@@ -3,7 +3,6 @@
 > Community research project for documenting and progressively reconstructing ICO for PlayStation 2 as a recompilable technical base.
 
 [![Last Commit](https://img.shields.io/github/last-commit/odevpedro/ico-reconstruction?style=flat-square)](https://github.com/odevpedro/ico-reconstruction/commits/main)
-[![License](https://img.shields.io/github/license/odevpedro/ico-reconstruction?style=flat-square)](./LICENSE)
 [![Project Status](https://img.shields.io/badge/status-planning%20%26%20research-blue?style=flat-square)](#current-status)
 
 ![ICO wallpaper](./assets/ico-wallpaper.webp)
@@ -35,13 +34,13 @@ This repository is currently documentation-first. The technical stack below desc
 |-------|-----------------------------|
 | Documentation | Markdown |
 | Project tracking | `docs/backlog.md`, `docs/architecture-log.md`, architectural decision notes |
-| ISO inspection | To be defined during environment setup |
+| Disc image inspection | `tools/iso-index` for metadata-only ISO9660/BIN/CUE indexing |
 | ELF analysis | To be defined during environment setup |
 | Disassembly | To be defined during environment setup |
 | Asset exploration | To be defined after initial ISO triage |
-| Validation | Reproducible notes, binary/asset observations, emulator/debugger evidence where applicable |
+| Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
 | CI/CD | Not configured yet |
-| Tests | Not configured yet |
+| Tests | No automated suite yet; synthetic fixture used for local tool validation |
 
 Architectural approach:
 
@@ -65,33 +64,40 @@ No reconstructed game code, assets, binaries, or ISO-derived copyrighted data ar
 Current repository contents are mostly operational documents:
 
 - `docs/backlog.md` - current project state and pending work
-- `decisoes-iniciais.md` - initial architectural and process decisions
-- `prompt-A-D.md` - architectural analysis prompt for the first major technical pass
-- `prompt-E-G.md` - decision matrix and squad architecture prompt
-- `fases-2-4.md` - execution templates for later phases
 - `docs/architecture-log.md` - historical record of implemented flows and decisions
+- `docs/architectural-analysis-a-d.md` - first subsystem feasibility and validation map
+- `docs/research-methodology.md` - evidence and documentation rules for research notes
+- `docs/legal-boundaries.md` - repository content boundaries and contribution limits
+- `docs/tooling-plan.md` - intended local tooling direction before implementation
+- `tools/verify-local-copy/` - metadata-only local input verifier
+- `tools/iso-index/` - metadata-only ISO9660/BIN/CUE indexer
 
 ## Repository Structure
 
 ```text
 .
+├── .github/
+│   └── ISSUE_TEMPLATE/           # GitHub issue templates
+├── .gitignore                    # Local binary/output safety rules
 ├── README.md                     # Public entry point for GitHub
 ├── assets/
 │   └── ico-wallpaper.webp        # Public README image
 ├── docs/
+│   ├── architectural-analysis-a-d.md # rev.007 feasibility and validation map
+│   ├── architecture-log.md       # Historical record of implemented flows and decisions
 │   ├── backlog.md                # Current work state and revision signatures
-├── decisoes-iniciais.md          # Initial project decisions and retarget history
-├── docs/                         # Future technical notes and architecture docs
-├── explanation_backlog.md        # Backlog operating rules
-├── fases-2-4.md                  # Execution templates for squad specs and reviews
-├── prompt-A-D.md                 # First architectural analysis prompt
-├── prompt-E-G.md                 # Decision matrix and squad architecture prompt
-├── research/                     # Future raw research notes and observations
-├── registro_funcionalidades.md   # Feature-flow documentation rules
-│   ├── architecture-log.md       # Historical record of project flows
+│   ├── legal-boundaries.md       # Legal and content boundaries
+│   ├── research-methodology.md   # Research evidence standards
+│   └── tooling-plan.md           # Planned local tooling workflow
+├── research/
+│   ├── README.md                 # Research note organization
+│   └── iso-layout/               # Metadata-only disc layout observations
 ├── tests/
-│   └── fixtures/                 # Future non-copyrighted parser/tooling fixtures
-└── tools/                        # Future scripts and local research utilities
+│   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
+└── tools/
+    ├── iso-index/                # Metadata-only ISO9660/BIN/CUE indexer
+    ├── README.md                 # Script and tooling conventions
+    └── verify-local-copy/        # Metadata-only local input verifier
 ```
 
 ## What This Project Is Not
@@ -122,11 +128,27 @@ Recommended first reading order:
 
 1. `README.md`
 2. `docs/backlog.md`
-3. `decisoes-iniciais.md`
-4. `prompt-A-D.md`
-5. `docs/architecture-log.md`
+3. `docs/architecture-log.md`
+4. `docs/architectural-analysis-a-d.md`
+5. `docs/research-methodology.md`
+6. `docs/legal-boundaries.md`
+7. `docs/tooling-plan.md`
 
 Future setup instructions will be added after the environment setup task defines reproducible tools for ISO inspection, ELF analysis, disassembly, debugging, and asset exploration.
+
+Current metadata-only verifier:
+
+```bash
+python3 tools/verify-local-copy/verify_local_copy.py /path/to/local/user-owned/input
+```
+
+Generated reports are written to `.local/reports/`, which is ignored by git.
+
+Current disc indexer:
+
+```bash
+python3 tools/iso-index/iso_index.py "/path/to/Ico (USA).bin" --cue "/path/to/Ico (USA).cue"
+```
 
 ## Tests
 
@@ -162,13 +184,16 @@ The project treats these as research topics, not solved problems.
 | Document | Purpose |
 |----------|---------|
 | [`docs/backlog.md`](./docs/backlog.md) | Current state, pending tasks, completed work, and revision signatures |
-| [`decisoes-iniciais.md`](./decisoes-iniciais.md) | Architectural and process decisions |
-| [`prompt-A-D.md`](./prompt-A-D.md) | Prompt for the first technical feasibility and roadmap analysis |
-| [`prompt-E-G.md`](./prompt-E-G.md) | Prompt for decision matrix, squads, and final recommendation |
-| [`fases-2-4.md`](./fases-2-4.md) | Templates for squad specs, roadmap, decision review, and black boxes |
-| [`docs/architecture-log.md`](./docs/architecture-log.md) | Incremental historical record of implemented flows and decisions |
-| [`explanation_backlog.md`](./explanation_backlog.md) | Operational rules for backlog updates |
-| [`registro_funcionalidades.md`](./registro_funcionalidades.md) | Operational rules for feature-flow documentation |
+| [`docs/architecture-log.md`](./docs/architecture-log.md) | Historical record of implemented flows and decisions |
+| [`docs/architectural-analysis-a-d.md`](./docs/architectural-analysis-a-d.md) | First subsystem feasibility and validation map |
+| [`docs/research-methodology.md`](./docs/research-methodology.md) | Research evidence standards and observation format |
+| [`docs/legal-boundaries.md`](./docs/legal-boundaries.md) | Content rules for legal and clean-room repository boundaries |
+| [`docs/tooling-plan.md`](./docs/tooling-plan.md) | Planned local tooling direction before executable tools exist |
+| [`research/README.md`](./research/README.md) | Organization rules for future research notes |
+| [`tools/README.md`](./tools/README.md) | Scope and conventions for future local utilities |
+| [`tools/verify-local-copy/README.md`](./tools/verify-local-copy/README.md) | Metadata-only local input verifier |
+| [`tools/iso-index/README.md`](./tools/iso-index/README.md) | Metadata-only ISO9660/BIN/CUE indexer |
+| [`research/iso-layout/ico-usa-bin-cue-initial-index.md`](./research/iso-layout/ico-usa-bin-cue-initial-index.md) | Initial confirmed metadata-only BIN/CUE layout observation |
 
 ## Initial Roadmap
 
@@ -204,7 +229,10 @@ The project treats these as research topics, not solved problems.
 [x] rev.004 - README merged with repository template structure
 [x] rev.005 - ICO wallpaper added to README
 [x] rev.006 - Minimal GitHub folder structure added
-[ ] rev.007 - Architectural analysis A-D for ICO
+[x] rev.006.1 - Documentation cleanup and base research guides
+[x] rev.007 - Architectural analysis A-D for ICO
+[x] rev.007.1 - Local metadata tooling foundation
+[x] rev.007.2 - Local BIN/CUE disc index and initial observation
 [ ] rev.008 - Architectural analysis E-G for ICO
 [ ] pending - Environment setup for extraction and disassembly
 [ ] pending - First visible proof of concept against a user-owned copy
@@ -257,7 +285,6 @@ Every meaningful contribution should update the relevant project documents:
 
 - update `docs/backlog.md` when work starts, completes, blocks, or creates a new risk
 - update `docs/architecture-log.md` when a technical flow, tool, or subsystem behavior is documented
-- record architectural decisions in `decisoes-iniciais.md` when they affect project direction
 
 Backlog entries use this signature format:
 

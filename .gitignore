@@ -1,0 +1,44 @@
+# Local user-owned game inputs and binary work
+*.iso
+*.ISO
+*.bin
+*.BIN
+*.elf
+*.ELF
+*.img
+*.IMG
+*.mdf
+*.MDF
+*.cue
+*.CUE
+
+# Local extraction, dumps, and generated binary outputs
+.local/
+local/
+input/
+inputs/
+output/
+outputs/
+extracted/
+extracts/
+dumps/
+reports/
+tmp/
+temp/
+
+# Emulator/debugger state
+sstates/
+memcards/
+*.pnach
+*.sav
+*.state
+
+# Python/runtime cache
+__pycache__/
+*.py[cod]
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

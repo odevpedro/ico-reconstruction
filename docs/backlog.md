@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 6 |
+| Completed | 10 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -22,16 +22,6 @@ _(No items currently in progress)_
 ---
 
 ## Pending
-
-### [SQUAD-ARCH | rev.007 | Pending]
-**Architectural Analysis A-D for ICO**
-
-- Feasibility assessment by subsystem
-- Identify validatable items without game binary
-- Identify items requiring empirical testing
-- Deliverable: documented feasibility report
-
----
 
 ### [SQUAD-ARCH | rev.008 | Pending]
 **Architectural Analysis E-G for ICO**
@@ -55,6 +45,16 @@ _(No items currently in progress)_
 
 ---
 
+### [SQUAD-TOOLING | Pending | Pending]
+**First Visible Proof of Concept Against a User-Owned Copy**
+
+- Use local metadata verifier output as the input baseline
+- Choose a non-distributable low-risk mutation target only after ISO/ELF metadata is known
+- Document emulator/debugger validation steps
+- Deliverable: reproducible local-only PoC notes and tooling
+
+---
+
 ## Completed
 
 ### [x] [SQUAD-ARCH | rev.001 | 2026-05-12]
@@ -75,6 +75,33 @@ ICO wallpaper added to README
 ### [x] [SQUAD-ARCH | rev.006 | 2026-05-12]
 Minimal GitHub folder structure added
 
+### [x] [SQUAD-ARCH | rev.006.1 | 2026-05-12]
+Documentation cleanup and base research guides
+
+### [x] [SQUAD-ARCH | rev.007 | 2026-05-12]
+Architectural Analysis A-D for ICO
+
+- Feasibility assessment by subsystem
+- Identified validatable items without game binary
+- Identified items requiring empirical testing
+- Deliverable: `docs/architectural-analysis-a-d.md`
+
+### [x] [SQUAD-TOOLING | rev.007.1 | 2026-05-12]
+Local metadata tooling foundation
+
+- Added local binary/output `.gitignore` safety rules
+- Added GitHub issue templates for research, tooling, legal/content concerns, and subsystem mapping
+- Added `tools/verify-local-copy/` metadata-only verifier
+- Added a synthetic metadata fixture for validation
+
+### [x] [SQUAD-TOOLING | rev.007.2 | 2026-05-12]
+Local BIN/CUE disc index and initial observation
+
+- Added `tools/iso-index/` metadata-only ISO9660/BIN/CUE indexer
+- Ran metadata-only indexing against local `Ico (USA).bin` with CUE context
+- Recorded confirmed safe metadata in `research/iso-layout/ico-usa-bin-cue-initial-index.md`
+- Identified `SCUS_971.13` as the main executable candidate and `DFDATAS/DATA.DF` as the primary large data/archive candidate
+
 ---
 
 ## Revision Signatures
@@ -87,8 +114,12 @@ Minimal GitHub folder structure added
 | rev.004 | 2026-05-12 | SQUAD-ARCH | README merged with repository template structure |
 | rev.005 | 2026-05-12 | SQUAD-ARCH | ICO wallpaper added to README |
 | rev.006 | 2026-05-12 | SQUAD-ARCH | Minimal GitHub folder structure added |
-| rev.007 | TBD | SQUAD-ARCH | Architectural analysis A-D for ICO |
+| rev.006.1 | 2026-05-12 | SQUAD-ARCH | Documentation cleanup and base research guides |
+| rev.007 | 2026-05-12 | SQUAD-ARCH | Architectural analysis A-D for ICO |
+| rev.007.1 | 2026-05-12 | SQUAD-TOOLING | Local metadata tooling foundation |
+| rev.007.2 | 2026-05-12 | SQUAD-TOOLING | Local BIN/CUE disc index and initial observation |
 | rev.008 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
+| pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 
 ---
 

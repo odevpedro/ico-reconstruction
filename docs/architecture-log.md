@@ -196,3 +196,155 @@ If real tools are added, the `tools/` folder must receive a specific README with
 - Use `.gitkeep` to version still-empty directories.
 - Keep the structure small to avoid promising non-existent modules.
 - Reserve `tests/fixtures/` only for synthetic or non-copyrighted fixtures.
+
+# Feature: Documentation Cleanup and Base Research Guides
+
+> Squad responsible: SQUAD-ARCH
+> Revision: rev.006.1
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+The public documentation was aligned with the actual repository state. The obsolete future `docs/data-model.md` reference was removed, and base guides were added for research methodology, legal boundaries, tooling direction, research notes, and future tools.
+
+## Main Flow
+
+### 1. Entry Point
+The PO requested cleanup after reviewing the next recommended steps for the project.
+
+### 2. Input Validation
+The repository was confirmed to be documentation-first, with no executable application, runtime, database, API, source port, or implemented tooling.
+
+### 3. Application Orchestration
+The README now points to existing project documents and newly added base guides. The backlog records the cleanup as an intermediate revision without consuming `rev.007`, which remains reserved for architectural analysis A-D.
+
+### 4. Business Rules
+Documentation continues to prohibit committing ISO contents, binaries, extracted assets, proprietary source, or copyrighted game data. Future tooling must operate on a local user-supplied copy.
+
+### 5. Persistence / Integrations
+Updated `README.md`, `docs/backlog.md`, and this log. Added `docs/research-methodology.md`, `docs/legal-boundaries.md`, `docs/tooling-plan.md`, `research/README.md`, and `tools/README.md`.
+
+### 6. Final Response
+The repository now has a cleaner public structure and enough base documentation to support the next architecture pass.
+
+## Alternative Flows and Errors
+If the project later introduces real executable tools, the README and `docs/tooling-plan.md` must be revised with actual setup commands, generated output paths, and test instructions.
+
+## Key Technical Decisions
+- Keep `rev.007` assigned to architectural analysis A-D.
+- Replace the unused data model reference with research, legal, and tooling guides.
+- Keep the repository documentation-first until empirical tooling exists.
+
+# Feature: Architectural Analysis A-D
+
+> Squad responsible: SQUAD-ARCH
+> Revision: rev.007
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+The first subsystem feasibility and validation map was documented for ICO Reconstruction. The analysis distinguishes confirmed repository state from hypotheses and unknowns that require local empirical validation against a user-owned copy.
+
+## Main Flow
+
+### 1. Entry Point
+The project advanced from documentation cleanup into the pending `rev.007` architecture task.
+
+### 2. Input Validation
+No ISO, ELF, executable, asset, or extracted game data is present in the repository. The analysis therefore uses documentation-only evidence and marks ICO-specific technical claims as hypotheses or unknowns.
+
+### 3. Application Orchestration
+Created `docs/architectural-analysis-a-d.md` with a subsystem feasibility table, validation work that can happen without a binary, validation work that requires empirical testing, and a recommended first technical path.
+
+### 4. Business Rules
+The recommended path starts with metadata-only local verification and ISO indexing. It explicitly avoids committing proprietary data or beginning gameplay reconstruction before empirical metadata exists.
+
+### 5. Persistence / Integrations
+Updated `README.md`, `docs/backlog.md`, and this log. Added `docs/architectural-analysis-a-d.md`.
+
+### 6. Final Response
+`rev.007` is complete. The next practical project step is environment setup or metadata-only local verifier work before deeper subsystem claims.
+
+## Alternative Flows and Errors
+If empirical ISO/ELF inspection contradicts the assumptions in the A-D analysis, the report should be revised with confirmed observations and the changed evidence level.
+
+## Key Technical Decisions
+- Treat reconstruction/source-port feasibility as unproven until local ISO and executable metadata are inspected.
+- Prioritize metadata-only tooling before asset extraction or mutation PoCs.
+- Keep `rev.008` constrained by evidence from `rev.007` and future local tooling.
+
+# Feature: Local Metadata Tooling Foundation
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.007.1
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+The repository received the first practical tooling foundation: safety-focused `.gitignore` rules, GitHub issue templates, and a metadata-only verifier for local user-owned inputs.
+
+## Main Flow
+
+### 1. Entry Point
+The PO requested the next practical steps to be done at once: ignored local outputs, issue templates, and a first metadata-only verifier.
+
+### 2. Input Validation
+No real ICO data was used. A synthetic fixture was added under `tests/fixtures/` to validate the verifier without proprietary content.
+
+### 3. Application Orchestration
+The verifier accepts a local file or directory, records file metadata and optional SHA-256 hashes, and writes a JSON report under `.local/reports/`, which is ignored by git.
+
+### 4. Business Rules
+The tool does not copy, extract, patch, decode, or redistribute game data. Reports are local by default and must be reviewed before any metadata from a real copy is committed.
+
+### 5. Persistence / Integrations
+Added `.gitignore`, issue templates under `.github/ISSUE_TEMPLATE/`, `tools/verify-local-copy/`, and `tests/fixtures/metadata-sample.txt`. Updated README, tooling docs, backlog, and this log.
+
+### 6. Final Response
+The project now has a first safe local verification tool and collaboration templates. Full runtime/disassembly environment setup remains pending.
+
+## Alternative Flows and Errors
+If a local directory contains too many files, the verifier refuses to scan beyond `--max-files` unless explicitly raised. Users may pass `--no-hash` to avoid expensive hashing.
+
+## Key Technical Decisions
+- Keep generated reports under `.local/reports/` and ignored by git.
+- Use Python standard library only for the first tool.
+- Treat the verifier as metadata-only groundwork, not ISO parsing or extraction.
+
+# Feature: Local BIN/CUE Disc Index and Initial Observation
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.007.2
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+A metadata-only ISO9660/BIN/CUE indexer was added and used against the local user-owned ICO USA BIN/CUE image. The project now has its first confirmed disc layout observation without copying or extracting proprietary files into the repository.
+
+## Main Flow
+
+### 1. Entry Point
+The PO provided the local path `/home/peter/Downloads/Ico (USA)/` and clarified that the game is stored as CD-ROM BIN/CUE rather than a DVD ISO.
+
+### 2. Input Validation
+The local directory contains `Ico (USA).bin` and `Ico (USA).cue`. The CUE declares `TRACK 01 MODE2/2352`. The files remained outside the repository.
+
+### 3. Application Orchestration
+`tools/verify-local-copy/` generated a local metadata report with hashes. `tools/iso-index/` detected the raw 2352-byte sector layout with data offset 24, generated a local metadata-only ISO9660 index, and parsed basic ELF header metadata for the executable candidate.
+
+### 4. Business Rules
+No game content was copied, extracted, decoded, patched, or committed. Only safe metadata, file names, sizes, LBAs, hashes, and interpretation notes were recorded.
+
+### 5. Persistence / Integrations
+Added `tools/iso-index/` and `research/iso-layout/ico-usa-bin-cue-initial-index.md`. Updated README, tooling docs, backlog, and this log.
+
+### 6. Final Response
+The project now has confirmed local disc metadata: main executable candidate `SCUS_971.13`, ELF32 header metadata, primary data/archive candidate `DFDATAS/DATA.DF`, and BIN/CUE sector layout details.
+
+## Alternative Flows and Errors
+If another regional dump uses a different sector layout, `iso-index` must detect the Primary Volume Descriptor using one of its supported layouts or be extended with another layout candidate.
+
+## Key Technical Decisions
+- Treat ICO USA as a CD-ROM BIN/CUE workflow for current local analysis.
+- Keep generated index JSON in `.local/reports/` and commit only reviewed metadata summaries.
+- Use disc metadata to drive the next step: metadata-only ELF section/program-header inspection and `DATA.DF` structure triage.
