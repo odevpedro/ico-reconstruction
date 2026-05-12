@@ -20,10 +20,12 @@
 ### [SQUAD-RUNTIME | rev.011 | In Progress]
 **Environment Setup for Disassembly and Emulation**
 
-- Research and select disassembler options (Ghidra, radare2, IDA)
-- Research and select emulator for validation (PCSX2)
-- Document workflow for analyzing known function addresses
-- Define validation methodology for code analysis
+- Research and select disassembler options (Ghidra, radare2, IDA) - Done
+- Research and select emulator for validation (PCSX2) - Done
+- Document workflow for analyzing known function addresses - Done
+- Added `tools/elf-extractor/` for ELF extraction - Done
+- Extracted ELF: .local/extracted/SCUS_971.13.elf (5.48 MB)
+- Next: Install Ghidra and import ELF for analysis
 - Deliverable: documented environment setup guide
 
 ---

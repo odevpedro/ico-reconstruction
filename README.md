@@ -43,7 +43,8 @@ This repository is currently documentation-first. The technical stack below desc
 | Function prologue detection | `tools/mips-prologue-scan` for MIPS function boundary detection |
 | Function reference correlation | `tools/function-ref-correlator` for linking prologues with code references |
 | Call graph analysis | `tools/mips-call-graph` for identifying function callers |
-| Disassembly | To be defined during environment setup |
+| ELF extraction | `tools/elf-extractor` for extracting ELF for disassembler import |
+| Disassembly | Environment setup with Ghidra |
 | Archive/data exploration | `tools/data-df-index` for metadata-only `DATA.DF` structural triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
 | CI/CD | Not configured yet |
@@ -87,6 +88,7 @@ Current repository contents are mostly operational documents:
 - `tools/mips-prologue-scan/` - metadata-only MIPS function prologue scanner
 - `tools/function-ref-correlator/` - metadata-only function reference correlator
 - `tools/mips-call-graph/` - metadata-only MIPS call graph analyzer
+- `tools/elf-extractor/` - ELF extractor for disassembler import
 
 ## Repository Structure
 
@@ -228,6 +230,12 @@ Current MIPS call graph analyzer:
 python3 tools/mips-call-graph/mips_call_graph.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13 --prologue-report .local/reports/...-mips-prologue-scan.json --target 0x001321c8 --target 0x00132630
 ```
 
+ELF extractor for disassembler import:
+
+```bash
+python3 tools/elf-extractor/elf_extractor.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13 --output-dir .local/extracted
+```
+
 ## Tests
 
 No automated test suite exists yet because the repository currently contains planning and research documentation only.
@@ -292,6 +300,7 @@ The project treats these as research topics, not solved problems.
 | [`tools/mips-call-graph/README.md`](./tools/mips-call-graph/README.md) | Metadata-only MIPS call graph analyzer |
 | [`research/elf/ico-usa-scus-97113-call-graph-analysis.md`](./research/elf/ico-usa-scus-97113-call-graph-analysis.md) | Confirmed call graph analysis (13 callers, 15 calls) |
 | [`research/elf/ico-usa-environment-setup-plan.md`](./research/elf/ico-usa-environment-setup-plan.md) | Environment setup plan for disassembly and emulation |
+| [`tools/elf-extractor/README.md`](./tools/elf-extractor/README.md) | ELF extractor for disassembler import |
 
 ## Initial Roadmap
 
