@@ -39,6 +39,7 @@ This repository is currently documentation-first. The technical stack below desc
 | Overlay metadata | `tools/dvp-index` for metadata-only `.DVP.*` overlay correlation |
 | Executable references | `tools/exe-ref-index` for exact string/constant reference scans |
 | MIPS immediate patterns | `tools/mips-immediate-scanner` for split-immediate (lui/addiu) pattern scanning |
+| Symbol table analysis | `tools/elf-symbol-scan` for detecting symbol tables and dynamic linking |
 | Disassembly | To be defined during environment setup |
 | Archive/data exploration | `tools/data-df-index` for metadata-only `DATA.DF` structural triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
@@ -79,7 +80,7 @@ Current repository contents are mostly operational documents:
 - `tools/dvp-index/` - metadata-only `.DVP.*` overlay indexer
 - `tools/exe-ref-index/` - metadata-only exact executable reference scanner
 - `tools/mips-immediate-scanner/` - metadata-only MIPS split-immediate pattern scanner
-- `tools/mips-immediate-scanner/` - metadata-only MIPS split-immediate pattern scanner
+- `tools/elf-symbol-scan/` - metadata-only ELF symbol table scanner
 
 ## Repository Structure
 
@@ -197,6 +198,12 @@ Current MIPS split-immediate pattern scanner:
 python3 tools/mips-immediate-scanner/mips_immediate_scanner.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13 --target 0x00556a10 --target 0x00633b68
 ```
 
+Current ELF symbol table scanner:
+
+```bash
+python3 tools/elf-symbol-scan/elf_symbol_scan.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13
+```
+
 ## Tests
 
 No automated test suite exists yet because the repository currently contains planning and research documentation only.
@@ -252,6 +259,8 @@ The project treats these as research topics, not solved problems.
 | [`tools/mips-immediate-scanner/README.md`](./tools/mips-immediate-scanner/README.md) | Metadata-only MIPS split-immediate pattern scanner |
 | [`research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md`](./research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md) | Initial confirmed metadata-only executable reference scan |
 | [`research/exe-refs/ico-usa-scus-97113-mips-immediate-patterns.md`](./research/exe-refs/ico-usa-scus-97113-mips-immediate-patterns.md) | Confirmed metadata-only MIPS split-immediate pattern scan |
+| [`tools/elf-symbol-scan/README.md`](./tools/elf-symbol-scan/README.md) | Metadata-only ELF symbol table scanner |
+| [`research/elf/ico-usa-scus-97113-symbol-table-analysis.md`](./research/elf/ico-usa-scus-97113-symbol-table-analysis.md) | Confirmed ELF symbol table analysis (stripped) |
 
 ## Initial Roadmap
 

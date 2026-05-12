@@ -151,6 +151,14 @@ MIPS split-immediate pattern scan for DATA.DF and DFDATAS addresses
 - Found 8 pattern matches for addresses 0x00556a10, 0x00556a20, 0x006127e8, and 0x00633b68
 - DATA.DF at 0x00556a28 had no split-immediate patterns found in .text section
 
+### [x] [SQUAD-TOOLING | rev.007.9 | 2026-05-12]
+ELF symbol table analysis (stripped executable)
+
+- Added `tools/elf-symbol-scan/` metadata-only ELF symbol table scanner
+- Scanned embedded `SCUS_971.13` for .symtab, .dynsym, and dynamic linking structures
+- Recorded confirmed metadata in `research/elf/ico-usa-scus-97113-symbol-table-analysis.md`
+- Confirmed executable is completely stripped: no .symtab, no .dynsym, no PT_DYNAMIC
+
 ---
 
 ## Revision Signatures
