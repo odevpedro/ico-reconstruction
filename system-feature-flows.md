@@ -424,3 +424,41 @@ Se análise futura do executável ou de overlays identificar offset de tabela fo
 - Manter análise de archive como metadata-only até o formato ser entendido.
 - Evitar extrair ou nomear entradas internas até definir uma representação limpa e segura.
 - Usar metadados ELF `.DVP.*` e referências do executável para guiar a próxima passada direcionada em `DATA.DF`.
+
+# Feature: Correlação Local de Metadados de Overlay DVP
+
+> Squad responsável: SQUAD-TOOLING
+> Revisão: rev.007.5
+> Sessão: 2026-05-12
+> Status: Estável
+
+## Resumo
+Foi adicionado um indexador metadata-only de overlays `.DVP.*` e usado contra o executável embutido `SCUS_971.13`. A ferramenta correlaciona metadados das seções DVP com o range carregado do ELF e o contexto de tamanho conhecido de `DATA.DF`.
+
+## Fluxo principal
+
+### 1. Ponto de entrada
+A análise ELF anterior identificou `.DVP.ovlytab`, `.DVP.ovlystrtab` e 12 seções `.DVP.overlay...`.
+
+### 2. Validação de entrada
+O executável foi lido da imagem BIN local usando setor 2352 e offset de dados 24. `DATA.DF` foi usado apenas como contexto de tamanho. Nenhum byte do executável, payload de overlay ou conteúdo de archive foi commitado.
+
+### 3. Orquestração da aplicação
+`tools/dvp-index/` analisou metadados das seções `.DVP.*`, contou entradas da string table de overlays, interpretou `.DVP.ovlytab` como entradas de 12 bytes e classificou valores numéricos contra o range carregado do ELF e o tamanho conhecido de `DATA.DF`.
+
+### 4. Regras de negócio
+O relatório permanece metadata-only. Ele não inclui bytes brutos do executável, disassembly, conteúdo de overlays, entradas extraídas de archive ou assets decodificados.
+
+### 5. Persistência / Integrações
+Foram adicionados `tools/dvp-index/` e `research/dvp/ico-usa-dvp-overlay-metadata.md`. Foram atualizados README, documentação de tooling, backlog, `docs/architecture-log.md` e este registro.
+
+### 6. Resposta final
+Foram confirmadas 14 seções `.DVP.*`, 12 seções de overlay, 12 entradas na tabela de overlays e 12 entradas na string table de overlays. A tabela de overlays parece incluir referências de memória ELF, então a interpretação direta como offsets de `DATA.DF` permanece não confirmada.
+
+## Fluxos alternativos e erros
+Se scans direcionados futuros de `DATA.DF` validarem algum token numérico de `.DVP.overlay...` como offset de archive, a nota DVP deve ser revisada de hipótese para mapeamento confirmado daquele token.
+
+## Decisões técnicas importantes
+- Não tratar valores numéricos como offsets de `DATA.DF` apenas porque cabem dentro do tamanho do archive.
+- Comparar valores DVP tanto contra ranges carregados do ELF quanto contra contexto de tamanho de `DATA.DF`.
+- Usar tokens numéricos DVP como sementes de busca para scans direcionados de `DATA.DF`, não como entradas confirmadas de tabela.

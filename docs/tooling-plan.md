@@ -8,6 +8,7 @@ Current implemented tool:
 - `tools/iso-index/` - metadata-only ISO9660/BIN/CUE indexer
 - `tools/elf-index/` - metadata-only ELF32 indexer
 - `tools/data-df-index/` - metadata-only `DATA.DF` structural triage tool
+- `tools/dvp-index/` - metadata-only `.DVP.*` overlay metadata indexer
 
 ## Initial Goals
 
@@ -20,6 +21,7 @@ Planned areas:
 - identify the main executable - started with `tools/iso-index/`
 - inspect ELF header, program headers, section headers, and symbol-table presence - started with `tools/elf-index/`
 - inspect `DATA.DF` aggregate structure without extraction - started with `tools/data-df-index/`
+- correlate `.DVP.*` overlay metadata with ELF load ranges and `DATA.DF` size context - started with `tools/dvp-index/`
 - collect file names, offsets, sizes, and basic metadata
 - generate local reports ignored by git
 - support future synthetic parser fixtures
@@ -43,6 +45,7 @@ tools/
   iso-index/
   elf-index/
   data-df-index/
+  dvp-index/
   elf-notes/
 tests/
   fixtures/

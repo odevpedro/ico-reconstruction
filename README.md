@@ -36,6 +36,7 @@ This repository is currently documentation-first. The technical stack below desc
 | Project tracking | `docs/backlog.md`, `docs/architecture-log.md`, architectural decision notes |
 | Disc image inspection | `tools/iso-index` for metadata-only ISO9660/BIN/CUE indexing |
 | ELF analysis | `tools/elf-index` for metadata-only ELF32 header/section/program-header indexing |
+| Overlay metadata | `tools/dvp-index` for metadata-only `.DVP.*` overlay correlation |
 | Disassembly | To be defined during environment setup |
 | Archive/data exploration | `tools/data-df-index` for metadata-only `DATA.DF` structural triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
@@ -73,6 +74,7 @@ Current repository contents are mostly operational documents:
 - `tools/iso-index/` - metadata-only ISO9660/BIN/CUE indexer
 - `tools/elf-index/` - metadata-only ELF32 indexer
 - `tools/data-df-index/` - metadata-only `DATA.DF` triage tool
+- `tools/dvp-index/` - metadata-only `.DVP.*` overlay indexer
 
 ## Repository Structure
 
@@ -93,6 +95,7 @@ Current repository contents are mostly operational documents:
 │   └── tooling-plan.md           # Planned local tooling workflow
 ├── research/
 │   ├── data-df/                  # Metadata-only DATA.DF observations
+│   ├── dvp/                      # Metadata-only DVP overlay observations
 │   ├── elf/                      # Metadata-only ELF observations
 │   ├── README.md                 # Research note organization
 │   └── iso-layout/               # Metadata-only disc layout observations
@@ -100,6 +103,7 @@ Current repository contents are mostly operational documents:
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
 └── tools/
     ├── data-df-index/            # Metadata-only DATA.DF triage tool
+    ├── dvp-index/                # Metadata-only DVP overlay indexer
     ├── elf-index/                # Metadata-only ELF32 indexer
     ├── iso-index/                # Metadata-only ISO9660/BIN/CUE indexer
     ├── README.md                 # Script and tooling conventions
@@ -168,6 +172,12 @@ Current `DATA.DF` triage:
 python3 tools/data-df-index/data_df_index.py --image "/path/to/Ico (USA).bin" --lba 2898 --size 539367424 --sector-size 2352 --data-offset 24 --source-name DFDATAS/DATA.DF
 ```
 
+Current DVP overlay metadata indexer:
+
+```bash
+python3 tools/dvp-index/dvp_index.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13 --data-df-size 539367424
+```
+
 ## Tests
 
 No automated test suite exists yet because the repository currently contains planning and research documentation only.
@@ -216,6 +226,8 @@ The project treats these as research topics, not solved problems.
 | [`research/elf/ico-usa-scus-97113-elf-metadata.md`](./research/elf/ico-usa-scus-97113-elf-metadata.md) | Initial confirmed metadata-only ELF observation |
 | [`tools/data-df-index/README.md`](./tools/data-df-index/README.md) | Metadata-only `DATA.DF` structural triage |
 | [`research/data-df/ico-usa-data-df-initial-triage.md`](./research/data-df/ico-usa-data-df-initial-triage.md) | Initial confirmed metadata-only `DATA.DF` triage |
+| [`tools/dvp-index/README.md`](./tools/dvp-index/README.md) | Metadata-only `.DVP.*` overlay indexer |
+| [`research/dvp/ico-usa-dvp-overlay-metadata.md`](./research/dvp/ico-usa-dvp-overlay-metadata.md) | Initial confirmed metadata-only `.DVP.*` overlay observation |
 
 ## Initial Roadmap
 
@@ -257,6 +269,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.007.2 - Local BIN/CUE disc index and initial observation
 [x] rev.007.3 - Local ELF metadata index and initial observation
 [x] rev.007.4 - Local DATA.DF metadata triage
+[x] rev.007.5 - Local DVP overlay metadata correlation
 [ ] rev.008 - Architectural analysis E-G for ICO
 [ ] pending - Environment setup for extraction and disassembly
 [ ] pending - First visible proof of concept against a user-owned copy

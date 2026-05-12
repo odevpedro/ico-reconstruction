@@ -97,4 +97,4 @@ No `SHT_SYMTAB` or `SHT_DYNSYM` section was detected.
 
 ## Next Step
 
-Use the `DATA.DF` triage results and `.DVP.*` section metadata to design a targeted search for archive tables or overlay references.
+Use the `.DVP.*` overlay metadata documented in `research/dvp/ico-usa-dvp-overlay-metadata.md` to drive targeted `DATA.DF` scans around candidate numeric tokens.

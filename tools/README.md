@@ -8,6 +8,7 @@ Current tools:
 - `iso-index/` - metadata-only ISO9660/BIN/CUE indexer
 - `elf-index/` - metadata-only ELF32 indexer
 - `data-df-index/` - metadata-only `DATA.DF` structural triage tool
+- `dvp-index/` - metadata-only `.DVP.*` overlay metadata indexer
 
 Tools should:
 

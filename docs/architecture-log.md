@@ -424,3 +424,41 @@ If later executable or overlay analysis identifies a table offset outside the fi
 - Keep archive analysis metadata-only until the format is understood.
 - Avoid extracting or naming internal archive entries until a clean safe representation is defined.
 - Use `.DVP.*` ELF metadata and executable references to guide the next targeted `DATA.DF` pass.
+
+# Feature: Local DVP Overlay Metadata Correlation
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.007.5
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+A metadata-only `.DVP.*` overlay indexer was added and used against the embedded `SCUS_971.13` executable. The tool correlates DVP section metadata with the ELF load range and known `DATA.DF` size context.
+
+## Main Flow
+
+### 1. Entry Point
+The previous ELF analysis identified `.DVP.ovlytab`, `.DVP.ovlystrtab`, and 12 `.DVP.overlay...` sections.
+
+### 2. Input Validation
+The executable was read from the local BIN image using sector size 2352 and data offset 24. `DATA.DF` was used only as size context. No executable bytes, overlay payloads, or archive contents were committed.
+
+### 3. Application Orchestration
+`tools/dvp-index/` parsed `.DVP.*` section metadata, counted overlay string-table entries, interpreted `.DVP.ovlytab` as 12-byte entries, and classified numeric values against the ELF load range and known `DATA.DF` size.
+
+### 4. Business Rules
+The report remains metadata-only. It does not include raw executable bytes, disassembly, overlay contents, extracted archive entries, or decoded assets.
+
+### 5. Persistence / Integrations
+Added `tools/dvp-index/` and `research/dvp/ico-usa-dvp-overlay-metadata.md`. Updated README, tooling docs, backlog, and this log.
+
+### 6. Final Response
+Confirmed 14 `.DVP.*` sections, 12 overlay sections, 12 overlay-table entries, and 12 overlay string-table entries. The overlay table appears to include ELF memory references, so direct `DATA.DF` offset interpretation remains unconfirmed.
+
+## Alternative Flows and Errors
+If future targeted `DATA.DF` scans validate any `.DVP.overlay...` numeric token as an archive offset, the DVP note should be revised from hypothesis to confirmed mapping for that token.
+
+## Key Technical Decisions
+- Do not treat numeric values as `DATA.DF` offsets merely because they fit inside the archive size.
+- Compare DVP values against both ELF load ranges and `DATA.DF` size context.
+- Use DVP numeric tokens as search seeds for targeted `DATA.DF` scans, not as confirmed table entries.

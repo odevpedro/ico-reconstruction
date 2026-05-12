@@ -68,4 +68,4 @@ The initial head-window scan found no simple monotonic 32-bit offset table candi
 
 ## Next Step
 
-Correlate `SCUS_971.13` references and `.DVP.*` section metadata with possible `DATA.DF` offsets before attempting deeper archive parsing.
+Use the `.DVP.*` overlay metadata documented in `research/dvp/ico-usa-dvp-overlay-metadata.md` to drive targeted `DATA.DF` scans around candidate numeric tokens.

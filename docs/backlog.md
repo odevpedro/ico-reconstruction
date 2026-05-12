@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 12 |
+| Completed | 13 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -118,6 +118,14 @@ Local DATA.DF metadata triage
 - Recorded confirmed safe metadata in `research/data-df/ico-usa-data-df-initial-triage.md`
 - Found no simple head-window offset table candidate under current heuristic
 
+### [x] [SQUAD-TOOLING | rev.007.5 | 2026-05-12]
+Local DVP overlay metadata correlation
+
+- Added `tools/dvp-index/` metadata-only `.DVP.*` overlay indexer
+- Correlated `.DVP.ovlytab`, `.DVP.ovlystrtab`, and `.DVP.overlay...` metadata with ELF load range and `DATA.DF` size context
+- Recorded confirmed safe metadata in `research/dvp/ico-usa-dvp-overlay-metadata.md`
+- Identified 12 overlay table entries and 12 overlay string-table entries
+
 ---
 
 ## Revision Signatures
@@ -136,6 +144,7 @@ Local DATA.DF metadata triage
 | rev.007.2 | 2026-05-12 | SQUAD-TOOLING | Local BIN/CUE disc index and initial observation |
 | rev.007.3 | 2026-05-12 | SQUAD-TOOLING | Local ELF metadata index and initial observation |
 | rev.007.4 | 2026-05-12 | SQUAD-TOOLING | Local DATA.DF metadata triage |
+| rev.007.5 | 2026-05-12 | SQUAD-TOOLING | Local DVP overlay metadata correlation |
 | rev.008 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 
