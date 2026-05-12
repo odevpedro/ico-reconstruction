@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 15 |
+| Completed | 16 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -142,6 +142,15 @@ Executable reference scan for DATA.DF and DVP tokens
 - Recorded confirmed safe metadata in `research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md`
 - Confirmed direct `DATA.DF` and `DFDATAS` string references in executable data sections
 
+### [x] [SQUAD-TOOLING | rev.007.8 | 2026-05-12]
+MIPS split-immediate pattern scan for DATA.DF and DFDATAS addresses
+
+- Added `tools/mips-immediate-scanner/` metadata-only MIPS split-immediate pattern scanner
+- Scanned embedded `SCUS_971.13` for lui/addiu patterns referencing known virtual addresses
+- Recorded confirmed safe metadata in `research/exe-refs/ico-usa-scus-97113-mips-immediate-patterns.md`
+- Found 8 pattern matches for addresses 0x00556a10, 0x00556a20, 0x006127e8, and 0x00633b68
+- DATA.DF at 0x00556a28 had no split-immediate patterns found in .text section
+
 ---
 
 ## Revision Signatures
@@ -163,6 +172,7 @@ Executable reference scan for DATA.DF and DVP tokens
 | rev.007.5 | 2026-05-12 | SQUAD-TOOLING | Local DVP overlay metadata correlation |
 | rev.007.6 | 2026-05-12 | SQUAD-TOOLING | Targeted DATA.DF scans around DVP tokens |
 | rev.007.7 | 2026-05-12 | SQUAD-TOOLING | Executable reference scan for DATA.DF and DVP tokens |
+| rev.007.8 | 2026-05-12 | SQUAD-TOOLING | MIPS split-immediate pattern scan for DATA.DF and DFDATAS addresses |
 | rev.008 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 

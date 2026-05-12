@@ -10,6 +10,7 @@ Current implemented tool:
 - `tools/data-df-index/` - metadata-only `DATA.DF` structural triage tool
 - `tools/dvp-index/` - metadata-only `.DVP.*` overlay metadata indexer
 - `tools/exe-ref-index/` - metadata-only exact executable reference scanner
+- `tools/mips-immediate-scanner/` - metadata-only MIPS split-immediate pattern scanner
 
 ## Initial Goals
 
@@ -25,6 +26,7 @@ Planned areas:
 - scan targeted `DATA.DF` windows around candidate offsets - started with `tools/data-df-index --target-offset`
 - correlate `.DVP.*` overlay metadata with ELF load ranges and `DATA.DF` size context - started with `tools/dvp-index/`
 - scan exact strings and constants in the executable - started with `tools/exe-ref-index/`
+  - scan MIPS split-immediate patterns for known virtual addresses - started with `tools/mips-immediate-scanner/`
 - collect file names, offsets, sizes, and basic metadata
 - generate local reports ignored by git
 - support future synthetic parser fixtures
@@ -50,6 +52,7 @@ tools/
   data-df-index/
   dvp-index/
   exe-ref-index/
+  mips-immediate-scanner/
   elf-notes/
 tests/
   fixtures/
