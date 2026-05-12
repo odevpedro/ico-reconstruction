@@ -34,7 +34,7 @@ This repository is currently documentation-first. The technical stack below desc
 | Layer | Current / Intended Tooling |
 |-------|-----------------------------|
 | Documentation | Markdown |
-| Project tracking | `backlog.md`, `system-feature-flows.md`, architectural decision notes |
+| Project tracking | `docs/backlog.md`, `docs/architecture-log.md`, architectural decision notes |
 | ISO inspection | To be defined during environment setup |
 | ELF analysis | To be defined during environment setup |
 | Disassembly | To be defined during environment setup |
@@ -64,12 +64,12 @@ No reconstructed game code, assets, binaries, or ISO-derived copyrighted data ar
 
 Current repository contents are mostly operational documents:
 
-- `backlog.md` - current project state and pending work
+- `docs/backlog.md` - current project state and pending work
 - `decisoes-iniciais.md` - initial architectural and process decisions
 - `prompt-A-D.md` - architectural analysis prompt for the first major technical pass
 - `prompt-E-G.md` - decision matrix and squad architecture prompt
 - `fases-2-4.md` - execution templates for later phases
-- `system-feature-flows.md` - historical record of implemented flows and decisions
+- `docs/architecture-log.md` - historical record of implemented flows and decisions
 
 ## Repository Structure
 
@@ -78,7 +78,8 @@ Current repository contents are mostly operational documents:
 ├── README.md                     # Public entry point for GitHub
 ├── assets/
 │   └── ico-wallpaper.webp        # Public README image
-├── backlog.md                    # Current work state and revision signatures
+├── docs/
+│   ├── backlog.md                # Current work state and revision signatures
 ├── decisoes-iniciais.md          # Initial project decisions and retarget history
 ├── docs/                         # Future technical notes and architecture docs
 ├── explanation_backlog.md        # Backlog operating rules
@@ -87,7 +88,7 @@ Current repository contents are mostly operational documents:
 ├── prompt-E-G.md                 # Decision matrix and squad architecture prompt
 ├── research/                     # Future raw research notes and observations
 ├── registro_funcionalidades.md   # Feature-flow documentation rules
-├── system-feature-flows.md       # Historical record of project flows
+│   ├── architecture-log.md       # Historical record of project flows
 ├── tests/
 │   └── fixtures/                 # Future non-copyrighted parser/tooling fixtures
 └── tools/                        # Future scripts and local research utilities
@@ -120,10 +121,10 @@ cd ico-reconstruction
 Recommended first reading order:
 
 1. `README.md`
-2. `backlog.md`
+2. `docs/backlog.md`
 3. `decisoes-iniciais.md`
 4. `prompt-A-D.md`
-5. `system-feature-flows.md`
+5. `docs/architecture-log.md`
 
 Future setup instructions will be added after the environment setup task defines reproducible tools for ISO inspection, ELF analysis, disassembly, debugging, and asset exploration.
 
@@ -160,12 +161,12 @@ The project treats these as research topics, not solved problems.
 
 | Document | Purpose |
 |----------|---------|
-| [`backlog.md`](./backlog.md) | Current state, pending tasks, completed work, and revision signatures |
+| [`docs/backlog.md`](./docs/backlog.md) | Current state, pending tasks, completed work, and revision signatures |
 | [`decisoes-iniciais.md`](./decisoes-iniciais.md) | Architectural and process decisions |
 | [`prompt-A-D.md`](./prompt-A-D.md) | Prompt for the first technical feasibility and roadmap analysis |
 | [`prompt-E-G.md`](./prompt-E-G.md) | Prompt for decision matrix, squads, and final recommendation |
 | [`fases-2-4.md`](./fases-2-4.md) | Templates for squad specs, roadmap, decision review, and black boxes |
-| [`system-feature-flows.md`](./system-feature-flows.md) | Incremental historical record of implemented flows and decisions |
+| [`docs/architecture-log.md`](./docs/architecture-log.md) | Incremental historical record of implemented flows and decisions |
 | [`explanation_backlog.md`](./explanation_backlog.md) | Operational rules for backlog updates |
 | [`registro_funcionalidades.md`](./registro_funcionalidades.md) | Operational rules for feature-flow documentation |
 
@@ -229,7 +230,7 @@ Suggested contribution flow:
 1. Fork the repository.
 2. Create a branch: `git checkout -b research/my-topic`.
 3. Make a focused documentation or tooling change.
-4. Update `backlog.md` and `system-feature-flows.md` when the change affects project state or technical flow.
+4. Update `docs/backlog.md` and `docs/architecture-log.md` when the change affects project state or technical flow.
 5. Commit using Conventional Commits, for example: `docs: document initial ELF observations`.
 6. Open a pull request explaining what was observed, how it was validated, and what remains uncertain.
 
@@ -254,8 +255,8 @@ This project uses a documentation-first workflow.
 
 Every meaningful contribution should update the relevant project documents:
 
-- update `backlog.md` when work starts, completes, blocks, or creates a new risk
-- update `system-feature-flows.md` when a technical flow, tool, or subsystem behavior is documented
+- update `docs/backlog.md` when work starts, completes, blocks, or creates a new risk
+- update `docs/architecture-log.md` when a technical flow, tool, or subsystem behavior is documented
 - record architectural decisions in `decisoes-iniciais.md` when they affect project direction
 
 Backlog entries use this signature format:
