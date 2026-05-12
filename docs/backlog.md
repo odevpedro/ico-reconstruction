@@ -24,7 +24,9 @@
 - Research and select emulator for validation (PCSX2) - Done
 - Document workflow for analyzing known function addresses - Done
 - Added `tools/elf-extractor/` for ELF extraction - Done
-- Extracted ELF: .local/extracted/SCUS_971.13.elf (5.48 MB)
+- Extracted ELF: .local/extracted/SCUS_971.13.elf (5.48 MB, SHA256: ea7953b0...)
+- Added Ghidra import guide: .local/ghidra/GHIDRA_IMPORT_GUIDE.md
+- Generated Ghidra navigation script: .local/ghidra/ICOAnalysisScript.java
 - Next: Install Ghidra and import ELF for analysis
 - Deliverable: documented environment setup guide
 

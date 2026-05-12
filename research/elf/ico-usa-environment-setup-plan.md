@@ -3,6 +3,14 @@
 > Status: In Progress
 > Date: 2026-05-12
 
+## Current Status
+
+- [x] ELF extracted: `.local/extracted/SCUS_971.13.elf` (5.48 MB)
+- [x] SHA256: `ea7953b0c626c2d1dfc1928e0646e2a699db29cd8e0b460993ddadc9a695ed31`
+- [x] Ghidra import guide generated: `.local/ghidra/GHIDRA_IMPORT_GUIDE.md`
+- [x] Ghidra script generated: `.local/ghidra/ICOAnalysisScript.java`
+- [ ] **NEXT: Install Ghidra and import ELF**
+
 ## Purpose
 
 This document outlines the environment setup for deeper analysis of the ICO executable using disassemblers and emulators. This is the next logical step after the metadata-only tooling pipeline.
