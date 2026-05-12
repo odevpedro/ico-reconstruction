@@ -10,20 +10,27 @@
 | Category | Count |
 |----------|-------|
 | Completed | 20 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Pending | 3 |
 
 ---
 
 ## In Progress
 
-_(No items currently in progress)_
+### [SQUAD-RUNTIME | rev.011 | In Progress]
+**Environment Setup for Disassembly and Emulation**
+
+- Research and select disassembler options (Ghidra, radare2, IDA)
+- Research and select emulator for validation (PCSX2)
+- Document workflow for analyzing known function addresses
+- Define validation methodology for code analysis
+- Deliverable: documented environment setup guide
 
 ---
 
 ## Pending
 
-### [SQUAD-ARCH | rev.008 | Pending]
+### [SQUAD-ARCH | rev.012 | Pending]
 **Architectural Analysis E-G for ICO**
 
 - Decision matrix for technical approach

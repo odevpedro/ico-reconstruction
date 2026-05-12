@@ -11,6 +11,10 @@ Current implemented tool:
 - `tools/dvp-index/` - metadata-only `.DVP.*` overlay metadata indexer
 - `tools/exe-ref-index/` - metadata-only exact executable reference scanner
 - `tools/mips-immediate-scanner/` - metadata-only MIPS split-immediate pattern scanner
+- `tools/elf-symbol-scan/` - metadata-only ELF symbol table scanner
+- `tools/mips-prologue-scan/` - metadata-only MIPS function prologue scanner
+- `tools/function-ref-correlator/` - metadata-only function reference correlator
+- `tools/mips-call-graph/` - metadata-only MIPS call graph analyzer
 
 ## Initial Goals
 
@@ -63,3 +67,34 @@ Each tool should include its own README with required inputs, expected local out
 ## Testing Direction
 
 Tests should use synthetic fixtures or metadata-only samples. Any test depending on a real local copy should be optional and must not require committing copyrighted files.
+
+## Environment Setup (Next Phase)
+
+After completing the metadata-only tooling pipeline, the next phase involves setting up a proper disassembly and emulation environment.
+
+### Disassembler
+
+Recommended: **Ghidra** (free, open source, excellent MIPS support)
+
+Alternative: **radare2** (lightweight, scriptable)
+
+### Emulator
+
+Recommended: **PCSX2** (for runtime validation)
+
+### Workflow
+
+1. Import ELF into disassembler using extracted executable
+2. Map known function addresses from our analysis
+3. Analyze key functions (start with 0x00132630)
+4. Validate findings with emulator breakpoints
+
+### Known Targets for Analysis
+
+| Function | Purpose |
+|----------|---------|
+| `0x00132630` | Most-called, likely file I/O utility |
+| `0x001321c8` | References DFDATAS strings |
+| `0x0019fb34` | Data loading function |
+
+All analysis remains metadata-only - disassembly notes are documentation, not extracted code.

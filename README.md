@@ -291,6 +291,7 @@ The project treats these as research topics, not solved problems.
 | [`research/elf/ico-usa-scus-97113-function-reference-correlation.md`](./research/elf/ico-usa-scus-97113-function-reference-correlation.md) | Confirmed function reference correlation (7 functions) |
 | [`tools/mips-call-graph/README.md`](./tools/mips-call-graph/README.md) | Metadata-only MIPS call graph analyzer |
 | [`research/elf/ico-usa-scus-97113-call-graph-analysis.md`](./research/elf/ico-usa-scus-97113-call-graph-analysis.md) | Confirmed call graph analysis (13 callers, 15 calls) |
+| [`research/elf/ico-usa-environment-setup-plan.md`](./research/elf/ico-usa-environment-setup-plan.md) | Environment setup plan for disassembly and emulation |
 
 ## Initial Roadmap
 
