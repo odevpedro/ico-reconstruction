@@ -500,3 +500,41 @@ Future scans can adjust `--target-window-bytes`, add more offsets, or scan offse
 - Preserve generic head/middle/tail triage while adding targeted scans.
 - Treat high-entropy targeted windows as evidence against simple local table structures, not proof that the offsets are meaningless.
 - Move next investigation toward executable-reference analysis instead of wider blind archive scans.
+
+# Feature: Executable Reference Scan for DATA.DF and DVP Tokens
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.007.7
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+A metadata-only executable reference scanner was added and used against embedded `SCUS_971.13` to search for exact strings and 32-bit constants related to `DATA.DF`, DVP metadata, and prior candidate tokens.
+
+## Main Flow
+
+### 1. Entry Point
+Targeted `DATA.DF` scans around DVP tokens did not reveal simple local tables, so the investigation shifted to executable references.
+
+### 2. Input Validation
+The executable was read from the local BIN image using sector size 2352 and data offset 24. No executable bytes, disassembly, or arbitrary string dumps were committed.
+
+### 3. Application Orchestration
+`tools/exe-ref-index/` searches only user-supplied strings and constants, then reports match counts, file offsets, virtual addresses, and containing sections.
+
+### 4. Business Rules
+The report remains metadata-only and exact-query-only. It does not extract executable contents, recover functions, or dump arbitrary strings.
+
+### 5. Persistence / Integrations
+Added `tools/exe-ref-index/` and `research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md`. Updated README, tooling docs, backlog, and this log.
+
+### 6. Final Response
+Confirmed direct `DATA.DF` and `DFDATAS` string references in executable data sections. Tested DVP numeric tokens were not found as direct 32-bit constants.
+
+## Alternative Flows and Errors
+Constants may be formed through MIPS split-immediate instruction sequences, so absence of exact 32-bit constants is not proof that the executable does not use those values.
+
+## Key Technical Decisions
+- Search only explicit user-provided strings and constants.
+- Record exact offsets and sections, not surrounding bytes or disassembly.
+- Move next investigation toward MIPS immediate/reference pattern scanning.

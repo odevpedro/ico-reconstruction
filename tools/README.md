@@ -9,6 +9,7 @@ Current tools:
 - `elf-index/` - metadata-only ELF32 indexer
 - `data-df-index/` - metadata-only `DATA.DF` structural triage tool
 - `dvp-index/` - metadata-only `.DVP.*` overlay metadata indexer
+- `exe-ref-index/` - metadata-only exact executable reference scanner
 
 Tools should:
 

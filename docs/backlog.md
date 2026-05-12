@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 14 |
+| Completed | 15 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -134,6 +134,14 @@ Targeted DATA.DF scans around DVP tokens
 - Recorded confirmed safe metadata in `research/data-df/ico-usa-data-df-dvp-targeted-scan.md`
 - Found no simple local offset table or fixed-record candidates around tested DVP tokens
 
+### [x] [SQUAD-TOOLING | rev.007.7 | 2026-05-12]
+Executable reference scan for DATA.DF and DVP tokens
+
+- Added `tools/exe-ref-index/` metadata-only exact reference scanner
+- Scanned embedded `SCUS_971.13` for `DATA.DF`, `DFDATAS`, DVP terms, and DVP numeric constants
+- Recorded confirmed safe metadata in `research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md`
+- Confirmed direct `DATA.DF` and `DFDATAS` string references in executable data sections
+
 ---
 
 ## Revision Signatures
@@ -154,6 +162,7 @@ Targeted DATA.DF scans around DVP tokens
 | rev.007.4 | 2026-05-12 | SQUAD-TOOLING | Local DATA.DF metadata triage |
 | rev.007.5 | 2026-05-12 | SQUAD-TOOLING | Local DVP overlay metadata correlation |
 | rev.007.6 | 2026-05-12 | SQUAD-TOOLING | Targeted DATA.DF scans around DVP tokens |
+| rev.007.7 | 2026-05-12 | SQUAD-TOOLING | Executable reference scan for DATA.DF and DVP tokens |
 | rev.008 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 

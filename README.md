@@ -37,6 +37,7 @@ This repository is currently documentation-first. The technical stack below desc
 | Disc image inspection | `tools/iso-index` for metadata-only ISO9660/BIN/CUE indexing |
 | ELF analysis | `tools/elf-index` for metadata-only ELF32 header/section/program-header indexing |
 | Overlay metadata | `tools/dvp-index` for metadata-only `.DVP.*` overlay correlation |
+| Executable references | `tools/exe-ref-index` for exact string/constant reference scans |
 | Disassembly | To be defined during environment setup |
 | Archive/data exploration | `tools/data-df-index` for metadata-only `DATA.DF` structural triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
@@ -75,6 +76,7 @@ Current repository contents are mostly operational documents:
 - `tools/elf-index/` - metadata-only ELF32 indexer
 - `tools/data-df-index/` - metadata-only `DATA.DF` triage tool
 - `tools/dvp-index/` - metadata-only `.DVP.*` overlay indexer
+- `tools/exe-ref-index/` - metadata-only exact executable reference scanner
 
 ## Repository Structure
 
@@ -97,6 +99,7 @@ Current repository contents are mostly operational documents:
 │   ├── data-df/                  # Metadata-only DATA.DF observations
 │   ├── dvp/                      # Metadata-only DVP overlay observations
 │   ├── elf/                      # Metadata-only ELF observations
+│   ├── exe-refs/                 # Metadata-only executable reference observations
 │   ├── README.md                 # Research note organization
 │   └── iso-layout/               # Metadata-only disc layout observations
 ├── tests/
@@ -105,6 +108,7 @@ Current repository contents are mostly operational documents:
     ├── data-df-index/            # Metadata-only DATA.DF triage tool
     ├── dvp-index/                # Metadata-only DVP overlay indexer
     ├── elf-index/                # Metadata-only ELF32 indexer
+    ├── exe-ref-index/            # Metadata-only executable reference scanner
     ├── iso-index/                # Metadata-only ISO9660/BIN/CUE indexer
     ├── README.md                 # Script and tooling conventions
     └── verify-local-copy/        # Metadata-only local input verifier
@@ -178,6 +182,12 @@ Current DVP overlay metadata indexer:
 python3 tools/dvp-index/dvp_index.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13 --data-df-size 539367424
 ```
 
+Current executable reference scanner:
+
+```bash
+python3 tools/exe-ref-index/exe_ref_index.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13 --query DATA.DF --query DFDATAS
+```
+
 ## Tests
 
 No automated test suite exists yet because the repository currently contains planning and research documentation only.
@@ -229,6 +239,8 @@ The project treats these as research topics, not solved problems.
 | [`research/data-df/ico-usa-data-df-dvp-targeted-scan.md`](./research/data-df/ico-usa-data-df-dvp-targeted-scan.md) | Targeted metadata-only `DATA.DF` scans around DVP numeric tokens |
 | [`tools/dvp-index/README.md`](./tools/dvp-index/README.md) | Metadata-only `.DVP.*` overlay indexer |
 | [`research/dvp/ico-usa-dvp-overlay-metadata.md`](./research/dvp/ico-usa-dvp-overlay-metadata.md) | Initial confirmed metadata-only `.DVP.*` overlay observation |
+| [`tools/exe-ref-index/README.md`](./tools/exe-ref-index/README.md) | Metadata-only exact executable reference scanner |
+| [`research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md`](./research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md) | Initial confirmed metadata-only executable reference scan |
 
 ## Initial Roadmap
 
@@ -272,6 +284,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.007.4 - Local DATA.DF metadata triage
 [x] rev.007.5 - Local DVP overlay metadata correlation
 [x] rev.007.6 - Targeted DATA.DF scans around DVP tokens
+[x] rev.007.7 - Executable reference scan for DATA.DF and DVP tokens
 [ ] rev.008 - Architectural analysis E-G for ICO
 [ ] pending - Environment setup for extraction and disassembly
 [ ] pending - First visible proof of concept against a user-owned copy

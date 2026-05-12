@@ -68,4 +68,4 @@ Each targeted scan used a 262,144-byte window centered on the candidate offset w
 
 ## Next Step
 
-The next useful step is executable-reference analysis: search metadata-only for constants or references near the DVP numeric tokens and `DATA.DF` access paths in `SCUS_971.13`.
+Executable-reference analysis is documented in `research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md`. The next useful step is metadata-only MIPS split-immediate/reference scanning for the confirmed `DATA.DF` and `DFDATAS` virtual addresses.

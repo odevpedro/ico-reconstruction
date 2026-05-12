@@ -9,6 +9,7 @@ Current implemented tool:
 - `tools/elf-index/` - metadata-only ELF32 indexer
 - `tools/data-df-index/` - metadata-only `DATA.DF` structural triage tool
 - `tools/dvp-index/` - metadata-only `.DVP.*` overlay metadata indexer
+- `tools/exe-ref-index/` - metadata-only exact executable reference scanner
 
 ## Initial Goals
 
@@ -23,6 +24,7 @@ Planned areas:
 - inspect `DATA.DF` aggregate structure without extraction - started with `tools/data-df-index/`
 - scan targeted `DATA.DF` windows around candidate offsets - started with `tools/data-df-index --target-offset`
 - correlate `.DVP.*` overlay metadata with ELF load ranges and `DATA.DF` size context - started with `tools/dvp-index/`
+- scan exact strings and constants in the executable - started with `tools/exe-ref-index/`
 - collect file names, offsets, sizes, and basic metadata
 - generate local reports ignored by git
 - support future synthetic parser fixtures
@@ -47,6 +49,7 @@ tools/
   elf-index/
   data-df-index/
   dvp-index/
+  exe-ref-index/
   elf-notes/
 tests/
   fixtures/

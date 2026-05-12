@@ -500,3 +500,41 @@ Scans futuros podem ajustar `--target-window-bytes`, adicionar mais offsets ou e
 - Preservar a triagem genérica de início/meio/fim enquanto adiciona scans direcionados.
 - Tratar janelas direcionadas de alta entropia como evidência contra estruturas locais simples de tabela, não como prova de que os offsets não têm significado.
 - Mover a próxima investigação para análise de referências do executável em vez de scans cegos mais amplos do archive.
+
+# Feature: Scan de Referências do Executável para DATA.DF e Tokens DVP
+
+> Squad responsável: SQUAD-TOOLING
+> Revisão: rev.007.7
+> Sessão: 2026-05-12
+> Status: Estável
+
+## Resumo
+Foi adicionado um scanner metadata-only de referências do executável e usado contra o `SCUS_971.13` embutido para procurar strings e constantes 32-bit exatas relacionadas a `DATA.DF`, metadados DVP e tokens candidatos anteriores.
+
+## Fluxo principal
+
+### 1. Ponto de entrada
+Os scans direcionados de `DATA.DF` ao redor de tokens DVP não revelaram tabelas locais simples, então a investigação avançou para referências no executável.
+
+### 2. Validação de entrada
+O executável foi lido da imagem BIN local usando setor 2352 e offset de dados 24. Nenhum byte do executável, disassembly ou dump arbitrário de strings foi commitado.
+
+### 3. Orquestração da aplicação
+`tools/exe-ref-index/` procura apenas strings e constantes fornecidas pelo usuário, depois registra contagens de matches, offsets de arquivo, endereços virtuais e seções.
+
+### 4. Regras de negócio
+O relatório permanece metadata-only e limitado a consultas exatas. Ele não extrai conteúdo do executável, não recupera funções e não faz dump arbitrário de strings.
+
+### 5. Persistência / Integrações
+Foram adicionados `tools/exe-ref-index/` e `research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md`. Foram atualizados README, documentação de tooling, backlog, `docs/architecture-log.md` e este registro.
+
+### 6. Resposta final
+Foram confirmadas referências diretas às strings `DATA.DF` e `DFDATAS` em seções de dados do executável. Os tokens numéricos DVP testados não foram encontrados como constantes 32-bit diretas.
+
+## Fluxos alternativos e erros
+Constantes podem ser formadas por sequências MIPS de immediates separados, então ausência de constantes 32-bit exatas não prova que o executável não usa esses valores.
+
+## Decisões técnicas importantes
+- Procurar apenas strings e constantes explicitamente fornecidas.
+- Registrar offsets e seções exatas, não bytes ao redor ou disassembly.
+- Mover a próxima investigação para scanning de padrões de immediates/referências MIPS.
