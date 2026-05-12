@@ -40,6 +40,7 @@ This repository is currently documentation-first. The technical stack below desc
 | Executable references | `tools/exe-ref-index` for exact string/constant reference scans |
 | MIPS immediate patterns | `tools/mips-immediate-scanner` for split-immediate (lui/addiu) pattern scanning |
 | Symbol table analysis | `tools/elf-symbol-scan` for detecting symbol tables and dynamic linking |
+| Function prologue detection | `tools/mips-prologue-scan` for MIPS function boundary detection |
 | Disassembly | To be defined during environment setup |
 | Archive/data exploration | `tools/data-df-index` for metadata-only `DATA.DF` structural triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
@@ -81,6 +82,7 @@ Current repository contents are mostly operational documents:
 - `tools/exe-ref-index/` - metadata-only exact executable reference scanner
 - `tools/mips-immediate-scanner/` - metadata-only MIPS split-immediate pattern scanner
 - `tools/elf-symbol-scan/` - metadata-only ELF symbol table scanner
+- `tools/mips-prologue-scan/` - metadata-only MIPS function prologue scanner
 
 ## Repository Structure
 
@@ -204,6 +206,12 @@ Current ELF symbol table scanner:
 python3 tools/elf-symbol-scan/elf_symbol_scan.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13
 ```
 
+Current MIPS function prologue scanner:
+
+```bash
+python3 tools/mips-prologue-scan/mips_prologue_scan.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13
+```
+
 ## Tests
 
 No automated test suite exists yet because the repository currently contains planning and research documentation only.
@@ -261,6 +269,8 @@ The project treats these as research topics, not solved problems.
 | [`research/exe-refs/ico-usa-scus-97113-mips-immediate-patterns.md`](./research/exe-refs/ico-usa-scus-97113-mips-immediate-patterns.md) | Confirmed metadata-only MIPS split-immediate pattern scan |
 | [`tools/elf-symbol-scan/README.md`](./tools/elf-symbol-scan/README.md) | Metadata-only ELF symbol table scanner |
 | [`research/elf/ico-usa-scus-97113-symbol-table-analysis.md`](./research/elf/ico-usa-scus-97113-symbol-table-analysis.md) | Confirmed ELF symbol table analysis (stripped) |
+| [`tools/mips-prologue-scan/README.md`](./tools/mips-prologue-scan/README.md) | Metadata-only MIPS function prologue scanner |
+| [`research/elf/ico-usa-scus-97113-mips-prologue-scan.md`](./research/elf/ico-usa-scus-97113-mips-prologue-scan.md) | Confirmed MIPS function prologue scan (3991 functions) |
 
 ## Initial Roadmap
 
@@ -306,7 +316,9 @@ The project treats these as research topics, not solved problems.
 [x] rev.007.6 - Targeted DATA.DF scans around DVP tokens
 [x] rev.007.7 - Executable reference scan for DATA.DF and DVP tokens
 [x] rev.007.8 - MIPS split-immediate pattern scan for DATA.DF and DFDATAS addresses
-[ ] rev.008 - Architectural analysis E-G for ICO
+[x] rev.007.9 - ELF symbol table analysis (stripped executable)
+[x] rev.008 - MIPS function prologue scan (3991 functions)
+[ ] rev.009 - Architectural analysis E-G for ICO
 [ ] pending - Environment setup for extraction and disassembly
 [ ] pending - First visible proof of concept against a user-owned copy
 ```

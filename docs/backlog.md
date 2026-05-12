@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 16 |
+| Completed | 18 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -159,6 +159,14 @@ ELF symbol table analysis (stripped executable)
 - Recorded confirmed metadata in `research/elf/ico-usa-scus-97113-symbol-table-analysis.md`
 - Confirmed executable is completely stripped: no .symtab, no .dynsym, no PT_DYNAMIC
 
+### [x] [SQUAD-TOOLING | rev.008 | 2026-05-12]
+MIPS function prologue scan
+
+- Added `tools/mips-prologue-scan/` metadata-only MIPS function prologue scanner
+- Scanned embedded `SCUS_971.13` for addiu $sp patterns
+- Recorded confirmed metadata in `research/elf/ico-usa-scus-97113-mips-prologue-scan.md`
+- Found 3,991 function prologues with 71 unique stack sizes in .text section
+
 ---
 
 ## Revision Signatures
@@ -181,7 +189,9 @@ ELF symbol table analysis (stripped executable)
 | rev.007.6 | 2026-05-12 | SQUAD-TOOLING | Targeted DATA.DF scans around DVP tokens |
 | rev.007.7 | 2026-05-12 | SQUAD-TOOLING | Executable reference scan for DATA.DF and DVP tokens |
 | rev.007.8 | 2026-05-12 | SQUAD-TOOLING | MIPS split-immediate pattern scan for DATA.DF and DFDATAS addresses |
-| rev.008 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
+| rev.007.9 | 2026-05-12 | SQUAD-TOOLING | ELF symbol table analysis (stripped executable) |
+| rev.008 | 2026-05-12 | SQUAD-TOOLING | MIPS function prologue scan |
+| rev.009 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 
 ---
