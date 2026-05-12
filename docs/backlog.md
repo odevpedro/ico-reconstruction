@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 19 |
+| Completed | 20 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -175,6 +175,14 @@ Function reference correlation
 - Recorded confirmed metadata in `research/elf/ico-usa-scus-97113-function-reference-correlation.md`
 - Identified function addresses: 0x001321c8, 0x00132630, 0x00132ff0, 0x00185ca8, 0x0019fb34, 0x001a0a38, 0x0023d468
 
+### [x] [SQUAD-TOOLING | rev.010 | 2026-05-12]
+Call graph analysis
+
+- Added `tools/mips-call-graph/` metadata-only MIPS call graph analyzer
+- Scanned for jal/jalr instructions targeting the 7 known functions
+- Found 15 calls from 13 unique caller functions
+- Recorded confirmed metadata in `research/elf/ico-usa-scus-97113-call-graph-analysis.md`
+
 ---
 
 ## Revision Signatures
@@ -200,7 +208,8 @@ Function reference correlation
 | rev.007.9 | 2026-05-12 | SQUAD-TOOLING | ELF symbol table analysis (stripped executable) |
 | rev.008 | 2026-05-12 | SQUAD-TOOLING | MIPS function prologue scan |
 | rev.009 | 2026-05-12 | SQUAD-TOOLING | Function reference correlation (7 functions identified) |
-| rev.010 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
+| rev.010 | 2026-05-12 | SQUAD-TOOLING | Call graph analysis (13 callers identified) |
+| rev.011 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 
 ---
