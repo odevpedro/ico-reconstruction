@@ -462,3 +462,41 @@ Se scans direcionados futuros de `DATA.DF` validarem algum token numérico de `.
 - Não tratar valores numéricos como offsets de `DATA.DF` apenas porque cabem dentro do tamanho do archive.
 - Comparar valores DVP tanto contra ranges carregados do ELF quanto contra contexto de tamanho de `DATA.DF`.
 - Usar tokens numéricos DVP como sementes de busca para scans direcionados de `DATA.DF`, não como entradas confirmadas de tabela.
+
+# Feature: Scans Direcionados de DATA.DF ao Redor de Tokens DVP
+
+> Squad responsável: SQUAD-TOOLING
+> Revisão: rev.007.6
+> Sessão: 2026-05-12
+> Status: Estável
+
+## Resumo
+`tools/data-df-index/` foi estendido com scans direcionados repetíveis por offset e usado para inspecionar janelas ao redor de tokens numéricos dos nomes de seções `.DVP.overlay...`.
+
+## Fluxo principal
+
+### 1. Ponto de entrada
+A análise de overlays DVP identificou tokens numéricos que poderiam ser usados como sementes de busca em `DATA.DF`.
+
+### 2. Validação de entrada
+O scan usou metadados locais de `DFDATAS/DATA.DF` da imagem BIN/CUE de ICO USA. Nenhum byte do archive, entrada extraída ou dado decodificado do jogo foi commitado.
+
+### 3. Orquestração da aplicação
+`data-df-index` agora aceita argumentos repetíveis `--target-offset` e escaneia janelas limitadas ao redor de cada candidato. O scan dos tokens DVP usou janelas de 262.144 bytes ao redor de seis offsets candidatos.
+
+### 4. Regras de negócio
+O relatório permanece metadata-only e registra apenas entropia, estatísticas de classes de bytes, hashes e contagens de candidatos a tabelas.
+
+### 5. Persistência / Integrações
+Foram atualizados `tools/data-df-index/`, README, documentação de tooling, backlog, `docs/architecture-log.md` e este registro. Foi adicionado `research/data-df/ico-usa-data-df-dvp-targeted-scan.md`.
+
+### 6. Resposta final
+Nenhuma tabela local simples de offsets ou candidatos a registros fixos foi encontrada ao redor dos tokens numéricos DVP testados. Os tokens DVP continuam úteis como sementes de busca, mas não estão confirmados como offsets de `DATA.DF`.
+
+## Fluxos alternativos e erros
+Scans futuros podem ajustar `--target-window-bytes`, adicionar mais offsets ou escanear offsets encontrados por análise de referências do executável.
+
+## Decisões técnicas importantes
+- Preservar a triagem genérica de início/meio/fim enquanto adiciona scans direcionados.
+- Tratar janelas direcionadas de alta entropia como evidência contra estruturas locais simples de tabela, não como prova de que os offsets não têm significado.
+- Mover a próxima investigação para análise de referências do executável em vez de scans cegos mais amplos do archive.

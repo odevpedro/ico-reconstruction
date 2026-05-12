@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 13 |
+| Completed | 14 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -126,6 +126,14 @@ Local DVP overlay metadata correlation
 - Recorded confirmed safe metadata in `research/dvp/ico-usa-dvp-overlay-metadata.md`
 - Identified 12 overlay table entries and 12 overlay string-table entries
 
+### [x] [SQUAD-TOOLING | rev.007.6 | 2026-05-12]
+Targeted DATA.DF scans around DVP tokens
+
+- Extended `tools/data-df-index/` with repeatable `--target-offset` scans
+- Ran targeted windows around DVP numeric tokens
+- Recorded confirmed safe metadata in `research/data-df/ico-usa-data-df-dvp-targeted-scan.md`
+- Found no simple local offset table or fixed-record candidates around tested DVP tokens
+
 ---
 
 ## Revision Signatures
@@ -145,6 +153,7 @@ Local DVP overlay metadata correlation
 | rev.007.3 | 2026-05-12 | SQUAD-TOOLING | Local ELF metadata index and initial observation |
 | rev.007.4 | 2026-05-12 | SQUAD-TOOLING | Local DATA.DF metadata triage |
 | rev.007.5 | 2026-05-12 | SQUAD-TOOLING | Local DVP overlay metadata correlation |
+| rev.007.6 | 2026-05-12 | SQUAD-TOOLING | Targeted DATA.DF scans around DVP tokens |
 | rev.008 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 

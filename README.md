@@ -226,6 +226,7 @@ The project treats these as research topics, not solved problems.
 | [`research/elf/ico-usa-scus-97113-elf-metadata.md`](./research/elf/ico-usa-scus-97113-elf-metadata.md) | Initial confirmed metadata-only ELF observation |
 | [`tools/data-df-index/README.md`](./tools/data-df-index/README.md) | Metadata-only `DATA.DF` structural triage |
 | [`research/data-df/ico-usa-data-df-initial-triage.md`](./research/data-df/ico-usa-data-df-initial-triage.md) | Initial confirmed metadata-only `DATA.DF` triage |
+| [`research/data-df/ico-usa-data-df-dvp-targeted-scan.md`](./research/data-df/ico-usa-data-df-dvp-targeted-scan.md) | Targeted metadata-only `DATA.DF` scans around DVP numeric tokens |
 | [`tools/dvp-index/README.md`](./tools/dvp-index/README.md) | Metadata-only `.DVP.*` overlay indexer |
 | [`research/dvp/ico-usa-dvp-overlay-metadata.md`](./research/dvp/ico-usa-dvp-overlay-metadata.md) | Initial confirmed metadata-only `.DVP.*` overlay observation |
 
@@ -270,6 +271,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.007.3 - Local ELF metadata index and initial observation
 [x] rev.007.4 - Local DATA.DF metadata triage
 [x] rev.007.5 - Local DVP overlay metadata correlation
+[x] rev.007.6 - Targeted DATA.DF scans around DVP tokens
 [ ] rev.008 - Architectural analysis E-G for ICO
 [ ] pending - Environment setup for extraction and disassembly
 [ ] pending - First visible proof of concept against a user-owned copy

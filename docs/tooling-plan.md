@@ -21,6 +21,7 @@ Planned areas:
 - identify the main executable - started with `tools/iso-index/`
 - inspect ELF header, program headers, section headers, and symbol-table presence - started with `tools/elf-index/`
 - inspect `DATA.DF` aggregate structure without extraction - started with `tools/data-df-index/`
+- scan targeted `DATA.DF` windows around candidate offsets - started with `tools/data-df-index --target-offset`
 - correlate `.DVP.*` overlay metadata with ELF load ranges and `DATA.DF` size context - started with `tools/dvp-index/`
 - collect file names, offsets, sizes, and basic metadata
 - generate local reports ignored by git

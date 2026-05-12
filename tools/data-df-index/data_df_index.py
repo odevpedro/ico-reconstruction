@@ -17,6 +17,7 @@ TOOL_NAME = "data-df-index"
 TOOL_VERSION = "0.1.0"
 PAYLOAD_SIZE = 2048
 DEFAULT_SCAN_BYTES = 1024 * 1024
+DEFAULT_TARGET_WINDOW_BYTES = 256 * 1024
 
 
 def utc_now() -> str:
@@ -197,11 +198,54 @@ def profile_windows(args: argparse.Namespace, image: Path) -> list[dict[str, Any
     return windows
 
 
+def targeted_window_offset(size: int, target_offset: int, window_bytes: int) -> int:
+    if target_offset < 0 or target_offset >= size:
+        raise RuntimeError(f"Target offset {target_offset} is outside DATA.DF size {size}.")
+    half_window = window_bytes // 2
+    start = max(0, target_offset - half_window)
+    if start + window_bytes > size:
+        start = max(0, size - window_bytes)
+    return start
+
+
+def profile_targeted_windows(args: argparse.Namespace, image: Path) -> list[dict[str, Any]]:
+    windows: list[dict[str, Any]] = []
+    for target_offset in args.target_offset:
+        region_offset = targeted_window_offset(args.size, target_offset, args.target_window_bytes)
+        data = read_image_region(
+            image,
+            args.lba,
+            args.size,
+            args.sector_size,
+            args.data_offset,
+            args.target_window_bytes,
+            region_offset=region_offset,
+        )
+        relative_target = target_offset - region_offset
+        windows.append(
+            {
+                "target_offset": target_offset,
+                "target_offset_hex": f"0x{target_offset:08x}",
+                "region_offset": region_offset,
+                "region_offset_hex": f"0x{region_offset:08x}",
+                "relative_target_offset": relative_target,
+                "scan_bytes_actual": len(data),
+                "byte_profile": byte_profile(data),
+                "offset_table_candidates": offset_table_candidates(
+                    data, args.size, min(args.offset_scan_bytes, len(data))
+                ),
+                "fixed_record_candidates": fixed_record_candidates(data, args.size),
+            }
+        )
+    return windows
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     image = args.image.expanduser().resolve()
     if not image.exists():
         raise FileNotFoundError(f"Image path does not exist: {args.image}")
     windows = profile_windows(args, image)
+    targeted_windows = profile_targeted_windows(args, image)
     head_window = windows[0] if windows else {}
     return {
         "tool": TOOL_NAME,
@@ -221,8 +265,18 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "scan_bytes_requested": args.scan_bytes,
             "window_count": len(windows),
             "total_scan_bytes": sum(window["scan_bytes_actual"] for window in windows),
+            "target_window_bytes_requested": args.target_window_bytes,
+            "targeted_window_count": len(targeted_windows),
+            "targeted_total_scan_bytes": sum(
+                window["scan_bytes_actual"] for window in targeted_windows
+            ),
             "total_scan_ratio": round(
-                sum(window["scan_bytes_actual"] for window in windows) / args.size, 6
+                (
+                    sum(window["scan_bytes_actual"] for window in windows)
+                    + sum(window["scan_bytes_actual"] for window in targeted_windows)
+                )
+                / args.size,
+                6,
             )
             if args.size
             else 0,
@@ -231,6 +285,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "head_offset_table_candidates": head_window.get("offset_table_candidates", []),
         "head_fixed_record_candidates": head_window.get("fixed_record_candidates", []),
         "windows": windows,
+        "targeted_windows": targeted_windows,
     }
 
 
@@ -267,6 +322,19 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=65536,
         help="Initial bytes to consider for monotonic offset-table candidates. Default: 65536.",
+    )
+    parser.add_argument(
+        "--target-offset",
+        action="append",
+        type=lambda value: int(value, 0),
+        default=[],
+        help="Candidate DATA.DF offset to scan. Accepts decimal or 0x-prefixed values. Repeatable.",
+    )
+    parser.add_argument(
+        "--target-window-bytes",
+        type=int,
+        default=DEFAULT_TARGET_WINDOW_BYTES,
+        help="Bytes to scan around each --target-offset. Default: 262144.",
     )
     parser.add_argument(
         "--output-dir",

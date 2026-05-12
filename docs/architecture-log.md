@@ -462,3 +462,41 @@ If future targeted `DATA.DF` scans validate any `.DVP.overlay...` numeric token 
 - Do not treat numeric values as `DATA.DF` offsets merely because they fit inside the archive size.
 - Compare DVP values against both ELF load ranges and `DATA.DF` size context.
 - Use DVP numeric tokens as search seeds for targeted `DATA.DF` scans, not as confirmed table entries.
+
+# Feature: Targeted DATA.DF Scans Around DVP Tokens
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.007.6
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+`tools/data-df-index/` was extended with repeatable targeted offset scans and used to inspect windows around numeric tokens from `.DVP.overlay...` section names.
+
+## Main Flow
+
+### 1. Entry Point
+The DVP overlay analysis identified numeric tokens that could be used as search seeds for `DATA.DF`.
+
+### 2. Input Validation
+The scan used local `DFDATAS/DATA.DF` metadata from the ICO USA BIN/CUE image. No archive bytes, extracted entries, or decoded game data were committed.
+
+### 3. Application Orchestration
+`data-df-index` now accepts repeatable `--target-offset` arguments and scans bounded windows around each candidate. The DVP token scan used 262,144-byte windows around six candidate offsets.
+
+### 4. Business Rules
+The report remains metadata-only and records entropy, byte-class statistics, hashes, and table-candidate counts only.
+
+### 5. Persistence / Integrations
+Updated `tools/data-df-index/`, README, tooling docs, backlog, and this log. Added `research/data-df/ico-usa-data-df-dvp-targeted-scan.md`.
+
+### 6. Final Response
+No simple local offset table or fixed-record candidates were found around the tested DVP numeric tokens. The DVP tokens remain useful search seeds, but are not confirmed `DATA.DF` offsets.
+
+## Alternative Flows and Errors
+Future scans can adjust `--target-window-bytes`, add more offsets, or scan offsets found from executable-reference analysis.
+
+## Key Technical Decisions
+- Preserve generic head/middle/tail triage while adding targeted scans.
+- Treat high-entropy targeted windows as evidence against simple local table structures, not proof that the offsets are meaningless.
+- Move next investigation toward executable-reference analysis instead of wider blind archive scans.

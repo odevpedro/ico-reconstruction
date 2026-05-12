@@ -94,4 +94,4 @@ These values are not consistently 2048-aligned, so they should not be treated as
 
 ## Next Step
 
-Extend `data-df-index` with targeted window scans around `.DVP.overlay...` numeric tokens and compare entropy/padding/table candidates near those positions.
+Targeted `DATA.DF` scans around `.DVP.overlay...` numeric tokens are documented in `research/data-df/ico-usa-data-df-dvp-targeted-scan.md`. The next useful step is executable-reference analysis around DVP metadata and `DATA.DF` access paths.
