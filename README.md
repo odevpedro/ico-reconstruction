@@ -35,7 +35,7 @@ This repository is currently documentation-first. The technical stack below desc
 | Documentation | Markdown |
 | Project tracking | `docs/backlog.md`, `docs/architecture-log.md`, architectural decision notes |
 | Disc image inspection | `tools/iso-index` for metadata-only ISO9660/BIN/CUE indexing |
-| ELF analysis | To be defined during environment setup |
+| ELF analysis | `tools/elf-index` for metadata-only ELF32 header/section/program-header indexing |
 | Disassembly | To be defined during environment setup |
 | Asset exploration | To be defined after initial ISO triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
@@ -71,6 +71,7 @@ Current repository contents are mostly operational documents:
 - `docs/tooling-plan.md` - intended local tooling direction before implementation
 - `tools/verify-local-copy/` - metadata-only local input verifier
 - `tools/iso-index/` - metadata-only ISO9660/BIN/CUE indexer
+- `tools/elf-index/` - metadata-only ELF32 indexer
 
 ## Repository Structure
 
@@ -90,11 +91,13 @@ Current repository contents are mostly operational documents:
 │   ├── research-methodology.md   # Research evidence standards
 │   └── tooling-plan.md           # Planned local tooling workflow
 ├── research/
+│   ├── elf/                      # Metadata-only ELF observations
 │   ├── README.md                 # Research note organization
 │   └── iso-layout/               # Metadata-only disc layout observations
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
 └── tools/
+    ├── elf-index/                # Metadata-only ELF32 indexer
     ├── iso-index/                # Metadata-only ISO9660/BIN/CUE indexer
     ├── README.md                 # Script and tooling conventions
     └── verify-local-copy/        # Metadata-only local input verifier
@@ -150,6 +153,12 @@ Current disc indexer:
 python3 tools/iso-index/iso_index.py "/path/to/Ico (USA).bin" --cue "/path/to/Ico (USA).cue"
 ```
 
+Current ELF indexer:
+
+```bash
+python3 tools/elf-index/elf_index.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13
+```
+
 ## Tests
 
 No automated test suite exists yet because the repository currently contains planning and research documentation only.
@@ -194,6 +203,8 @@ The project treats these as research topics, not solved problems.
 | [`tools/verify-local-copy/README.md`](./tools/verify-local-copy/README.md) | Metadata-only local input verifier |
 | [`tools/iso-index/README.md`](./tools/iso-index/README.md) | Metadata-only ISO9660/BIN/CUE indexer |
 | [`research/iso-layout/ico-usa-bin-cue-initial-index.md`](./research/iso-layout/ico-usa-bin-cue-initial-index.md) | Initial confirmed metadata-only BIN/CUE layout observation |
+| [`tools/elf-index/README.md`](./tools/elf-index/README.md) | Metadata-only ELF32 indexer |
+| [`research/elf/ico-usa-scus-97113-elf-metadata.md`](./research/elf/ico-usa-scus-97113-elf-metadata.md) | Initial confirmed metadata-only ELF observation |
 
 ## Initial Roadmap
 
@@ -233,6 +244,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.007 - Architectural analysis A-D for ICO
 [x] rev.007.1 - Local metadata tooling foundation
 [x] rev.007.2 - Local BIN/CUE disc index and initial observation
+[x] rev.007.3 - Local ELF metadata index and initial observation
 [ ] rev.008 - Architectural analysis E-G for ICO
 [ ] pending - Environment setup for extraction and disassembly
 [ ] pending - First visible proof of concept against a user-owned copy

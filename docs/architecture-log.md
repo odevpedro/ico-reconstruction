@@ -348,3 +348,41 @@ If another regional dump uses a different sector layout, `iso-index` must detect
 - Treat ICO USA as a CD-ROM BIN/CUE workflow for current local analysis.
 - Keep generated index JSON in `.local/reports/` and commit only reviewed metadata summaries.
 - Use disc metadata to drive the next step: metadata-only ELF section/program-header inspection and `DATA.DF` structure triage.
+
+# Feature: Local ELF Metadata Index and Initial Observation
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.007.3
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+A metadata-only ELF32 indexer was added and used against the embedded `SCUS_971.13` executable from the local ICO USA BIN/CUE image. The project now has confirmed executable layout metadata without extracting or committing the executable.
+
+## Main Flow
+
+### 1. Entry Point
+The previous disc index identified `SCUS_971.13` at LBA 25 with size 5,481,608 bytes.
+
+### 2. Input Validation
+The executable was read from the local BIN image using sector size 2352 and data offset 24. No executable copy was written into the repository.
+
+### 3. Application Orchestration
+`tools/elf-index/` parsed the ELF header, program headers, section headers, section names, and symbol-table presence from memory, then wrote a local JSON report under `.local/reports/`.
+
+### 4. Business Rules
+The report is metadata-only. It does not include executable bytes, disassembly, function bodies, copied proprietary source, or extracted game content.
+
+### 5. Persistence / Integrations
+Added `tools/elf-index/` and `research/elf/ico-usa-scus-97113-elf-metadata.md`. Updated README, tooling docs, backlog, and this log.
+
+### 6. Final Response
+Confirmed ELF32 little-endian metadata: entry point `0x00100008`, one `PT_LOAD` segment, 27 section headers, no symbol table, vector-unit-related sections, and `.DVP.overlay...` sections that need follow-up.
+
+## Alternative Flows and Errors
+If another regional executable has different ELF layout, run `elf-index` with the LBA and size reported by `iso-index` for that dump and record a separate regional observation.
+
+## Key Technical Decisions
+- Keep ELF reports metadata-only and local by default.
+- Do not list individual symbol names; only record symbol table presence/counts.
+- Use `.DVP.overlay...` section metadata to guide the next investigation into overlays and `DFDATAS/DATA.DF`.

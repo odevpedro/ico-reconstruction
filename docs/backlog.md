@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 10 |
+| Completed | 11 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -102,6 +102,14 @@ Local BIN/CUE disc index and initial observation
 - Recorded confirmed safe metadata in `research/iso-layout/ico-usa-bin-cue-initial-index.md`
 - Identified `SCUS_971.13` as the main executable candidate and `DFDATAS/DATA.DF` as the primary large data/archive candidate
 
+### [x] [SQUAD-TOOLING | rev.007.3 | 2026-05-12]
+Local ELF metadata index and initial observation
+
+- Added `tools/elf-index/` metadata-only ELF32 indexer
+- Ran ELF metadata indexing against embedded `SCUS_971.13`
+- Recorded confirmed safe metadata in `research/elf/ico-usa-scus-97113-elf-metadata.md`
+- Confirmed one `PT_LOAD` segment, 27 section headers, no symbol table, and `.DVP.overlay...` sections requiring follow-up
+
 ---
 
 ## Revision Signatures
@@ -118,6 +126,7 @@ Local BIN/CUE disc index and initial observation
 | rev.007 | 2026-05-12 | SQUAD-ARCH | Architectural analysis A-D for ICO |
 | rev.007.1 | 2026-05-12 | SQUAD-TOOLING | Local metadata tooling foundation |
 | rev.007.2 | 2026-05-12 | SQUAD-TOOLING | Local BIN/CUE disc index and initial observation |
+| rev.007.3 | 2026-05-12 | SQUAD-TOOLING | Local ELF metadata index and initial observation |
 | rev.008 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 

@@ -6,6 +6,7 @@ Current tools:
 
 - `verify-local-copy/` - metadata-only verifier for local user-owned inputs
 - `iso-index/` - metadata-only ISO9660/BIN/CUE indexer
+- `elf-index/` - metadata-only ELF32 indexer
 
 Tools should:
 

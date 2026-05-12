@@ -110,5 +110,6 @@ The indexer identified `SCUS_971.13` as an ELF32 little-endian executable.
 
 - `DATA.DF` internal structure is unknown.
 - Whether there is an external or embedded file table is unknown.
-- ELF section names and symbol information for `SCUS_971.13` have not been inspected yet.
+- ELF section metadata for `SCUS_971.13` is documented in `research/elf/ico-usa-scus-97113-elf-metadata.md`.
+- Function boundaries and symbolic names for `SCUS_971.13` have not been recovered.
 - No runtime or emulator validation has been performed yet.

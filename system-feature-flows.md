@@ -348,3 +348,41 @@ Se outro dump regional usar layout de setor diferente, `iso-index` deve detectar
 - Tratar ICO USA como workflow CD-ROM BIN/CUE para a análise local atual.
 - Manter JSONs gerados em `.local/reports/` e commitar apenas resumos de metadados revisados.
 - Usar metadados do disco para guiar o próximo passo: inspeção metadata-only dos program/section headers do ELF e triagem estrutural de `DATA.DF`.
+
+# Feature: Índice Local de Metadados ELF e Observação Inicial
+
+> Squad responsável: SQUAD-TOOLING
+> Revisão: rev.007.3
+> Sessão: 2026-05-12
+> Status: Estável
+
+## Resumo
+Foi adicionado um indexador ELF32 metadata-only e usado contra o executável embutido `SCUS_971.13` da imagem local BIN/CUE de ICO USA. O projeto agora possui metadados confirmados de layout do executável sem extrair ou commitar o executável.
+
+## Fluxo principal
+
+### 1. Ponto de entrada
+O índice de disco anterior identificou `SCUS_971.13` no LBA 25 com tamanho de 5.481.608 bytes.
+
+### 2. Validação de entrada
+O executável foi lido da imagem BIN local usando setor 2352 e offset de dados 24. Nenhuma cópia do executável foi gravada no repositório.
+
+### 3. Orquestração da aplicação
+`tools/elf-index/` analisou cabeçalho ELF, program headers, section headers, nomes de seções e presença de tabelas de símbolos em memória, depois gravou relatório JSON local em `.local/reports/`.
+
+### 4. Regras de negócio
+O relatório é metadata-only. Ele não inclui bytes do executável, disassembly, corpos de função, código proprietário copiado ou conteúdo extraído do jogo.
+
+### 5. Persistência / Integrações
+Foram adicionados `tools/elf-index/` e `research/elf/ico-usa-scus-97113-elf-metadata.md`. Foram atualizados README, documentação de tooling, backlog, `docs/architecture-log.md` e este registro.
+
+### 6. Resposta final
+Foram confirmados metadados ELF32 little-endian: entry point `0x00100008`, um segmento `PT_LOAD`, 27 section headers, ausência de tabela de símbolos, seções relacionadas a vector unit e seções `.DVP.overlay...` que exigem investigação posterior.
+
+## Fluxos alternativos e erros
+Se outro executável regional tiver layout ELF diferente, rodar `elf-index` com LBA e tamanho reportados por `iso-index` para aquele dump e registrar uma observação regional separada.
+
+## Decisões técnicas importantes
+- Manter relatórios ELF como metadata-only e locais por padrão.
+- Não listar nomes individuais de símbolos; registrar apenas presença e contagens de tabelas de símbolos.
+- Usar metadados das seções `.DVP.overlay...` para guiar a próxima investigação sobre overlays e `DFDATAS/DATA.DF`.

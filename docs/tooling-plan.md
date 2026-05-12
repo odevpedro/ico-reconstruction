@@ -6,6 +6,7 @@ Current implemented tool:
 
 - `tools/verify-local-copy/` - metadata-only verifier for local user-owned inputs
 - `tools/iso-index/` - metadata-only ISO9660/BIN/CUE indexer
+- `tools/elf-index/` - metadata-only ELF32 indexer
 
 ## Initial Goals
 
@@ -15,7 +16,8 @@ Planned areas:
 
 - verify local input and record checksums - started with `tools/verify-local-copy/`
 - inspect ISO9660/BIN/CUE disc layout - started with `tools/iso-index/`
-- identify the main executable
+- identify the main executable - started with `tools/iso-index/`
+- inspect ELF header, program headers, section headers, and symbol-table presence - started with `tools/elf-index/`
 - collect file names, offsets, sizes, and basic metadata
 - generate local reports ignored by git
 - support future synthetic parser fixtures
@@ -37,6 +39,7 @@ Future tooling can be organized like this:
 tools/
   verify-local-copy/
   iso-index/
+  elf-index/
   elf-notes/
 tests/
   fixtures/
