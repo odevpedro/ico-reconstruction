@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 11 |
+| Completed | 12 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -110,6 +110,14 @@ Local ELF metadata index and initial observation
 - Recorded confirmed safe metadata in `research/elf/ico-usa-scus-97113-elf-metadata.md`
 - Confirmed one `PT_LOAD` segment, 27 section headers, no symbol table, and `.DVP.overlay...` sections requiring follow-up
 
+### [x] [SQUAD-TOOLING | rev.007.4 | 2026-05-12]
+Local DATA.DF metadata triage
+
+- Added `tools/data-df-index/` metadata-only structural triage tool
+- Ran head/middle/tail sampling against embedded `DFDATAS/DATA.DF`
+- Recorded confirmed safe metadata in `research/data-df/ico-usa-data-df-initial-triage.md`
+- Found no simple head-window offset table candidate under current heuristic
+
 ---
 
 ## Revision Signatures
@@ -127,6 +135,7 @@ Local ELF metadata index and initial observation
 | rev.007.1 | 2026-05-12 | SQUAD-TOOLING | Local metadata tooling foundation |
 | rev.007.2 | 2026-05-12 | SQUAD-TOOLING | Local BIN/CUE disc index and initial observation |
 | rev.007.3 | 2026-05-12 | SQUAD-TOOLING | Local ELF metadata index and initial observation |
+| rev.007.4 | 2026-05-12 | SQUAD-TOOLING | Local DATA.DF metadata triage |
 | rev.008 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 

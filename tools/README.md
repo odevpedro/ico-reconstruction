@@ -7,6 +7,7 @@ Current tools:
 - `verify-local-copy/` - metadata-only verifier for local user-owned inputs
 - `iso-index/` - metadata-only ISO9660/BIN/CUE indexer
 - `elf-index/` - metadata-only ELF32 indexer
+- `data-df-index/` - metadata-only `DATA.DF` structural triage tool
 
 Tools should:
 

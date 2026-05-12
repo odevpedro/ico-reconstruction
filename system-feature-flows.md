@@ -386,3 +386,41 @@ Se outro executável regional tiver layout ELF diferente, rodar `elf-index` com 
 - Manter relatórios ELF como metadata-only e locais por padrão.
 - Não listar nomes individuais de símbolos; registrar apenas presença e contagens de tabelas de símbolos.
 - Usar metadados das seções `.DVP.overlay...` para guiar a próxima investigação sobre overlays e `DFDATAS/DATA.DF`.
+
+# Feature: Triagem Local de Metadados de DATA.DF
+
+> Squad responsável: SQUAD-TOOLING
+> Revisão: rev.007.4
+> Sessão: 2026-05-12
+> Status: Estável
+
+## Resumo
+Foi adicionada uma ferramenta metadata-only de triagem de `DATA.DF` e usada contra o candidato a archive embutido `DFDATAS/DATA.DF` da imagem local BIN/CUE de ICO USA.
+
+## Fluxo principal
+
+### 1. Ponto de entrada
+O índice de disco identificou `DFDATAS/DATA.DF` no LBA 2.898 com tamanho de 539.367.424 bytes.
+
+### 2. Validação de entrada
+O candidato a archive foi lido da imagem BIN local usando setor 2352 e offset de dados 24. Nenhuma cópia do archive ou de conteúdos internos foi gravada no repositório.
+
+### 3. Orquestração da aplicação
+`tools/data-df-index/` amostrou janelas de início, meio e fim, calculou metadados de perfil de bytes e procurou no início candidatos simples a tabelas monotônicas de offsets 32-bit e tabelas de registros fixos.
+
+### 4. Regras de negócio
+O relatório é metadata-only. Ele não inclui bytes brutos do archive, entradas extraídas, payloads de assets, nomes de arquivos internos ou conteúdo decodificado do jogo.
+
+### 5. Persistência / Integrações
+Foram adicionados `tools/data-df-index/` e `research/data-df/ico-usa-data-df-initial-triage.md`. Foram atualizados README, documentação de tooling, backlog, `docs/architecture-log.md` e este registro.
+
+### 6. Resposta final
+A triagem inicial encontrou alta entropia no início, entropia menor no meio, fim majoritariamente zero/padding e nenhum candidato simples a tabela de offsets no início sob a heurística atual.
+
+## Fluxos alternativos e erros
+Se análise futura do executável ou de overlays identificar offset de tabela fora do primeiro megabyte, `data-df-index` deve ser estendido para escanear offsets direcionados em vez de depender da heurística genérica do início.
+
+## Decisões técnicas importantes
+- Manter análise de archive como metadata-only até o formato ser entendido.
+- Evitar extrair ou nomear entradas internas até definir uma representação limpa e segura.
+- Usar metadados ELF `.DVP.*` e referências do executável para guiar a próxima passada direcionada em `DATA.DF`.

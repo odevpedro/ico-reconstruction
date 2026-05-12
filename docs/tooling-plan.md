@@ -7,6 +7,7 @@ Current implemented tool:
 - `tools/verify-local-copy/` - metadata-only verifier for local user-owned inputs
 - `tools/iso-index/` - metadata-only ISO9660/BIN/CUE indexer
 - `tools/elf-index/` - metadata-only ELF32 indexer
+- `tools/data-df-index/` - metadata-only `DATA.DF` structural triage tool
 
 ## Initial Goals
 
@@ -18,6 +19,7 @@ Planned areas:
 - inspect ISO9660/BIN/CUE disc layout - started with `tools/iso-index/`
 - identify the main executable - started with `tools/iso-index/`
 - inspect ELF header, program headers, section headers, and symbol-table presence - started with `tools/elf-index/`
+- inspect `DATA.DF` aggregate structure without extraction - started with `tools/data-df-index/`
 - collect file names, offsets, sizes, and basic metadata
 - generate local reports ignored by git
 - support future synthetic parser fixtures
@@ -40,6 +42,7 @@ tools/
   verify-local-copy/
   iso-index/
   elf-index/
+  data-df-index/
   elf-notes/
 tests/
   fixtures/

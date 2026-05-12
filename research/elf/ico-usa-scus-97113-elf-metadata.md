@@ -97,4 +97,4 @@ No `SHT_SYMTAB` or `SHT_DYNSYM` section was detected.
 
 ## Next Step
 
-Create a metadata-only `data-df-index` or `dfdatas-index` prototype to inspect `DFDATAS/DATA.DF` structure at the header/table level without extracting archive contents.
+Use the `DATA.DF` triage results and `.DVP.*` section metadata to design a targeted search for archive tables or overlay references.

@@ -386,3 +386,41 @@ If another regional executable has different ELF layout, run `elf-index` with th
 - Keep ELF reports metadata-only and local by default.
 - Do not list individual symbol names; only record symbol table presence/counts.
 - Use `.DVP.overlay...` section metadata to guide the next investigation into overlays and `DFDATAS/DATA.DF`.
+
+# Feature: Local DATA.DF Metadata Triage
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.007.4
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+A metadata-only `DATA.DF` triage tool was added and used against the embedded `DFDATAS/DATA.DF` archive candidate from the local ICO USA BIN/CUE image.
+
+## Main Flow
+
+### 1. Entry Point
+The disc index identified `DFDATAS/DATA.DF` at LBA 2,898 with size 539,367,424 bytes.
+
+### 2. Input Validation
+The archive candidate was read from the local BIN image using sector size 2352 and data offset 24. No archive copy or internal archive contents were written into the repository.
+
+### 3. Application Orchestration
+`tools/data-df-index/` sampled head, middle, and tail windows, calculated byte-profile metadata, and searched the head window for simple monotonic 32-bit offset tables and fixed-record table candidates.
+
+### 4. Business Rules
+The report is metadata-only. It does not include raw archive bytes, extracted entries, asset payloads, file names from inside the archive, or decoded game content.
+
+### 5. Persistence / Integrations
+Added `tools/data-df-index/` and `research/data-df/ico-usa-data-df-initial-triage.md`. Updated README, tooling docs, backlog, and this log.
+
+### 6. Final Response
+The initial triage found high entropy at the start, lower entropy in the middle, mostly zero/padding at the tail, and no simple head-window offset table candidate under the current heuristic.
+
+## Alternative Flows and Errors
+If later executable or overlay analysis identifies a table offset outside the first megabyte, `data-df-index` should be extended to scan targeted offsets instead of relying on generic head-window heuristics.
+
+## Key Technical Decisions
+- Keep archive analysis metadata-only until the format is understood.
+- Avoid extracting or naming internal archive entries until a clean safe representation is defined.
+- Use `.DVP.*` ELF metadata and executable references to guide the next targeted `DATA.DF` pass.

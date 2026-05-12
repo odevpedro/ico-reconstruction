@@ -37,7 +37,7 @@ This repository is currently documentation-first. The technical stack below desc
 | Disc image inspection | `tools/iso-index` for metadata-only ISO9660/BIN/CUE indexing |
 | ELF analysis | `tools/elf-index` for metadata-only ELF32 header/section/program-header indexing |
 | Disassembly | To be defined during environment setup |
-| Asset exploration | To be defined after initial ISO triage |
+| Archive/data exploration | `tools/data-df-index` for metadata-only `DATA.DF` structural triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
 | CI/CD | Not configured yet |
 | Tests | No automated suite yet; synthetic fixture used for local tool validation |
@@ -72,6 +72,7 @@ Current repository contents are mostly operational documents:
 - `tools/verify-local-copy/` - metadata-only local input verifier
 - `tools/iso-index/` - metadata-only ISO9660/BIN/CUE indexer
 - `tools/elf-index/` - metadata-only ELF32 indexer
+- `tools/data-df-index/` - metadata-only `DATA.DF` triage tool
 
 ## Repository Structure
 
@@ -91,12 +92,14 @@ Current repository contents are mostly operational documents:
 │   ├── research-methodology.md   # Research evidence standards
 │   └── tooling-plan.md           # Planned local tooling workflow
 ├── research/
+│   ├── data-df/                  # Metadata-only DATA.DF observations
 │   ├── elf/                      # Metadata-only ELF observations
 │   ├── README.md                 # Research note organization
 │   └── iso-layout/               # Metadata-only disc layout observations
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
 └── tools/
+    ├── data-df-index/            # Metadata-only DATA.DF triage tool
     ├── elf-index/                # Metadata-only ELF32 indexer
     ├── iso-index/                # Metadata-only ISO9660/BIN/CUE indexer
     ├── README.md                 # Script and tooling conventions
@@ -159,6 +162,12 @@ Current ELF indexer:
 python3 tools/elf-index/elf_index.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13
 ```
 
+Current `DATA.DF` triage:
+
+```bash
+python3 tools/data-df-index/data_df_index.py --image "/path/to/Ico (USA).bin" --lba 2898 --size 539367424 --sector-size 2352 --data-offset 24 --source-name DFDATAS/DATA.DF
+```
+
 ## Tests
 
 No automated test suite exists yet because the repository currently contains planning and research documentation only.
@@ -205,6 +214,8 @@ The project treats these as research topics, not solved problems.
 | [`research/iso-layout/ico-usa-bin-cue-initial-index.md`](./research/iso-layout/ico-usa-bin-cue-initial-index.md) | Initial confirmed metadata-only BIN/CUE layout observation |
 | [`tools/elf-index/README.md`](./tools/elf-index/README.md) | Metadata-only ELF32 indexer |
 | [`research/elf/ico-usa-scus-97113-elf-metadata.md`](./research/elf/ico-usa-scus-97113-elf-metadata.md) | Initial confirmed metadata-only ELF observation |
+| [`tools/data-df-index/README.md`](./tools/data-df-index/README.md) | Metadata-only `DATA.DF` structural triage |
+| [`research/data-df/ico-usa-data-df-initial-triage.md`](./research/data-df/ico-usa-data-df-initial-triage.md) | Initial confirmed metadata-only `DATA.DF` triage |
 
 ## Initial Roadmap
 
@@ -245,6 +256,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.007.1 - Local metadata tooling foundation
 [x] rev.007.2 - Local BIN/CUE disc index and initial observation
 [x] rev.007.3 - Local ELF metadata index and initial observation
+[x] rev.007.4 - Local DATA.DF metadata triage
 [ ] rev.008 - Architectural analysis E-G for ICO
 [ ] pending - Environment setup for extraction and disassembly
 [ ] pending - First visible proof of concept against a user-owned copy
