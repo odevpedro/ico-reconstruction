@@ -41,6 +41,7 @@ This repository is currently documentation-first. The technical stack below desc
 | MIPS immediate patterns | `tools/mips-immediate-scanner` for split-immediate (lui/addiu) pattern scanning |
 | Symbol table analysis | `tools/elf-symbol-scan` for detecting symbol tables and dynamic linking |
 | Function prologue detection | `tools/mips-prologue-scan` for MIPS function boundary detection |
+| Function reference correlation | `tools/function-ref-correlator` for linking prologues with code references |
 | Disassembly | To be defined during environment setup |
 | Archive/data exploration | `tools/data-df-index` for metadata-only `DATA.DF` structural triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
@@ -83,6 +84,7 @@ Current repository contents are mostly operational documents:
 - `tools/mips-immediate-scanner/` - metadata-only MIPS split-immediate pattern scanner
 - `tools/elf-symbol-scan/` - metadata-only ELF symbol table scanner
 - `tools/mips-prologue-scan/` - metadata-only MIPS function prologue scanner
+- `tools/function-ref-correlator/` - metadata-only function reference correlator
 
 ## Repository Structure
 
@@ -212,6 +214,12 @@ Current MIPS function prologue scanner:
 python3 tools/mips-prologue-scan/mips_prologue_scan.py --image "/path/to/Ico (USA).bin" --lba 25 --size 5481608 --sector-size 2352 --data-offset 24 --source-name SCUS_971.13
 ```
 
+Current function reference correlator:
+
+```bash
+python3 tools/function-ref-correlator/function_ref_correlator.py --immediate-report .local/reports/...-mips-immediate-scan.json --prologue-report .local/reports/...-mips-prologue-scan.json
+```
+
 ## Tests
 
 No automated test suite exists yet because the repository currently contains planning and research documentation only.
@@ -271,6 +279,8 @@ The project treats these as research topics, not solved problems.
 | [`research/elf/ico-usa-scus-97113-symbol-table-analysis.md`](./research/elf/ico-usa-scus-97113-symbol-table-analysis.md) | Confirmed ELF symbol table analysis (stripped) |
 | [`tools/mips-prologue-scan/README.md`](./tools/mips-prologue-scan/README.md) | Metadata-only MIPS function prologue scanner |
 | [`research/elf/ico-usa-scus-97113-mips-prologue-scan.md`](./research/elf/ico-usa-scus-97113-mips-prologue-scan.md) | Confirmed MIPS function prologue scan (3991 functions) |
+| [`tools/function-ref-correlator/README.md`](./tools/function-ref-correlator/README.md) | Metadata-only function reference correlator |
+| [`research/elf/ico-usa-scus-97113-function-reference-correlation.md`](./research/elf/ico-usa-scus-97113-function-reference-correlation.md) | Confirmed function reference correlation (7 functions) |
 
 ## Initial Roadmap
 
@@ -318,7 +328,8 @@ The project treats these as research topics, not solved problems.
 [x] rev.007.8 - MIPS split-immediate pattern scan for DATA.DF and DFDATAS addresses
 [x] rev.007.9 - ELF symbol table analysis (stripped executable)
 [x] rev.008 - MIPS function prologue scan (3991 functions)
-[ ] rev.009 - Architectural analysis E-G for ICO
+[x] rev.009 - Function reference correlation (7 functions identified)
+[ ] rev.010 - Architectural analysis E-G for ICO
 [ ] pending - Environment setup for extraction and disassembly
 [ ] pending - First visible proof of concept against a user-owned copy
 ```

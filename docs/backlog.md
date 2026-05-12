@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 18 |
+| Completed | 19 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -167,6 +167,14 @@ MIPS function prologue scan
 - Recorded confirmed metadata in `research/elf/ico-usa-scus-97113-mips-prologue-scan.md`
 - Found 3,991 function prologues with 71 unique stack sizes in .text section
 
+### [x] [SQUAD-TOOLING | rev.009 | 2026-05-12]
+Function reference correlation
+
+- Added `tools/function-ref-correlator/` metadata-only function reference correlator
+- Correlated prologue and immediate scan data to identify 7 functions with DATA.DF/DFDATAS references
+- Recorded confirmed metadata in `research/elf/ico-usa-scus-97113-function-reference-correlation.md`
+- Identified function addresses: 0x001321c8, 0x00132630, 0x00132ff0, 0x00185ca8, 0x0019fb34, 0x001a0a38, 0x0023d468
+
 ---
 
 ## Revision Signatures
@@ -191,7 +199,8 @@ MIPS function prologue scan
 | rev.007.8 | 2026-05-12 | SQUAD-TOOLING | MIPS split-immediate pattern scan for DATA.DF and DFDATAS addresses |
 | rev.007.9 | 2026-05-12 | SQUAD-TOOLING | ELF symbol table analysis (stripped executable) |
 | rev.008 | 2026-05-12 | SQUAD-TOOLING | MIPS function prologue scan |
-| rev.009 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
+| rev.009 | 2026-05-12 | SQUAD-TOOLING | Function reference correlation (7 functions identified) |
+| rev.010 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
 | pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
 
 ---
