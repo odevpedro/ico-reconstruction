@@ -17,26 +17,17 @@
 
 ## In Progress
 
-### [x] [SQUAD-RUNTIME | rev.019 | 2026-05-13]
-Deeper Ghidra/PCSX2 Function and Asset Analysis
+### [SQUAD-RUNTIME | rev.021 | In Progress]
+Static Analysis Pipeline - Entity Structure and Call Graph
 
-- Research and select disassembler options (Ghidra, radare2, IDA) - Done
-- Research and select emulator for validation (PCSX2) - Done
-- Document workflow for analyzing known function addresses - Done
-- Added `tools/elf-extractor/` for ELF extraction - Done
-- Extracted ELF: .local/extracted/SCUS_971.13.elf (5.48 MB, SHA256: ea7953b0...)
-- Added Ghidra import guide: .local/ghidra/GHIDRA_IMPORT_GUIDE.md
-- Generated Ghidra navigation script: .local/ghidra/ICOAnalysisScript.java
-- Ghidra is installed and was used for rev.011-rev.018 analysis
-- Active modified BIN directory: `/home/peter/Imagens/Ico (USA)/`
-- Latest modified BIN tested in this branch: `/home/peter/Imagens/Ico (USA)/Ico (USA)-mod6.bin`
-- PCSX2 debugger is usable through the R5900 layout; local emulator log path is documented in `docs/local-logs-and-reports.md`
-- Continue-menu investigation via string/TM2 swap abandoned (mod4/mod5/mod6 all negative)
-- State transition dispatcher analysis identified 0x0013eb50 as central state resolver
-- 150+ callers confirmed for 0x0013eb50; caller context traced via MIPS disassembly
-- State IDs 0x11, 0x34, 0x35 mapped to parent function context (entity objects + VU operations)
-- Sister function 0x0013ebe0 identified with similar call pattern
-- Next: PCSX2 breakpoints on parent function entry points 0x00199f80 and 0x0017bb98
+- 146 callers of 0x0013eb50 identified and clustered by address range
+- Entity structure offsets documented: +0x15c, +0x800, +0x610, +0x4a0, +0x4ac, +0x4cc
+- String locations mapped: 0x005539a1 (continues), 0x005551f0 (pac_continueTag), 0x00555db6 (Continue)
+- Function 0x0011a520 disassembly shows continuation pattern (returns via $5, $16, $19, not $ra)
+- 4 lui-pattern references to pac_continueTag area: 0x00116f5c, 0x00117310, 0x0012850c, 0x001310ec
+- 8 PCSX2 breakpoints tested: state resolver IDs 0x2e/0x34/0x35 not in death-flow path
+- All runtime breakpoint strategies exhausted; focusing on static analysis
+- Next: document entity structure and build call graph for 0x0019xxxx cluster
 
 ---
 
