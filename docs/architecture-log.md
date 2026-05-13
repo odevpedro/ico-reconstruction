@@ -718,3 +718,66 @@ Priority addresses:
 - Prioritize `No` literals and `pad`/input clusters because the menu decision path must eventually process controller input and selected option state.
 - After runtime testing, the first expanded `No` and `pad` candidate set also did not isolate the death menu.
 - Next strategy should use memory/state tracing for the menu selection rather than more blind string-derived breakpoints.
+
+# Feature: State Resolver Caller Context Analysis
+
+> Squad responsible: SQUAD-RUNTIME
+> Revision: rev.019
+> Session: 2026-05-13
+> Status: Stable
+
+## Summary
+Following the state-transition dispatch analysis from rev.018, this pass traced the caller context of `0x0013eb50` to understand how state IDs map to entity objects and gameplay state. The investigation confirmed that 0x0013eb50 has 150+ callers and operates on entity data structures with indexed state lookups.
+
+## Main Flow
+
+### 1. Entry Point
+The rev.018 analysis identified `0x0013eb50` as a state resolver with callers passing IDs 0x11, 0x34, and 0x35. The next step was to open the context of the two parent functions that call this resolver and understand the data flow.
+
+### 2. Analysis Method
+Ghidra was not locally available, so the analysis used manual MIPS disassembly against the extracted ELF. The call pattern was traced through function prologues, instruction sequences, and register usage patterns.
+
+### 3. Findings
+
+**Function 0x00199f80 (parent of 0x0019a138, 0x0019a144):**
+- Stack frame: 0x130 bytes
+- Loads entity pointers via `0x015c($register)` - entity structure dereference
+- Calls `0x00203aa0` (unknown - likely scene or file loader)
+- Calls `0x0013eb50` with state IDs 0x34 and 0x35 in sequence
+- The return value from 0x0013eb50 is used as an index to look up entity fields at `+0x800`
+- Function returns via `jr $2` - using state resolver result as continuation target
+- Also calls `0x0013ebe0` (sister function) with entity member at offset `+0x610`
+
+**Function 0x0017bb98 (parent of 0x0017bd38):**
+- Stack frame: 0xf0 bytes
+- Heavy VU/coprocessor usage - floating-point operations with c1 instructions
+- Loads from `0x0020($17)`, `0x0024($17)`, `0x0028($17)`, `0x002c($17)` - VU float arrays
+- Multiple GP-relative constant loads (0x4248, 0xc336, 0xc38c, etc.)
+- Calls `0x00104508` - render or transformation function
+- Calls `0x0013eb50` with state ID 0x11
+- State ID 0x11 appears in VU/floating-point context, suggesting animation or camera state linkage
+
+**State IDs Observed:**
+- 0x11: 17 decimal - VU/floating-point context
+- 0x2e: 46 decimal - in file/loading context
+- 0x34: 52 decimal - sequential with 0x35
+- 0x35: 53 decimal - sequential with 0x34
+
+### 4. Key Technical Findings
+- 0x0013eb50 has 150+ direct callers - it is a central resolver used throughout the codebase
+- The function operates on entity/object data structures with fixed offsets
+- Return values are used as array indices into entity structures and as continuation targets
+- Sister function 0x0013ebe0 has similar call pattern and likely operates on a parallel state table
+- No direct jal-based callers of the parent functions were found - they are likely called via function pointers or jalr
+
+### 5. Next Validation Strategy
+- PCSX2 breakpoint on 0x00199f80 (entry point for state ID pair 0x34/0x35)
+- PCSX2 breakpoint on 0x0017bb98 (entry point for state ID 0x11)
+- Memory breakpoints on globals DAT_006321c0 and DAT_00633ca0 to observe state transitions
+- Examine data table at 0x006a93d0 for content patterns that reveal state ID semantics
+
+## Key Technical Decisions
+- 0x0013eb50 is not death-menu-specific but is a central game state dispatcher
+- Parent function entry points (0x00199f80, 0x0017bb98) are better breakpoint targets than 0x0013eb50 itself
+- State IDs likely map to animation, scene, or entity state rather than UI state
+- The entity structure with offsets +0x15c, +0x800, +0x610 is a key structural anchor for future analysis

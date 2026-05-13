@@ -361,6 +361,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.016 - Video/rendering functions identified (FUN_001b7288, FUN_001a6e28, FUN_001b0a80)
 [x] rev.017 - Second proof of concept: string modification in ELF (NULL.gcm -> NULL0000)
 [x] rev.018 - Multiple string modifications tested (title.gcm, logo.gcm, sacrifice.gcm)
+[x] rev.019 - State resolver caller context analysis (0x0013eb50, entity structures, state ID mapping)
 ```
 
 ## How To Contribute

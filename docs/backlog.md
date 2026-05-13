@@ -17,8 +17,8 @@
 
 ## In Progress
 
-### [SQUAD-RUNTIME | rev.019 | In Progress]
-**Deeper Ghidra/PCSX2 Function and Asset Analysis**
+### [x] [SQUAD-RUNTIME | rev.019 | 2026-05-13]
+Deeper Ghidra/PCSX2 Function and Asset Analysis
 
 - Research and select disassembler options (Ghidra, radare2, IDA) - Done
 - Research and select emulator for validation (PCSX2) - Done
@@ -31,10 +31,12 @@
 - Active modified BIN directory: `/home/peter/Imagens/Ico (USA)/`
 - Latest modified BIN tested in this branch: `/home/peter/Imagens/Ico (USA)/Ico (USA)-mod6.bin`
 - PCSX2 debugger is usable through the R5900 layout; local emulator log path is documented in `docs/local-logs-and-reports.md`
-- Current Continue-menu breakpoint candidates are documented in `research/exe-refs/ico-usa-continue-menu-breakpoint-candidates.md`
-- First expanded `No` and `pad` breakpoint set was validated and did not isolate the death menu
-- Next: use PCSX2 memory/state tracing for the `Continue / Yes / No` menu selection
-- Deliverable: documented function/asset-format notes grounded in Ghidra and emulator evidence
+- Continue-menu investigation via string/TM2 swap abandoned (mod4/mod5/mod6 all negative)
+- State transition dispatcher analysis identified 0x0013eb50 as central state resolver
+- 150+ callers confirmed for 0x0013eb50; caller context traced via MIPS disassembly
+- State IDs 0x11, 0x34, 0x35 mapped to parent function context (entity objects + VU operations)
+- Sister function 0x0013ebe0 identified with similar call pattern
+- Next: PCSX2 breakpoints on parent function entry points 0x00199f80 and 0x0017bb98
 
 ---
 

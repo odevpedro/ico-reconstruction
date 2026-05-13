@@ -581,3 +581,62 @@ Se o Ghidra continuar com problemas de TTY, usar a interface GUI diretamente. Al
 - Ghidra 12.x exige JDK 21, não JDK 17
 - Usar linguagem MIPS:LE:32:default, não MIPS:LE:32:GCC
 - Manter projeto local, não commitá-lo ao repositório
+
+# Feature: Análise de Contexto dos Callers do State Resolver
+
+> Squad responsável: SQUAD-RUNTIME
+> Revisão: rev.019
+> Sessão: 2026-05-13
+> Status: Estável
+
+## Resumo
+Após a análise de dispatch de transição de estado do rev.018, esta rodada abriu o contexto dos callers de `0x0013eb50` para entender como os IDs de estado se mapeiam para objetos de entidade e estado de gameplay. A investigação confirmou que 0x0013eb50 tem 150+ callers e opera em estruturas de dados de entidade com lookups de estado indexados.
+
+## Fluxo principal
+
+### 1. Ponto de entrada
+A análise do rev.018 identificou `0x0013eb50` como um resolvedor de estado com callers pasando IDs 0x11, 0x34 e 0x35. O próximo passo foi abrir o contexto das duas funções pai que chamam este resolvedor e entender o fluxo de dados.
+
+### 2. Método de análise
+Ghidra não estava disponível localmente, então a análise usou disassembly MIPS manual contra o ELF extraído. O padrão de chamada foi rastreado através de prologues de função, sequências de instruções e padrões de uso de registradores.
+
+### 3. Achados
+
+**Função 0x00199f80 (pai de 0x0019a138, 0x0019a144):**
+- Stack frame: 0x130 bytes
+- Carrega ponteiros de entidade via `0x015c($registrador)` - dereferência de estrutura de entidade
+- Chama `0x00203aa0` (desconhecido - provavelmente loader de cena ou arquivo)
+- Chama `0x0013eb50` com IDs de estado 0x34 e 0x35 em sequência
+- O valor de retorno de 0x0013eb50 é usado como índice para olhar campos de entidade em `+0x800`
+- Função retorna via `jr $2` - usando resultado do resolvedor de estado como alvo de continuação
+- Também chama `0x0013ebe0` (função irmã) com membro de entidade no offset `+0x610`
+
+**Função 0x0017bb98 (pai de 0x0017bd38):**
+- Stack frame: 0xf0 bytes
+- Uso intenso de VU/coprocessador - operações de ponto flutuante com instruções c1
+- Carrega de `0x0020($17)`, `0x0024($17)`, `0x0028($17)`, `0x002c($17)` - arrays de floats VU
+- Múltiplas cargas de constantes GP-relativas (0x4248, 0xc336, 0xc38c, etc.)
+- Chama `0x00104508` - função de renderização ou transformação
+- Chama `0x0013eb50` com ID de estado 0x11
+- ID de estado 0x11 aparece em contexto VU/ponto flutuante, sugerindo linkedagem a animação ou câmera
+
+**IDs de Estado Observados:**
+- 0x11: 17 decimal - contexto VU/ponto flutuante
+- 0x2e: 46 decimal - em contexto de arquivo/carregamento
+- 0x34: 52 decimal - sequencial com 0x35
+- 0x35: 53 decimal - sequencial com 0x34
+
+### 4. Persistência / Integrações
+Foi adicionado `research/elf/ghidra-rev019-state-resolver-caller-context.md`. Foram atualizados README.md, backlog.md, docs/architecture-log.md e este registro.
+
+### 5. Resposta final
+A `rev.019` está concluída. Os IDs de estado foram mapeados ao contexto de entidade/VU, e os pontos de entrada das funções pai (0x00199f80 e 0x0017bb98) foram identificados como alvos de breakpoint mais produtivos que o resolvedor central.
+
+## Fluxos alternativos e erros
+Se os breakpoints nos pontos de entrada das funções pai não dispararem durante o fluxo de morte, a estratégia deve mudar para breakpoints de memória nos flags globais de estado (DAT_006321c0, DAT_00633ca0).
+
+## Decisões técnicas importantes
+- 0x0013eb50 não é específico do menu de morte, mas é um dispatcher central de estado do jogo
+- Pontos de entrada de funções pai (0x00199f80, 0x0017bb98) são melhores alvos de breakpoint que 0x0013eb50 diretamente
+- IDs de estado provavelmente mapeiam para animação, cena ou estado de entidade, não estado de UI
+- A estrutura de entidade com offsets +0x15c, +0x800, +0x610 é uma âncora estrutural chave para análise futura
