@@ -351,8 +351,12 @@ The project treats these as research topics, not solved problems.
 [x] rev.009 - Function reference correlation (7 functions identified)
 [x] rev.010 - Call graph analysis (13 callers identified)
 [x] rev.011 - Environment setup for disassembly and emulation (Ghidra headless with JDK 21)
-[ ] pending - First visible proof of concept against a user-owned copy
-[ ] pending - First visible proof of concept against a user-owned copy
+[x] rev.012 - Function disassembly analysis (FUN_001b7288, FUN_001a6e28, FUN_001b0a80)
+[x] rev.013 - Library calls analysis (top 25 functions identified)
+[x] rev.014 - PS2 SDK function analysis (leaf functions dominant)
+[x] rev.015 - First proof of concept: string extraction (camdata/*.gcm files found)
+[ ] pending - Identify video/rendering functions
+[ ] pending - Modify string in ELF (second PoC)
 ```
 
 ## How To Contribute
