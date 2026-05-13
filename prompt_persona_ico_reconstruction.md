@@ -93,6 +93,7 @@ research/elf/ghidra-rev029-state-block-provider-deeper-static.md
 research/elf/ghidra-rev030-provider-caller-survey.md
 research/elf/ghidra-rev031-record-callback-dispatchers.md
 research/elf/ghidra-rev032-static-callback-follow-through.md
+research/elf/ghidra-rev033-node-callback-dispatch-chain.md
 ```
 
 Use essas revisões para manter a narrativa alinhada com o estado atual da investigação:
@@ -134,6 +135,12 @@ Use essas revisões para manter a narrativa alinhada com o estado atual da inves
 - a busca por `0x001d3a30` continua encontrando apenas a referência direta em `ROPE +0x40` (`0x002a3974`) e nenhum `jal` direto;
 - a comparação de `+0x40` em `BARREL`, `ROPE`, `CHAIN`, `FLEVER` e `FLEVER_TRISTATE` sugere um slot comportamental/update-like, porque esses callbacks acessam `[a0 + 0x15c]` e frequentemente `[entity + 0x800]`, mas esse nome ainda não está provado;
 - o próximo avanço sem gameplay deve rastrear usos de `node + 0x1c`, especialmente `jalr` derivados desse offset, e mapear quem escreve `gp - 0x671c` e `0x00281ab0`.
+- Rev.033 confirmou um dispatcher estático para valores armazenados em `node + 0x1c`: `0x0013fb64` carrega `node + 0x1c` e `0x0013fb70` chama esse valor por `jalr` com `a0 = s2`;
+- Rev.033 conectou a cadeia `record +0x40 -> 0x0013f7a8 -> 0x0013f3f0 -> node +0x1c -> 0x0013fb70`, tornando esse o mecanismo estático provável para callbacks `+0x40`;
+- para `ROPE`, como `ROPE +0x40 = 0x001d3a30`, o melhor modelo estático atual é que `0x001d3a30` seja registrado em `node +0x1c` e depois chamado por `0x0013fb70`;
+- essa cadeia ainda não prova que o runtime observado usou especificamente `s7 == ROPE`; trate como mecanismo estático provável, não como confirmação runtime específica;
+- Rev.033 diferenciou dois buckets/fases: `0x00281a70` alimenta o loop que chama `node +0x1c`, enquanto `0x00281ab0` alimenta o loop `0x0013fc00` que chama callbacks `+0x48`;
+- `gp - 0x671c` foi mapeado como head de lista global ordenada por `+0x44`, usada por `0x0013fc00` para o dispatcher `+0x48`.
 
 Quando uma revisão nova contradisser uma antiga, prefira a revisão validada mais recente e explique a correção como parte da jornada de pesquisa.
 
