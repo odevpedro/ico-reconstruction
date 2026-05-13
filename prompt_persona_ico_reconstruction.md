@@ -95,6 +95,7 @@ research/elf/ghidra-rev031-record-callback-dispatchers.md
 research/elf/ghidra-rev032-static-callback-follow-through.md
 research/elf/ghidra-rev033-node-callback-dispatch-chain.md
 research/elf/ghidra-rev034-callback-signature-and-record-selection.md
+research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md
 ```
 
 Use essas revisões para manter a narrativa alinhada com o estado atual da investigação:
@@ -142,12 +143,12 @@ Use essas revisões para manter a narrativa alinhada com o estado atual da inves
 - essa cadeia ainda não prova que o runtime observado usou especificamente `s7 == ROPE`; trate como mecanismo estático provável, não como confirmação runtime específica;
 - Rev.033 diferenciou dois buckets/fases: `0x00281a70` alimenta o loop que chama `node +0x1c`, enquanto `0x00281ab0` alimenta o loop `0x0013fc00` que chama callbacks `+0x48`;
 - `gp - 0x671c` foi mapeado como head de lista global ordenada por `+0x44`, usada por `0x0013fc00` para o dispatcher `+0x48`.
-- Rev.034 confirmou que `0x001d3a30` é compatível com a chamada por `0x0013fb70`, porque espera `a0` como objeto/contexto e acessa `[a0 +0x15c] -> +0x800`;
-- os callbacks `+0x40` vizinhos (`BARREL`, `ROPE`, `CHAIN`, `FLEVER`, `FLEVER_TRISTATE`) seguem a mesma convenção de argumento `a0 = object/context`;
-- `0x001b76f8` tem três callers diretos em `0x001b7d90`, `0x001b7df8` e `0x001b7e6c`;
-- Rev.034 mostrou que `s7` é selecionado por `0x002a31b8 + ([s4+0x46] * 0x64)`;
-- o record `ROPE` em `0x002a3934` corresponde ao índice `0x13` a partir da base `0x002a31b8`, então `[s4+0x46] == 0x13` selecionaria `ROPE`;
-- ainda não trate o runtime observado como prova de `[s4+0x46] == 0x13`; isso permanece como o próximo valor útil a capturar se o debugger for retomado.
+- Rev.034 confirmou que `0x001d3a30` é compatível com a chamada por `0x0013fb70`, porque espera `a0` como objeto/contexto e acessa `[a0 +0x15c] -> +0x800`, mas Rev.035 corrigiu a conclusão sobre seleção de `ROPE`;
+- os callbacks vizinhos identificados em Rev.026 como `record_start +0x40` correspondem, na convenção alinhada pelo label, a `descriptor_label -0x14`;
+- Rev.035 corrigiu a base de índices: `0x002a31b8` aponta para labels de descriptors; nessa convenção `BARREL` é índice `0x13` e `ROPE` é índice `0x14`;
+- `0x001b7ac0` carrega `descriptor_label +0x40`, não `descriptor_label -0x14`, então ele não prova registro de `ROPE +0x40`/`0x001d3a30` em `node +0x1c`;
+- uma varredura simples das entradas `0x002a4c48 + index * 0x4c` não encontrou `+0x46 == 0x14` nas entradas `0x000..0x1ff`;
+- mantenha `0x001d3a30` como callback de `ROPE` runtime-confirmado e estruturalmente forte, mas trate o dispatcher indireto exato desse callback como ainda não resolvido.
 
 Quando uma revisão nova contradisser uma antiga, prefira a revisão validada mais recente e explique a correção como parte da jornada de pesquisa.
 
