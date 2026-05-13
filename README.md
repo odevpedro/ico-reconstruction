@@ -90,6 +90,14 @@ Current repository contents are mostly operational documents:
 - `tools/mips-call-graph/` - metadata-only MIPS call graph analyzer
 - `tools/elf-extractor/` - ELF extractor for disassembler import
 
+Current ELF research focus:
+
+- a confirmed internal dispatcher at `0x001d37c8`, with jump table `0x00618fb0`, documented in [`research/elf/ghidra-rev023-dispatcher-table-resolution.md`](./research/elf/ghidra-rev023-dispatcher-table-resolution.md)
+- a record/callback chain around the `.data` record labeled `ROPE`, documented across [`research/elf/ghidra-rev026-rope-record-table-context.md`](./research/elf/ghidra-rev026-rope-record-table-context.md) through [`research/elf/ghidra-rev034-callback-signature-and-record-selection.md`](./research/elf/ghidra-rev034-callback-signature-and-record-selection.md)
+- a probable static callback path `record +0x40 -> node +0x1c -> 0x0013fb70`, with `ROPE +0x40 = 0x001d3a30`, documented in [`research/elf/ghidra-rev033-node-callback-dispatch-chain.md`](./research/elf/ghidra-rev033-node-callback-dispatch-chain.md)
+
+These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
+
 ## Repository Structure
 
 ```text
@@ -303,6 +311,9 @@ The project treats these as research topics, not solved problems.
 | [`tools/mips-call-graph/README.md`](./tools/mips-call-graph/README.md) | Metadata-only MIPS call graph analyzer |
 | [`research/elf/ico-usa-scus-97113-call-graph-analysis.md`](./research/elf/ico-usa-scus-97113-call-graph-analysis.md) | Confirmed call graph analysis (13 callers, 15 calls) |
 | [`research/elf/ico-usa-environment-setup-plan.md`](./research/elf/ico-usa-environment-setup-plan.md) | Environment setup plan for disassembly and emulation |
+| [`research/elf/ghidra-rev023-dispatcher-table-resolution.md`](./research/elf/ghidra-rev023-dispatcher-table-resolution.md) | Confirmed dispatcher table resolution for `0x001d37c8` |
+| [`research/elf/ghidra-rev033-node-callback-dispatch-chain.md`](./research/elf/ghidra-rev033-node-callback-dispatch-chain.md) | Static callback chain from record slot to `node +0x1c` dispatch |
+| [`research/elf/ghidra-rev034-callback-signature-and-record-selection.md`](./research/elf/ghidra-rev034-callback-signature-and-record-selection.md) | Callback signature and record-selection analysis for the `ROPE` chain |
 | [`tools/elf-extractor/README.md`](./tools/elf-extractor/README.md) | ELF extractor for disassembler import |
 
 ## Initial Roadmap
@@ -362,6 +373,8 @@ The project treats these as research topics, not solved problems.
 [x] rev.017 - Second proof of concept: string modification in ELF (NULL.gcm -> NULL0000)
 [x] rev.018 - Multiple string modifications tested (title.gcm, logo.gcm, sacrifice.gcm)
 [x] rev.019 - State resolver caller context analysis (0x0013eb50, entity structures, state ID mapping)
+[x] rev.023 - Dispatcher table resolution (`0x001d37c8`, jump table `0x00618fb0`)
+[x] rev.026-034 - Record/callback chain analysis around `ROPE`, `node +0x1c`, and `0x001d3a30`
 ```
 
 ## How To Contribute

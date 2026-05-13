@@ -349,13 +349,22 @@ When creating a new research note, write only to the requested file.
 
 Do not freely edit:
 
-- `README.md`;
 - `docs/backlog.md`;
 - `docs/architecture-log.md`;
 - high-level project summaries;
 - older revision notes.
 
-Do not update high-level docs until the result is reviewed.
+Do not update high-level docs until the result is reviewed, except that `README.md`
+should be updated when a result is mature and relevant enough to change the
+public project summary.
+
+When updating `README.md`, keep it conservative:
+
+- summarize only validated research state;
+- avoid speculative gameplay names;
+- link to the newest relevant research notes;
+- do not include copyrighted game data;
+- do not turn unresolved hypotheses into project claims.
 
 Do not rewrite history.
 
