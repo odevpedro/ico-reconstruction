@@ -96,6 +96,7 @@ research/elf/ghidra-rev032-static-callback-follow-through.md
 research/elf/ghidra-rev033-node-callback-dispatch-chain.md
 research/elf/ghidra-rev034-callback-signature-and-record-selection.md
 research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md
+research/elf/ghidra-rev036-registration-path-survey.md
 ```
 
 Use essas revisões para manter a narrativa alinhada com o estado atual da investigação:
@@ -149,6 +150,12 @@ Use essas revisões para manter a narrativa alinhada com o estado atual da inves
 - `0x001b7ac0` carrega `descriptor_label +0x40`, não `descriptor_label -0x14`, então ele não prova registro de `ROPE +0x40`/`0x001d3a30` em `node +0x1c`;
 - uma varredura simples das entradas `0x002a4c48 + index * 0x4c` não encontrou `+0x46 == 0x14` nas entradas `0x000..0x1ff`;
 - mantenha `0x001d3a30` como callback de `ROPE` runtime-confirmado e estruturalmente forte, mas trate o dispatcher indireto exato desse callback como ainda não resolvido.
+- Rev.036 confirmou por varredura binária completa que não existe nenhum `lw rt,-0x14(rs)` no ELF; o slot `descriptor_label -0x14` não é acessado diretamente por esse padrão;
+- Rev.036 confirmou que `0x001b76f8` possui um zero-guard em `0x001b7ac4`: `beq a1,zero,0x001b7ad4` que pula o registro quando `descriptor_label +0x40 == 0`; para ROPE esse campo é zero, portanto `0x001b76f8` não registra `0x001d3a30`;
+- os únicos cinco callers estáticos de `0x0013f7a8` são `0x001b7ab0`, `0x001b7acc`, `0x00201ed4`, `0x00240e50` e `0x00240f90`; os três fora de `0x001b76f8` recebem o callback como argumento externo (s5, s6) com origem não tracejável estaticamente;
+- o campo `entry[+0x46]` não possui nenhum `sb` writer estático; o único escritor halfword encontrado é `sh v0,+70(s2)` em `0x0014066c`, que faz parte de um construtor/inicializador de struct;
+- a função em `0x00201e80` usa a entry table `0x002a4c48`, verifica `lhu v0,+64(v1)` = `entry[+0x40]` como halfword antes de escolher entre `0x0013f778` e `0x0013f7a8`, e é candidata alternativa de registro não explorada antes de Rev.036;
+- trate o registro de `0x001d3a30` em `node +0x1c` como ainda não resolvido estaticamente; os candidatos remanescentes são `0x00201ed4`, `0x00240e50`, `0x00240f90` e qualquer path dinâmico de room loading.
 
 Quando uma revisão nova contradisser uma antiga, prefira a revisão validada mais recente e explique a correção como parte da jornada de pesquisa.
 
