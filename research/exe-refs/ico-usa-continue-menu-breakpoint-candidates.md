@@ -95,31 +95,35 @@ Confirmed in PCSX2 debugger:
 | `0x0011a794` | Hit when pressing `New Game` | Calls `0x0011a520`; also too generic |
 | `0x0012d218` | Did not hit on `New Game`, death menu, or clicking `Yes` | Not directly involved in observed Continue flow |
 | `0x0012fd58` | Did not hit in the tested flow | Callsite not directly involved in observed Continue flow |
+| `0x00104b98` | Hit immediately during startup | Input/pad path, too generic |
+| `0x00104bbc` | Adjacent callsite for the same early input/pad path | Deprioritized with `0x00104b98` |
+| `0x0013ad58` | Hit immediately during startup | Input/pad path, too generic |
+| `0x0013b008` | Callsite into the same early input/pad chain | Deprioritized with `0x0013ad58` |
+| `0x0013af88` | Hit immediately during startup | Input/pad path, too generic |
+| `0x0013a868` | Same input/pad cluster as `0x0013af88` | Deprioritized with `0x0013af88` |
+| `0x0012f818` | Did not hit during startup or death/Continue flow | Not directly involved in observed Continue flow |
+| `0x001ac4b8` | Did not hit during startup or death/Continue flow | Not directly involved in observed Continue flow |
+| `0x001ac688` | Did not hit during startup or death/Continue flow | Not directly involved in observed Continue flow |
+| `0x001aca28` | Did not hit during startup or death/Continue flow | Not directly involved in observed Continue flow |
 
 ## Prioritized Next Breakpoints
 
-The next manual tests should prioritize candidates that were not already disproven and are closer to input or Yes/No state:
+All breakpoints in this first expanded set have now been tested or deprioritized:
 
-1. `0x0012f818`
-2. `0x001ac4b8`
-3. `0x001ac688`
-4. `0x001aca28`
-5. `0x0013a868`
-6. `0x0013af88`
-7. `0x0013b008`
-8. `0x0013ad58`
-9. `0x00104b98`
-10. `0x00104bbc`
+1. `0x00104b98`, `0x00104bbc`, `0x0013ad58`, `0x0013b008`, `0x0013af88`, and `0x0013a868` fired too early and are too generic.
+2. `0x0012f818`, `0x001ac4b8`, `0x001ac688`, and `0x001aca28` did not fire during the observed death/Continue flow.
 
-Recommended test sequence:
+The next breakpoint round should not continue blindly from string references alone.
 
-1. Add one execute breakpoint at a time.
-2. Check whether it fires on `New Game`.
-3. If it does not fire early, keep it active until the death `Continue / Yes / No` menu.
-4. If it fires during the menu or when pressing `Yes`/`No`, capture a debugger screenshot with registers.
+Recommended next strategy:
+
+1. Use PCSX2 memory search to find a menu-state or selection variable while the `Continue / Yes / No` menu is visible.
+2. Compare memory while the cursor/choice changes between `Yes` and `No`, if the menu allows moving selection.
+3. Add read/write memory breakpoints on the narrowed address instead of executing broad string-derived functions.
+4. If memory search is not practical, switch to Ghidra-led analysis around death state/game state transitions rather than UI text assets.
 
 ## Current Conclusion
 
-The first `pac_continueTag` and `%s.tm2` paths did not isolate the death/continue menu.
+The first `pac_continueTag`, `%s.tm2`, `No`, and input/pad string-reference paths did not isolate the death/continue menu.
 
-The next productive front is to test functions tied to `No` literals and input/pad clusters, because the menu decision path should eventually process controller input and branch on the selected option even if the visible text is texture-backed.
+The next productive front is memory/state tracing. The menu decision path should still modify or read state, but it is not exposed by the string-reference candidates tested so far.

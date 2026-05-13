@@ -716,3 +716,5 @@ Priority addresses:
 - Stop blind TM2 name swaps for the death menu until runtime evidence identifies a concrete asset path.
 - Treat `pac_continueTag`/`%s.tm2` as deprioritized for the observed death menu.
 - Prioritize `No` literals and `pad`/input clusters because the menu decision path must eventually process controller input and selected option state.
+- After runtime testing, the first expanded `No` and `pad` candidate set also did not isolate the death menu.
+- Next strategy should use memory/state tracing for the menu selection rather than more blind string-derived breakpoints.

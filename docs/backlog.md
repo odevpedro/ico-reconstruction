@@ -32,7 +32,8 @@
 - Latest modified BIN tested in this branch: `/home/peter/Imagens/Ico (USA)/Ico (USA)-mod6.bin`
 - PCSX2 debugger is usable through the R5900 layout; local emulator log path is documented in `docs/local-logs-and-reports.md`
 - Current Continue-menu breakpoint candidates are documented in `research/exe-refs/ico-usa-continue-menu-breakpoint-candidates.md`
-- Next: validate the new `No` and `pad` candidate addresses in PCSX2 one at a time
+- First expanded `No` and `pad` breakpoint set was validated and did not isolate the death menu
+- Next: use PCSX2 memory/state tracing for the `Continue / Yes / No` menu selection
 - Deliverable: documented function/asset-format notes grounded in Ghidra and emulator evidence
 
 ---
