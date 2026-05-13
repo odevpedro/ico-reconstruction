@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 28 |
+| Completed | 31 |
 | In Progress | 1 |
 | Pending | 2 |
 
@@ -17,17 +17,39 @@
 
 ## In Progress
 
-### [SQUAD-RUNTIME | rev.021 | In Progress]
-Static Analysis Pipeline - Entity Structure and Call Graph
+### [x] [SQUAD-RUNTIME | rev.019 | 2026-05-13]
+Static Analysis Pipeline - State Resolver Caller Context
 
-- 146 callers of 0x0013eb50 identified and clustered by address range
-- Entity structure offsets documented: +0x15c, +0x800, +0x610, +0x4a0, +0x4ac, +0x4cc
-- String locations mapped: 0x005539a1 (continues), 0x005551f0 (pac_continueTag), 0x00555db6 (Continue)
-- Function 0x0011a520 disassembly shows continuation pattern (returns via $5, $16, $19, not $ra)
-- 4 lui-pattern references to pac_continueTag area: 0x00116f5c, 0x00117310, 0x0012850c, 0x001310ec
-- 8 PCSX2 breakpoints tested: state resolver IDs 0x2e/0x34/0x35 not in death-flow path
-- All runtime breakpoint strategies exhausted; focusing on static analysis
-- Next: document entity structure and build call graph for 0x0019xxxx cluster
+- Traced callers of 0x0013eb50 via manual MIPS disassembly
+- Found parent functions 0x00199f80 (stack 0x130, entity dereference) and 0x0017bb98 (stack 0xf0, VU/floating-point)
+- Identified sister function 0x0013ebe0 with similar call pattern
+- Analyzed state tables: DAT_006321c0 (mode flag), DAT_006a93d0 (flat), DAT_00633ca0 (0x174-byte records)
+- Clustered 146 callers of 0x0013eb50 into 14 address ranges; 0x0019xxxx has 38 callers (largest)
+
+### [x] [SQUAD-RUNTIME | rev.020 | 2026-05-13]
+UI String Context and Caller Analysis
+
+- Mapped UI string locations: 0x005539a1 (continues), 0x005551f0 (pac_continueTag), 0x00555db6 (Continue)
+- Disassembled 0x0011a520 (pac_continueTag loader) - uses continuation pattern, calls 0x001a6e28, 0x001ad768, 0x00263ff0
+- Found 4 lui-pattern references to pac_continueTag: 0x00116f5c, 0x00117310, 0x0012850c, 0x001310ec
+- Found 4 code references to "Continue" string: 0x0012a710, 0x0012a7a0, 0x0012a7f8, 0x00198710
+- Updated Ghidra headless setup docs with working command template
+
+### [x] [SQUAD-RUNTIME | rev.021 | 2026-05-13]
+Continue Menu String Deception + Static Call Graph Deep Dive
+
+- CRITICAL: "Continue" at 0x00555db6 is actually "ContinueAnimation:illegal Animation No." - debug string, NOT menu text
+- Menu text is in TM2 textures (yesno_p*.tm2, conti_p*.tm2) - no ASCII for options
+- Analyzed 0x0012a710 / 0x0012a618 - display/validation function, NOT continue menu trigger
+- Analyzed 0x001d37c8 - entity state dispatcher with jump table at 0x00628fb0 (handles states 0-4)
+- Analyzed 0x001d3a30 - entity update loop with ZERO static callers (vtable-only dispatch)
+- Analyzed 0x00199c30 and 0x00199f80 - also zero static callers (vtable-dispatched handlers)
+- 60 unique functions in 0x0019xxxx call state resolver 0x0013eb50
+- All shadow references in ELF are about rendering/shadow maps, not Yorda capture
+- New strategy: DATA.DF overlay analysis or memory search during gameplay, stop targeting ASCII strings
+
+### [SQUAD-RUNTIME | rev.022 | In Progress]
+Static Analysis Pipeline - Entity Structure and Call Graph
 
 ---
 
@@ -216,6 +238,9 @@ Call graph analysis
 | rev.016 | 2026-05-12 | SQUAD-RUNTIME | Video/rendering functions identified |
 | rev.017 | 2026-05-12 | SQUAD-TOOLING | Second PoC: string modification (NULL.gcm -> NULL0000) |
 | rev.018 | 2026-05-12 | SQUAD-TOOLING | Multiple string modifications tested (title.gcm, logo.gcm, sacrifice.gcm) |
+| rev.019 | 2026-05-13 | SQUAD-RUNTIME | Static analysis - state resolver caller context (146 callers, 14 clusters) |
+| rev.020 | 2026-05-13 | SQUAD-RUNTIME | UI string context and caller analysis |
+| rev.021 | 2026-05-13 | SQUAD-RUNTIME | Continue menu string deception + vtable call graph deep dive |
 
 ---
 
