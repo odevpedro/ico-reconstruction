@@ -9,16 +9,16 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 20 |
+| Completed | 28 |
 | In Progress | 1 |
-| Pending | 3 |
+| Pending | 2 |
 
 ---
 
 ## In Progress
 
-### [SQUAD-RUNTIME | rev.011 | In Progress]
-**Environment Setup for Disassembly and Emulation**
+### [SQUAD-RUNTIME | rev.019 | In Progress]
+**Deeper Ghidra/PCSX2 Function and Asset Analysis**
 
 - Research and select disassembler options (Ghidra, radare2, IDA) - Done
 - Research and select emulator for validation (PCSX2) - Done
@@ -27,8 +27,13 @@
 - Extracted ELF: .local/extracted/SCUS_971.13.elf (5.48 MB, SHA256: ea7953b0...)
 - Added Ghidra import guide: .local/ghidra/GHIDRA_IMPORT_GUIDE.md
 - Generated Ghidra navigation script: .local/ghidra/ICOAnalysisScript.java
-- Next: Install Ghidra and import ELF for analysis
-- Deliverable: documented environment setup guide
+- Ghidra is installed and was used for rev.011-rev.018 analysis
+- Active modified BIN directory: `/home/peter/Imagens/Ico (USA)/`
+- Latest modified BIN tested in this branch: `/home/peter/Imagens/Ico (USA)/Ico (USA)-mod6.bin`
+- PCSX2 debugger is usable through the R5900 layout; local emulator log path is documented in `docs/local-logs-and-reports.md`
+- Current Continue-menu breakpoint candidates are documented in `research/exe-refs/ico-usa-continue-menu-breakpoint-candidates.md`
+- Next: validate the new `No` and `pad` candidate addresses in PCSX2 one at a time
+- Deliverable: documented function/asset-format notes grounded in Ghidra and emulator evidence
 
 ---
 
@@ -45,24 +50,13 @@
 ---
 
 ### [SQUAD-RUNTIME | Pending | Pending]
-**Environment Setup for Extraction and Disassembly**
+**Asset Format and Runtime Validation Expansion**
 
-- ISO inspection tooling
-- ELF analysis tooling
-- Disassembly workflow
-- Debugging setup
-- Asset exploration tools
-- Deliverable: reproducible research environment
-
----
-
-### [SQUAD-TOOLING | Pending | Pending]
-**First Visible Proof of Concept Against a User-Owned Copy**
-
-- Use local metadata verifier output as the input baseline
-- Choose a non-distributable low-risk mutation target only after ISO/ELF metadata is known
-- Document emulator/debugger validation steps
-- Deliverable: reproducible local-only PoC notes and tooling
+- Investigate `.gcm` file references and storage format
+- Locate UI text or texture-backed text sources
+- Analyze file-loading and save/load code paths
+- Test numeric/value patches only on local modified BINs
+- Deliverable: reproducible local-only notes and tooling that do not distribute proprietary data
 
 ---
 
@@ -220,8 +214,14 @@ Call graph analysis
 | rev.008 | 2026-05-12 | SQUAD-TOOLING | MIPS function prologue scan |
 | rev.009 | 2026-05-12 | SQUAD-TOOLING | Function reference correlation (7 functions identified) |
 | rev.010 | 2026-05-12 | SQUAD-TOOLING | Call graph analysis (13 callers identified) |
-| rev.011 | TBD | SQUAD-ARCH | Architectural analysis E-G for ICO |
-| pending | TBD | SQUAD-TOOLING | First visible proof of concept against a user-owned copy |
+| rev.011 | 2026-05-12 | SQUAD-RUNTIME | Environment setup for disassembly (Ghidra + PCSX2) |
+| rev.012 | 2026-05-12 | SQUAD-RUNTIME | Function disassembly analysis |
+| rev.013 | 2026-05-12 | SQUAD-RUNTIME | Library calls analysis (top 25 functions) |
+| rev.014 | 2026-05-12 | SQUAD-RUNTIME | PS2 SDK function analysis (leaf functions) |
+| rev.015 | 2026-05-12 | SQUAD-TOOLING | First PoC: string extraction (81 .gcm files found) |
+| rev.016 | 2026-05-12 | SQUAD-RUNTIME | Video/rendering functions identified |
+| rev.017 | 2026-05-12 | SQUAD-TOOLING | Second PoC: string modification (NULL.gcm -> NULL0000) |
+| rev.018 | 2026-05-12 | SQUAD-TOOLING | Multiple string modifications tested (title.gcm, logo.gcm, sacrifice.gcm) |
 
 ---
 

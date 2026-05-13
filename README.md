@@ -275,6 +275,8 @@ The project treats these as research topics, not solved problems.
 | [`docs/research-methodology.md`](./docs/research-methodology.md) | Research evidence standards and observation format |
 | [`docs/legal-boundaries.md`](./docs/legal-boundaries.md) | Content rules for legal and clean-room repository boundaries |
 | [`docs/tooling-plan.md`](./docs/tooling-plan.md) | Planned local tooling direction before executable tools exist |
+| [`docs/ai-onboarding.md`](./docs/ai-onboarding.md) | Required reading path and current handoff context for new AI agents |
+| [`docs/local-logs-and-reports.md`](./docs/local-logs-and-reports.md) | Local project report directory and PCSX2 emulator log locations |
 | [`research/README.md`](./research/README.md) | Organization rules for future research notes |
 | [`tools/README.md`](./tools/README.md) | Scope and conventions for future local utilities |
 | [`tools/verify-local-copy/README.md`](./tools/verify-local-copy/README.md) | Metadata-only local input verifier |
@@ -291,6 +293,7 @@ The project treats these as research topics, not solved problems.
 | [`tools/mips-immediate-scanner/README.md`](./tools/mips-immediate-scanner/README.md) | Metadata-only MIPS split-immediate pattern scanner |
 | [`research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md`](./research/exe-refs/ico-usa-scus-97113-data-df-dvp-references.md) | Initial confirmed metadata-only executable reference scan |
 | [`research/exe-refs/ico-usa-scus-97113-mips-immediate-patterns.md`](./research/exe-refs/ico-usa-scus-97113-mips-immediate-patterns.md) | Confirmed metadata-only MIPS split-immediate pattern scan |
+| [`research/exe-refs/ico-usa-continue-menu-breakpoint-candidates.md`](./research/exe-refs/ico-usa-continue-menu-breakpoint-candidates.md) | Continue menu breakpoint candidates and PCSX2 validation notes |
 | [`tools/elf-symbol-scan/README.md`](./tools/elf-symbol-scan/README.md) | Metadata-only ELF symbol table scanner |
 | [`research/elf/ico-usa-scus-97113-symbol-table-analysis.md`](./research/elf/ico-usa-scus-97113-symbol-table-analysis.md) | Confirmed ELF symbol table analysis (stripped) |
 | [`tools/mips-prologue-scan/README.md`](./tools/mips-prologue-scan/README.md) | Metadata-only MIPS function prologue scanner |
@@ -355,8 +358,9 @@ The project treats these as research topics, not solved problems.
 [x] rev.013 - Library calls analysis (top 25 functions identified)
 [x] rev.014 - PS2 SDK function analysis (leaf functions dominant)
 [x] rev.015 - First proof of concept: string extraction (camdata/*.gcm files found)
-[ ] pending - Identify video/rendering functions
-[ ] pending - Modify string in ELF (second PoC)
+[x] rev.016 - Video/rendering functions identified (FUN_001b7288, FUN_001a6e28, FUN_001b0a80)
+[x] rev.017 - Second proof of concept: string modification in ELF (NULL.gcm -> NULL0000)
+[x] rev.018 - Multiple string modifications tested (title.gcm, logo.gcm, sacrifice.gcm)
 ```
 
 ## How To Contribute

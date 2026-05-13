@@ -15,6 +15,9 @@ Current implemented tool:
 - `tools/mips-prologue-scan/` - metadata-only MIPS function prologue scanner
 - `tools/function-ref-correlator/` - metadata-only function reference correlator
 - `tools/mips-call-graph/` - metadata-only MIPS call graph analyzer
+- `tools/elf-extractor/` - local-only ELF extractor for disassembler import
+- `tools/ghidra-import/` - local Ghidra guide/script generator
+- `tools/elf-replacer/` - local-only ELF replacement experiment tool for modified BIN testing
 
 ## Initial Goals
 
@@ -34,6 +37,7 @@ Planned areas:
 - collect file names, offsets, sizes, and basic metadata
 - generate local reports ignored by git
 - support future synthetic parser fixtures
+- keep binary mutation experiments local under user-owned modified BIN paths, currently `/home/peter/Imagens/Ico (USA)/`
 
 ## Non-Goals
 
@@ -57,6 +61,12 @@ tools/
   dvp-index/
   exe-ref-index/
   mips-immediate-scanner/
+  mips-prologue-scan/
+  function-ref-correlator/
+  mips-call-graph/
+  elf-extractor/
+  ghidra-import/
+  elf-replacer/
   elf-notes/
 tests/
   fixtures/

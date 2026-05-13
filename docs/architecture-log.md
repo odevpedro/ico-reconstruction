@@ -538,3 +538,181 @@ Constants may be formed through MIPS split-immediate instruction sequences, so a
 - Search only explicit user-provided strings and constants.
 - Record exact offsets and sections, not surrounding bytes or disassembly.
 - Move next investigation toward MIPS immediate/reference pattern scanning.
+
+# Feature: Environment Setup for Disassembly and Emulation
+
+> Squad responsible: SQUAD-RUNTIME
+> Revision: rev.011
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+Environment setup completed with Ghidra headless and PCSX2 for validation.
+
+## Main Flow
+
+### 1. Ghidra Setup
+- Fixed JDK 21 compatibility issue with Ghidra headless
+- Created isolated script folder /tmp/ghidra_scripts_clean/ to fix OSGi bundle loading errors
+- Extracted ELF: .local/extracted/SCUS_971.13.elf (5,481,608 bytes)
+- Ghidra is installed locally and was used throughout the rev.011-rev.018 analysis; the next step is deeper analysis, not installation.
+
+### 2. PCSX2 Setup
+- Installed PCSX2 via Flatpak
+- Configured Vulkan renderer with AMD Radeon RX 7600
+
+### 3. First ELF Analysis
+- Analyzed function at 0x001b7288 (most called - 8 callers)
+- Analyzed function at 0x001a6e28 (4 callers)
+- Analyzed function at 0x001b0a80 (3 callers)
+
+## Alternative Flows and Errors
+- Ghidra GUI not needed - headless mode sufficient for analysis
+
+## Key Technical Decisions
+- Use isolated script folder for Ghidra to avoid OSGi errors
+
+---
+
+# Feature: Function Disassembly Analysis
+
+> Squad responsible: SQUAD-RUNTIME
+> Revision: rev.012
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+Analyzed top called functions in the ELF executable.
+
+## Key Findings
+- FUN_001b7288: 8 callers - highest call frequency
+- FUN_001a6e28: 4 callers
+- FUN_001b0a80: 3 callers
+- All functions identified as leaf functions (no JAL/JALR to further functions)
+- These are PS2 SDK utility functions, not game logic
+
+---
+
+# Feature: String Extraction and File Reference Discovery
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.015
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+First proof of concept: extracted and identified all file references in the ELF.
+
+## Key Findings
+- Found 81 unique .gcm file references in the ELF
+- camdata/*.gcm files identified
+- Confirmed metadata-only approach works for file reference discovery
+- Additional strings: "Game Over", "Pause", "Continue", etc.
+
+## Files Found
+sacrifice.gcm, boss.gcm, athletic.gcm, NULL.gcm, title.gcm, logo.gcm, chara.gcm, etc.
+
+---
+
+# Feature: ELF String Modification - Proof of Concept
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.017
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+Second proof of concept: modified ELF strings within ISO and verified game still runs.
+
+## Modification
+- NULL.gcm -> NULL0000 (same length: 8 bytes)
+- Applied to ISO: /home/peter/Imagens/Ico (USA)/Ico (USA)-mod.bin
+
+## Testing
+- PCSX2 boots modified ISO without errors
+- Game runs normally
+- Confirmed: metadata-only modifications work
+
+## Tools Created
+- tools/elf-replacer/elf_replacer.py for ELF modification within ISO
+
+---
+
+# Feature: Multiple String Modifications Test
+
+> Squad responsible: SQUAD-TOOLING
+> Revision: rev.018
+> Session: 2026-05-12
+> Status: Stable
+
+## Summary
+Tested multiple string modifications to understand which are critical.
+
+## Modifications Applied
+- title.gcm -> TITLE_GCM (9 bytes)
+- logo.gcm -> LOGO_GCM (8 bytes)
+- sacrifice.gcm -> SACRIFICE_GCM (13 bytes)
+
+## Results
+- Game continues to work normally
+- Menu principal functions normally
+- These strings are either not used at startup or have fallback behavior
+
+## Key Findings
+- UI text not in ASCII in ELF - likely in .gcm files or textures
+- File reference strings are non-critical for game startup
+
+## Testing
+- PCSX2 with Vulkan renderer
+- ISO modified at /home/peter/Imagens/Ico (USA)/Ico (USA)-mod2.bin
+- `/home/peter/Imagens/Ico (USA)/` is the active local directory for modified BIN experiments.
+- `Ico (USA)-mod2.bin` is the latest modified BIN from this sequence.
+
+---
+
+# Feature: Continue Menu Breakpoint Candidate Expansion
+
+> Squad responsible: SQUAD-RUNTIME
+> Revision: rev.019
+> Session: 2026-05-13
+> Status: In Progress
+
+## Summary
+The death-flow UI investigation moved from blind string/TM2 replacement to PCSX2 debugger validation. Initial breakpoints around `pac_continueTag` and `%s.tm2` did not isolate the `Continue / Yes / No` menu, so a broader executable-reference pass was performed to collect more candidate addresses before further manual tests.
+
+## Main Flow
+
+### 1. Entry Point
+Manual PCSX2 validation showed that `mod4`, `mod5`, and `mod6` did not change the visible death menu text. The observed target is the normal `Continue` menu with `Yes` and `No`, not a separate `Game Over` screen.
+
+### 2. Runtime Validation
+The PCSX2 debugger was opened in the `R5900 (EE)` layout. Execute breakpoints were tested:
+
+- `0x0011a520`: hit on `New Game`, too generic
+- `0x0011a794`: hit on `New Game`, too generic
+- `0x0012d218`: did not hit on `New Game`, death menu, or `Yes`
+- `0x0012fd58`: did not hit in the tested flow
+
+### 3. Candidate Expansion
+A broad `exe-ref-index` search scanned UI, decision, input, and texture terms including `Continue`, `Yes`, `No`, `pad`, `select`, `decide`, `menu`, `pause`, `pac_continueTag`, and TM2 references. The resulting 190 VAs were passed through `mips-immediate-scanner`, `function-ref-correlator`, and `mips-call-graph`.
+
+### 4. Candidate Set
+The strongest next candidates are now documented in `research/exe-refs/ico-usa-continue-menu-breakpoint-candidates.md`.
+
+Priority addresses:
+
+- `0x0012f818`
+- `0x001ac4b8`
+- `0x001ac688`
+- `0x001aca28`
+- `0x0013a868`
+- `0x0013af88`
+- `0x0013b008`
+- `0x0013ad58`
+- `0x00104b98`
+- `0x00104bbc`
+
+## Key Technical Decisions
+- Stop blind TM2 name swaps for the death menu until runtime evidence identifies a concrete asset path.
+- Treat `pac_continueTag`/`%s.tm2` as deprioritized for the observed death menu.
+- Prioritize `No` literals and `pad`/input clusters because the menu decision path must eventually process controller input and selected option state.

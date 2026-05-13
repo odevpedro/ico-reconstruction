@@ -1,6 +1,6 @@
 # ICO USA Environment Setup Plan
 
-> Status: In Progress
+> Status: Completed for setup; deeper analysis remains in progress
 > Date: 2026-05-12
 
 ## Current Status
@@ -9,7 +9,9 @@
 - [x] SHA256: `ea7953b0c626c2d1dfc1928e0646e2a699db29cd8e0b460993ddadc9a695ed31`
 - [x] Ghidra import guide generated: `.local/ghidra/GHIDRA_IMPORT_GUIDE.md`
 - [x] Ghidra script generated: `.local/ghidra/ICOAnalysisScript.java`
-- [ ] **NEXT: Install Ghidra and import ELF**
+- [x] Ghidra installed and used for ELF analysis
+- [x] PCSX2 used to validate modified BIN boot/runtime behavior
+- [ ] **NEXT: Analyze file-loading/.gcm handling and validate findings in PCSX2**
 
 ## Purpose
 
@@ -132,8 +134,8 @@ These can be used to locate functions that use these strings in the disassembler
 
 ## Next Steps
 
-1. Install Ghidra and verify it can load the ELF
-2. Create import script to map known function addresses
-3. Document initial analysis of 0x00132630 function
+1. Continue Ghidra analysis from the already imported ELF
+2. Revalidate candidate file-loading functions against Ghidra's function boundaries
+3. Investigate `.gcm` references and runtime behavior with PCSX2
 
 (End of file - total 93 lines)

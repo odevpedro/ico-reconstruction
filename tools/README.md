@@ -10,6 +10,14 @@ Current tools:
 - `data-df-index/` - metadata-only `DATA.DF` structural triage tool
 - `dvp-index/` - metadata-only `.DVP.*` overlay metadata indexer
 - `exe-ref-index/` - metadata-only exact executable reference scanner
+- `mips-immediate-scanner/` - metadata-only MIPS split-immediate pattern scanner
+- `elf-symbol-scan/` - metadata-only ELF symbol table scanner
+- `mips-prologue-scan/` - metadata-only MIPS function prologue scanner
+- `function-ref-correlator/` - metadata-only function reference correlator
+- `mips-call-graph/` - metadata-only MIPS call graph analyzer
+- `elf-extractor/` - local-only ELF extractor for disassembler import
+- `ghidra-import/` - local Ghidra guide/script generator
+- `elf-replacer/` - local-only ELF replacement experiment tool for modified BIN testing
 
 Tools should:
 
