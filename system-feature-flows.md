@@ -538,3 +538,46 @@ Constantes podem ser formadas por sequências MIPS de immediates separados, ent�
 - Procurar apenas strings e constantes explicitamente fornecidas.
 - Registrar offsets e seções exatas, não bytes ao redor ou disassembly.
 - Mover a próxima investigação para scanning de padrões de immediates/referências MIPS.
+
+# Feature: Setup de Ambiente para Disassembly e Emulação
+
+> Squad responsável: SQUAD-TOOLING
+> Revisão: rev.011
+> Sessão: 2026-05-12
+> Status: Estável
+
+## Resumo
+Foi configurado o ambiente para desassembly do executável ICO usando Ghidra em modo headless. O processo envolveu instalação do JDK 21 (necessário para Ghidra 12.x), configuração do Ghidra, extração do ELF e execução bem-sucedida da análise.
+
+## Fluxo principal
+
+### 1. Ponto de entrada
+O projeto avanzou para a etapa de disassembly após a análise de call graph identificar funções-chave no executável.
+
+### 2. Validação de entrada
+O JDK 17 originally tentado não era suficiente - Ghidra 12.x exige JDK 21. O JDK 21 estava disponível no sistema (java-21-openjdk) mas necessitou instalar o pacote-devel para ter javac disponível.
+
+### 3. Orquestração da aplicação
+- Instalação de java-21-openjdk-devel
+- Configuração de launch.properties do Ghidra
+- Extração do ELF para .local/extracted/
+- Execução bem-sucedida do Ghidra headless com processador MIPS:LE:32:default
+
+### 4. Regras de negócio
+O projeto Ghidra permanece local (não commitado). Apenas relatórios de análise e scripts são commitados.
+
+### 5. Persistência / Integrações
+- Adicionados scripts .local/ghidra/AnalyzeKnownFunctions.java e AnalyzeUnknownAddresses.java
+- Adicionado research/elf/ghidra-analysis-rev011.md com resultados da análise
+- Atualizados README.md e este registro
+
+### 6. Resposta final
+3426 funções identificadas no executável. Funções mais chamadas: FUN_001b7288 (8 callers), FUN_001a6e28 (4 callers), FUN_001b0a80 (3 callers). Endereços conhecidos 0x00132630, 0x00185ca8, 0x0019fb34 não foram reconhecidos como funções (provavelmente dados).
+
+## Fluxos alternativos e erros
+Se o Ghidra continuar com problemas de TTY, usar a interface GUI diretamente. Alternativas como radare2 podem ser consideradas.
+
+## Decisões técnicas importantes
+- Ghidra 12.x exige JDK 21, não JDK 17
+- Usar linguagem MIPS:LE:32:default, não MIPS:LE:32:GCC
+- Manter projeto local, não commitá-lo ao repositório

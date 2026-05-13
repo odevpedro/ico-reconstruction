@@ -350,8 +350,8 @@ The project treats these as research topics, not solved problems.
 [x] rev.008 - MIPS function prologue scan (3991 functions)
 [x] rev.009 - Function reference correlation (7 functions identified)
 [x] rev.010 - Call graph analysis (13 callers identified)
-[ ] rev.011 - Environment setup for extraction and disassembly
-[ ] pending - Environment setup for extraction and disassembly
+[x] rev.011 - Environment setup for disassembly and emulation (Ghidra headless with JDK 21)
+[ ] pending - First visible proof of concept against a user-owned copy
 [ ] pending - First visible proof of concept against a user-owned copy
 ```
 
