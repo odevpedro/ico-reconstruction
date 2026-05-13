@@ -29,6 +29,15 @@ The most useful result from this pass is not a menu string. It is the shape of t
 - `0x001ae5f0` looks like a small enum classifier that normalizes state into a compact set of outputs.
 - `0x0013d8e4` looks like a guarded table lookup.
 - `0x0013eb50` looks like a state-table or entity-table scan with fixed record stride `0x174`.
+- `0x0013eb50` is called directly from at least three callsites:
+  - `0x0017bd38` with state ID `0x11`
+  - `0x0019a138` with state ID `0x34`
+  - `0x0019a144` with state ID `0x35`
+
+Decompilation of `FUN_0013eb50` shows two lookup modes:
+
+- when `DAT_006321c0 == 0`, it returns `DAT_006a93d0[param_1]` for IDs under `0x43`;
+- otherwise it scans `DAT_00633ca0` records with stride `0x174` and returns the matching record where field `+4 == 1` and field `+0xc == param_1`.
 
 That combination is much closer to gameplay state management than to UI text, and it is the right place to look next if the goal is to understand the transition into `Continue / Yes / No` without brute-force breakpoints.
 
@@ -36,6 +45,7 @@ That combination is much closer to gameplay state management than to UI text, an
 
 - The exact meaning of the numeric state values is still unknown.
 - The `0x174` record table is not yet named, so the subject could still be menu state, scene state, entity state, or another game-system dispatcher.
+- The caller sites are still not cleanly wrapped by function boundaries, so the surrounding high-level routine is partially hidden by Ghidra's analysis gaps.
 - Ghidra has not yet given us stable xrefs or symbolic names for these blocks.
 
 ## Next Validation Step
@@ -48,4 +58,3 @@ This revision is intentionally metadata-only:
 - no extracted ELF payloads
 - no copyrighted asset content
 - no disassembly dump beyond the local observations needed to justify the inference
-
