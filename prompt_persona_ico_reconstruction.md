@@ -86,6 +86,13 @@ Além disso, antes de escrever qualquer texto narrativo novo, consulte as revis�
 research/elf/ghidra-rev023-dispatcher-table-resolution.md
 research/elf/ghidra-rev024-internal-state-block-semantics.md
 research/elf/ghidra-rev025-runtime-confirmed-caller-context.md
+research/elf/ghidra-rev026-rope-record-table-context.md
+research/elf/ghidra-rev027-rope-state-block-initializer.md
+research/elf/ghidra-rev028-state-block-provider-contract.md
+research/elf/ghidra-rev029-state-block-provider-deeper-static.md
+research/elf/ghidra-rev030-provider-caller-survey.md
+research/elf/ghidra-rev031-record-callback-dispatchers.md
+research/elf/ghidra-rev032-static-callback-follow-through.md
 ```
 
 Use essas revisões para manter a narrativa alinhada com o estado atual da investigação:
@@ -99,6 +106,34 @@ Use essas revisões para manter a narrativa alinhada com o estado atual da inves
 - o alvo carregado em `$a0` após `lw a0,0($v1)` ainda não foi capturado com confiança, então não apresente isso como fato runtime direto;
 - `0x001d3a30` aparece como referência direta em `.data` em `0x002a3974`, sugerindo chamada indireta/tabela;
 - a palavra ASCII `ROPE` aparece próxima a essa região de dados, mas deve ser tratada como rótulo/metadado fraco, não como prova semântica de gameplay.
+- Rev.026 vinculou `0x001d3a30` a um record `.data` rotulado `ROPE`, com provável início em `0x002a3934`;
+- esse record tem stride aparente de `0x64` em relação a records vizinhos como `BARREL`, `CHAIN`, `FLEVER` e `FLEVER_TRISTATE`;
+- no record `ROPE`, os slots `+0x38`, `+0x40` e `+0x48` apontam para `0x001d3b28`, `0x001d3a30` e `0x001d27a8`;
+- `0x001d27a8` escreve o ponteiro usado em `[entity + 0x800]`, enquanto `0x001d3a30` pode chamar o dispatcher `0x001d37c8`;
+- mesmo com o label `ROPE`, não nomeie os estados internos do dispatcher como estados de gameplay sem evidência direta adicional.
+- Rev.027 confirmou que `0x001d27a8` copia um template de `0x90` bytes de `0x004c46b0`, instala o ponteiro retornado em `[entity + 0x800]`, e esse template inicializa `[state_block + 0x48]` com `0`;
+- o offset `[state_block + 0x48]` é o `candidate_state_id` usado pelo dispatcher de Rev.024, então o state block do record `ROPE` começa estruturalmente em state id `0`;
+- o template também contém `0x0000012c` em `[state_block + 0x44]`, campo relacionado ao contador/decremento observado em `state_1_block`;
+- não generalize automaticamente o papel do slot `+0x48` para todos os records vizinhos; em Rev.027, essa conclusão é confirmada apenas para `ROPE`.
+- Rev.028 corrigiu a linguagem sobre `0x0013a0f8`: ela não deve ser chamada definitivamente de alocador;
+- o comportamento confirmado de `0x0013a0f8` é chamar `0x00138e30`, retornar o ponteiro se não for zero, e entrar em caminho diagnóstico/assert-like se o retorno for zero;
+- portanto, use termos cautelosos como “provedor/resolvedor de ponteiro de state block” até `0x00138e30` ser analisada.
+- Rev.029 aprofundou `0x00138e30`: para o caso `ROPE`, `0x001d27a8` pede `0x90` bytes, passa o metadado curto `src/item.c` e `0x1b2`, e o provider retorna um payload pointer após overhead/header interno de `0x40`;
+- trate `0x00138e30` como allocator/pool-like, mas ainda não como nome definitivo de subsistema;
+- o ponteiro gravado em `[entity + 0x800]` é o payload retornado, não o header interno do provider.
+- Rev.030 mostrou que `0x0013a0f8` tem 247 callsites estáticos e é um provider allocator-like amplo, não específico de `ROPE`;
+- o caso `ROPE +0x48` continua bem delimitado: `0x001d27e8` passa `a1 = 0x90`, `a2 = "src/item.c"` e `a3 = 0x1b2`;
+- `src/item.c` não apareceu em outros callsites inferidos na varredura local de Rev.030;
+- outros records vizinhos chamam o provider por callbacks `+0x48`, mas com metadados/tamanhos diferentes, como `src/switch.c` e `src/rotObject.c`.
+- Rev.031 confirmou estaticamente dispatchers de callbacks de records: `0x0013fc00` chama callbacks em `+0x48`, e `0x0013d140` chama callbacks em `+0x38`;
+- em `0x0013fc00`, o callback `+0x48` é chamado com o próprio record/objeto em `a0`, o que fornece um mecanismo estático plausível para invocar `ROPE +0x48 = 0x001d27a8`;
+- o slot `+0x40` do `ROPE`, onde fica `0x001d3a30`, continua sem dispatcher estático isolado; trate isso como lacuna aberta, não como ausência de chamada;
+- não nomeie definitivamente os slots `+0x38`, `+0x40` e `+0x48` como fases de lifecycle até haver evidência mais direta.
+- Rev.032 aprofundou `0x0013fc00`: ele percorre uma estrutura/lista com head em `gp - 0x671c`, buckets em torno de `0x00281ab0`, encadeamento por `+0x34`, filtro por `+0x16c` e máscara `+0x50`, e chama `+0x48` dos candidatos aceitos;
+- Rev.032 rastreou `0x0013f7a8` e mostrou que ele não chama diretamente o valor recebido em `a1`; ele repassa esse valor para `0x0013f3f0`, onde pode ser armazenado em `node + 0x1c`;
+- a busca por `0x001d3a30` continua encontrando apenas a referência direta em `ROPE +0x40` (`0x002a3974`) e nenhum `jal` direto;
+- a comparação de `+0x40` em `BARREL`, `ROPE`, `CHAIN`, `FLEVER` e `FLEVER_TRISTATE` sugere um slot comportamental/update-like, porque esses callbacks acessam `[a0 + 0x15c]` e frequentemente `[entity + 0x800]`, mas esse nome ainda não está provado;
+- o próximo avanço sem gameplay deve rastrear usos de `node + 0x1c`, especialmente `jalr` derivados desse offset, e mapear quem escreve `gp - 0x671c` e `0x00281ab0`.
 
 Quando uma revisão nova contradisser uma antiga, prefira a revisão validada mais recente e explique a correção como parte da jornada de pesquisa.
 
