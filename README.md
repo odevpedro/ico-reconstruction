@@ -96,6 +96,7 @@ Current ELF research focus:
 - a record/callback chain around the `.data` record labeled `ROPE`, documented across [`research/elf/ghidra-rev026-rope-record-table-context.md`](./research/elf/ghidra-rev026-rope-record-table-context.md) through [`research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md`](./research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md)
 - a confirmed node callback dispatcher at `0x0013fb70`, plus a corrected descriptor-index model that keeps the exact indirect dispatcher for `ROPE +0x40 = 0x001d3a30` unresolved, documented in [`research/elf/ghidra-rev033-node-callback-dispatch-chain.md`](./research/elf/ghidra-rev033-node-callback-dispatch-chain.md) and [`research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md`](./research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md)
 - a registration path survey confirming that `0x001b76f8` skips ROPE registration due to a zero-guard, and mapping all five static callers of `0x0013f7a8`, documented in [`research/elf/ghidra-rev036-registration-path-survey.md`](./research/elf/ghidra-rev036-registration-path-survey.md)
+- a complete analysis of the three remaining callers of `0x0013f7a8`, closing three paths definitively and leaving two runtime-dependent candidates open, documented in [`research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`](./research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md)
 
 These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
 
@@ -317,6 +318,7 @@ The project treats these as research topics, not solved problems.
 | [`research/elf/ghidra-rev034-callback-signature-and-record-selection.md`](./research/elf/ghidra-rev034-callback-signature-and-record-selection.md) | Callback signature and record-selection analysis for the `ROPE` chain |
 | [`research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md`](./research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md) | Entry-table and descriptor-index correction for the `ROPE` callback model |
 | [`research/elf/ghidra-rev036-registration-path-survey.md`](./research/elf/ghidra-rev036-registration-path-survey.md) | Registration path survey: zero-guard in `0x001b76f8`, all five callers of `0x0013f7a8` |
+| [`research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`](./research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md) | Complete analysis of remaining callers of `0x0013f7a8` and the ROPE registration gap |
 | [`tools/elf-extractor/README.md`](./tools/elf-extractor/README.md) | ELF extractor for disassembler import |
 
 ## Initial Roadmap
@@ -380,6 +382,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.026-034 - Record/callback chain analysis around `ROPE`, `node +0x1c`, and `0x001d3a30`
 [x] rev.035 - Entry-table and descriptor-index correction for the `ROPE` callback model
 [x] rev.036 - Registration path survey: zero-guard confirmed in `0x001b76f8`, all five callers of `0x0013f7a8` mapped
+[x] rev.037 - Remaining callers analyzed: three paths closed, two runtime-dependent candidates open; ROPE registration gap documented
 ```
 
 ## How To Contribute

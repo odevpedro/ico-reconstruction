@@ -97,6 +97,7 @@ research/elf/ghidra-rev033-node-callback-dispatch-chain.md
 research/elf/ghidra-rev034-callback-signature-and-record-selection.md
 research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md
 research/elf/ghidra-rev036-registration-path-survey.md
+research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md
 ```
 
 Use essas revisões para manter a narrativa alinhada com o estado atual da investigação:
@@ -156,6 +157,12 @@ Use essas revisões para manter a narrativa alinhada com o estado atual da inves
 - o campo `entry[+0x46]` não possui nenhum `sb` writer estático; o único escritor halfword encontrado é `sh v0,+70(s2)` em `0x0014066c`, que faz parte de um construtor/inicializador de struct;
 - a função em `0x00201e80` usa a entry table `0x002a4c48`, verifica `lhu v0,+64(v1)` = `entry[+0x40]` como halfword antes de escolher entre `0x0013f778` e `0x0013f7a8`, e é candidata alternativa de registro não explorada antes de Rev.036;
 - trate o registro de `0x001d3a30` em `node +0x1c` como ainda não resolvido estaticamente; os candidatos remanescentes são `0x00201ed4`, `0x00240e50`, `0x00240f90` e qualquer path dinâmico de room loading.
+- Rev.037 completou o mapeamento dos cinco callers de `0x0013f7a8`: `0x001b76f8` possui dois callsites distintos (`0x001b7ab0` via `entry[+0x24]` e `0x001b7acc` via `descriptor_label+0x40`); o callsite `0x001b7acc` é definitivamente pulado para ROPE (slot zero);
+- `0x00240d40` registra `descriptor_label+0x40` somente quando o caller passa `t0 != 0`; como ROPE tem esse slot zerado, o caminho é descartado independentemente do valor de t0;
+- `0x00240ea0` registra o argumento `t0` do caller diretamente; os dois callers conhecidos passam `0x001c3720` e `0x001f2390`, nenhum passa `0x001d3a30`;
+- `0x00201e70` usa o argumento `a1` original para o registro, com gate `entry[+0x40] halfword != 0`; nos dois callsites conhecidos (`0x00203080` e `0x00203ea0`), `a1` vem de dados de runtime e não pode ser rastreado estaticamente;
+- o único caminho estático que ROPE poderia usar em `0x001b76f8` é o callsite `0x001b7ab0` via `entry[+0x24]`; isso requer uma entrada com `+0x46 == 0x14` e `+0x24 == 0x001d3a30`, o que não foi observado nos dados estáticos;
+- os candidatos abertos remanescentes para o registro de `0x001d3a30` são: (a) `entry[+0x24]` preenchido dinamicamente com `0x001d3a30` e (b) `0x00201e70` chamado com `a1 = 0x001d3a30` em runtime; ambos requerem observação em runtime para confirmação.
 
 Quando uma revisão nova contradisser uma antiga, prefira a revisão validada mais recente e explique a correção como parte da jornada de pesquisa.
 
