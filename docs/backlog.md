@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 42 |
+| Completed | 43 |
 | In Progress | 1 |
 | Pending | 2 |
 
@@ -17,12 +17,7 @@
 
 ## In Progress
 
-### [SQUAD-EXTERNAL | rev.044 | 2026-05-14]
-Staged Callback / Storage Path for 0x001d27a8
-
-- Investigating whether 0x001d27a8 (slot +0x48) is copied to intermediate structure before call
-- Checking if any path prepares a1 for 0x001d27a8
-- Documented in research/elf/ghidra-rev044-staged-callback-path-001d27a8.md
+_(none — aguardando definição da Rev.045)_
 
 ### [x] [SQUAD-EXTERNAL | rev.041 | 2026-05-14]
 Cloth Variant Table 0x004d4188
@@ -50,6 +45,17 @@ Cloth Initializer Argument Source
 - No direct jal to 0x001d27a8 — reached exclusively via callback dispatch
 - Origin of a1 remains open — runtime prioritário: breakpoints at 0x001d27a8, 0x001d2858, 0x0013fc44, 0x0013fcb8
 - Documented in research/elf/ghidra-rev043-cloth-initializer-arg-source.md
+
+### [x] [SQUAD-EXTERNAL | rev.044 | 2026-05-14]
+Staged Callback / Storage Path for 0x001d27a8
+
+- No staged callback path found that explains 0x001d27a8(a0, a1)
+- 0x0013f3f0 → node+0x1c → 0x0013fb70 passes only a0 (valid for 0x001d3a30, not for initializer)
+- +0x48 dispatchers in 0x0013fc00 both prepare only a0
+- New finding: 0x00129660 is constructor-like, calls descriptor+0x58 with a1=sp+0x20
+- ROPE has +0x58=0 and 0x001d27a8 in +0x48 — structurally similar but excluded for static ROPE
+- Static options for a1 origin are exhausted — next step is runtime breakpoint
+- Documented in research/elf/ghidra-rev044-staged-callback-path-001d27a8.md
 - Extracted raw bytes + complete assembly listings with Capstone
 - Documented compiler: EE GCC (Sony fork for R5900)
 - Inferred flags: -O2, -G0, -mips3, -mgp64, -mabi=eabi, -msingle-float
@@ -279,6 +285,7 @@ Call graph analysis
 | rev.041 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant table 0x004d4188: 8 entries stride 0x14 |
 | rev.042 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant field writers: 0x001d2858 confirmed, 0x001d1ad8 candidate, 0x001d390c discarded |
 | rev.043 | 2026-05-14 | SQUAD-EXTERNAL | Cloth initializer arg source: 0x001d27a8 needs a1, [a1+0x30] origin open |
+| rev.044 | 2026-05-14 | SQUAD-EXTERNAL | Staged callback path: no static explanation for a1; 0x00129660 constructor-like found but excluded for ROPE static |
 
 ---
 

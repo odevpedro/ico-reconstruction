@@ -396,6 +396,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.041 - Cloth variant table 0x004d4188: 8 entries stride 0x14, indexed by [state_block+0x04]
 [x] rev.042 - Cloth variant field writers: 0x001d2858 confirmed, 0x001d1ad8 candidate, 0x001d390c discarded
 [x] rev.043 - Cloth initializer arg source: 0x001d27a8 needs a1, [a1+0x30] origin still open
+[x] rev.044 - Staged callback path: no static explanation for a1; 0x00129660 constructor-like found but excluded for ROPE static
 ```
 
 ## How To Contribute

@@ -555,3 +555,4 @@ A narrativa acima foi escrita antes da Rev.040. Para manter a precisão técnica
 6. **Rev.041**: `[state_block + 0x04]` não é boolean simples — indexa uma tabela cloth-domain em `0x004d4188` (8 entries, stride 0x14). O campo é um variant/mode selector.
 7. **Rev.042**: writer confirmado do variant field é `0x001d2858` (copia `[initializer_arg+0x30]` para `[payload+0x04]`). `0x001d390c` foi descartado como writer (escreve +0x44, não +0x04).
 8. **Rev.043**: `0x001d27a8` consome `a0` (contexto) e `a1` (segundo ponteiro). `[a1+0x30]` → `[payload+0x04]`. O dispatcher `+0x48` conhecido (`0x0013fc00`) só prepara `a0`. Origem de `a1` segue em aberto.
+9. **Rev.044**: nenhum caminho staged estático explica `0x001d27a8(a0, a1)`. `0x00129660` é constructor-like que chama `descriptor+0x58` com `a1=sp+0x20`, mas ROPE tem `+0x58=0` — excluído para o caso estático. Opções estáticas esgotadas para origem de `a1`; próximo passo é runtime.

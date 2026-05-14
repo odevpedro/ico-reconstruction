@@ -232,4 +232,5 @@ Com os dados coletados:
 - Rev.041: variant table 0x004d4188 (8 entries stride 0x14, indexada por state_block+0x04)
 - Rev.042: variant field writer 0x001d2858, candidate setter 0x001d1ad8
 - Rev.043: initializer arg source — 0x001d27a8 needs a1, [a1+0x30] origin open
+- Rev.044: staged callback path — static options for a1 exhausted
 - `.local/pcsx2-symbols.sym`: símbolos para o debugger

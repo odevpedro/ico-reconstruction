@@ -45,6 +45,9 @@
 0x0013fcb8 cloth_dispatch_plus48_alternate
 0x001d27a8 cloth_payload_initializer_plus48
 
+; === Staged callback path (Rev.044) ===
+0x00129660 cloth_constructor_like_descriptor_plus58
+
 ; === Callback Registration Chain ===
 0x0013f7a8 callback_registration_wrapper
 0x0013f778 sister_callback_registration
