@@ -553,3 +553,4 @@ A narrativa acima foi escrita antes da Rev.040. Para manter a precisão técnica
 4. **O gap de registro de `0x001d3a30` em `node + 0x1c` continua aberto.** Nenhuma das 5 revisões até Rev.040 resolveu quem chama `0x0013f7a8` com `a1 = 0x001d3a30` em runtime.
 5. **Termos antigos como "entity state", "Yorda state", "capture state" foram descartados** a partir da Rev.039. Qualquer ocorrência deles em notas anteriores (Rev.001-037) é registro histórico de hipótese descartada, não conclusão vigente.
 6. **Rev.041**: `[state_block + 0x04]` não é boolean simples — indexa uma tabela cloth-domain em `0x004d4188` (8 entries, stride 0x14). O campo é um variant/mode selector.
+7. **Rev.042**: writer confirmado do variant field é `0x001d2858` (copia `[initializer_arg+0x30]` para `[payload+0x04]`). `0x001d390c` foi descartado como writer (escreve +0x44, não +0x04).

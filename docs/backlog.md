@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 40 |
+| Completed | 41 |
 | In Progress | 0 |
 | Pending | 2 |
 
@@ -32,6 +32,16 @@ Cloth Variant Table 0x004d4188
 - Mapped 0x004d4188 as cloth-domain table of 8 entries, stride 0x14
 - Table indexed by [state_block+0x04] — this field is variant/mode field, not boolean
 - Documented in research/elf/ghidra-rev041-cloth-variant-table-004d4188.md
+
+### [x] [SQUAD-EXTERNAL | rev.042 | 2026-05-14]
+Cloth Variant Field Writers
+
+- Confirmed writer of variant/mode field [payload+0x04]: 0x001d2858, copies [initializer_arg+0x30]
+- Candidate generic setter: 0x001d1ad8 (store at 0x001d1b18)
+- External caller observed: fumi/src/way_llf at 0x00216f34 zeros [payload+0x04]
+- 0x001d1668: related cloth +0x800 writer, but different payload/record
+- 0x001d390c: DISCARDED as +0x04 writer (writes +0x44 due to s1=state_block+0x40)
+- Documented in research/elf/ghidra-rev042-cloth-variant-field-writers.md
 - Extracted raw bytes + complete assembly listings with Capstone
 - Documented compiler: EE GCC (Sony fork for R5900)
 - Inferred flags: -O2, -G0, -mips3, -mgp64, -mabi=eabi, -msingle-float
@@ -256,7 +266,9 @@ Call graph analysis
 | rev.037 | 2026-05-13 | SQUAD-RUNTIME | Remaining callers and ROPE registration gap — static options exhausted |
 | rev.038 | 2026-05-13 | SQUAD-EXTERNAL | decomp.me scratch generation + CCC debug symbol scan (none found) |
 | 2026-05-14 | 2026-05-14 | SQUAD-EXTERNAL | ICO-decomp cross-reference: cloth physics, source tree mapping |
-| Rev.041 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant table 0x004d4188: 8 entries stride 0x14, indexed by [state_block+0x04] |
+| rev.040 | 2026-05-14 | SQUAD-EXTERNAL | Static cloth domain reinterpretation + auxiliary helper mapping |
+| rev.041 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant table 0x004d4188: 8 entries stride 0x14 |
+| rev.042 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant field writers: 0x001d2858 confirmed, 0x001d1ad8 candidate, 0x001d390c discarded |
 
 ---
 

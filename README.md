@@ -394,6 +394,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.039 - Cloth domain correction: dispatcher 0x001d37c8 and callback 0x001d3a30 reclassified as cloth physics, not entity/gameplay state
 [x] rev.040 - Static cloth domain reinterpretation: auxiliary helpers mapped (0x001d2738, 0x001d29b8, 0x001d2bf0), 0x0013f7a8 corrected as not iosThreadStart
 [x] rev.041 - Cloth variant table 0x004d4188: 8 entries stride 0x14, indexed by [state_block+0x04]
+[x] rev.042 - Cloth variant field writers: 0x001d2858 confirmed, 0x001d1ad8 candidate, 0x001d390c discarded
 ```
 
 ## How To Contribute
