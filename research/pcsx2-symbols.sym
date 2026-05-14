@@ -1,0 +1,77 @@
+; ICO Reconstruction — PCSX2 Symbol File
+; Gerado em 2026-05-14
+; Atualizado com Rev.040 (cloth domain reinterpretation)
+; Nomes neutros e provisórios — não tratar como conclusões de gameplay
+;
+; Uso: File -> Load Symbols no PCSX2 Debugger
+
+; === Cloth Dispatcher ===
+0x001d37c8 cloth_domain_dispatcher_candidate
+0x00618fb0 cloth_domain_dispatcher_jumptable
+
+; === Cloth Internal State Blocks ===
+0x001d3818 cloth_domain_stateblock_0
+0x001d3844 cloth_domain_stateblock_1
+0x001d391c cloth_domain_stateblock_2
+0x001d39e0 cloth_domain_stateblock_3
+0x001d3a10 cloth_domain_stateblock_4
+
+; === Cloth Domain Callback ===
+0x001d3a30 cloth_domain_update_callback_candidate
+
+; === Cloth Domain Helpers (Rev.040) ===
+0x001d27a8 cloth_domain_payload_initializer_candidate
+0x001d2738 cloth_domain_stateblock_activation_helper
+0x001d29b8 cloth_domain_transform_helper_candidate
+0x001d2bf0 cloth_domain_geometry_update_candidate
+0x001d2538 cloth_domain_event_wrapper_30
+0x001d2540 cloth_domain_event_wrapper_31
+0x001d2548 cloth_domain_event_wrapper_32
+
+; === Cloth Variant Table (Rev.041) ===
+0x004d4188 cloth_variant_table_candidate
+0x001d3bf0 cloth_variant_field08_user_candidate
+
+; === Cloth Variant Field Writers (Rev.042) ===
+0x001d2858 cloth_variant_field_writer_confirmed
+0x001d1ad8 cloth_variant_setter_candidate
+0x001d1b18 cloth_variant_setter_store_point
+0x00216f34 cloth_variant_zero_caller_way_llf
+0x001d1668 cloth_related_other_payload_writer
+0x001d390c cloth_domain_writes_044_not_004
+
+; === Callback Registration Chain ===
+0x0013f7a8 callback_registration_wrapper
+0x0013f778 sister_callback_registration
+0x0013f3f0 node_callback_storage
+0x0013fb70 node_callback_dispatcher
+
+; === Registration Path ===
+0x001b76f8 object_init_registration_path
+0x001b7ab0 callsite_reg_via_entry_24
+0x001b7acc callsite_reg_via_descriptor_40
+0x001b7ac4 zero_guard_rope
+0x00201e70 registration_runtime_candidate
+0x00201ed4 callsite_reg_runtime_candidate
+0x00240d40 registration_descriptor_40_gated
+0x00240e50 callsite_reg_descriptor_40
+0x00240ea0 registration_t0_literal
+0x00240f90 callsite_reg_t0_literal
+
+; === State Resolver ===
+0x0013eb50 state_resolver
+0x0013ebe0 state_resolver_sister
+
+; === Entity / Context Structures ===
+0x00199f80 entity_parent_function
+0x0017bb98 vu_parent_function
+
+; === Data Tables ===
+0x002a4c48 entry_table
+0x002a31b8 descriptor_table
+0x006a93d0 state_flat_table
+0x00633ca0 state_record_table
+0x006321c0 state_mode_flag
+
+; === ROPE Descriptor Context ===
+0x002a3974 rope_descriptor_label

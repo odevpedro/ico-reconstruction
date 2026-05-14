@@ -129,6 +129,47 @@ Objetivo: capturar evidência runtime para resolver o gap de registro do callbac
 
 ---
 
+## Breakpoint 6 — Variant field writer (confirmation)
+
+**Endereço**: `0x001d2858`
+
+**Condição**: break on execute
+
+**Campos para capturar**:
+
+| Registrador | O que representa | Anotar |
+|---|---|---|
+| `a0` | initializer_arg (payload source) | endereço |
+| `[a0 + 0x30]` | **variant value being copied** | **0-7** |
+| `[payload + 0x04]` destino | escrita realizada | deve ser igual a [a0+0x30] |
+
+**Perguntas**:
+- Qual é o valor de `[a0+0x30]`? É sempre 0-7?
+- O valor muda entre chamadas?
+- O valor corresponde aos índices da tabela 0x004d4188?
+
+---
+
+## Breakpoint 7 — Variant field zeroing (candidate setter)
+
+**Endereço**: `0x001d1b18` (store inside `0x001d1ad8`)
+
+**Condição**: break on write (memory), ou break on execute se mem write não for suportado
+
+**Campos para capturar**:
+
+| Registrador | O que representa | Anotar |
+|---|---|---|
+| `ra` | **quem chamou o setter** | **pode ser fumi/src/way_llf?** |
+| `a0` | target payload | endereço |
+
+**Perguntas**:
+- Quem chama `0x001d1ad8`? (`ra` revela)
+- É chamado com o mesmo payload do cloth animation?
+- Qual o contexto de gameplay (fase, transição, morte)?
+
+---
+
 ## Logging pattern
 
 Para cada breakpoint, registrar:
@@ -161,4 +202,5 @@ Com os dados coletados:
 - Rev.039: correção de domínio cloth
 - Rev.040: reinterpretação estática do cluster cloth
 - Rev.041: variant table 0x004d4188 (8 entries stride 0x14, indexada por state_block+0x04)
+- Rev.042: variant field writer 0x001d2858, candidate setter 0x001d1ad8
 - `.local/pcsx2-symbols.sym`: símbolos para o debugger
