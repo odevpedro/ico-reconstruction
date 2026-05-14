@@ -9,22 +9,20 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 41 |
-| In Progress | 0 |
+| Completed | 42 |
+| In Progress | 1 |
 | Pending | 2 |
 
 ---
 
 ## In Progress
 
-### [x] [SQUAD-EXTERNAL | rev.040 | 2026-05-14]
-Static Cloth Domain Reinterpretation
+### [SQUAD-EXTERNAL | rev.044 | 2026-05-14]
+Staged Callback / Storage Path for 0x001d27a8
 
-- Reinterpreted 0x001d37c8/0x001d3a30 as cloth/chain simulation cluster
-- Registered caveat: ICO-decomp clothAnimation.c is ASM-only, no C decompiled
-- Corrected 0x0013f7a8: not iosThreadStart (C decompile doesn't match wrapper)
-- Mapped auxiliary functions: 0x001d2738 (state block activation), 0x001d29b8 (transform helper), 0x001d2bf0 (geometry helper), 0x001d2538/40/48 (event wrappers for IDs 0x30/0x31/0x32)
-- Documented in research/elf/ghidra-rev040-static-cloth-domain-reinterpretation.md
+- Investigating whether 0x001d27a8 (slot +0x48) is copied to intermediate structure before call
+- Checking if any path prepares a1 for 0x001d27a8
+- Documented in research/elf/ghidra-rev044-staged-callback-path-001d27a8.md
 
 ### [x] [SQUAD-EXTERNAL | rev.041 | 2026-05-14]
 Cloth Variant Table 0x004d4188
@@ -42,6 +40,16 @@ Cloth Variant Field Writers
 - 0x001d1668: related cloth +0x800 writer, but different payload/record
 - 0x001d390c: DISCARDED as +0x04 writer (writes +0x44 due to s1=state_block+0x40)
 - Documented in research/elf/ghidra-rev042-cloth-variant-field-writers.md
+
+### [x] [SQUAD-EXTERNAL | rev.043 | 2026-05-14]
+Cloth Initializer Argument Source
+
+- Confirmed 0x001d27a8 consumes a0 (context) and a1 (second structure pointer)
+- [a1+0x30] is copied to [payload+0x04] at 0x001d2858
+- Known +0x48 dispatcher (0x0013fc00) only prepares a0, not a1
+- No direct jal to 0x001d27a8 — reached exclusively via callback dispatch
+- Origin of a1 remains open — runtime prioritário: breakpoints at 0x001d27a8, 0x001d2858, 0x0013fc44, 0x0013fcb8
+- Documented in research/elf/ghidra-rev043-cloth-initializer-arg-source.md
 - Extracted raw bytes + complete assembly listings with Capstone
 - Documented compiler: EE GCC (Sony fork for R5900)
 - Inferred flags: -O2, -G0, -mips3, -mgp64, -mabi=eabi, -msingle-float
@@ -266,9 +274,11 @@ Call graph analysis
 | rev.037 | 2026-05-13 | SQUAD-RUNTIME | Remaining callers and ROPE registration gap — static options exhausted |
 | rev.038 | 2026-05-13 | SQUAD-EXTERNAL | decomp.me scratch generation + CCC debug symbol scan (none found) |
 | 2026-05-14 | 2026-05-14 | SQUAD-EXTERNAL | ICO-decomp cross-reference: cloth physics, source tree mapping |
+| rev.039 | 2026-05-14 | SQUAD-EXTERNAL | Cloth domain correction — dispatcher/callback reclassified as cloth physics |
 | rev.040 | 2026-05-14 | SQUAD-EXTERNAL | Static cloth domain reinterpretation + auxiliary helper mapping |
 | rev.041 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant table 0x004d4188: 8 entries stride 0x14 |
 | rev.042 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant field writers: 0x001d2858 confirmed, 0x001d1ad8 candidate, 0x001d390c discarded |
+| rev.043 | 2026-05-14 | SQUAD-EXTERNAL | Cloth initializer arg source: 0x001d27a8 needs a1, [a1+0x30] origin open |
 
 ---
 

@@ -40,6 +40,11 @@
 0x001d1668 cloth_related_other_payload_writer
 0x001d390c cloth_domain_writes_044_not_004
 
+; === Cloth Initializer +0x48 dispatchers (Rev.043) ===
+0x0013fc44 cloth_dispatch_plus48_primary
+0x0013fcb8 cloth_dispatch_plus48_alternate
+0x001d27a8 cloth_payload_initializer_plus48
+
 ; === Callback Registration Chain ===
 0x0013f7a8 callback_registration_wrapper
 0x0013f778 sister_callback_registration

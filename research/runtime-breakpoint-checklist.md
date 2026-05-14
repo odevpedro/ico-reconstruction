@@ -170,6 +170,34 @@ Objetivo: capturar evidência runtime para resolver o gap de registro do callbac
 
 ---
 
+## Breakpoint 8 — Dispatcher +0x48 (slot dispatch, no a1)
+
+**Endereço**: `0x0013fc44` (inside 0x0013fc00, onde callback +0x48 é carregado)
+
+**Condição**: break on execute
+
+**Campos para capturar**:
+
+| Registrador | O que representa | Anotar |
+|---|---|---|
+| `a0` | **único argumento preparado** | endereço do objeto |
+| `a1` | **NÃO preparado** | lixo/zero? |
+| `callback` (v0 após load) | função sendo chamada | é 0x001d27a8? |
+
+**Pergunta**: quem chama +0x48 sem preparar a1? Isso confirma que a1 chega de outra forma.
+
+---
+
+## Breakpoint 9 — Dispatcher +0x48 alternative dispatch point
+
+**Endereço**: `0x0013fcb8` (ponto alternativo de dispatch de +0x48)
+
+**Condição**: break on execute
+
+**Campos para capturar**: mesmos do Breakpoint 8.
+
+---
+
 ## Logging pattern
 
 Para cada breakpoint, registrar:
@@ -203,4 +231,5 @@ Com os dados coletados:
 - Rev.040: reinterpretação estática do cluster cloth
 - Rev.041: variant table 0x004d4188 (8 entries stride 0x14, indexada por state_block+0x04)
 - Rev.042: variant field writer 0x001d2858, candidate setter 0x001d1ad8
+- Rev.043: initializer arg source — 0x001d27a8 needs a1, [a1+0x30] origin open
 - `.local/pcsx2-symbols.sym`: símbolos para o debugger
