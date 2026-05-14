@@ -75,10 +75,12 @@ Use it as orientation only.
 
 When there is a conflict between the AI context file and a later validated research revision, prefer the most recent validated research note.
 
-At the current stage, the most important validated research note is:
+At the current stage, the most important validated research notes are:
 
 ```txt
-research/elf/ghidra-rev023-dispatcher-table-resolution.md
+research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md  (latest static analysis)
+research/elf/ghidra-rev025-runtime-confirmed-caller-context.md (runtime validation)
+research/elf/ghidra-rev023-dispatcher-table-resolution.md     (dispatcher foundation)
 ```
 
 ---
@@ -91,53 +93,23 @@ Before doing new analysis, read these files in this order if they exist:
 2. `.local/key-concepts.md`
 3. `.local/ai-context.md`
 4. `key-concepts.md`
-5. `research/elf/ghidra-rev023-dispatcher-table-resolution.md`
-6. `research/elf/ghidra-rev022-dispatcher-ground-truth.md`
-7. `research/elf/ghidra-rev021-continue-menu-pivot.md`
-8. `research/elf/ghidra-rev018-state-transition-dispatch.md`
-9. `research/elf/ghidra-rev019-state-resolver-caller-context.md`
+5. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
+6. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
+7. `research/elf/ghidra-rev023-dispatcher-table-resolution.md`
+8. `research/elf/ghidra-rev022-dispatcher-ground-truth.md`
+9. `research/elf/ghidra-rev021-continue-menu-pivot.md`
+10. `research/elf/ghidra-rev018-state-transition-dispatch.md`
+11. `research/elf/ghidra-rev019-state-resolver-caller-context.md`
 
-Use Rev.023 as the current source of truth when it contradicts Rev.022.
+Use Rev.037 as the current source of truth when it contradicts earlier revisions.
 
 ---
 
 ## Current strategic status
 
-The most important current discovery is the confirmed dispatcher at:
+### Confirmed dispatcher model (Rev.022-024)
 
-```txt
-0x001d37c8
-```
-
-Rev.023 resolved the prior contradiction from Rev.022.
-
-The real jump table is:
-
-```txt
-0x00618fb0
-```
-
-not:
-
-```txt
-0x00628fb0
-```
-
-The table contains 5 valid internal basic-block targets:
-
-```txt
-state 0 -> 0x001d3818
-state 1 -> 0x001d3844
-state 2 -> 0x001d391c
-state 3 -> 0x001d39e0
-state 4 -> 0x001d3a10
-```
-
-These are internal basic blocks inside `0x001d37c8`.
-
-They are not separate function entry points.
-
-This means the current confirmed model is:
+The dispatcher at `0x001d37c8` is confirmed with jump table at `0x00618fb0` (5 entries):
 
 ```txt
 entity/context
@@ -150,6 +122,22 @@ entity/context
 -> jump table at 0x00618fb0
 -> internal basic block handler
 ```
+
+### Runtime confirmation (Rev.025)
+
+The only static caller of the dispatcher, `0x001d3a30`, was confirmed at runtime via PCSX2 breakpoint (Rev.024 session). It reaches the dispatcher during gameplay/load.
+
+### ROPE callback registration gap (Rev.033-037)
+
+Static analysis of all 5 callsites of `0x0013f7a8` (callback registration) is complete. Three paths are definitively excluded for ROPE callback `0x001d3a30`. Two paths remain candidates but require runtime validation. **Static options are exhausted.**
+
+### External tooling results (Rev.038)
+
+- **CCC (Chaos Compiler Collection)**: No `.mdebug`/STABS/debug symbols found in ELF.
+- **decomp.me scratches**: 6 function packages generated (dispatcher, ROPE callback, registration chain) for crowd-sourced decompilation matching.
+- **ICO-decomp cross-reference** (`RossyDoubleUnderscore/ICO-decomp`): Dispatcher `0x001d37c8` and ROPE callback `0x001d3a30` reside in **`clothAnimation.c`** (cloth physics), not entity/AI state. Nearby symbols: `GetCloth4D`, `getCloth4D_PlaneClip`. The 5 internal state blocks are likely cloth vertex/simulation state transitions.
+- **Compiler confirmed**: EE GCC 2.9-991111-01 with flags `-march=r5900 -mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2`.
+- **Source tree**: ICO-decomp splat YAML reveals folder structure: `sugipon/` (cloth, physics, motion, gameplay), `omori/` (camera, AI), `fumi/` (core engine, IOS), `ito/` (bosses), `seki/` (rendering).
 
 ---
 
@@ -200,6 +188,10 @@ should not be treated as validated state handlers unless later evidence proves o
 
 Rev.023 rejected them as the current dispatcher targets.
 
+### Rev.038 correction
+
+The dispatcher `0x001d37c8` and its 5 internal state blocks are **cloth animation state transitions** (verified via ICO-decomp symbol names: `clothAnimation.c` range), not entity/gameplay state management. All earlier speculative names (Yorda, capture, menu, etc.) are incorrect for these functions. The 5 states likely represent cloth vertex simulation phases (e.g., idle, wind, collision, constraint solve, post-process).
+
 ---
 
 ## Current confirmed dispatcher model
@@ -240,84 +232,42 @@ Those names require evidence.
 
 ## Current priority
 
-The next intended research step is:
+The static analysis phase (Rev.001-037) is complete. The verified chain covers:
+
+1. Dispatcher model (`0x001d37c8` + 5 state blocks)
+2. ROPE callback (`0x001d3a30` confirmed at runtime)
+3. Callback registration chain (`0x0013f7a8` -> `0x0013f3f0` -> node+0x1c)
+4. 5 callsites of registration function mapped; 3 excluded for ROPE
+5. Compiler identified: EE GCC (Sony fork for R5900)
+
+The static analysis phase (Rev.001-037) is complete. The verified chain covers:
+
+1. Dispatcher model (`0x001d37c8` + 5 state blocks)
+2. ROPE callback (`0x001d3a30` confirmed at runtime)
+3. Callback registration chain (`0x0013f7a8` -> `0x0013f3f0` -> node+0x1c)
+4. 5 callsites of registration function mapped; 3 excluded for ROPE
+5. Compiler identified: EE GCC (Sony fork for R5900)
+
+The project has entered a new phase: **External Integration**.
 
 ```txt
-Rev.024 — Internal State Block Semantics
+Phase 2 — External Integration
 ```
 
 Objective:
 
-Analyze the five internal state blocks reached by the dispatcher and classify what each state appears to do.
+1. Submit scratches to decomp.me for crowd-sourced matching (Rev.038 in progress)
+2. Cross-reference findings with ICO-decomp project (if feasible)
+3. Validate compiler flags through PS2 dev community knowledge
+4. Prepare runtime breakpoints for the unresolved ROPE gap
 
-The next file should likely be:
+The next file should be:
 
 ```txt
-research/elf/ghidra-rev024-internal-state-block-semantics.md
+research/elf/ghidra-rev038-decompme-scratches.md
 ```
 
 Only create a different file if explicitly instructed.
-
----
-
-## Rev.024 target blocks
-
-Analyze these internal blocks:
-
-```txt
-0x001d3818
-0x001d3844
-0x001d391c
-0x001d39e0
-0x001d3a10
-```
-
-For each block, identify:
-
-- starting address;
-- estimated ending address;
-- main instructions;
-- direct calls;
-- indirect calls;
-- memory reads;
-- memory writes;
-- offsets used;
-- constants used;
-- branches;
-- whether it changes `candidate_state_id`;
-- whether it accesses `candidate_state_block_ptr`;
-- whether it accesses entity/context fields;
-- whether it returns to the common epilogue;
-- likely semantic role;
-- confidence level.
-
-Do not assign gameplay names without evidence.
-
----
-
-## Preferred naming for Rev.024
-
-Use neutral names first:
-
-```txt
-state_0_block
-state_1_block
-state_2_block
-state_3_block
-state_4_block
-```
-
-If the evidence supports cautious interpretation, use names like:
-
-```txt
-state_0_init_like
-state_1_update_like
-state_2_transition_like
-state_3_cleanup_like
-state_4_exit_like
-```
-
-Never use strong names unless directly supported by evidence.
 
 ---
 
@@ -468,16 +418,13 @@ Do not assume zero static callers means high importance.
 
 ---
 
-## Runtime validation later
+## Runtime validation next
 
-Runtime validation should come after Rev.024 unless explicitly requested earlier.
-
-Useful runtime targets later:
+The Rev.025 session confirmed dispatcher reachability. Next runtime targets for the ROPE gap:
 
 ```txt
-breakpoint at 0x001d37c8
-breakpoint at 0x001d380c
-breakpoint at 0x001d3810
+breakpoint at 0x0013f7a8  (capture a1 when a3 == 0x13)
+breakpoint at 0x001d37c8  (monitor state_id distribution)
 ```
 
 Useful values to capture:
@@ -490,6 +437,7 @@ candidate_state_block_ptr
 entity/context pointer
 state block pointer
 selected jump table entry
+a1 at 0x0013f7a8 entry (which callback is being registered?)
 ```
 
 Useful questions:
@@ -499,6 +447,28 @@ Useful questions:
 - Does `candidate_state_id` change?
 - Who writes `[candidate_state_block_ptr + 0x48]`?
 - Does the dispatcher trigger during normal gameplay, death, capture, menu, or transition?
+
+---
+
+## Blog persona prompt maintenance
+
+The file below is a required companion context for narrative/blog-style writing about this project:
+
+```txt
+prompt_persona_ico_reconstruction.md
+```
+
+Whenever a validated research revision changes the current understanding of the project, update this persona/blog prompt as part of the same work.
+
+This is a project condition, not an optional cleanup task.
+
+The prompt must stay aligned with the latest validated research while preserving the same caution rules:
+
+- separate confirmed facts from hypotheses;
+- do not turn narrative scenes into technical evidence;
+- do not invent discoveries;
+- prefer the newest validated research note when older notes conflict;
+- keep the archaeology/digital-reconstruction tone grounded in reproducible evidence.
 
 ---
 

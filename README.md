@@ -97,6 +97,12 @@ Current ELF research focus:
 - a confirmed node callback dispatcher at `0x0013fb70`, plus a corrected descriptor-index model that keeps the exact indirect dispatcher for `ROPE +0x40 = 0x001d3a30` unresolved, documented in [`research/elf/ghidra-rev033-node-callback-dispatch-chain.md`](./research/elf/ghidra-rev033-node-callback-dispatch-chain.md) and [`research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md`](./research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md)
 - a registration path survey confirming that `0x001b76f8` skips ROPE registration due to a zero-guard, and mapping all five static callers of `0x0013f7a8`, documented in [`research/elf/ghidra-rev036-registration-path-survey.md`](./research/elf/ghidra-rev036-registration-path-survey.md)
 - a complete analysis of the three remaining callers of `0x0013f7a8`, closing three paths definitively and leaving two runtime-dependent candidates open, documented in [`research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`](./research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md)
+- External integration phase initiated (Rev.038):
+  - **CCC (Chaos Compiler Collection)** confirmed no `.mdebug`/STABS/debug symbols in the ELF
+  - **decomp.me scratches** generated for 6 key functions (dispatcher, ROPE callback, registration chain)
+  - **Compiler identified**: EE GCC 2.9-991111-01 (Sony fork), flags: `-march=r5900 -mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2`
+  - **ICO-decomp cross-reference** (`RossyDoubleUnderscore/ICO-decomp`): dispatcher and ROPE callback reside in `clothAnimation.c` (cloth physics), not entity/AI state
+  - **Parallel findings**: 5-state dispatcher likely handles cloth vertex/simulation states, not gameplay state transitions
 
 These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
 
@@ -319,6 +325,7 @@ The project treats these as research topics, not solved problems.
 | [`research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md`](./research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md) | Entry-table and descriptor-index correction for the `ROPE` callback model |
 | [`research/elf/ghidra-rev036-registration-path-survey.md`](./research/elf/ghidra-rev036-registration-path-survey.md) | Registration path survey: zero-guard in `0x001b76f8`, all five callers of `0x0013f7a8` |
 | [`research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`](./research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md) | Complete analysis of remaining callers of `0x0013f7a8` and the ROPE registration gap |
+| [`possible_ressources.md`](./possible_ressources.md) | Catalog of external projects, tools, and communities for integration |
 | [`tools/elf-extractor/README.md`](./tools/elf-extractor/README.md) | ELF extractor for disassembler import |
 
 ## Initial Roadmap
@@ -383,6 +390,10 @@ The project treats these as research topics, not solved problems.
 [x] rev.035 - Entry-table and descriptor-index correction for the `ROPE` callback model
 [x] rev.036 - Registration path survey: zero-guard confirmed in `0x001b76f8`, all five callers of `0x0013f7a8` mapped
 [x] rev.037 - Remaining callers analyzed: three paths closed, two runtime-dependent candidates open; ROPE registration gap documented
+[x] rev.038 - External integration: CCC debug symbol scan (none found), 6 decomp.me scratch packages generated, compiler flags refined, ICO-decomp cross-reference
+[x] rev.039 - Cloth domain correction: dispatcher 0x001d37c8 and callback 0x001d3a30 reclassified as cloth physics, not entity/gameplay state
+[x] rev.040 - Static cloth domain reinterpretation: auxiliary helpers mapped (0x001d2738, 0x001d29b8, 0x001d2bf0), 0x0013f7a8 corrected as not iosThreadStart
+[x] rev.041 - Cloth variant table 0x004d4188: 8 entries stride 0x14, indexed by [state_block+0x04]
 ```
 
 ## How To Contribute

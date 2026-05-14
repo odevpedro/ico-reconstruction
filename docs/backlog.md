@@ -9,47 +9,44 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 31 |
-| In Progress | 1 |
+| Completed | 40 |
+| In Progress | 0 |
 | Pending | 2 |
 
 ---
 
 ## In Progress
 
-### [x] [SQUAD-RUNTIME | rev.019 | 2026-05-13]
-Static Analysis Pipeline - State Resolver Caller Context
+### [x] [SQUAD-EXTERNAL | rev.040 | 2026-05-14]
+Static Cloth Domain Reinterpretation
 
-- Traced callers of 0x0013eb50 via manual MIPS disassembly
-- Found parent functions 0x00199f80 (stack 0x130, entity dereference) and 0x0017bb98 (stack 0xf0, VU/floating-point)
-- Identified sister function 0x0013ebe0 with similar call pattern
-- Analyzed state tables: DAT_006321c0 (mode flag), DAT_006a93d0 (flat), DAT_00633ca0 (0x174-byte records)
-- Clustered 146 callers of 0x0013eb50 into 14 address ranges; 0x0019xxxx has 38 callers (largest)
+- Reinterpreted 0x001d37c8/0x001d3a30 as cloth/chain simulation cluster
+- Registered caveat: ICO-decomp clothAnimation.c is ASM-only, no C decompiled
+- Corrected 0x0013f7a8: not iosThreadStart (C decompile doesn't match wrapper)
+- Mapped auxiliary functions: 0x001d2738 (state block activation), 0x001d29b8 (transform helper), 0x001d2bf0 (geometry helper), 0x001d2538/40/48 (event wrappers for IDs 0x30/0x31/0x32)
+- Documented in research/elf/ghidra-rev040-static-cloth-domain-reinterpretation.md
 
-### [x] [SQUAD-RUNTIME | rev.020 | 2026-05-13]
-UI String Context and Caller Analysis
+### [x] [SQUAD-EXTERNAL | rev.041 | 2026-05-14]
+Cloth Variant Table 0x004d4188
 
-- Mapped UI string locations: 0x005539a1 (continues), 0x005551f0 (pac_continueTag), 0x00555db6 (Continue)
-- Disassembled 0x0011a520 (pac_continueTag loader) - uses continuation pattern, calls 0x001a6e28, 0x001ad768, 0x00263ff0
-- Found 4 lui-pattern references to pac_continueTag: 0x00116f5c, 0x00117310, 0x0012850c, 0x001310ec
-- Found 4 code references to "Continue" string: 0x0012a710, 0x0012a7a0, 0x0012a7f8, 0x00198710
-- Updated Ghidra headless setup docs with working command template
+- Mapped 0x004d4188 as cloth-domain table of 8 entries, stride 0x14
+- Table indexed by [state_block+0x04] — this field is variant/mode field, not boolean
+- Documented in research/elf/ghidra-rev041-cloth-variant-table-004d4188.md
+- Extracted raw bytes + complete assembly listings with Capstone
+- Documented compiler: EE GCC (Sony fork for R5900)
+- Inferred flags: -O2, -G0, -mips3, -mgp64, -mabi=eabi, -msingle-float
+- All scratch packages in /tmp/decompme_scratches/ ready for web submission
+- CCC (Chaos Compiler Collection) confirmed: no .mdebug/STABS/debug symbols in ELF
 
-### [x] [SQUAD-RUNTIME | rev.021 | 2026-05-13]
-Continue Menu String Deception + Static Call Graph Deep Dive
+### [SQUAD-EXTERNAL | 2026-05-14]
+ICO-decomp Cross-Reference
 
-- CRITICAL: "Continue" at 0x00555db6 is actually "ContinueAnimation:illegal Animation No." - debug string, NOT menu text
-- Menu text is in TM2 textures (yesno_p*.tm2, conti_p*.tm2) - no ASCII for options
-- Analyzed 0x0012a710 / 0x0012a618 - display/validation function, NOT continue menu trigger
-- Analyzed 0x001d37c8 - entity state dispatcher with jump table at 0x00628fb0 (handles states 0-4)
-- Analyzed 0x001d3a30 - entity update loop with ZERO static callers (vtable-only dispatch)
-- Analyzed 0x00199c30 and 0x00199f80 - also zero static callers (vtable-dispatched handlers)
-- 60 unique functions in 0x0019xxxx call state resolver 0x0013eb50
-- All shadow references in ELF are about rendering/shadow maps, not Yorda capture
-- New strategy: DATA.DF overlay analysis or memory search during gameplay, stop targeting ASCII strings
-
-### [SQUAD-RUNTIME | rev.022 | In Progress]
-Static Analysis Pipeline - Entity Structure and Call Graph
+- Cloned and analyzed RossyDoubleUnderscore/ICO-decomp (5792 symbols, 1174 subsegments)
+- Cross-referenced 14 project addresses — none have exact symbol names in ICO-decomp
+- Critical discovery: dispatcher 0x1d37c8 resides in sugipon/src/clothAnimation.c (cloth physics), not entity/AI state
+- All 5 internal state blocks are likely cloth vertex simulation transitions
+- "ROPE" in ICO-decomp (79 symbols) refers to gameplay ropes — different from our .data descriptor "ROPE"
+- Documented in research/ico-decomp-cross-reference-2026-05-14.md
 
 ---
 
@@ -241,6 +238,25 @@ Call graph analysis
 | rev.019 | 2026-05-13 | SQUAD-RUNTIME | Static analysis - state resolver caller context (146 callers, 14 clusters) |
 | rev.020 | 2026-05-13 | SQUAD-RUNTIME | UI string context and caller analysis |
 | rev.021 | 2026-05-13 | SQUAD-RUNTIME | Continue menu string deception + vtable call graph deep dive |
+| rev.022 | 2026-05-13 | SQUAD-RUNTIME | Dispatcher ground truth — jump table address corrected to 0x00618fb0 |
+| rev.023 | 2026-05-13 | SQUAD-RUNTIME | Dispatcher table resolution — confirmed 5-state dispatch model |
+| rev.024 | 2026-05-13 | SQUAD-RUNTIME | Internal state block semantics — 5 blocks analyzed |
+| rev.025 | 2026-05-13 | SQUAD-RUNTIME | Runtime-confirmed caller context (0x001d3a30) |
+| rev.026 | 2026-05-13 | SQUAD-RUNTIME | ROPE record table context and descriptor structure |
+| rev.027 | 2026-05-13 | SQUAD-RUNTIME | ROPE state block initializer analysis |
+| rev.028 | 2026-05-13 | SQUAD-RUNTIME | State block provider contract (0x0013a0f8) |
+| rev.029 | 2026-05-13 | SQUAD-RUNTIME | State block provider deeper static analysis |
+| rev.030 | 2026-05-13 | SQUAD-RUNTIME | Provider caller survey — allocator pattern |
+| rev.031 | 2026-05-13 | SQUAD-RUNTIME | Record callback dispatchers |
+| rev.032 | 2026-05-13 | SQUAD-RUNTIME | Static callback follow-through |
+| rev.033 | 2026-05-13 | SQUAD-RUNTIME | Node callback dispatch chain — store in node+0x1c |
+| rev.034 | 2026-05-13 | SQUAD-RUNTIME | Callback signature and record selection |
+| rev.035 | 2026-05-13 | SQUAD-RUNTIME | Entry table and descriptor correction — ROPE index fixed to 0x14 |
+| rev.036 | 2026-05-13 | SQUAD-RUNTIME | Registration path survey — 5 callsites of 0x0013f7a8 |
+| rev.037 | 2026-05-13 | SQUAD-RUNTIME | Remaining callers and ROPE registration gap — static options exhausted |
+| rev.038 | 2026-05-13 | SQUAD-EXTERNAL | decomp.me scratch generation + CCC debug symbol scan (none found) |
+| 2026-05-14 | 2026-05-14 | SQUAD-EXTERNAL | ICO-decomp cross-reference: cloth physics, source tree mapping |
+| Rev.041 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant table 0x004d4188: 8 entries stride 0x14, indexed by [state_block+0x04] |
 
 ---
 
