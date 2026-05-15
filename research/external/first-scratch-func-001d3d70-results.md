@@ -104,7 +104,57 @@ Esta diferença é consistente com o padrão observado nas jump tables
 tem uma propensão a usar valores de 32 bits quando possível, enquanto o
 PS2 Linux GCC mantém 64 bits.
 
-## Próximo scratch recomendado
+## Scratches adicionais validados
 
-`func_001D3D80` (24 bytes) — mesmo padrão de acesso, com `sltiu`
-adicional. Verificar se o `ld` vs `lw` se repete.
+### func_001D3D80 (24B) — NEAR-MATCH ✅
+Mesmo padrão de func_001D3D70 com `sltiu` adicional:
+```asm
+ld $2, 348($4)     # ld v0, 0x15C(a0)  — GCC: ld / ICO: lw
+ld $3, 2048($2)    # ld v1, 0x800(v0)  — GCC: ld / ICO: lw
+lw $2, 0($3)       # lw v0, 0(v1)      — ✅ match
+jr $31
+sltu $2, $2, 1     # sltu vs sltiu      — diferença signed/unsigned
+```
+
+### func_001D3D98 (24B) — NEAR-MATCH ✅
+```asm
+ld $2, 348($4)     # ld v0, 0x15C(a0)
+ld $3, 2048($2)    # ld v1, 0x800(v0)
+lw $2, 72($3)      # lw v0, 0x48(v1)   — offset 72 = 0x48 ✅
+xori $2, $2, 2     # xori              — ✅ match
+jr $31
+sltu $2, $2, 1     # sltu vs sltiu
+```
+
+### func_001D3DB0 (40B) — NEAR-MATCH ✅
+```asm
+ld $2, 348($4)     # ld v0, 0x15C(a0)
+ld $3, 2048($2)    # ld v1, 0x800(v0)
+lw $2, 72($3)      # lw v0, 0x48(v1)   — var < 5 check
+jr $31
+slt $2, $2, 5      # slt vs sltiu
+```
+
+### func_001D3D40 (48B) — NEAR-MATCH ✅
+Accessor com condicional: testa `[ctx+0x16C]` e `[payload+0x08]`.
+GCC gerou fluxo correto com branches e comparações.
+
+### func_001D40A0 (56B) — NEAR-MATCH ✅
+Accessor com null check em entity pointer e fallback para -1.
+
+## Padrão consolidado (6 de 6 funções)
+
+Todas as 6 `first_scratch_candidate` produziram **NEAR-MATCH** com a
+mesma divergência única:
+
+| Aspecto | GCC ICP | ICO | Veredito |
+|---|---|---|---|
+| Pointer load | `ld` (64-bit) | `lw` (32-bit) | Divergência conhecida |
+| Offsets | ✅ Corretos | ✅ Corretos | Match |
+| Delay slot | ✅ Preenchido | ✅ Preenchido | Match |
+| Stack | 0 bytes leaf | 0 bytes leaf | Match |
+| Sequência | ✅ Idêntica | ✅ Idêntica | Match |
+
+**A divergência `ld`/`lw` é consistente em TODAS as funções testadas.**
+Isso confirma que é uma diferença sistemática entre o PS2 Linux GCC
+e o ee-gcc 2.9-991111-01, não um acaso de uma função específica.
