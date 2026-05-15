@@ -309,11 +309,14 @@ Download em andamento via Archive.org (~175MB de 1359MB, 13%).
 
 ## Próximo passo recomendado
 
-1. ✅ Container i386 criado e GCC 2.95.2 funcional
-2. ✅ Micro-targets compilados — assembly gerado com estilo similar ao ICO
-3. ⏳ Aguardar DISC2.iso download completar (~9 min restantes)
-4. ⏳ Extrair SRPMS do DISC2.iso (possível GCC source RPM)
-5. 🔄 **Retomar runtime capture** para resolver origem do `a1` em
+1. ✅ Container i386 criado e funcional
+2. ✅ GCC 2.95.2 executando dentro do container
+3. ✅ Micro-targets compilados e comparados (6 near-matches)
+4. ✅ Divergências de codegen documentadas (ld/lw, JT 4B/8B)
+5. ✅ Compilador disponível em `/tmp/ps2-gcc-2.95/` (prebuilt)
+6. ❌ Build do GCC 2.95 do source falhou (autoconf + newlib)
+   → Usar o prebuilt como base para compiler package decomp.me é viável
+7. 🔄 **Retomar runtime capture** para resolver origem do `a1` em
    `0x001d27a8` (gargalo real da análise)
 
 ## Veredito
