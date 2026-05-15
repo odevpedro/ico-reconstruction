@@ -26,8 +26,13 @@ segments:
     vram: 0x00100000
     subalign: null
     subsegments:
-      # Pre-callback monolithic
-      - [0x001000, asm, main_text_pre_0403f0]
+      # Pre-callback monolithic (up to state resolver)
+      - [0x001000, asm, main_text_early_001000_03fb50]
+
+      # State resolver (REVISÃO ATUAL)
+      - [0x03fb50, asm, state_resolver_first_0013eb50]
+      - [0x03fbe0, asm, state_resolver_next_0013ebe0]
+      - [0x03fc50, asm, main_text_mid_0013fc50_0403f0]
 
       # Callback infrastructure (promoted in Rev.038)
       - [0x0403f0, asm, callback_storage_0013f3f0]
