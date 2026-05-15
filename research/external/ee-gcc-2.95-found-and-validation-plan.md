@@ -232,13 +232,56 @@ find . -name "*.patch" -o -name "*.diff" -o -name "*.tar.gz"
 - Não perseguir `-march=r5900` no GCC 2.95.2 — ele não tem suporte e
   adicionar seria um fork do GCC
 
+## Progresso
+
+### Container i386 — ✅ FUNCIONAL
+
+Docker i386 (Debian Bookworm) → GCC 2.95.2 PS2 Linux executa sem erros.
+
+Comando usado:
+```bash
+docker run --rm ps2-gcc-295 ee-gcc \
+  -B/tmp/ps2/bin/ -B/tmp/ps2/lib/gcc-lib/mipsEEel-linux/2.95.2/ \
+  -S -G0 -mips3 -mgp64 -mabi=eabi -msingle-float -O2 -fno-pic -mno-abicalls \
+  test.c
+```
+
+### Codegen observado
+
+| Função | Assembly gerado | Notas |
+|---|---|---|
+| `add` | `j $31; addu $2,$4,$5` | Tail call, 0 stack frame |
+| `mul` | `j $31; mult $2,$4,$5` | 3-operand MIPS32 (não usa hi/lo) |
+| `test` | `lw $2,0($4); sw $5,4($4); addu` | Load/store padrão |
+| `ladd` | `j $31; daddu $2,$4,$5` | 64-bit add com `-mgp64` |
+| `cond` | `movn $2,$4,$3` | Conditional move MIPS IV |
+| `sum` | `dsll`/`daddu`/`lw`/`bne` loop | Loop com array |
+
+### Comparação com ICO
+
+**Similaridades**:
+- Uso de `.ent`/`.end`/`.frame`/`.mask`/`.fmask` (mesmo estilo do ICO)
+- `j $31` equivalente a `jr $ra` (mesmo encoding)
+- `addu`/`daddu` para aritmética
+- EABI calling convention (argumentos em a0-a3, retorno em v0)
+- `-fno-pic -mno-abicalls` remove código de GP-relative (mais próximo do ICO)
+
+**Diferenças esperadas**:
+- ICO usa `-march=r5900` (não disponível aqui) → seleção diferente de
+  instruções (ex: `mul` vs `mult`/`mflo`)
+- ICO foi compilado com patches Sony adicionais
+- ICO usa newlib (embarcado), não glibc (Linux)
+
+### DISC2.iso
+
+Download em andamento via Archive.org (~175MB de 1359MB, 13%).
+
 ## Próximo passo recomendado
 
-1. ⏳ **Criar container i386** com imagem Linux antiga para executar
-   o GCC 2.95.2 PS2 Linux
-2. ⏳ **Executar ee-gcc --version** dentro do container
-3. ⏳ **Compilar micro-targets** e comparar assembly com ICO
-4. ⏳ **Documentar diferenças de codegen** observadas
+1. ✅ Container i386 criado e GCC 2.95.2 funcional
+2. ✅ Micro-targets compilados — assembly gerado com estilo similar ao ICO
+3. ⏳ Aguardar DISC2.iso download completar (~9 min restantes)
+4. ⏳ Extrair SRPMS do DISC2.iso (possível GCC source RPM)
 5. 🔄 **Retomar runtime capture** para resolver origem do `a1` em
    `0x001d27a8` (gargalo real da análise)
 
