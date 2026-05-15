@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 58 |
+| Completed | 59 |
 | In Progress | 0 |
 | Pending | 1 |
 
@@ -339,6 +339,7 @@ Call graph analysis
 | rev.044 | 2026-05-14 | SQUAD-EXTERNAL | Staged callback path: no static explanation for a1 |
 | rev.045 | 2026-05-15 | SQUAD-RUNTIME | Runtime plan for tomorrow — checkpoint before PCSX2 capture |
 | rev.046 | 2026-05-15 | SQUAD-RUNTIME | Runtime capture: a1 source resolved — a1 = sp, caller = 0x001B7A74 |
+| rev.047 | 2026-05-15 | SQUAD-RUNTIME | Descriptor Callback Runtime Model — modelo consolidado pós-runtime |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | External splat tooling experiments (SOTC survey, Rabbitizer, 3 splat experiments) |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | Full cloth cluster splat promotion — 22 functions isolated, YAML in splat/ |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | SDK/library recognition — 183 libkernl functions confirmed; libc absent from USA .text |
