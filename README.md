@@ -97,12 +97,17 @@ Current ELF research focus:
 - a confirmed node callback dispatcher at `0x0013fb70`, plus a corrected descriptor-index model that keeps the exact indirect dispatcher for `ROPE +0x40 = 0x001d3a30` unresolved, documented in [`research/elf/ghidra-rev033-node-callback-dispatch-chain.md`](./research/elf/ghidra-rev033-node-callback-dispatch-chain.md) and [`research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md`](./research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md)
 - a registration path survey confirming that `0x001b76f8` skips ROPE registration due to a zero-guard, and mapping all five static callers of `0x0013f7a8`, documented in [`research/elf/ghidra-rev036-registration-path-survey.md`](./research/elf/ghidra-rev036-registration-path-survey.md)
 - a complete analysis of the three remaining callers of `0x0013f7a8`, closing three paths definitively and leaving two runtime-dependent candidates open, documented in [`research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`](./research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md)
-- External integration phase initiated (Rev.038):
+- External integration phase (Rev.038-045):
   - **CCC (Chaos Compiler Collection)** confirmed no `.mdebug`/STABS/debug symbols in the ELF
   - **decomp.me scratches** generated for 6 key functions (dispatcher, ROPE callback, registration chain)
   - **Compiler identified**: EE GCC 2.9-991111-01 (Sony fork), flags: `-march=r5900 -mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2`
   - **ICO-decomp cross-reference** (`RossyDoubleUnderscore/ICO-decomp`): dispatcher and ROPE callback reside in `clothAnimation.c` (cloth physics), not entity/AI state
   - **Parallel findings**: 5-state dispatcher likely handles cloth vertex/simulation states, not gameplay state transitions
+- External tooling experiments (splat, Rabbitizer, spimdisasm):
+  - **splat64[mips]** confirmed viable for ICO USA ELF: `splat/SCUS_971.13.cloth-full.yaml` promotes **22 cloth-domain functions** into individual asm files
+  - **Rabbitizer/spimdisasm** independently validated dispatcher/callback instruction anchors
+  - **SOTC tooling survey** confirmed useful process patterns (splat, Ninja, map/first-diff)
+- Full cloth cluster documented in [`research/external/ico-splat-cloth-full-promotion.md`](./research/external/ico-splat-cloth-full-promotion.md)
 
 These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
 
@@ -128,8 +133,10 @@ These notes describe structural evidence only. They do not assign definitive gam
 │   ├── dvp/                      # Metadata-only DVP overlay observations
 │   ├── elf/                      # Metadata-only ELF observations
 │   ├── exe-refs/                 # Metadata-only executable reference observations
+│   ├── external/                 # External tooling experiments (splat, Rabbitizer, SOTC)
 │   ├── README.md                 # Research note organization
 │   └── iso-layout/               # Metadata-only disc layout observations
+├── splat/                        # splat64[mips] YAML config and Makefile
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
 └── tools/

@@ -9,68 +9,15 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 43 |
-| In Progress | 1 |
-| Pending | 2 |
+| Completed | 54 |
+| In Progress | 0 |
+| Pending | 3 |
 
 ---
 
 ## In Progress
 
-_(none — aguardando definição da Rev.045)_
-
-### [x] [SQUAD-EXTERNAL | rev.041 | 2026-05-14]
-Cloth Variant Table 0x004d4188
-
-- Mapped 0x004d4188 as cloth-domain table of 8 entries, stride 0x14
-- Table indexed by [state_block+0x04] — this field is variant/mode field, not boolean
-- Documented in research/elf/ghidra-rev041-cloth-variant-table-004d4188.md
-
-### [x] [SQUAD-EXTERNAL | rev.042 | 2026-05-14]
-Cloth Variant Field Writers
-
-- Confirmed writer of variant/mode field [payload+0x04]: 0x001d2858, copies [initializer_arg+0x30]
-- Candidate generic setter: 0x001d1ad8 (store at 0x001d1b18)
-- External caller observed: fumi/src/way_llf at 0x00216f34 zeros [payload+0x04]
-- 0x001d1668: related cloth +0x800 writer, but different payload/record
-- 0x001d390c: DISCARDED as +0x04 writer (writes +0x44 due to s1=state_block+0x40)
-- Documented in research/elf/ghidra-rev042-cloth-variant-field-writers.md
-
-### [x] [SQUAD-EXTERNAL | rev.043 | 2026-05-14]
-Cloth Initializer Argument Source
-
-- Confirmed 0x001d27a8 consumes a0 (context) and a1 (second structure pointer)
-- [a1+0x30] is copied to [payload+0x04] at 0x001d2858
-- Known +0x48 dispatcher (0x0013fc00) only prepares a0, not a1
-- No direct jal to 0x001d27a8 — reached exclusively via callback dispatch
-- Origin of a1 remains open — runtime prioritário: breakpoints at 0x001d27a8, 0x001d2858, 0x0013fc44, 0x0013fcb8
-- Documented in research/elf/ghidra-rev043-cloth-initializer-arg-source.md
-
-### [x] [SQUAD-EXTERNAL | rev.044 | 2026-05-14]
-Staged Callback / Storage Path for 0x001d27a8
-
-- No staged callback path found that explains 0x001d27a8(a0, a1)
-- 0x0013f3f0 → node+0x1c → 0x0013fb70 passes only a0 (valid for 0x001d3a30, not for initializer)
-- +0x48 dispatchers in 0x0013fc00 both prepare only a0
-- New finding: 0x00129660 is constructor-like, calls descriptor+0x58 with a1=sp+0x20
-- ROPE has +0x58=0 and 0x001d27a8 in +0x48 — structurally similar but excluded for static ROPE
-- Static options for a1 origin are exhausted — next step is runtime breakpoint
-- Documented in research/elf/ghidra-rev044-staged-callback-path-001d27a8.md
-- Extracted raw bytes + complete assembly listings with Capstone
-- Documented compiler: EE GCC (Sony fork for R5900)
-- Inferred flags: -O2, -G0, -mips3, -mgp64, -mabi=eabi, -msingle-float
-- All scratch packages in /tmp/decompme_scratches/ ready for web submission
-- CCC (Chaos Compiler Collection) confirmed: no .mdebug/STABS/debug symbols in ELF
-
-### [SQUAD-EXTERNAL | 2026-05-14]
-ICO-decomp Cross-Reference
-
-- Cloned and analyzed RossyDoubleUnderscore/ICO-decomp (5792 symbols, 1174 subsegments)
-- Cross-referenced 14 project addresses — none have exact symbol names in ICO-decomp
-- Critical discovery: dispatcher 0x1d37c8 resides in sugipon/src/clothAnimation.c (cloth physics), not entity/AI state
-- All 5 internal state blocks are likely cloth vertex simulation transitions
-- "ROPE" in ICO-decomp (79 symbols) refers to gameplay ropes — different from our .data descriptor "ROPE"
-- Documented in research/ico-decomp-cross-reference-2026-05-14.md
+_(none)_
 
 ---
 
@@ -98,6 +45,77 @@ ICO-decomp Cross-Reference
 ---
 
 ## Completed
+
+### [x] [SQUAD-TOOLING | 2026-05-15]
+Full cloth cluster splat promotion — 22 functions isolated
+
+- Comprehensive splat YAML created (splat/SCUS_971.13.cloth-full.yaml)
+- All 22 spimdisasm-detected cloth-domain functions promoted (0x1d27a8-0x1d45b0)
+- 30 asm segments, 100% coverage, zero errors
+- Makefile with EE GCC toolchain requirements (splat/Makefile)
+- Documented in research/external/ico-splat-cloth-full-promotion.md
+
+### [x] [SQUAD-TOOLING | 2026-05-15]
+External splat tooling experiments (5 notes)
+
+- SOTC tooling relevance survey (research/external/sotc-tooling-relevance-survey.md)
+- Rabbitizer/spimdisasm independent anchor validation (research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md)
+- Minimal splat experiment confirmed viable (research/external/ico-splat-minimal-experiment.md)
+- Promoted verified ranges — 4 functions isolated (research/external/ico-splat-promoted-ranges-experiment.md)
+- Adjacent promoted ranges — 3 more functions (research/external/ico-splat-adjacent-promoted-ranges-experiment.md)
+
+### [x] [SQUAD-RUNTIME | rev.045 | 2026-05-15]
+Runtime plan for tomorrow — checkpoint before PCSX2 capture
+
+- Static analysis exhausted; a1 source for 0x001d27a8 requires runtime breakpoint
+- Priority breakpoints defined: 0x001d27a8 (a0, a1, [a1+0x30]), 0x0013f7a8 (a1 when a3==0x13), 0x001d37c8 (state_id distribution)
+- Runtime capture automation plan documented (research/runtime-capture-automation-plan.md)
+- Documented in research/elf/ghidra-rev045-runtime-plan-for-tomorrow.md
+
+### [x] [SQUAD-EXTERNAL | rev.044 | 2026-05-14]
+Staged Callback / Storage Path for 0x001d27a8
+
+- No staged callback path found that explains 0x001d27a8(a0, a1)
+- 0x0013f3f0 → node+0x1c → 0x0013fb70 passes only a0
+- +0x48 dispatchers in 0x0013fc00 both prepare only a0
+- Static options for a1 origin exhausted — next step is runtime breakpoint
+- Compiler confirmed: EE GCC 2.9-991111-01, flags: -march=r5900 -mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2
+- Documented in research/elf/ghidra-rev044-staged-callback-path-001d27a8.md
+
+### [x] [SQUAD-EXTERNAL | rev.043 | 2026-05-14]
+Cloth Initializer Argument Source
+
+- 0x001d27a8 consumes a0 (context) and a1 (second structure pointer)
+- [a1+0x30] copied to [payload+0x04] at 0x001d2858
+- Known +0x48 dispatcher only prepares a0, not a1
+- No direct jal to 0x001d27a8 — reached via callback dispatch
+- Documented in research/elf/ghidra-rev043-cloth-initializer-arg-source.md
+
+### [x] [SQUAD-EXTERNAL | rev.042 | 2026-05-14]
+Cloth Variant Field Writers
+
+- Confirmed writer of variant/mode field [payload+0x04]: 0x001d2858 (copies [initializer_arg+0x30])
+- Documented in research/elf/ghidra-rev042-cloth-variant-field-writers.md
+
+### [x] [SQUAD-EXTERNAL | rev.041 | 2026-05-14]
+Cloth Variant Table 0x004d4188
+
+- Mapped as cloth-domain table of 8 entries, stride 0x14
+- Documented in research/elf/ghidra-rev041-cloth-variant-table-004d4188.md
+
+### [x] [SQUAD-EXTERNAL | 2026-05-14]
+ICO-decomp Cross-Reference
+
+- RossyDoubleUnderscore/ICO-decomp cross-reference (5792 symbols, 1174 subsegments)
+- Critical discovery: dispatcher in sugipon/src/clothAnimation.c (cloth physics)
+- "ROPE" in ICO-decomp refers to gameplay ropes — different from our .data descriptor
+- Documented in research/ico-decomp-cross-reference-2026-05-14.md
+
+### [x] [SQUAD-EXTERNAL | rev.040 | 2026-05-14]
+Static cloth domain reinterpretation
+
+### [x] [SQUAD-EXTERNAL | rev.039 | 2026-05-14]
+Cloth domain correction — dispatcher/callback reclassified as cloth physics
 
 ### [x] [SQUAD-ARCH | rev.001 | 2026-05-12]
 Initial strategic planning and prompt workflow
@@ -285,7 +303,10 @@ Call graph analysis
 | rev.041 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant table 0x004d4188: 8 entries stride 0x14 |
 | rev.042 | 2026-05-14 | SQUAD-EXTERNAL | Cloth variant field writers: 0x001d2858 confirmed, 0x001d1ad8 candidate, 0x001d390c discarded |
 | rev.043 | 2026-05-14 | SQUAD-EXTERNAL | Cloth initializer arg source: 0x001d27a8 needs a1, [a1+0x30] origin open |
-| rev.044 | 2026-05-14 | SQUAD-EXTERNAL | Staged callback path: no static explanation for a1; 0x00129660 constructor-like found but excluded for ROPE static |
+| rev.044 | 2026-05-14 | SQUAD-EXTERNAL | Staged callback path: no static explanation for a1 |
+| rev.045 | 2026-05-15 | SQUAD-RUNTIME | Runtime plan for tomorrow — checkpoint before PCSX2 capture |
+| 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | External splat tooling experiments (SOTC survey, Rabbitizer, 3 splat experiments) |
+| 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | Full cloth cluster splat promotion — 22 functions isolated, YAML in splat/ |
 
 ---
 
