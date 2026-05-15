@@ -234,6 +234,37 @@ find . -name "*.patch" -o -name "*.diff" -o -name "*.tar.gz"
 
 ## Progresso
 
+### SRPM do PS2 Linux Kit — ✅ ENCONTRADO E EXTRAÍDO
+
+O arquivo `GCC-29_1.RPM` no diretório `SRPMS/` do DISC2.iso é o **Source RPM**
+do **GCC 2.95.2-3a** para PS2 Linux (target `mipsEEel-linux`).
+
+Conteúdo:
+
+| Arquivo | Tamanho | Descrição |
+|---|---|---|
+| `gcc-2.95.2.tar.gz` | 49 KB | Upstream GCC 2.95.2 source (comprimido) |
+| `gcc-2.95.2-frankengcc-patches.patch` | 94 linhas | C++ comdat linkage fix (Netscape) |
+| `gcc-2.95.2-single-float-const.patch` | 79 linhas | `-fsingle-precision-constant` flag |
+| `gcc-ps2linux-1.0.0.patch` | **183 KB** | **Patch principal PS2 Linux** |
+| `gcc-ps2linux-1.0.0.spec` | — | RPM spec (build/install) |
+
+O spec confirma:
+
+- **Target**: `mipsEEel-linux`
+- **Config**: `--target=mipsEEel-linux --host=mipsEEel-linux --build=mipsEEel-linux`
+- **Depende de**: `binutils >= 2.9EE`
+- **Build date**: 2001-10-04 (sexta-feira)
+- **Changelog**: `Thu Mar 29 2001 Hiroyuki Machida <machida@sm.sony.co.jp>`
+  — engenheiro da Sony adicionando suporte a PS2 Linux
+
+O patch principal (`gcc-ps2linux-1.0.0.patch`) com 183 KB modifica dezenas de
+arquivos do GCC para adicionar:
+- R5900 performance counters (`sys_r5900.h`, `sysmips`)
+- Target triple `mipsEEel`/`mipsEEel-linux` em `config.guess` e `config.sub`
+- Configuração completa do backend MIPS para o target EE
+- Suporte a `-D__R5900` e `-D_R5900` como built-in
+
 ### Container i386 — ✅ FUNCIONAL
 
 Docker i386 (Debian Bookworm) → GCC 2.95.2 PS2 Linux executa sem erros.
