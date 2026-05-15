@@ -149,6 +149,17 @@ functions.
 3. **Check DVP overlays**: the "missing" SDK libraries might be in overlay
    segments rather than main .text
 
+   **Result**: DVP overlays total only 20KB (12 overlays, 0.4-2KB each).
+   Too small for the ~44KB libc. The libraries were genuinely inlined by
+   EE GCC -O2 in the USA build. DVP overlays likely contain level-specific
+   game code (scripts, collision), not SDK functions.
+
+4. **Model .rodata as typed segment in splat**: currently .rodata is a raw
+   `databin` blob. Attempting to model it as `rodata` type failed:
+   splat's rodata segment requires parent-based cross-referencing with the
+   text segment that needs further configuration. Keeping .rodata as databin
+   for now; the jump table at 0x00618FB0 remains in `undefined_syms_auto.txt`.
+
 ## Conservative Verdict
 
 The SDK recognition scan produced one definitive result and one negative but
