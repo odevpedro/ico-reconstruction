@@ -1,0 +1,95 @@
+name: ICO USA SCUS_971.13 — full cloth cluster promotion
+sha1: a4d8fc1948fb2da2395f3863a94a3b93de55de14
+options:
+  basename: SCUS_971.13
+  target_path: /home/peter/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf
+  base_path: /tmp/ico-cloth-full
+  asm_path: asm
+  asset_path: assets
+  src_path: src
+  build_path: build
+  compiler: EEGCC
+  platform: ps2
+  ld_bss_contains_common: True
+  ld_bss_is_noload: true
+  use_gp_rel_macro_nonmatching: False
+  string_encoding: EUC-JP
+  disasm_unknown: True
+  named_regs_for_c_funcs: True
+  find_file_boundaries: False
+  section_order: [".text", ".vutext", ".data", ".rodata", ".lit4", ".sdata", ".sbss", ".bss"]
+segments:
+  - [0x000000, databin, elf_header]
+  - name: main_text
+    type: code
+    start: 0x001000
+    vram: 0x00100000
+    subalign: null
+    subsegments:
+      # Pre-callback monolithic
+      - [0x001000, asm, main_text_pre_0403f0]
+
+      # Callback infrastructure (promoted in Rev.038)
+      - [0x0403f0, asm, callback_storage_0013f3f0]
+      - [0x040638, asm, gap_0013f638_0013f7a8]
+      - [0x0407a8, asm, callback_register_0013f7a8]
+      - [0x0407d8, asm, gap_0013f7d8_0013fc00]
+      - [0x040c00, asm, cb48_dispatcher_0013fc00]
+
+      # Pre-cloth monolithic (1822 functions, callback/threading/shockdriver region)
+      - [0x040d10, asm, main_text_precloth_0013fd10_001d27a8]
+
+      # Cloth payload lifecycle cluster — all spimdisasm-detected functions
+      - [0x0d37a8, asm, cloth_payload_init_001d27a8]
+      - [0x0d39b8, asm, cloth_setup_001d29b8]
+      - [0x0d3bf0, asm, cloth_sim_001d2bf0]
+      - [0x0d47c8, asm, cloth_dispatcher_001d37c8]
+      - [0x0d4a30, asm, cloth_update_cb_001d3a30]
+      - [0x0d4b28, asm, cloth_aux_001d3b28]
+      - [0x0d4bf0, asm, cloth_sub_001d3bf0]
+      - [0x0d4d40, asm, cloth_sub_001d3d40]
+      - [0x0d4d70, asm, cloth_sub_001d3d70]
+      - [0x0d4d80, asm, cloth_sub_001d3d80]
+      - [0x0d4d98, asm, cloth_sub_001d3d98]
+      - [0x0d4db0, asm, cloth_sub_001d3db0]
+      - [0x0d4dd8, asm, cloth_sub_001d3dd8]
+      - [0x0d4e80, asm, cloth_sub_001d3e80]
+      - [0x0d4f78, asm, cloth_sub_001d3f78]
+      - [0x0d50a0, asm, cloth_sub_001d40a0]
+      - [0x0d50d8, asm, cloth_sub_001d40d8]
+      - [0x0d5170, asm, cloth_sub_001d4170]
+      - [0x0d5228, asm, cloth_sub_001d4228]
+      - [0x0d5348, asm, cloth_sub_001d4348]
+      - [0x0d5358, asm, cloth_sub_001d4358]
+      - [0x0d53f8, asm, cloth_sub_001d43f8]
+
+      # Post-cloth monolithic (rest of .text)
+      - [0x0d55b0, asm, main_text_postcloth_001d45b0_1705d4]
+  - [0x1705d4, databin, text_to_vutext_pad]
+  - [0x1705e0, databin, vutext]
+  - [0x1756c0, databin, vutext_to_data_pad]
+  - [0x175700, databin, data]
+  - [0x4546b8, databin, data_to_rodata_pad]
+  - [0x454700, databin, rodata]
+  - [0x531900, databin, lit4]
+  - [0x5328d0, databin, lit4_to_sdata_pad]
+  - [0x532900, databin, sdata]
+  - [0x534bc6, databin, sdata_to_reginfo_pad]
+  - [0x534c0c, databin, reginfo]
+  - [0x534c24, databin, dvp_ovlytab]
+  - [0x534cb4, databin, dvp_ovlystrtab]
+  - [0x534e42, databin, dvp_overlay_00]
+  - [0x535642, databin, dvp_overlay_01]
+  - [0x535bda, databin, dvp_overlay_02]
+  - [0x5363da, databin, dvp_overlay_03]
+  - [0x53659a, databin, dvp_overlay_04]
+  - [0x536d9a, databin, dvp_overlay_05]
+  - [0x53759a, databin, dvp_overlay_06]
+  - [0x537c4a, databin, dvp_overlay_07]
+  - [0x53844a, databin, dvp_overlay_08]
+  - [0x538c4a, databin, dvp_overlay_09]
+  - [0x53944a, databin, dvp_overlay_10]
+  - [0x5398b2, databin, dvp_overlay_11]
+  - [0x539e42, databin, shstrtab]
+  - [0x53a050, databin, section_headers]
+  - [0x53a488]
