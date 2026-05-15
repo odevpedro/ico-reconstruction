@@ -9,9 +9,9 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 57 |
+| Completed | 58 |
 | In Progress | 0 |
-| Pending | 2 |
+| Pending | 1 |
 
 ---
 
@@ -45,6 +45,19 @@ _(none)_
 ---
 
 ## Completed
+
+### [x] [SQUAD-RUNTIME | rev.046 | 2026-05-15]
+Runtime Capture — a1 source resolved in 0x001D27A8
+
+- Breakpoint em 0x001D27A8 disparou com sucesso via PCSX2 debugger
+- a1 = sp = 0x00798E40 — initializer struct na stack do caller
+- Caller identificado: 0x001B7A74-0x001B7A8C (jalr via descriptor+0x58)
+- Descriptor = 0x002A3924 (próximo ao ROPE 0x002A3974)
+- [a1+0x30] = 0 (variant inicial = 0)
+- [a1+0x58] = 0 (callback está no descriptor, não no initializer)
+- Initializer struct contém dados de transform/pose (posição X/Y/Z)
+- Gap aberto desde Rev.037 resolvido
+- Documentado em research/elf/ghidra-rev046-runtime-a1-source-resolved.md
 
 ### [x] [SQUAD-TOOLING | 2026-05-15]
 decomp.me scratches regenerated + ee-gcc toolchain installed
@@ -325,6 +338,7 @@ Call graph analysis
 | rev.043 | 2026-05-14 | SQUAD-EXTERNAL | Cloth initializer arg source: 0x001d27a8 needs a1, [a1+0x30] origin open |
 | rev.044 | 2026-05-14 | SQUAD-EXTERNAL | Staged callback path: no static explanation for a1 |
 | rev.045 | 2026-05-15 | SQUAD-RUNTIME | Runtime plan for tomorrow — checkpoint before PCSX2 capture |
+| rev.046 | 2026-05-15 | SQUAD-RUNTIME | Runtime capture: a1 source resolved — a1 = sp, caller = 0x001B7A74 |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | External splat tooling experiments (SOTC survey, Rabbitizer, 3 splat experiments) |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | Full cloth cluster splat promotion — 22 functions isolated, YAML in splat/ |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | SDK/library recognition — 183 libkernl functions confirmed; libc absent from USA .text |
