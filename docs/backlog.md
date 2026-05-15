@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 54 |
+| Completed | 55 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -45,6 +45,15 @@ _(none)_
 ---
 
 ## Completed
+
+### [x] [SQUAD-TOOLING | 2026-05-15]
+SDK/library recognition — PS2 SDK functions identified in USA .text
+
+- Cross-referenced 959 PAL SDK symbols against USA binary via ICO-decomp
+- Confirmed **183 libkernl EE kernel functions** at exact same addresses (threading, interrupts, DMA, SIF, semaphores, cache)
+- **Key negative finding**: libc, libm, libgcc, libsndn2, libpad, libmc, libmpeg, libipu, libscf are **NOT in USA .text** — USA .text is 108K smaller than PAL, matching the size of these libraries
+- USA likely uses inlined libc or different SDK linking strategy
+- Documented in research/external/sdk-library-recognition.md
 
 ### [x] [SQUAD-TOOLING | 2026-05-15]
 Full cloth cluster splat promotion — 22 functions isolated
@@ -307,6 +316,7 @@ Call graph analysis
 | rev.045 | 2026-05-15 | SQUAD-RUNTIME | Runtime plan for tomorrow — checkpoint before PCSX2 capture |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | External splat tooling experiments (SOTC survey, Rabbitizer, 3 splat experiments) |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | Full cloth cluster splat promotion — 22 functions isolated, YAML in splat/ |
+| 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | SDK/library recognition — 183 libkernl functions confirmed; libc absent from USA .text |
 
 ---
 
