@@ -9,9 +9,9 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 55 |
+| Completed | 57 |
 | In Progress | 0 |
-| Pending | 3 |
+| Pending | 2 |
 
 ---
 
@@ -45,6 +45,17 @@ _(none)_
 ---
 
 ## Completed
+
+### [x] [SQUAD-TOOLING | 2026-05-15]
+decomp.me scratches regenerated + ee-gcc toolchain installed
+
+- 6 scratches regenerated in /tmp/decompme_scratches/ (18 files: .s + .bin.hex + .meta.json each)
+- Functions: cloth_dispatcher, cloth_update_callback, callback_storage, callback_register, cb48_dispatcher, cloth_payload_init
+- Prebuilt ps2dev/ps2dev toolchain (GCC 15.2.0) installed to ~/ps2dev/
+- EE GCC compiles R5900 MIPS64 code successfully (64-bit ELF output)
+- Full build pipeline tested: assembly works, linking needs path adjustments
+- Note: matching ee-gcc 2.9-991111-01 requires Sony PS2 Linux SDK (GCC 2.95.2 with R5900 patches)
+- decomp.me has NO ee-gcc compiler packages — only Metrowerks mwcps2 for PS2
 
 ### [x] [SQUAD-TOOLING | 2026-05-15]
 SDK/library recognition — PS2 SDK functions identified in USA .text
@@ -317,6 +328,7 @@ Call graph analysis
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | External splat tooling experiments (SOTC survey, Rabbitizer, 3 splat experiments) |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | Full cloth cluster splat promotion — 22 functions isolated, YAML in splat/ |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | SDK/library recognition — 183 libkernl functions confirmed; libc absent from USA .text |
+| 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | decomp.me scratches regenerated + ee-gcc 15.2.0 toolchain installed |
 
 ---
 
