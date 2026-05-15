@@ -157,6 +157,101 @@ These projects serve as reference implementations for PS2 decompilation methodol
 - Workflow documentation (see parappa2/docs/decompilation.md)
 - PS2-specific compiler flag identification
 
+### 4.1 Fantaskink/SOTC — evaluated as tooling reference
+
+**Repository**: https://github.com/Fantaskink/SOTC
+
+**Local evaluation note**:
+
+```txt
+research/external/sotc-tooling-relevance-survey.md
+```
+
+**Independent follow-up note**:
+
+```txt
+research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md
+```
+
+**Updated relevance**: Medium to High for tooling/process, Low for direct ICO
+semantics.
+
+**Confirmed useful patterns**:
+
+- `splat64[mips]` YAML-based segmentation workflow;
+- Rabbitizer/spimdisasm as an independent MIPS decoding path;
+- Ninja build graph generation;
+- map/first-diff style validation;
+- `sha1sum`-based rebuild checks;
+- SDK/library segmentation strategy;
+- decomp.me compiler package setup pattern.
+
+**Confirmed limits**:
+
+- SOTC is not ICO and must not be used as semantic evidence for ICO gameplay,
+  cloth physics, callbacks, or state machines.
+- SOTC uses `ee-gcc2.96`; ICO remains provisionally identified as EE GCC
+  `2.9-991111-01` with flags documented in Rev.038.
+- SOTC XFF tooling may be useful later for module/overlay work, but it is not
+  current evidence for the ELF cloth dispatcher.
+
+**Result already obtained**:
+
+Rabbitizer independently revalidated the key dispatcher/callback anchors:
+
+| Anchor | Result |
+|---|---|
+| `0x001d3800` | decoded as `sll $v1,$v1,2` |
+| `0x001d3b04` | direct call to local dispatcher VA `0x001d37c8` |
+| `0x00618fb0` | five `.text` jump-table targets: `0x001d3818`, `0x001d3844`, `0x001d391c`, `0x001d39e0`, `0x001d3a10` |
+
+**Completed integration test**:
+
+A minimal `splat64[mips]` experiment for
+`.local/extracted/SCUS_971.13.elf` is documented in:
+
+```txt
+research/external/ico-splat-minimal-experiment.md
+```
+
+Result: `splat` can split the ICO USA `.text`, generate the key dispatcher and
+registration anchors, and carry the full ELF layout when non-text/DVP regions
+are treated as `databin`.
+
+Follow-up result:
+
+```txt
+research/external/ico-splat-promoted-ranges-experiment.md
+```
+
+This promoted four verified ranges into separate asm files:
+
+- `0x0013f3f0` callback storage;
+- `0x0013f7a8` callback registration wrapper;
+- `0x001d37c8` cloth dispatcher;
+- `0x001d3a30` cloth update callback.
+
+The follow-up also found that boundary checks matter: the first naive ends for
+`0x0013f3f0` and `0x0013f7a8` were too short and had to be corrected to include
+return/epilogue instructions.
+
+Second follow-up result:
+
+```txt
+research/external/ico-splat-adjacent-promoted-ranges-experiment.md
+```
+
+This promoted the next adjacent verified ranges:
+
+- `0x0013fc00` callback slot `+0x48` dispatcher;
+- `0x001d27a8` cloth payload initializer candidate;
+- `0x001d3b28` cloth state auxiliary function.
+
+The result is positive from a tooling standpoint: the cluster can be isolated
+incrementally while keeping full ELF coverage. It does not close the semantic
+gap around `0x001d27a8`, because `0x0013fc00` visibly prepares only `a0`, while
+`0x001d27a8` consumes a meaningful `a1`. Runtime capture is still required.
+
 ---
 
 ## 5. PS2 Development Ecosystem
