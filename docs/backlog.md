@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 68 |
+| Completed | 69 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -161,8 +161,18 @@ Handler decompilation wave 2 — GIRL, QUEEN, BGA, AP1
 - Documentado em research/elf/ghidra-rev054-handler-decompilation-wave2.md
 - src/entity/types.h, src/entity/structs.h, src/entity/near_matches.c criados (4 NEAR-STRUCTURAL models)
 
-### [x] [SQUAD-ARCH | 2026-05-16]
-Cloth struct model committed — first C source files in repo
+### [x] [SQUAD-RUNTIME | rev.056 | 2026-05-16]
+Handler decompilation wave 3 — BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR; descriptor index correction
+
+- Descriptor index correction: WOODBOX0=17 (NOT 6), BGA=30 (NOT 50), AP1=61 (NOT 56), BARREL=19 (no init_fn)
+- DEVIL_GI (idx 48) confirmed as full GIRL alias — all 4 handler addresses identical to GIRL
+- BIRD (idx 32): hC=60 insns (64B alloc, random timer spread), hB=2 insns (tail to 0x1E3FC8), hA=24 insns (sub_init + gp check)
+- ATTACKCH idx 62: hC=12B alloc (parent tracking), hB=12 insns (guard), hA=44 insns (projectile spawner)
+- ATTACKCH idx 63: hC=176 insns (320B stack, dynamic child array, rotation math), hB=28 insns (linked-list detach), hA=NO-OP
+- BOSS_CTR (idx 64): hC=60 insns (53-slot loop, no alloc), hB=4 insns (conditional tail), hA=68 insns (slot cleanup)
+- hB dispatcher diversity: 5 distinct patterns observed across all entities (full code, delegate, conditional, linked-list, guard)
+- Total: 12 handler functions analyzed, 13 entries with non-null init_fn mapped
+- Documented in research/elf/ghidra-rev056-handler-decompilation-wave3.md
 
 - src/types.h, src/cloth/structs.h, src/cloth/accessors.c, src/cloth/near_matches.c
 - docs/data-model.md: full data model with ADRs
@@ -453,6 +463,7 @@ Call graph analysis
 | rev.053 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 1: COP2 cloth (dist check + plane clip), WOODBOX0 init/update/post-init, ENEMY1 full lifecycle (19+ subfns), BOY warm/cold init paths |
 | 2026-05-16 | 2026-05-16 | SQUAD-RUNTIME | 0x0024xxxx callers investigated: 0x240D40/0x240EA0 are object factories, excluded for ROPE callback |
 | rev.054 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 2: GIRL, QUEEN, BGA, AP1 — 12 funcoes disassembled, padrao hC/hB/hA confirmado em 7 entidades |
+| rev.056 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 3: BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR — 12 handlers disassembled; descriptor index correction (WOODBOX0=17, BGA=30, AP1=61); hB dispatcher diversity confirmed (no unified dispatch); 13 entries with non-null init_fn |
 
 ---
 

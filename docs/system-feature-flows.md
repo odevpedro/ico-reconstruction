@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-16 (Rev.054 — handler lifecycle flow mapeado: init_fn → hC constructor → hB update → hA reset; 7 entidades confirmadas)
+> **Ultima atualizacao:** 2026-05-16 (Rev.056 — handler wave 3: 13 entidades mapeadas; hB dispatcher diversity confirmada; DEVIL_GI = GIRL alias)
 
 ---
 
@@ -247,23 +247,47 @@ hA     (+0x48) → Post-init / Reset (cleanup, reset condicional)
        └─> group_free() / cleanup chain
 ```
 
-### Tabela de Handlers por Entidade (Rev.054)
+### Tabela de Handlers por Entidade (Rev.056)
 
-| Indice | Nome | init_fn | hC (constructor) | hB (update) | hA (reset) |
-|--------|------|---------|-------------------|-------------|------------|
-| 1 | BOY | 0x153478 | 0x1C1A98 | 0x1C1DD8 (51 insns) | 0x1C1F58 (80 insns) |
-| 2 | GIRL | 0x174BA0 | **0x1D1668** (92 insns, 64B) | **0x1D17F8** (112 insns, anim blend) | **0x1D1A98** (16 insns) |
-| 4 | ENEMY1 | 0x164440 | 0x1CE220 (~103 insns, 80B) | 0x1CE3C0 (~135 insns, AI+draw) | 0x1CE690 (~23 insns) |
-| 17 | WOODBOX0 | 0x17D1D0 | 0x1C00C0 (286 insns, 400B) | 0x1C0538 (27 insns, counter) | 0x1C05D0 (28 insns) |
-| 19 | BARREL | 0 | **0x1D27A8** (cloth_payload_init) | **0x1D3A30** (cloth update, event-driven) | 0x1D3B28 |
-| 30 | BGA | 0x203EE8 | **0** (sem handlers) | **0** | **0** |
-| 46 | QUEEN | 0x19B7F8 | **0x19A7E8** (68 insns, 24B) | **0x19A8F0** (44 insns, LOD scaling) | **0x19A9A0** (32 insns) |
-| 61 | AP1 | 0x1BB6B0 | **0x1B8720** (400+ insns, 640B) | **0x1BA330** (~200 insns, 7-state FSM) | **0x1BA530** (40 insns) |
+| Indice | Nome | init_fn | hC (constructor) | hB (update) | hA (reset) | Status |
+|--------|------|---------|-------------------|-------------|------------|--------|
+| 1 | BOY | 0x153478 | 0x1C1A98 | 0x1C1DD8 (51 insns) | 0x1C1F58 (80 insns) | ASM |
+| 2 | GIRL | 0x174BA0 | 0x1D1668 (92 insns, 64B) | 0x1D17F8 (112 insns, anim blend) | 0x1D1A98 (16 insns) | ASM |
+| 4 | ENEMY1 | 0x164440 | 0x1CE220 (~103 insns, 80B) | 0x1CE3C0 (~135 insns, AI+draw) | 0x1CE690 (~23 insns) | ASM |
+| 17 | WOODBOX0 | 0x17D1D0 | 0x1C00C0 (286 insns, 400B) | 0x1C0538 (27 insns, counter) | 0x1C05D0 (28 insns) | ASM |
+| 19 | BARREL | 0 | 0x1D27A8 (cloth_payload_init) | 0x1D3A30 (cloth update) | 0x1D3B28 | CLOTH |
+| 30 | BGA | 0x203EE8 | 0 | 0 | 0 | ASM |
+| 32 | BIRD | 0x1971C0 | 0x197240 (60 insns, 64B, random timer) | 0x197078 (2 insns, tail to 0x1E3FC8) | 0x197080 (24 insns) | NEAR |
+| 46 | QUEEN | 0x19B7F8 | 0x19A7E8 (68 insns, 24B) | 0x19A8F0 (44 insns, LOD scaling) | 0x19A9A0 (32 insns) | NEAR |
+| 48 | DEVIL_GI | 0x174BA0 | 0x1D1668 (= GIRL) | 0x1D17F8 (= GIRL) | 0x1D1A98 (= GIRL) | ALIAS |
+| 61 | AP1 | 0x1BB6B0 | 0x1B8720 (400+ insns, 640B) | 0x1BA330 (~200 insns, 7-state FSM) | 0x1BA530 (40 insns) | ASM |
+| 62 | ATTACKCH | 0x1BBF78 | 0x1BBE50 (20 insns, 12B alloc) | 0x1BBEA0 (12 insns, guard) | 0x1BBEC8 (44 insns, spawner) | NEAR |
+| 63 | ATTACKCH | 0x1BBF78 | 0x1BBB20 (176 insns, dyn alloc, rotation math) | 0x1BBDD8 (28 insns, linked-list detach) | 0x1BBE48 (2 insns, NO-OP) | ASM |
+| 64 | BOSS_CTR | 0x198140 | 0x198218 (60 insns, 53-slot loop) | 0x197FC8 (4 insns, conditional tail) | 0x198000 (68 insns, slot cleanup) | ASM |
+
+### hB dispatcher diversity
+
+Nao ha um dispatcher unificado para hB (+0x50). Cada entidade tem codigo hB independente,
+chamado atraves do mesmo mecanismo de dispatcher do descritor. Padroes observados:
+
+| Pattern | Count | Entities |
+|---------|-------|----------|
+| Full code | 7 | BOY, GIRL/DEVIL_GI, ENEMY1, WOODBOX0, QUEEN, AP1 |
+| Delegate (tail to 0x1E3FC8) | 1 | BIRD |
+| Conditional tail | 1 | BOSS_CTR (0x17DD60 or 0x17DCD8) |
+| Linked-list management | 1 | ATTACKCH idx 63 |
+| Small guard (12 insns) | 1 | ATTACKCH idx 62 |
+| Cloth physics | 1 | BARREL |
+
+A busca por um dispatcher centralizado (Rev.055) falhou porque o dispatcher nao existe —
+o runtime le `descriptor[+0x50]` e chama `jalr` diretamente para cada entidade.
 
 ### Observacoes
 
-- **hC sempre aloca via 0x13A0F8**: todas as entidades com hC usam heap_alloc com tag unica
+- **hC sempre aloca via 0x13A0F8**: todas as entidades com hC usam heap_alloc com tag unica (exceto BOSS_CTR que tem alloc=0)
 - **entity_state_reg**: todas chamam com (a1, a2, a3, t0, t1) — parametros especificos por tipo
 - **descriptor_setup(entity, 2)**: padrao universal (exceto BARREL que tem init_fn=0)
 - **BGA e o caso atipico**: 2D sprite overlay, init_fn=12 insns, sem handlers
 - **AP1 e o mais complexo**: 640B de estado, 4 child slots, state machine de 7 estados, frame offset randomization
+- **DEVIL_GI = GIRL alias**: todos os 4 handlers identicos. Provavelmente paleta alternativa ou versao de cutscene.
+- **Nenhum handler usa COP2**: COP2 exclusivo do sistema cloth BARREL (79 COP2 total em 2 funcoes)

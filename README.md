@@ -113,9 +113,11 @@ Current ELF research focus:
 - **Rev.050** — Cloth system anatomy consolidated. Three analyses: (1) `cloth_payload_init` (0x1D27A8) partially decompiled — variant-controlled init path, (2) `0x1B76F8` identified as the descriptor iteration function that calls `cloth_payload_init` via `descriptor+0x58`, (3) Entry table at `0x002A4C48` fully mapped (512 entries, stride 0x4C). **No entry has +0x46=0x14 (ROPE)** — all cloth objects use BARREL (index 0x13) which shares the same handlers. [`research/elf/ghidra-rev050-cloth-system-anatomy.md`](./research/elf/ghidra-rev050-cloth-system-anatomy.md)
 - **src/ directory** — First verified C sources committed. Struct model with `cloth_payload`, `cloth_entity`, `cloth_context`, `physics_type_entry`. 3 exact-match accessor functions and 3 near-structural models.
 - **Rev.051** — Runtime session 3 (~90 min, 1419 events): probe direto em `0x001D3A30` confirmou **zero disparos** durante gameplay normal, refutando o modelo de "update callback por frame". Investigação dos callers `0x00240E58`/`0x00240F98` revelou duas funções factory (`0x240D40`, `0x240EA0`) que registram múltiplos callbacks — ambas excluídas como caminho para o ROPE callback. Correção do segmento `.text`: `0x00100000..0x0026F5D4` (não `0x001Fxxxx`). [`research/runtime/pcsx2-recompiler-session3-2026-05-16.md`](./research/runtime/pcsx2-recompiler-session3-2026-05-16.md)
-- **Rev.052** — Five-way consolidation: descriptor table full map (68 entries, stride 0x64), sister_callback_reg decompiled, cloth_event_clear decompiled, DVP overlays confirmed as VU0 microcode (no MIPS code), VU0 cloth physics (20KB microcode + 63 COP2 instructions). [`research/elf/ghidra-rev052-five-way-consolidation.md`](./research/elf/ghidra-rev052-five-way-consolidation.md)
+- **Rev.052** — Five-way consolidation: descriptor table full map (68 entries, stride 0x64, 13 with non-null init_fn), sister_callback_reg decompiled, cloth_event_clear decompiled, DVP overlays confirmed as VU0 microcode (no MIPS code), VU0 cloth physics (20KB microcode + 63 COP2 instructions). [`research/elf/ghidra-rev052-five-way-consolidation.md`](./research/elf/ghidra-rev052-five-way-consolidation.md)
 - **Rev.053** — Handler decompilation wave 1: COP2 cloth functions (clothSubDistanceCheck at 0x1D3E80, clothSubPlaneClip at 0x1D45B0), WOODBOX0 lifecycle (286 insns constructor, 27 insns update), ENEMY1 full AI lifecycle (19+ sub-functions mapped), BOY warm/cold init paths. [`research/elf/ghidra-rev053-handler-decompilation-wave1.md`](./research/elf/ghidra-rev053-handler-decompilation-wave1.md)
 - **Rev.054** — Handler decompilation wave 2: GIRL/Yorda (64B alloc, variant paths, anim blend), QUEEN boss (24B alloc, LOD scaling), BGA sprite overlay (init_fn=12 insns, no handlers), AP1 attack pattern 1 (640B alloc, 4 child slots, 7-state machine). Padrão hC/hB/hA confirmado em 7 entidades. [`research/elf/ghidra-rev054-handler-decompilation-wave2.md`](./research/elf/ghidra-rev054-handler-decompilation-wave2.md)
+- **Rev.055** — COP2 cloth decompilation: clothSubDistanceCheck (5 COP2, proximity wakeup), clothSubPlaneClip (74 COP2, 4×4 transform + frustum clip), clothSubForceApply (0 COP2 — EE sin/cos only). BOY hC analyzed: 76B alloc, 5 models, 3 child entities. hB dispatcher investigation: gap unresolved — no centralized dispatch found. [`research/elf/ghidra-rev055-cop2-cloth-boy-hc-hb-dispatcher.md`](./research/elf/ghidra-rev055-cop2-cloth-boy-hc-hb-dispatcher.md)
+- **Rev.056** — Handler decompilation wave 3 (final): BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR — 12 handlers analyzed. Descriptor index correction (WOODBOX0=17, BGA=30, AP1=61). DEVIL_GI = GIRL alias. BIRD hB = 2 insns (delegate). ATTACKCH idx 63 hC = 176 insns (rotation matrix + dynamic child array). BOSS_CTR = 53-slot Queen boss arena manager. hB dispatcher diversity: 5 distinct patterns, no centralized dispatch. All 13 entries with non-null init_fn now mapped. [`research/elf/ghidra-rev056-handler-decompilation-wave3.md`](./research/elf/ghidra-rev056-handler-decompilation-wave3.md)
 
 These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
 
@@ -152,10 +154,10 @@ These notes describe structural evidence only. They do not assign definitive gam
 │   │   ├── structs.h             # Cloth struct hierarchy (payload, entity, context)
 │   │   ├── accessors.c           # 3 EXACT match functions
 │   │   └── near_matches.c        # 3 NEAR-STRUCTURAL validated models
-│   └── entity/                   # Entity system structs and handlers (Rev.054)
-│       ├── types.h               # Entity type enums (68 types, phy_type constants)
-│       ├── structs.h             # Descriptor/entry/state struct definitions
-│       └── near_matches.c        # 4 NEAR-STRUCTURAL handler models (GIRL hA, QUEEN hA/init, BGA init)
+    │   └── entity/                   # Entity system structs and handlers (Rev.056)
+    │       ├── types.h               # 68-type enum, phy_type constants
+    │       ├── structs.h             # descriptor_record, entry_record, state_block
+    │       └── near_matches.c        # 4 NEAR-STRUCTURAL handler models (GIRL hA, QUEEN hA/init, BGA init)
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
 └── tools/

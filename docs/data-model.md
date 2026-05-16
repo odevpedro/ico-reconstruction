@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-16 (Rev.054 — handler wave 2: GIRL, QUEEN, BGA, AP1; padrao hC/hB/hA confirmado em 7 entidades; src/entity/ criado com structs e 4 NEAR-STRUCTURAL models)
+> **Ultima atualizacao:** 2026-05-16 (Rev.056 — handler wave 3: BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR; descriptor index correction; hB dispatcher diversity; 13 entries with init_fn mapped)
 
 ---
 
@@ -154,27 +154,29 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 | **hA (+0x48)** | Post-init / Reset | Chamado condicionalmente. Cleanup, reset de estado |
 | **init_fn (+0x40)** | Asset init | Carrega modelos 3D, configura DMA. Chamado pelo sistema de assets |
 
-**Indices conhecidos (Rev.052 — scan completo de 68 entries):**
+**Indices conhecidos (Rev.056 — scan completo de 68 entries, indices corrigidos):**
 
-| Indice | Label | init_fn (+0x40) | hA (+0x48) | hB (+0x50) | hC (+0x58) | Alloc hC |
-|--------|-------|-----------------|-------------|-------------|-------------|----------|
-| 1 | BOY | 0x153478 | 0x1C1F58 | 0x1C1DD8 | 0x1C1A98 | ? |
-| 2 | **GIRL** | 0x174BA0 | **0x1D1A98** | **0x1D17F8** | **0x1D1668** | **64B** |
-| 4 | **ENEMY1** | 0x164440 | 0x1CE690 | 0x1CE3C0 | 0x1CE220 | 80B |
-| 17 | **WOODBOX0** | 0x17D1D0 | 0x1C05D0 | 0x1C0538 | 0x1C00C0 | 400B |
-| 19 | **BARREL** | 0 | 0x1D3B28 | 0x1D3A30 | 0x1D27A8 | ~40B |
-| 20 | ROPE | 0 | 0x1E9630 | 0x1E9810 | 0x1E8F38 | — |
-| 30 | **BGA** | **0x203EE8** | **0** | **0** | **0** | **0** |
-| 46 | **QUEEN** | **0x19B7F8** | **0x19A9A0** | **0x19A8F0** | **0x19A7E8** | **24B** |
-| 48 | DEVIL_GI | 0x174BA0 | ? | ? | ? | — |
-| 61 | **AP1** | 0x1BB6B0 | **0x1BA530** | **0x1BA330** | **0x1B8720** | **640B** |
-| 62 | ATTACKCH | 0x1BBF78 | ? | ? | ? | — |
-| 63 | ATTACKCH | 0x1BBF78 | ? | ? | ? | — |
-| 64 | BOSS_CTR | 0x198140 | ? | ? | ? | — |
+| Indice | Label | init_fn (+0x40) | hA (+0x48) | hB (+0x50) | hC (+0x58) | Alloc hC | Status |
+|--------|-------|-----------------|-------------|-------------|-------------|----------|--------|
+| 1 | BOY | 0x153478 | 0x1C1F58 | 0x1C1DD8 | 0x1C1A98 | ? | ASM |
+| 2 | GIRL | 0x174BA0 | 0x1D1A98 | 0x1D17F8 | 0x1D1668 | 64B | ASM |
+| 4 | ENEMY1 | 0x164440 | 0x1CE690 | 0x1CE3C0 | 0x1CE220 | 80B | ASM |
+| 17 | WOODBOX0 | 0x17D1D0 | 0x1C05D0 | 0x1C0538 | 0x1C00C0 | 400B | ASM |
+| 19 | BARREL | 0 | 0x1D3B28 | 0x1D3A30 | 0x1D27A8 | ~40B | CLOTH |
+| 20 | ROPE | 0 | 0x1E9630 | 0x1E9810 | 0x1E8F38 | — | OVERLAY |
+| 30 | BGA | 0x203EE8 | 0 | 0 | 0 | 0 | ASM |
+| 32 | BIRD | 0x1971C0 | 0x197080 | 0x197078 | 0x197240 | 64B | NEAR |
+| 46 | QUEEN | 0x19B7F8 | 0x19A9A0 | 0x19A8F0 | 0x19A7E8 | 24B | NEAR |
+| 48 | DEVIL_GI | 0x174BA0 | 0x1D1A98 | 0x1D17F8 | 0x1D1668 | 64B | ALIAS |
+| 61 | AP1 | 0x1BB6B0 | 0x1BA530 | 0x1BA330 | 0x1B8720 | 640B | ASM |
+| 62 | ATTACKCH | 0x1BBF78 | 0x1BBEC8 | 0x1BBEA0 | 0x1BBE50 | 12B | NEAR |
+| 63 | ATTACKCH | 0x1BBF78 | 0x1BBE48 | 0x1BBDD8 | 0x1BBB20 | dyn*8 | ASM |
+| 64 | BOSS_CTR | 0x198140 | 0x198000 | 0x197FC8 | 0x198218 | 0 | ASM |
 
-**12 entradas com init_fn nao-nulo (modelos 3D dedicados):** BOY, GIRL, ENEMY1, WOODBOX0, BGA, BIRD, QUEEN, DEVIL_GI, AP1, ATTACKCH x2, BOSS_CTR
+**13 entradas com init_fn nao-nulo:** BOY, GIRL, ENEMY1, WOODBOX0, BGA, BIRD, QUEEN, DEVIL_GI, AP1, ATTACKCH x2, BOSS_CTR
+**10 enderecos unicos init_fn:** GIRL/DEVIL_GI compartilham 0x174BA0, ATTACKCH 62/63 compartilham 0x1BBF78
 
-**Observacao:** BARREL (0x13) e ROPE (0x14) compartilhavam os mesmos handlers na tabela antiga (Rev.049). Rev.052 corrigiu: BARREL tem handlers 0x1D3B28/0x1D3A30/0x1D27A8, ROPE tem 0x1E9630/0x1E9810/0x1E8F38 — completamente diferentes. BARREL usa handlers cloth physics, ROPE usa handlers overlay.
+**Observacao:** BARREL (idx 19) e ROPE (idx 20) sao descritores diferentes, mas na tabela de tipos fisicos (0x001A48A0) ambos aparecem com os mesmos handlers. Rev.056 corrigiu indices de varios descritores: WOODBOX0=17 (era 6), BGA=30 (era 50), AP1=61 (era 56).
 
 ---
 
