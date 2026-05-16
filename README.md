@@ -65,7 +65,7 @@ The project does not currently define a database, backend API, ORM, authenticati
 
 ## Current Status
 
-The project is currently in the **planning and architecture phase**.
+The project has moved into **decompilation and struct modeling**. A verified structural model of the cloth physics system exists in `src/`, with 3 EXACT C matches and 5 NEAR-STRUCTURAL validated models (Rev.048). The ROPE callback is confirmed to live in a static physics object type table at `0x001A48A0` with 31 types (Rev.049), not in the dynamic callback registry.
 
 No reconstructed game code, assets, binaries, or ISO-derived copyrighted data are included in this repository.
 
@@ -108,6 +108,9 @@ Current ELF research focus:
   - **Rabbitizer/spimdisasm** independently validated dispatcher/callback instruction anchors
   - **SOTC tooling survey** confirmed useful process patterns (splat, Ninja, map/first-diff)
 - Full cloth cluster documented in [`research/external/ico-splat-cloth-full-promotion.md`](./research/external/ico-splat-cloth-full-promotion.md)
+- **Rev.048** — C scratch model synthesis with fixed taxonomy (EXACT/NEAR-STRUCTURAL/NEAR-LOCAL/MISMATCH/BLOCKED/ASM-HOLD), `ico_ptr32` type rule, and GCC 2.95.2 limitations documented. 3 exact matches, 5 near-structural validated models. [`research/elf/ghidra-rev048-c-scratch-model-and-ico_ptr32.md`](./research/elf/ghidra-rev048-c-scratch-model-and-ico_ptr32.md)
+- **Rev.049** — Physics object type table discovered at `0x001A48A0` (stride 0x64, 31 types). ROPE entry at `0x001A4968` with handlers `0x001D3B28`, `0x001D3A30`, `0x001D27A8`. Confirms ROPE callback is NOT registered via `0x0013F7A8` — it lives statically in the type table. [`research/elf/ghidra-rev049-physics-object-type-table.md`](./research/elf/ghidra-rev049-physics-object-type-table.md)
+- **src/ directory** — First verified C sources committed. Struct model with `cloth_payload`, `cloth_entity`, `cloth_context`, `physics_type_entry`. 3 exact-match accessor functions and 3 near-structural models.
 
 These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
 
@@ -125,6 +128,7 @@ These notes describe structural evidence only. They do not assign definitive gam
 │   ├── architectural-analysis-a-d.md # rev.007 feasibility and validation map
 │   ├── architecture-log.md       # Historical record of implemented flows and decisions
 │   ├── backlog.md                # Current work state and revision signatures
+│   ├── data-model.md             # Reverse-engineered struct hierarchy
 │   ├── legal-boundaries.md       # Legal and content boundaries
 │   ├── research-methodology.md   # Research evidence standards
 │   └── tooling-plan.md           # Planned local tooling workflow
@@ -137,6 +141,12 @@ These notes describe structural evidence only. They do not assign definitive gam
 │   ├── README.md                 # Research note organization
 │   └── iso-layout/               # Metadata-only disc layout observations
 ├── splat/                        # splat64[mips] YAML config and Makefile
+├── src/                          # Verified reverse-engineered C sources
+│   ├── types.h                   # ico_ptr32 and basic type definitions
+│   └── cloth/
+│       ├── structs.h             # Cloth struct hierarchy (payload, entity, context)
+│       ├── accessors.c           # 3 EXACT match functions
+│       └── near_matches.c        # 3 NEAR-STRUCTURAL validated models
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
 └── tools/

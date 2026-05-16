@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 59 |
+| Completed | 63 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -81,6 +81,34 @@ decomp.me scratches regenerated + ee-gcc toolchain installed
 - Full build pipeline tested: assembly works, linking needs path adjustments
 - Note: matching ee-gcc 2.9-991111-01 requires Sony PS2 Linux SDK (GCC 2.95.2 with R5900 patches)
 - decomp.me has NO ee-gcc compiler packages — only Metrowerks mwcps2 for PS2
+
+### [x] [SQUAD-EXTERNAL | rev.048 | 2026-05-16]
+C scratch model synthesis — fixed taxonomy, ico_ptr32 rule, 9-function status matrix
+
+- Fixed taxonomy: EXACT / NEAR-STRUCTURAL / NEAR-LOCAL / MISMATCH / BLOCKED / ASM-HOLD
+- 3 EXACT matches (bit-identical C for 0x1D3D70, 0x1D3D80, 0x1D3D98)
+- 5 NEAR-STRUCTURAL validated models (0x1D3DB0, 0x1D3D40, 0x1D40A0, 0x1D4358, 0x1D3BF0)
+- 1 BLOCKED (dispatcher 0x1D37C8 due to jump table)
+- ico_ptr32 (typedef int) confirmed across all 8 tested functions
+- GCC 2.95.2 limitations documented (7 items)
+- Documented in research/elf/ghidra-rev048-c-scratch-model-and-ico_ptr32.md
+
+### [x] [SQUAD-EXTERNAL | rev.049 | 2026-05-16]
+Physics object type table discovered — ROPE callback lives in static table
+
+- 31 physics object types at 0x001A48A0, stride 0x64
+- ROPE entry has handlers 0x1D3B28, 0x1D3A30, 0x1D27A8
+- 0x001D3A30 NOT registered via 0x0013F7A8 (confirmed by 483 runtime events)
+- ROPE gap redefined: find table reader, not registration path
+- Documented in research/elf/ghidra-rev049-physics-object-type-table.md
+
+### [x] [SQUAD-ARCH | 2026-05-16]
+Cloth struct model committed — first C source files in repo
+
+- src/types.h, src/cloth/structs.h, src/cloth/accessors.c, src/cloth/near_matches.c
+- docs/data-model.md: full data model with ADRs
+- docs/system-feature-flows.md: cloth dispatch flow + type table init
+- README.md updated with new structure and findings
 
 ### [x] [SQUAD-TOOLING | 2026-05-15]
 SDK/library recognition — PS2 SDK functions identified in USA .text
@@ -356,6 +384,10 @@ Call graph analysis
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | Full cloth cluster splat promotion — 22 functions isolated, YAML in splat/ |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | SDK/library recognition — 183 libkernl functions confirmed; libc absent from USA .text |
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | decomp.me scratches regenerated + ee-gcc 15.2.0 toolchain installed |
+| rev.048 | 2026-05-16 | SQUAD-EXTERNAL | C scratch model synthesis — fixed taxonomy, ico_ptr32 rule, 9-function status matrix |
+| rev.049 | 2026-05-16 | SQUAD-EXTERNAL | Physics object type table — ROPE in static table, not dynamic registry |
+| 2026-05-16 | 2026-05-16 | SQUAD-ARCH | First C source files committed (struct model + accessors + near matches) |
+| 2026-05-16 | 2026-05-16 | SQUAD-ARCH | docs/data-model.md + docs/system-feature-flows.md created |
 
 ---
 
