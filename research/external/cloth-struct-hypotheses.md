@@ -2,18 +2,23 @@
 
 ## Date
 
-2026-05-15 (Updated with Rev.046-047 runtime evidence)
+2026-05-16 (Updated with ico_ptr32 rule and exact match evidence)
 
 ## Resumo executivo
 
 Hipóteses de estruturas de dados para o sistema cloth do ICO, baseadas em
 offsets confirmados por 6 near-matches de accessors + análise runtime
-Rev.046. **A principal mudança**: o initializer struct (`a1`) não é um
-descritor global — é uma estrutura **temporária na stack** do caller.
+Rev.046 + 3 retestes com `ico_ptr32` (Rev.048).
 
-Quatro estruturas separadas:
+**Mudanças desta revisão**:
+- `ico_ptr32` (typedef para `int`) é a regra provisória para campos que
+  armazenam endereços internos do jogo (gera `lw`, não `ld`)
+- `EntityContext.entity` e `Entity.payload` mudaram de `void*` para `ico_ptr32`
+- O initializer struct (`a1`) continua como `StackInitializer` na stack
 
-1. **EntityContext** — contexto passado em `a0` (contém ponteiro para entidade)
+Cinco estruturas separadas:
+
+1. **EntityContext** — contexto passado em `a0` (contém endereço da entidade)
 2. **Entity** — entidade que contém payload cloth em +0x800
 3. **ClothPayload** — dados de simulação (variant, state_id, flags)
 4. **DescriptorRecord** — registro fixo na `.data` (contém slots de callback)
@@ -36,18 +41,35 @@ Captura no PCXS2 debugger, breakpoint em `0x001D27A8`:
 
 ## Estruturas
 
+### 0. Regra provisória: `ico_ptr32`
+
+```c
+typedef int ico_ptr32;
+```
+
+`ico_ptr32` modela endereços internos do jogo armazenados como words de
+32 bits. O tipo `int` (signed) foi escolhido porque gera `lw`, que é o
+que o ICO usa. `unsigned int` geraria `lwu`. `void*` geraria `ld`.
+
+**Confirmado por**: 3 retestes com exact near-match (0x1D3DB0, 0x1D3D40,
+0x1D40A0) — todos geraram `lw` para entity e payload com este tipo.
+
+**Cautela**: não é tipo final. Não aplicar a campos que são ponteiros de
+sistema (callbacks em DescriptorRecord) sem verificar se o ICO usa `ld`
+ou `lw` para carregá-los.
+
 ### 1. EntityContext (era "ClothContext")
 
-Passado em `a0` para funções do cluster cloth. Contém ponteiro para a
-entidade e para dados auxiliares.
+Passado em `a0` para funções do cluster cloth. Contém endereço da
+entidade e endereço auxiliar, ambos como `ico_ptr32`.
 
 ```c
 // Tamanho: pelo menos 0x170 bytes
 struct EntityContext {
     uint8_t  pad_000[0x15C];          // 348 bytes de uso interno
-    void    *entity;                   // +0x15C — ponteiro para Entity
+    ico_ptr32 entity;                  // +0x15C — endereço da Entity (32-bit)
     uint8_t  pad_160[0x16C - 0x160];  // 12 bytes
-    void    *extra_ptr;                // +0x16C — ponteiro auxiliar (opcional)
+    ico_ptr32 extra_ptr;               // +0x16C — endereço auxiliar (32-bit)
 };
 ```
 
@@ -63,7 +85,7 @@ Entidade que contém o payload cloth em `+0x800`.
 // Tamanho: pelo menos 0x804 bytes
 struct Entity {
     uint8_t  pad_000[0x800];          // 2048 bytes — estrutura maior de entidade
-    void    *payload;                  // +0x800 — ponteiro para ClothPayload
+    ico_ptr32 payload;                 // +0x800 — endereço do ClothPayload (32-bit)
 };
 ```
 
@@ -171,7 +193,9 @@ Descritor (.data, s0=0x002A3924 "BARREL")
             └─ [Entity + 0x800] = payload
 ```
 
-## O que mudou com o runtime
+## O que mudou com runtime e exact matches
+
+### Mudanças runtime (Rev.046-047)
 
 | Antes | Depois |
 |---|---|
@@ -180,6 +204,14 @@ Descritor (.data, s0=0x002A3924 "BARREL")
 | `InitArg` só com variant | Struct completa com dados de transform |
 | Descritor não observado | `DescriptorRecord` com nome e 3 slots |
 | "ROPE" como descritor separado | "ROPE" é label dentro do BARREL |
+
+### Mudanças de modelagem (Rev.048 — exact match retests)
+
+| Antes | Depois | Evidência |
+|---|---|---|
+| `void *entity` em EntityContext | `ico_ptr32 entity` | 3 retestes: `int` gera `lw` (match), `void*` gera `ld` (mismatch) |
+| `void *payload` em Entity | `ico_ptr32 payload` | mesmo padrão |
+| Todos os ponteiros como `void*` | `ico_ptr32` para endereços, `void*` apenas para callbacks de sistema | `DescriptorRecord.slot_*` ainda não testados |
 
 ## Nomes provisórios vs ICO-decomp
 
@@ -206,4 +238,6 @@ Descritor (.data, s0=0x002A3924 "BARREL")
 1. Breakpoint em `0x001B7A74` — entender quem chama o caller
 2. Breakpoint em `0x0013F7A8` — ver registro do callback no slot +0x50
 3. Mais hits de `0x001D27A8` — ver se variant muda
+4. Consolidar C sources testados em `research/external/cloth-exact-match-c-sources.md`
+5. Testar `0x001D4358` (pack color, 160B) — próximo candidato sem branches
 
