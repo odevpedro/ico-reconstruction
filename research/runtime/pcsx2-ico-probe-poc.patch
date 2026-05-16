@@ -1,0 +1,117 @@
+diff --git a/pcsx2/Interpreter.cpp b/pcsx2/Interpreter.cpp
+index 70cd58d..da423d0 100644
+--- a/pcsx2/Interpreter.cpp
++++ b/pcsx2/Interpreter.cpp
+@@ -11,6 +11,8 @@
+ 
+ #include "common/FastJmp.h"
+ 
++#include <cstdio>
++#include <cstdlib>
+ #include <float.h>
+ 
+ using namespace R5900;		// for OPCODE and OpcodeImpl
+@@ -26,6 +28,94 @@ static u32 intLastBranchTo;
+ 
+ void intEventTest();
+ 
++static FILE* IcoProbeGetLogFile()
++{
++	static FILE* log_file = nullptr;
++	static bool attempted_open = false;
++
++	if (attempted_open)
++		return log_file;
++
++	attempted_open = true;
++
++	const char* log_path = std::getenv("ICO_PCSX2_PROBE_LOG");
++	if (!log_path || !log_path[0])
++		log_path = "/tmp/ico-pcsx2-probe-events.jsonl";
++
++	log_file = std::fopen(log_path, "ab");
++	if (log_file)
++		std::setvbuf(log_file, nullptr, _IOLBF, 0);
++
++	return log_file;
++}
++
++static void IcoProbeWriteWordArray(FILE* fp, const u32 base, const u32 words)
++{
++	std::fputc('[', fp);
++	for (u32 i = 0; i < words; i++)
++	{
++		if (i != 0)
++			std::fputc(',', fp);
++		std::fprintf(fp, "\"0x%08x\"", memRead32(base + (i * 4)));
++	}
++	std::fputc(']', fp);
++}
++
++static void IcoProbeMaybeLog(const u32 pc)
++{
++	if (pc != 0x001d27a8)
++		return;
++
++	FILE* fp = IcoProbeGetLogFile();
++	if (!fp)
++		return;
++
++	const u32 a0 = cpuRegs.GPR.n.a0.UL[0];
++	const u32 a1 = cpuRegs.GPR.n.a1.UL[0];
++	const u32 a2 = cpuRegs.GPR.n.a2.UL[0];
++	const u32 a3 = cpuRegs.GPR.n.a3.UL[0];
++	const u32 sp = cpuRegs.GPR.n.sp.UL[0];
++	const u32 ra = cpuRegs.GPR.n.ra.UL[0];
++	const u32 v0 = cpuRegs.GPR.n.v0.UL[0];
++	const u32 v1 = cpuRegs.GPR.n.v1.UL[0];
++	const u32 s0 = cpuRegs.GPR.n.s0.UL[0];
++	const u32 s3 = cpuRegs.GPR.n.s3.UL[0];
++
++	std::fprintf(fp,
++		"{\"session\":\"ico_probe_poc\","
++		"\"label\":\"cloth_payload_init\","
++		"\"pc\":\"0x%08x\","
++		"\"cycle\":%llu,"
++		"\"regs\":{"
++		"\"a0\":\"0x%08x\","
++		"\"a1\":\"0x%08x\","
++		"\"a2\":\"0x%08x\","
++		"\"a3\":\"0x%08x\","
++		"\"sp\":\"0x%08x\","
++		"\"ra\":\"0x%08x\","
++		"\"v0\":\"0x%08x\","
++		"\"v1\":\"0x%08x\","
++		"\"s0\":\"0x%08x\","
++		"\"s3\":\"0x%08x\"},"
++		"\"caller_probe\":{"
++		"\"ra_minus_8\":\"0x%08x\","
++		"\"ra_minus_4\":\"0x%08x\","
++		"\"ra\":\"0x%08x\"},"
++		"\"memory\":{"
++		"\"a1_plus_30_word\":\"0x%08x\","
++		"\"a1_words_32\":",
++		pc,
++		static_cast<unsigned long long>(cpuRegs.cycle),
++		a0, a1, a2, a3, sp, ra, v0, v1, s0, s3,
++		memRead32(ra - 8), memRead32(ra - 4), memRead32(ra),
++		memRead32(a1 + 0x30));
++
++	IcoProbeWriteWordArray(fp, a1, 32);
++	std::fprintf(fp, ",\"sp_words_16\":");
++	IcoProbeWriteWordArray(fp, sp, 16);
++	std::fprintf(fp, "}}\n");
++}
++
+ void intUpdateCPUCycles()
+ {
+ 	const bool lowcycles = (cpuBlockCycles <= 40);
+@@ -169,6 +259,8 @@ static void execI()
+ #endif
+ 
+ 	const u32 pc = cpuRegs.pc;
++	IcoProbeMaybeLog(pc);
++
+ 	// We need to increase the pc before executing the memRead32. An exception could appears
+ 	// and it expects the PC counter to be pre-incremented
+ 	cpuRegs.pc += 4;
