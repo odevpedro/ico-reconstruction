@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-16 (Rev.050 — added descriptor_entry, descriptor_record, entry_table; expanded cloth_payload, cloth_context)
+> **Ultima atualizacao:** 2026-05-16 (Rev.054 — handler wave 2: GIRL, QUEEN, BGA, AP1; padrao hC/hB/hA confirmado em 7 entidades; src/entity/ criado com structs e 4 NEAR-STRUCTURAL models)
 
 ---
 
@@ -131,24 +131,50 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 
 | Campo | Offset | Tipo | Descricao |
 |-------|--------|------|-----------|
-| ... | +0x00..+0x3C | varios | Campos nao mapeados |
-| `callback_aux` | +0x48 | ico_ptr32 | Handler auxiliar (ex: 0x1D3B28 para BARREL) |
-| `callback_update` | +0x50 | ico_ptr32 | Handler update/frame (ex: 0x1D3A30 para BARREL) |
-| `callback_init` | +0x58 | ico_ptr32 | Handler init/payload (ex: 0x1D27A8 para BARREL) |
+| `name` | +0x00 | char[4-8] | Nome ASCII, 4-8 bytes null-padded |
+| `phy_type` | +0x20 | u8 | Tipo de constraint fisico (0xF1=lever, 0xF2=woodbox, 0xF3=barrel, 0=generic) |
+| `scale` | +0x28 | float | Escala fisica (1.0=active, 0.0=inactive) |
+| `damping` | +0x2C | float | Damping/gravity (0.01=physics, 0.0=inert) |
+| `count` | +0x30 | u32 | Limite de instancias |
+| `init_fn` | +0x40 | ico_ptr32 | **Constructor/asset init** (0 = sem modelo dedicado) |
+| `flags` | +0x44 | u32 | 1=active, 0=inactive |
+| **hA** | **+0x48** | **ico_ptr32** | **Post-init/Reset handler** |
+| (pad) | +0x4C | u32 | Zero |
+| **hB** | **+0x50** | **ico_ptr32** | **Update per-frame handler** |
+| (pad) | +0x54 | u32 | Zero |
+| **hC** | **+0x58** | **ico_ptr32** | **Constructor/Init handler** (chamado por 0x1B76F8) |
+| (pad) | +0x5C | u32 | Zero |
 
-**Indices conhecidos:**
+**Convencao de handlers (confirmada em 7 entidades, Rev.053-054):**
 
-| Indice | Label | VA | +0x40 | +0x48 | +0x50 | +0x58 |
-|--------|-------|----|-------|-------|-------|-------|
-| 0x01 | BOY | 0x002A321C | 0x00153478 | 0x00000000 | 0x00000000 | 0x00000000 |
-| 0x02 | GIRL | 0x002A3280 | 0x00174BA0 | 0x001C1DD8 | 0x001C1F58 | 0x00000000 |
-| 0x13 | BARREL | 0x002A3924 | 0x00000000 | 0x001D3B28 | 0x001D3A30 | 0x001D27A8 |
-| 0x14 | ROPE | 0x002A3988 | 0x00000000 | 0x001D3B28 | 0x001D3A30 | 0x001D27A8 |
-| 0x15 | CHAIN | 0x002A39EC | 0x00000000 | 0x1E9630 | 0x1E9810 | 0x1E8F38 |
-| 0x16 | FLEVER | 0x002A3A50 | 0x00000000 | 0x18F640 | 0x18ECC8 | 0x18E5B0 |
-| 0x17 | FLEVER_TRISTATE | 0x002A3AB4 | 0x00000000 | 0x1BC438 | 0x1BC130 | 0x1C09C8 |
+| Slot | Papel | Detalhes |
+|------|-------|----------|
+| **hC (+0x58)** | Constructor | Aloca heap via 0x13A0F8, init estado interno. Chamado pelo iterador 0x1B76F8 |
+| **hB (+0x50)** | Update per-frame | Despachado em runtime. Contem colisao, AI, animacao, desenho |
+| **hA (+0x48)** | Post-init / Reset | Chamado condicionalmente. Cleanup, reset de estado |
+| **init_fn (+0x40)** | Asset init | Carrega modelos 3D, configura DMA. Chamado pelo sistema de assets |
 
-**Observacao:** BARREL (0x13) e ROPE (0x14) compartilham EXATAMENTE os mesmos 3 handlers. A entry table usa BARREL, nunca ROPE.
+**Indices conhecidos (Rev.052 — scan completo de 68 entries):**
+
+| Indice | Label | init_fn (+0x40) | hA (+0x48) | hB (+0x50) | hC (+0x58) | Alloc hC |
+|--------|-------|-----------------|-------------|-------------|-------------|----------|
+| 1 | BOY | 0x153478 | 0x1C1F58 | 0x1C1DD8 | 0x1C1A98 | ? |
+| 2 | **GIRL** | 0x174BA0 | **0x1D1A98** | **0x1D17F8** | **0x1D1668** | **64B** |
+| 4 | **ENEMY1** | 0x164440 | 0x1CE690 | 0x1CE3C0 | 0x1CE220 | 80B |
+| 17 | **WOODBOX0** | 0x17D1D0 | 0x1C05D0 | 0x1C0538 | 0x1C00C0 | 400B |
+| 19 | **BARREL** | 0 | 0x1D3B28 | 0x1D3A30 | 0x1D27A8 | ~40B |
+| 20 | ROPE | 0 | 0x1E9630 | 0x1E9810 | 0x1E8F38 | — |
+| 30 | **BGA** | **0x203EE8** | **0** | **0** | **0** | **0** |
+| 46 | **QUEEN** | **0x19B7F8** | **0x19A9A0** | **0x19A8F0** | **0x19A7E8** | **24B** |
+| 48 | DEVIL_GI | 0x174BA0 | ? | ? | ? | — |
+| 61 | **AP1** | 0x1BB6B0 | **0x1BA530** | **0x1BA330** | **0x1B8720** | **640B** |
+| 62 | ATTACKCH | 0x1BBF78 | ? | ? | ? | — |
+| 63 | ATTACKCH | 0x1BBF78 | ? | ? | ? | — |
+| 64 | BOSS_CTR | 0x198140 | ? | ? | ? | — |
+
+**12 entradas com init_fn nao-nulo (modelos 3D dedicados):** BOY, GIRL, ENEMY1, WOODBOX0, BGA, BIRD, QUEEN, DEVIL_GI, AP1, ATTACKCH x2, BOSS_CTR
+
+**Observacao:** BARREL (0x13) e ROPE (0x14) compartilhavam os mesmos handlers na tabela antiga (Rev.049). Rev.052 corrigiu: BARREL tem handlers 0x1D3B28/0x1D3A30/0x1D27A8, ROPE tem 0x1E9630/0x1E9810/0x1E8F38 — completamente diferentes. BARREL usa handlers cloth physics, ROPE usa handlers overlay.
 
 ---
 

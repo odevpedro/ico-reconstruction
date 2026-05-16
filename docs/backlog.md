@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 67 |
+| Completed | 68 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -43,15 +43,6 @@ _(none)_
 - Deliverable: reproducible local-only notes and tooling that do not distribute proprietary data
 
 ---
-
-### [SQUAD-RUNTIME | rev.054 | Pending]
-**Handler decompilation wave 2 — GIRL, QUEEN, BGA, AP1**
-
-- Disassemblar handlers de GIRL/Yorda (0x1D1A98/0x1D17F8/0x1D1668)
-- Disassemblar handlers de QUEEN boss (0x19A9A0/0x19A8F0/0x19A7E8)
-- Disassemblar BGA (0x203EE8 init_fn, sem handlers)
-- Disassemblar AP1 (0x1BA530/0x1BA330/0x1B8720)
-- Verificar padrão hC/hB/hA se mantém
 
 ### [SQUAD-TOOLING | Pending | Pending]
 **PCSX2 Generic Runtime Logpoints Proposal**
@@ -158,6 +149,17 @@ Handler decompilation wave 1 — COP2 cloth, WOODBOX0, ENEMY1, BOY
 - BOY: hA=warm/cold init (80 insns, 12 jals, conditional map-39 logic), hB=5 update calls + collision + tail
 - Handler convention corrected: hC=constructor, hB=update, hA=post-init/reset
 - Documented in research/elf/ghidra-rev053-handler-decompilation-wave1.md
+
+### [x] [SQUAD-RUNTIME | rev.054 | 2026-05-16]
+Handler decompilation wave 2 — GIRL, QUEEN, BGA, AP1
+
+- GIRL hC=constructor (92 insns, 64B alloc, 3 variant paths), hB=update (112 insns, anim blend), hA=reset (16 insns)
+- QUEEN init_fn (36 insns, 3 model loads), hC=constructor (68 insns, 24B alloc), hB=update (44 insns, LOD scaling), hA=reset (32 insns)
+- BGA init_fn=12 insns (dma_read+sprite_dma_setup), SEM handlers (hA/hB/hC=0)
+- AP1 hC=constructor maior visto (640B alloc, 400+ insns, 4 child slots), hB=state machine 7 estados (~200 insns), hA=cleanup (40 insns)
+- Padrao hC/hB/hA confirmado em 7 entidades
+- Documentado em research/elf/ghidra-rev054-handler-decompilation-wave2.md
+- src/entity/types.h, src/entity/structs.h, src/entity/near_matches.c criados (4 NEAR-STRUCTURAL models)
 
 ### [x] [SQUAD-ARCH | 2026-05-16]
 Cloth struct model committed — first C source files in repo
@@ -450,7 +452,7 @@ Call graph analysis
 | rev.052 | 2026-05-16 | SQUAD-ARCH | Five-way consolidation: descriptor map (68 entries), sister_callbacks, event_clear decomp, VU0 cloth physics |
 | rev.053 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 1: COP2 cloth (dist check + plane clip), WOODBOX0 init/update/post-init, ENEMY1 full lifecycle (19+ subfns), BOY warm/cold init paths |
 | 2026-05-16 | 2026-05-16 | SQUAD-RUNTIME | 0x0024xxxx callers investigated: 0x240D40/0x240EA0 are object factories, excluded for ROPE callback |
-| 2026-05-16 | 2026-05-16 | SQUAD-ARCH | .text end corrected: 0x0026F5D4 (not 0x001Fxxxx) |
+| rev.054 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 2: GIRL, QUEEN, BGA, AP1 — 12 funcoes disassembled, padrao hC/hB/hA confirmado em 7 entidades |
 
 ---
 

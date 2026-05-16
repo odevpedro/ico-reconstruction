@@ -113,6 +113,9 @@ Current ELF research focus:
 - **Rev.050** — Cloth system anatomy consolidated. Three analyses: (1) `cloth_payload_init` (0x1D27A8) partially decompiled — variant-controlled init path, (2) `0x1B76F8` identified as the descriptor iteration function that calls `cloth_payload_init` via `descriptor+0x58`, (3) Entry table at `0x002A4C48` fully mapped (512 entries, stride 0x4C). **No entry has +0x46=0x14 (ROPE)** — all cloth objects use BARREL (index 0x13) which shares the same handlers. [`research/elf/ghidra-rev050-cloth-system-anatomy.md`](./research/elf/ghidra-rev050-cloth-system-anatomy.md)
 - **src/ directory** — First verified C sources committed. Struct model with `cloth_payload`, `cloth_entity`, `cloth_context`, `physics_type_entry`. 3 exact-match accessor functions and 3 near-structural models.
 - **Rev.051** — Runtime session 3 (~90 min, 1419 events): probe direto em `0x001D3A30` confirmou **zero disparos** durante gameplay normal, refutando o modelo de "update callback por frame". Investigação dos callers `0x00240E58`/`0x00240F98` revelou duas funções factory (`0x240D40`, `0x240EA0`) que registram múltiplos callbacks — ambas excluídas como caminho para o ROPE callback. Correção do segmento `.text`: `0x00100000..0x0026F5D4` (não `0x001Fxxxx`). [`research/runtime/pcsx2-recompiler-session3-2026-05-16.md`](./research/runtime/pcsx2-recompiler-session3-2026-05-16.md)
+- **Rev.052** — Five-way consolidation: descriptor table full map (68 entries, stride 0x64), sister_callback_reg decompiled, cloth_event_clear decompiled, DVP overlays confirmed as VU0 microcode (no MIPS code), VU0 cloth physics (20KB microcode + 63 COP2 instructions). [`research/elf/ghidra-rev052-five-way-consolidation.md`](./research/elf/ghidra-rev052-five-way-consolidation.md)
+- **Rev.053** — Handler decompilation wave 1: COP2 cloth functions (clothSubDistanceCheck at 0x1D3E80, clothSubPlaneClip at 0x1D45B0), WOODBOX0 lifecycle (286 insns constructor, 27 insns update), ENEMY1 full AI lifecycle (19+ sub-functions mapped), BOY warm/cold init paths. [`research/elf/ghidra-rev053-handler-decompilation-wave1.md`](./research/elf/ghidra-rev053-handler-decompilation-wave1.md)
+- **Rev.054** — Handler decompilation wave 2: GIRL/Yorda (64B alloc, variant paths, anim blend), QUEEN boss (24B alloc, LOD scaling), BGA sprite overlay (init_fn=12 insns, no handlers), AP1 attack pattern 1 (640B alloc, 4 child slots, 7-state machine). Padrão hC/hB/hA confirmado em 7 entidades. [`research/elf/ghidra-rev054-handler-decompilation-wave2.md`](./research/elf/ghidra-rev054-handler-decompilation-wave2.md)
 
 These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
 
@@ -145,10 +148,14 @@ These notes describe structural evidence only. They do not assign definitive gam
 ├── splat/                        # splat64[mips] YAML config and Makefile
 ├── src/                          # Verified reverse-engineered C sources
 │   ├── types.h                   # ico_ptr32 and basic type definitions
-│   └── cloth/
-│       ├── structs.h             # Cloth struct hierarchy (payload, entity, context)
-│       ├── accessors.c           # 3 EXACT match functions
-│       └── near_matches.c        # 3 NEAR-STRUCTURAL validated models
+│   ├── cloth/
+│   │   ├── structs.h             # Cloth struct hierarchy (payload, entity, context)
+│   │   ├── accessors.c           # 3 EXACT match functions
+│   │   └── near_matches.c        # 3 NEAR-STRUCTURAL validated models
+│   └── entity/                   # Entity system structs and handlers (Rev.054)
+│       ├── types.h               # Entity type enums (68 types, phy_type constants)
+│       ├── structs.h             # Descriptor/entry/state struct definitions
+│       └── near_matches.c        # 4 NEAR-STRUCTURAL handler models (GIRL hA, QUEEN hA/init, BGA init)
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
 └── tools/
@@ -422,6 +429,9 @@ The project treats these as research topics, not solved problems.
 [x] rev.049 - Physics object type table discovered (0x001A48A0, 31 types)
 [x] rev.050 - Cloth system anatomy consolidated: cloth_payload_init decompiled, 0x1B76F8 identified, entry table fully mapped
 [x] rev.051 - Runtime session 3: 0 hits at 0x1D3A30 (~90 min, 1419 events), 0x0024xxxx callers investigated, .text segment correction
+[x] rev.052 - Five-way consolidation: descriptor table full map, sister_callbacks, event_clear decomp, VU0 cloth
+[x] rev.053 - Handler decompilation wave 1: COP2 cloth, WOODBOX0, ENEMY1, BOY
+[x] rev.054 - Handler decompilation wave 2: GIRL, QUEEN, BGA, AP1 — 12 functions disassembled
 ```
 
 ## How To Contribute
