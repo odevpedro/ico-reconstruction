@@ -62,3 +62,66 @@ void bga_init(struct entity_context *entity)
     sub_202208();
     sub_203AA0(1);
 }
+
+/* =================================================================
+ * BIRD hC (0x197240) — NEAR-STRUCTURAL
+ * Constructor for flyer entity. 64B heap alloc, quaternion init,
+ * entity_state_reg with flyer params, random timer offset,
+ * entity_dispatch_update tail call.
+ * ================================================================= */
+ico_ptr32 sub_13A0F8(ico_ptr32 heap, u32 size, ico_ptr32 tag, u32 line);
+void sub_2641D8(ico_ptr32 dst, u32 fill, u32 size);
+void sub_105F00(ico_ptr32 dst, ico_ptr32 src);
+void sub_1E4798(struct entity_context *, u32, u32, u32, ico_ptr32, ico_ptr32);
+u32 sub_118A68(void);
+void sub_1D4B40(struct entity_context *, u32);
+
+ico_ptr32 bird_hC(struct entity_context *entity, ico_ptr32 initializer)
+{
+    ico_ptr32 heap = *(ico_ptr32 *)0x00719720;
+    ico_ptr32 alloc = sub_13A0F8(heap, 64, 0x0056AFD8, 978);
+
+    sub_2641D8(alloc, 0, 64);
+    sub_105F00(alloc, initializer);
+    *(u8 *)(alloc + 0x10) = 0;
+
+    sub_1E4798(entity, 2119, 2165, (u32)-1, (ico_ptr32)-1, (ico_ptr32)1073);
+
+    {
+        ico_ptr32 es = *(ico_ptr32 *)((u8 *)entity + 0x15C);
+        *(u32 *)(es + 0x544) = 1;
+        *(u32 *)(es + 0x54C) = 0;
+        *(u32 *)(es + 0x548) = 1;
+        *(u32 *)(es + 0x550) = 0;
+    }
+
+    {
+        ico_ptr32 es = *(ico_ptr32 *)((u8 *)entity + 0x15C);
+        float r = (float)sub_118A68() * 100.0f;
+        *(float *)(es + 0x4AC) = r;
+        *(float *)(es + 0x4B0) = r;
+        *(u32 *)(es + 0x4C4) = 0;
+    }
+
+    sub_1D4B40(entity, 3);
+    return alloc;
+}
+
+/* =================================================================
+ * ATTACKCH idx 62 hC (0x1BBE50) — NEAR-STRUCTURAL
+ * Constructor for attack chain child entity. 12B heap alloc with
+ * backref to parent slot. Clears parent tracking during init.
+ * ================================================================= */
+ico_ptr32 attackch62_hC(struct entity_context *entity, ico_ptr32 initializer)
+{
+    (void)entity;
+    ico_ptr32 heap = *(ico_ptr32 *)0x00719720;
+    ico_ptr32 alloc = sub_13A0F8(heap, 12, 0x006285E8, 27);
+
+    ico_ptr32 parent_slot = *(ico_ptr32 *)(initializer + 0x30);
+    *(u32 *)(alloc + 0x00) = parent_slot;
+    *(u32 *)(alloc + 0x04) = 0;
+    *(u32 *)(alloc + 0x08) = 0;
+    *(u32 *)parent_slot = 0;
+    return alloc;
+}
