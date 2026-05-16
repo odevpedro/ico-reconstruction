@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 70 |
+| Completed | 72 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -476,6 +476,11 @@ Call graph analysis
 | rev.054 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 2: GIRL, QUEEN, BGA, AP1 — 12 funcoes disassembled, padrao hC/hB/hA confirmado em 7 entidades |
 | rev.056 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 3: BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR — 12 handlers disassembled; descriptor index correction (WOODBOX0=17, BGA=30, AP1=61); hB dispatcher diversity confirmed (no unified dispatch); 13 entries with non-null init_fn |
 | rev.057 | 2026-05-16 | SQUAD-RUNTIME | C models: cloth dispatcher (5-state FSM), clothSubForceApply (EE sin/cos force), ENEMY1 hC (80B constructor); WOODBOX0 hC ASM-HOLD; factory analysis integration |
+| 2026-05-16 | 2026-05-16 | SQUAD-TOOLING | Compile test with ee-gcc 15.2.0: EXACT models structurally validated but NOT bit-identical (-mabi=eabi unsupported); modern toolchain confirms all offsets correct |
+| 2026-05-16 | 2026-05-16 | SQUAD-TOOLING | Entity handler splat YAML (splat/SCUS_971.13.entity-handlers.yaml): 15 subsegments across 6 entities (BIRD, BOSS_CTR, ATTACKCH x2, WOODBOX0, ENEMY1) |
+| 2026-05-16 | 2026-05-16 | SQUAD-ARCH | WOODBOX0 init data table at 0x4DF560 analyzed: 8 entries × 48B, model paths/params for crate parts; entry 4 contains object/sdf/st00a/model/0str16.p2o with float params |
+| 2026-05-16 | 2026-05-16 | SQUAD-EXTERNAL | ICO-decomp thread.c cross-reference: thread.c decompiled C source found, struct IosThreadInfo layout (0x70 bytes), callback offset +0x1C maps to ThreadParam.entry |
+| 2026-05-16 | 2026-05-16 | SQUAD-EXTERNAL | ICO-decomp fumi.h revealed: struct IosThreadInfo details (entry at +0x38, ThreadParam at +0x00), struct IosMsgQueue layout, memory partition constants |
 
 ---
 
