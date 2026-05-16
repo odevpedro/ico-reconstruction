@@ -17,6 +17,7 @@ KNOWN_CALLSITES = {
     0x001B7AB0: "entry +0x24 callback registration",
     0x001B7ACC: "descriptor_label +0x40 fallback registration",
     0x00201ED4: "runtime-dependent 0x00201e70 registration candidate",
+    0x00203EA0: "caller of 0x00201e70 using [s0+4] as callback",
     0x00240F90: "literal t0 callback registration path",
     0x00082618: "ELF entry sentinel caller",
 }
@@ -114,12 +115,16 @@ def follow_events(path: Path, poll_seconds: float) -> Iterable[dict[str, Any]]:
 def print_summary(events: list[dict[str, Any]]) -> None:
     callsites: Counter[int] = Counter()
     variants: Counter[int] = Counter()
+    a1_by_callsite: dict[int, Counter[int]] = {}
+    a0_by_pc: dict[int, Counter[int]] = {}
     stack_matches = 0
 
     for event in events:
         regs = event.get("regs", {})
         memory = event.get("memory", {})
+        pc = parse_hex(event.get("pc"))
         ra = parse_hex(regs.get("ra"))
+        a0 = parse_hex(regs.get("a0"))
         a1 = parse_hex(regs.get("a1"))
         sp = parse_hex(regs.get("sp"))
         variant = parse_hex(memory.get("a1_plus_30_word"))
@@ -127,6 +132,10 @@ def print_summary(events: list[dict[str, Any]]) -> None:
 
         if callsite is not None:
             callsites[callsite] += 1
+            if a1 is not None:
+                a1_by_callsite.setdefault(callsite, Counter())[a1] += 1
+        if pc is not None and a0 is not None:
+            a0_by_pc.setdefault(pc, Counter())[a0] += 1
         if variant is not None:
             variants[variant] += 1
         if a1 is not None and a1 == sp:
@@ -143,6 +152,24 @@ def print_summary(events: list[dict[str, Any]]) -> None:
     print("a1_plus_30_values:")
     for value, count in variants.most_common():
         print(f"  {fmt_addr(value)} count={count}")
+
+    print("unique_a1_by_callsite:")
+    for callsite, values in sorted(a1_by_callsite.items()):
+        label = KNOWN_CALLSITES.get(callsite, "unclassified")
+        rendered_values = ", ".join(
+            f"{fmt_addr(value)}({count})" for value, count in values.most_common()
+        )
+        print(
+            f"  {fmt_addr(callsite)} unique={len(values)} label={label} "
+            f"values={rendered_values}"
+        )
+
+    print("unique_a0_by_pc:")
+    for pc, values in sorted(a0_by_pc.items()):
+        rendered_values = ", ".join(
+            f"{fmt_addr(value)}({count})" for value, count in values.most_common()
+        )
+        print(f"  {fmt_addr(pc)} unique={len(values)} values={rendered_values}")
 
 
 def main() -> int:

@@ -11,7 +11,7 @@
 |----------|-------|
 | Completed | 59 |
 | In Progress | 0 |
-| Pending | 1 |
+| Pending | 3 |
 
 ---
 
@@ -41,6 +41,18 @@ _(none)_
 - Analyze file-loading and save/load code paths
 - Test numeric/value patches only on local modified BINs
 - Deliverable: reproducible local-only notes and tooling that do not distribute proprietary data
+
+---
+
+### [SQUAD-TOOLING | Pending | Pending]
+**PCSX2 Generic Runtime Logpoints Proposal**
+
+- Keep current ICO-specific PCSX2 probe as local POC only
+- Stabilize the POC across at least one more focused runtime session
+- Separate generic debugger/logpoint behavior from ICO-specific target addresses
+- Evaluate an upstream-friendly design for PCSX2: configurable addresses, register filters, structured logs, optional memory windows, and no mandatory pause
+- Open PCSX2 issue/discussion before any PR if the design remains useful after stabilization
+- Deliverable: short technical proposal that does not include game data or project-specific hardcoded addresses
 
 ---
 
