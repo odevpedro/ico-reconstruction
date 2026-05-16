@@ -9,8 +9,8 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 65 |
-| In Progress | 1 |
+| Completed | 66 |
+| In Progress | 0 |
 | Pending | 2 |
 
 ---
@@ -116,6 +116,29 @@ Cloth system anatomy consolidated — cloth_payload_init decompiled, 0x1B76F8 id
 
 ### [x] [SQUAD-RUNTIME | rev.051 | 2026-05-16]
 Runtime session 3 — 0x1D3A30 probe + 0x0024xxxx callers investigation
+
+- Breakpoint 0x1D3A30 added to PCSX2 instrumented build
+- ~90 min gameplay across varied areas (cable car, castle, Yorda, animations)
+- **1419 eventos capturados: ZERO hits at 0x1D3A30**
+- 145 cloth_payload_init hits with 50/50 variant split
+- 1249 callback_register hits, all a3=0x13, 10 distinct callback types, none is 0x1D3A30
+- .text section corrected: 0x00100000..0x0026F5D4 (not 0x001Fxxxx)
+- Callers 0x00240E58/0x00240F98 traced to functions 0x240D40/0x240EA0 (object factories + multi-callback registration)
+- Both callers definitively excluded as path for ROPE callback
+- Documented in research/runtime/pcsx2-recompiler-session3-2026-05-16.md
+
+### [x] [SQUAD-ARCH | rev.052 | 2026-05-16]
+Five-way consolidation — descriptor table full map, sister_callbacks, event_clear decomp, VU0 cloth
+
+- Descriptor table at 0x002A31B8 fully mapped: 68 entries, stride 0x64, with init_fn (+0x40), handlers A/B/C
+- **CORREÇÃO: 0x1D3A30 é BARREL hB (índice 19), NÃO ROPE**. ROPE (índice 20) tem handlers completamente diferentes (0x1E9630/0x1E9810/0x1E8F38)
+- 12 entries com init_fn não-nulo (BOY, GIRL, ENEMY1, WOODBOX0, BGA, BIRD, QUEEN, DEVIL_GI, AP1, ATTACKCH×2, BOSS_CTR)
+- sister_callback_reg (0x13F778) decompilado: especialização de 0x13F7A8 com t1=0x1800 fixo
+- cloth_event_clear (0x1AE6F8) decompilado: leaf function, tabela em 0x004B3D10, stride 0x40, ~182 entries
+- DVP overlays confirmados como VU0 microcode (12 entries, payloads vazios no ELF, carregados de DATA.DF)
+- VU0 cloth: 20KB .vutext microcode + 63 COP2 instructions no range cloth
+- Modelo híbrido EE+VU0 para física cloth; hB é event-driven, não per-frame
+- Documented in research/elf/ghidra-rev052-five-way-consolidation.md
 
 - Breakpoint 0x1D3A30 added to PCSX2 instrumented build
 - ~90 min gameplay across varied areas (cable car, castle, Yorda, animations)
@@ -415,6 +438,7 @@ Call graph analysis
 | 2026-05-16 | 2026-05-16 | SQUAD-ARCH | First C source files committed (struct model + accessors + near matches) |
 | 2026-05-16 | 2026-05-16 | SQUAD-ARCH | docs/data-model.md + docs/system-feature-flows.md created |
 | rev.051 | 2026-05-16 | SQUAD-RUNTIME | Runtime session 3: 0 hits at 0x1D3A30 across ~90 min / 1419 events — refutes per-frame model |
+| rev.052 | 2026-05-16 | SQUAD-ARCH | Five-way consolidation: descriptor map (68 entries), sister_callbacks, event_clear decomp, VU0 cloth physics |
 | 2026-05-16 | 2026-05-16 | SQUAD-RUNTIME | 0x0024xxxx callers investigated: 0x240D40/0x240EA0 are object factories, excluded for ROPE callback |
 | 2026-05-16 | 2026-05-16 | SQUAD-ARCH | .text end corrected: 0x0026F5D4 (not 0x001Fxxxx) |
 
