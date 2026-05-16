@@ -189,12 +189,12 @@ ico_ptr32 enemy1_hC(struct entity_context *entity, ico_ptr32 initializer)
  * WOODBOX0 hC (0x1C00C0) — ASM-HOLD
  *
  * Constructor for breakable crate (WOODBOX0, desc idx 17, init_fn=0x17D1D0).
- * ~286 instructions, 400B heap alloc with data copy from 0x4CF560.
+ * ~286 instructions, 400B heap alloc with data copy from 0x4DF560.
  *
  * Key pattern (partial):
  *   1. Alloc 400B from heap → s1
  *   2. Zero-fill 400B (large block via sub_2641D8)
- *   3. Data copy: 384B from 0x4CF560 to s1+0x10 (96 word loop via lw/sw)
+ *   3. Data copy: 384B from 0x4DF560 to s1+0x10 (96 word loop via lw/sw)
  *   4. Init fields at s1+0x04, s1+0x0C, s1+0x08
  *   5. sub_1B7FE8(entity, 0x1C6F40, ...) — spawn child entity
  *   6. sub_1CEF90 × multiple calls for child arrays
@@ -202,8 +202,26 @@ ico_ptr32 enemy1_hC(struct entity_context *entity, ico_ptr32 initializer)
  *   8. sub_202A18(entity, 0, s1) — reg payload
  *   9. Tail: entity_dispatch_update
  *
+ * Data table at 0x4DF560 (384 bytes, 8 entries × 48B):
+ *   Offset 0x00..0x0F: header (zero for all entries)
+ *   Offset 0x10: float param1 (0.0 or 1.0f)
+ *   Offset 0x14: float param2 (0.0 or 1.0f)
+ *   Offset 0x18: float param3 (250.0f for active entry)
+ *   Offset 0x1C: s32 count/ID (288 for model entry)
+ *   Offset 0x20: char name[28] (model path or "NULL")
+ *
+ *   Entry 0 (0x4DF560): "NULL" at +0x14 (no model)
+ *   Entry 1 (0x4DF590): "NULL" at +0x14
+ *   Entry 2 (0x4DF5C0): "NULL" at +0x14
+ *   Entry 3 (0x4DF5F0): all zeros
+ *   Entry 4 (0x4DF620): 1.0f, 1.0f, 250.0f, 288, "object/sdf/st00a/model/0str16.p2o"
+ *   Entry 5 (0x4DF650): continuation + trailing "NULL"
+ *   Entry 6 (0x4DF680): "NULL"
+ *   Entry 7 (0x4DF6B0): "NULL"
+ *
  * NOT YET written as C model. Function is too large for NEAR-STRUCTURAL
- * without deeper analysis of the data copy loop and initialization table at
- * 0x4CF560. The hB (0x1C0538) and hA (0x1C08A0) are also large.
+ * without deeper analysis of the data copy loop and model path string handling.
+ * The hB (0x1C0538, 27 insns) and hA (0x1C05D0, 28+ insns) are shorter.
  * ================================================================= */
-/* TO DO: write WOODBOX0 hC C model after 0x4CF560 data table analysis */
+/* TO DO: write WOODBOX0 hC C model after full disassembly of the 286-instruction
+   body, especially the data copy loop and model path string/table usage. */

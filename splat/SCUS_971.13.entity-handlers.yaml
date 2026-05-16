@@ -1,0 +1,118 @@
+name: ICO USA SCUS_971.13 — entity handler promotion (Rev.057)
+sha1: a4d8fc1948fb2da2395f3863a94a3b93de55de14
+options:
+  basename: SCUS_971.13
+  target_path: /home/peter/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf
+  base_path: /tmp/ico-entity-handlers
+  asm_path: asm
+  asset_path: assets
+  src_path: src
+  build_path: build
+  compiler: EEGCC
+  platform: ps2
+  ld_bss_contains_common: True
+  ld_bss_is_noload: true
+  use_gp_rel_macro_nonmatching: False
+  string_encoding: EUC-JP
+  disasm_unknown: True
+  named_regs_for_c_funcs: True
+  find_file_boundaries: False
+  section_order: [".text", ".vutext", ".data", ".rodata", ".lit4", ".sdata", ".sbss", ".bss"]
+segments:
+  - [0x000000, databin, elf_header]
+  - name: main_text
+    type: code
+    start: 0x001000
+    vram: 0x00100000
+    subalign: null
+    subsegments:
+      # Pre-entity monolithic (0x001000 to 0x197078)
+      - [0x001000, asm, main_text_early_001000_197078]
+
+      # --- BIRD handlers (desc idx 32, init_fn=0x1971C0) ---
+      # hB (0x197078): 2 insns tail to 0x1E3FC8
+      - [0x197078, asm, bird_hB_197078]
+      # hA (0x197080): 32B stack, reset handler
+      - [0x197080, asm, bird_hA_197080]
+      # hC (0x197240): 64B stack, constructor w/ random timer
+      - [0x197240, asm, bird_hC_197240]
+
+      # --- BOSS_CTR handlers (desc idx 64, init_fn=0x198140) ---
+      # hB (0x197FC8): conditional tail (4 insns)
+      - [0x197FC8, asm, bossctr_hB_197FC8]
+      # hA (0x198000): 32B stack, slot cleanup loop (53-slot manager)
+      - [0x198000, asm, bossctr_hA_198000]
+      # hC (0x198218): no alloc, 53-slot loop
+      - [0x198218, asm, bossctr_hC_198218]
+
+      # Post-BOSS_CTR monolithic
+      - [0x198330, asm, main_text_mid_198330_1BBB20]
+
+      # --- ATTACKCH idx 63 handlers (desc idx 63, init_fn=0x1BBF78) ---
+      # hC (0x1BBB20): 320B stack, rotation matrix, dynamic child array
+      - [0x1BBB20, asm, attackch63_hC_1BBB20]
+      # hB (0x1BBDD8): linked-list detach (28 insns)
+      - [0x1BBDD8, asm, attackch63_hB_1BBDD8]
+      # hA (0x1BBE48): NO-OP (2 insns)
+      - [0x1BBE48, asm, attackch63_hA_1BBE48]
+
+      # --- ATTACKCH idx 62 handlers (desc idx 62, init_fn=0x1BBF78) ---
+      # hC (0x1BBE50): 20 insns, 12B alloc w/ parent tracking
+      - [0x1BBE50, asm, attackch62_hC_1BBE50]
+      # hB (0x1BBEA0): small guard (12 insns)
+      - [0x1BBEA0, asm, attackch62_hB_1BBEA0]
+      # hA (0x1BBEC8): projectile spawner (44 insns)
+      - [0x1BBEC8, asm, attackch62_hA_1BBEC8]
+
+      # Post-ATTACKCH monolithic
+      - [0x1BBF10, asm, main_text_mid_1BBF10_1C00C0]
+
+      # --- WOODBOX0 handlers (desc idx 17, init_fn=0x17D1D0) ---
+      # hC (0x1C00C0): 286 insns, 400B alloc, data copy from 0x4DF560
+      - [0x1C00C0, asm, woodbox0_hC_1C00C0]
+      # hB (0x1C0538): 27 insns, 31-frame counter, destroy logic
+      - [0x1C0538, asm, woodbox0_hB_1C0538]
+      # hA (0x1C05D0): 28+ insns, post-init/reset
+      - [0x1C05D0, asm, woodbox0_hA_1C05D0]
+
+      # Post-WOODBOX0 monolithic
+      - [0x1C08C0, asm, main_text_mid_1C08C0_1CE220]
+
+      # --- ENEMY1 handlers (desc idx 4, init_fn=0x164440) ---
+      # hC (0x1CE220): 103 insns, 80B alloc, 2x child arrays
+      - [0x1CE220, asm, enemy1_hC_1CE220]
+      # hB (0x1CE3C0): ~135 insns, AI+attack+draw
+      - [0x1CE3C0, asm, enemy1_hB_1CE3C0]
+      # hA (0x1CE690): 23+ insns, reset/cleanup
+      - [0x1CE690, asm, enemy1_hA_1CE690]
+
+      # Remaining .text
+      - [0x1CE6F0, asm, main_text_remaining_1CE6F0_1705D4]
+  - [0x1705D4, databin, text_to_vutext_pad]
+  - [0x1705E0, databin, vutext]
+  - [0x1756C0, databin, vutext_to_data_pad]
+  - [0x175700, databin, data]
+  - [0x4546B8, databin, data_to_rodata_pad]
+  - [0x454700, databin, rodata]
+  - [0x531900, databin, lit4]
+  - [0x5328D0, databin, lit4_to_sdata_pad]
+  - [0x532900, databin, sdata]
+  - [0x534BC6, databin, sdata_to_reginfo_pad]
+  - [0x534C0C, databin, reginfo]
+  - [0x534C24, databin, dvp_ovlytab]
+  - [0x534CB4, databin, dvp_ovlystrtab]
+  - [0x534E42, databin, dvp_overlay_00]
+  - [0x535642, databin, dvp_overlay_01]
+  - [0x535BDA, databin, dvp_overlay_02]
+  - [0x5363DA, databin, dvp_overlay_03]
+  - [0x53659A, databin, dvp_overlay_04]
+  - [0x536D9A, databin, dvp_overlay_05]
+  - [0x53759A, databin, dvp_overlay_06]
+  - [0x537C4A, databin, dvp_overlay_07]
+  - [0x53844A, databin, dvp_overlay_08]
+  - [0x538C4A, databin, dvp_overlay_09]
+  - [0x53944A, databin, dvp_overlay_10]
+  - [0x5398B2, databin, dvp_overlay_11]
+  - [0x539E42, databin, shstrtab]
+  - [0x53A050, databin, section_headers]
+  - [0x53A488]
