@@ -65,7 +65,7 @@ The project does not currently define a database, backend API, ORM, authenticati
 
 ## Current Status
 
-The project has moved into **decompilation and struct modeling**. A verified structural model of the cloth physics system exists in `src/`, with 3 EXACT C matches and 5 NEAR-STRUCTURAL validated models (Rev.048). The ROPE callback is confirmed to live in a static physics object type table at `0x001A48A0` with 31 types (Rev.049), not in the dynamic callback registry.
+The project has moved into **decompilation and struct modeling**. A verified structural model of the cloth physics system exists in `src/`, with 3 EXACT C matches and 5 NEAR-STRUCTURAL validated models (Rev.048). The ROPE callback is confirmed to live in a static physics object type table at `0x001A48A0` with 31 types (Rev.049), not in the dynamic callback registry. A third PCSX2 runtime session (Rev.051, ~90 min, 1419 events) with a direct probe at `0x001D3A30` confirmed **zero hits during normal gameplay**, refuting the per-frame update model for this function.
 
 No reconstructed game code, assets, binaries, or ISO-derived copyrighted data are included in this repository.
 
@@ -110,7 +110,9 @@ Current ELF research focus:
 - Full cloth cluster documented in [`research/external/ico-splat-cloth-full-promotion.md`](./research/external/ico-splat-cloth-full-promotion.md)
 - **Rev.048** — C scratch model synthesis with fixed taxonomy (EXACT/NEAR-STRUCTURAL/NEAR-LOCAL/MISMATCH/BLOCKED/ASM-HOLD), `ico_ptr32` type rule, and GCC 2.95.2 limitations documented. 3 exact matches, 5 near-structural validated models. [`research/elf/ghidra-rev048-c-scratch-model-and-ico_ptr32.md`](./research/elf/ghidra-rev048-c-scratch-model-and-ico_ptr32.md)
 - **Rev.049** — Physics object type table discovered at `0x001A48A0` (stride 0x64, 31 types). ROPE entry at `0x001A4968` with handlers `0x001D3B28`, `0x001D3A30`, `0x001D27A8`. Confirms ROPE callback is NOT registered via `0x0013F7A8` — it lives statically in the type table. [`research/elf/ghidra-rev049-physics-object-type-table.md`](./research/elf/ghidra-rev049-physics-object-type-table.md)
+- **Rev.050** — Cloth system anatomy consolidated. Three analyses: (1) `cloth_payload_init` (0x1D27A8) partially decompiled — variant-controlled init path, (2) `0x1B76F8` identified as the descriptor iteration function that calls `cloth_payload_init` via `descriptor+0x58`, (3) Entry table at `0x002A4C48` fully mapped (512 entries, stride 0x4C). **No entry has +0x46=0x14 (ROPE)** — all cloth objects use BARREL (index 0x13) which shares the same handlers. [`research/elf/ghidra-rev050-cloth-system-anatomy.md`](./research/elf/ghidra-rev050-cloth-system-anatomy.md)
 - **src/ directory** — First verified C sources committed. Struct model with `cloth_payload`, `cloth_entity`, `cloth_context`, `physics_type_entry`. 3 exact-match accessor functions and 3 near-structural models.
+- **Rev.051** — Runtime session 3 (~90 min, 1419 events): probe direto em `0x001D3A30` confirmou **zero disparos** durante gameplay normal, refutando o modelo de "update callback por frame". Investigação dos callers `0x00240E58`/`0x00240F98` revelou duas funções factory (`0x240D40`, `0x240EA0`) que registram múltiplos callbacks — ambas excluídas como caminho para o ROPE callback. Correção do segmento `.text`: `0x00100000..0x0026F5D4` (não `0x001Fxxxx`). [`research/runtime/pcsx2-recompiler-session3-2026-05-16.md`](./research/runtime/pcsx2-recompiler-session3-2026-05-16.md)
 
 These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
 
@@ -342,6 +344,7 @@ The project treats these as research topics, not solved problems.
 | [`research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md`](./research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md) | Entry-table and descriptor-index correction for the `ROPE` callback model |
 | [`research/elf/ghidra-rev036-registration-path-survey.md`](./research/elf/ghidra-rev036-registration-path-survey.md) | Registration path survey: zero-guard in `0x001b76f8`, all five callers of `0x0013f7a8` |
 | [`research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`](./research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md) | Complete analysis of remaining callers of `0x0013f7a8` and the ROPE registration gap |
+| [`research/runtime/pcsx2-recompiler-session3-2026-05-16.md`](./research/runtime/pcsx2-recompiler-session3-2026-05-16.md) | Runtime session 3: 0 hits at 0x1D3A30, 0x0024xxxx callers investigation |
 | [`possible_ressources.md`](./possible_ressources.md) | Catalog of external projects, tools, and communities for integration |
 | [`tools/elf-extractor/README.md`](./tools/elf-extractor/README.md) | ELF extractor for disassembler import |
 
@@ -414,6 +417,11 @@ The project treats these as research topics, not solved problems.
 [x] rev.042 - Cloth variant field writers: 0x001d2858 confirmed, 0x001d1ad8 candidate, 0x001d390c discarded
 [x] rev.043 - Cloth initializer arg source: 0x001d27a8 needs a1, [a1+0x30] origin still open
 [x] rev.044 - Staged callback path: no static explanation for a1; 0x00129660 constructor-like found but excluded for ROPE static
+[x] rev.045-047 - Runtime PCSX2: a1 source resolved (a1 = sp), descriptor callback model consolidated
+[x] rev.048 - C scratch model synthesis: fixed taxonomy, ico_ptr32 rule, 9-function status matrix
+[x] rev.049 - Physics object type table discovered (0x001A48A0, 31 types)
+[x] rev.050 - Cloth system anatomy consolidated: cloth_payload_init decompiled, 0x1B76F8 identified, entry table fully mapped
+[x] rev.051 - Runtime session 3: 0 hits at 0x1D3A30 (~90 min, 1419 events), 0x0024xxxx callers investigated, .text segment correction
 ```
 
 ## How To Contribute

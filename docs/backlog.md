@@ -9,9 +9,9 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 63 |
-| In Progress | 0 |
-| Pending | 3 |
+| Completed | 65 |
+| In Progress | 1 |
+| Pending | 2 |
 
 ---
 
@@ -101,6 +101,31 @@ Physics object type table discovered — ROPE callback lives in static table
 - 0x001D3A30 NOT registered via 0x0013F7A8 (confirmed by 483 runtime events)
 - ROPE gap redefined: find table reader, not registration path
 - Documented in research/elf/ghidra-rev049-physics-object-type-table.md
+
+### [x] [SQUAD-ARCH | rev.050 | 2026-05-16]
+Cloth system anatomy consolidated — cloth_payload_init decompiled, 0x1B76F8 identified as descriptor iteration, entry table fully mapped
+
+- cloth_payload_init (0x1D27A8): 2 paths controlled by variant (==1 full init, !=1 quick path)
+- 0x1B76F8 identified as the real descriptor iteration function (not mystery table reader)
+- Entry table at 0x002A4C48 (512 entries, stride 0x4C) fully scanned
+- **No entry has +0x46=0x14 (ROPE)** — cloth objects use BARREL (index 0x13)
+- BARREL shares same handlers as ROPE: 0x1D3B28/+0x48, 0x1D3A30/+0x50, 0x1D27A8/+0x58
+- Why 0x1D3A30 never appears in 0x13F7A8 logs: entries BARREL have +0x24=0, BARREL descriptor has +0x40=0
+- Callback registration in 0x1B76F8 uses entry[+0x24] → 0x13F7A8(a3=0x13), or descriptor[+0x40] → 0x13F7A8
+- Documented in research/elf/ghidra-rev050-cloth-system-anatomy.md
+
+### [x] [SQUAD-RUNTIME | rev.051 | 2026-05-16]
+Runtime session 3 — 0x1D3A30 probe + 0x0024xxxx callers investigation
+
+- Breakpoint 0x1D3A30 added to PCSX2 instrumented build
+- ~90 min gameplay across varied areas (cable car, castle, Yorda, animations)
+- **1419 eventos capturados: ZERO hits at 0x1D3A30**
+- 145 cloth_payload_init hits with 50/50 variant split
+- 1249 callback_register hits, all a3=0x13, 10 distinct callback types, none is 0x1D3A30
+- .text section corrected: 0x00100000..0x0026F5D4 (not 0x001Fxxxx)
+- Callers 0x00240E58/0x00240F98 traced to functions 0x240D40/0x240EA0 (object factories + multi-callback registration)
+- Both callers definitively excluded as path for ROPE callback
+- Documented in research/runtime/pcsx2-recompiler-session3-2026-05-16.md
 
 ### [x] [SQUAD-ARCH | 2026-05-16]
 Cloth struct model committed — first C source files in repo
@@ -386,8 +411,12 @@ Call graph analysis
 | 2026-05-15 | 2026-05-15 | SQUAD-TOOLING | decomp.me scratches regenerated + ee-gcc 15.2.0 toolchain installed |
 | rev.048 | 2026-05-16 | SQUAD-EXTERNAL | C scratch model synthesis — fixed taxonomy, ico_ptr32 rule, 9-function status matrix |
 | rev.049 | 2026-05-16 | SQUAD-EXTERNAL | Physics object type table — ROPE in static table, not dynamic registry |
+| rev.050 | 2026-05-16 | SQUAD-ARCH | Cloth system anatomy — cloth_payload_init decompiled, 0x1B76F8 identified, entry table fully mapped |
 | 2026-05-16 | 2026-05-16 | SQUAD-ARCH | First C source files committed (struct model + accessors + near matches) |
 | 2026-05-16 | 2026-05-16 | SQUAD-ARCH | docs/data-model.md + docs/system-feature-flows.md created |
+| rev.051 | 2026-05-16 | SQUAD-RUNTIME | Runtime session 3: 0 hits at 0x1D3A30 across ~90 min / 1419 events — refutes per-frame model |
+| 2026-05-16 | 2026-05-16 | SQUAD-RUNTIME | 0x0024xxxx callers investigated: 0x240D40/0x240EA0 are object factories, excluded for ROPE callback |
+| 2026-05-16 | 2026-05-16 | SQUAD-ARCH | .text end corrected: 0x0026F5D4 (not 0x001Fxxxx) |
 
 ---
 
