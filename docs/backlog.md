@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 72 |
+| Completed | 73 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -160,6 +160,17 @@ Handler decompilation wave 2 — GIRL, QUEEN, BGA, AP1
 - Padrao hC/hB/hA confirmado em 7 entidades
 - Documentado em research/elf/ghidra-rev054-handler-decompilation-wave2.md
 - src/entity/types.h, src/entity/structs.h, src/entity/near_matches.c criados (4 NEAR-STRUCTURAL models)
+
+### [x] [SQUAD-ARCH | rev.059 | 2026-05-16]
+Three-step analysis completed — table reader correction + callback chain full analysis
+
+- **Correction:** Physics type table at 0x1A48A0 = CODE (not data table). 0x1A48A0 is in .text section, decodes as `move a0, s0`. Real tables: entry table at 0x002A4C48, descriptor table at 0x002A31B8.
+- **Descriptor handler layout confirmed:** +0x48=hA (post-init), +0x50=hB (update), +0x58=hC (constructor). +0x4C/+0x54 = padding (always 0).
+- **Scene loader (0x1B7D00-0x1B7F00) documented:** 4-phase init calling 0x1B76F8 (descriptor iteration/object creation). Phase 1: types 0-5, Phase 2: re-init types 2-5, Phase 3: dynamic enemies, Phase 4: 181 IDs from 0x4B3D10.
+- **0x13F3F0 full disassembly (576B, stride 0x94):** linked-list callback storage, 3-node scan limit, 2 alloc calls to 0x1A6E28, fallback to [obj+0x1C].
+- **0x13F7A8 (44B) + 0x13F7D8 (36B) disassembled:** 0x13F7A8 calls 0x13F3F0 twice (main + sister at obj+0x10). 0x13F7D8 is system-level variant (a0=0x194, a1=0, t1=0x1800).
+- **GIRL cloth delegation explained:** No direct cloth handlers in descriptor. AI system creates cloth objects independently via BARREL descriptor (idx 19).
+- data-model.md corrected (0x1A48A0 removed, callback_storage_node added), structs.h fixed, system-feature-flows.md expanded.
 
 ### [x] [SQUAD-RUNTIME | rev.057 | 2026-05-16]
 C models for cloth dispatcher, clothSubForceApply, ENEMY1 hC; factory analysis integration
@@ -481,6 +492,7 @@ Call graph analysis
 | 2026-05-16 | 2026-05-16 | SQUAD-ARCH | WOODBOX0 init data table at 0x4DF560 analyzed: 8 entries × 48B, model paths/params for crate parts; entry 4 contains object/sdf/st00a/model/0str16.p2o with float params |
 | 2026-05-16 | 2026-05-16 | SQUAD-EXTERNAL | ICO-decomp thread.c cross-reference: thread.c decompiled C source found, struct IosThreadInfo layout (0x70 bytes), callback offset +0x1C maps to ThreadParam.entry |
 | 2026-05-16 | 2026-05-16 | SQUAD-EXTERNAL | ICO-decomp fumi.h revealed: struct IosThreadInfo details (entry at +0x38, ThreadParam at +0x00), struct IosMsgQueue layout, memory partition constants |
+| rev.059 | 2026-05-16 | SQUAD-ARCH | Table reader correction + callback chain full analysis: 0x1A48A0 is CODE not data (Rev.049 correction); descriptor handler layout fixed (+0x48=hA, +0x50=hB, +0x58=hC); scene loader 0x1B7D00 documented (4-phase init, calls 0x1B76F8); 0x13F3F0 (576B linked-list, stride 0x94) + 0x13F7A8 + 0x13F7D8 fully disassembled; GIRL cloth delegation explained (AI system creates cloth objects independently); data-model.md corrected |
 
 ---
 

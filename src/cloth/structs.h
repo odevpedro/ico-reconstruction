@@ -43,28 +43,21 @@ struct cloth_context {
 };
 
 /* =================================================================
- * Physics object type table entry (Rev.049)
- * Base: 0x001A48A0, stride: 0x64, 31+ entries
- * Each entry has 3 handler functions for a physics object type.
+ * Callback storage node (Rev.059)
+ * Managed by 0x13F3F0 (576 bytes). Linked list with stride 0x94.
+ * The system at 0x13F7A8 registers callbacks of type 0x13 (cloth).
+ * +0x1C in the containing struct is the direct callback slot
+ * (maps to ThreadParam.entry in EE SDK).
  * ================================================================= */
-struct physics_type_entry {
-    ico_u32 count;          /* +0x00: usually 1 */
-    ico_ptr32 handler_a;    /* +0x04: post-dispatch / cleanup */
-    ico_ptr32 pad_08;       /* +0x08: null */
-    ico_ptr32 handler_b;    /* +0x0C: update / main callback */
-    ico_ptr32 pad_10;       /* +0x10: null */
-    ico_ptr32 handler_c;    /* +0x14: init / payload init */
-    ico_u32  pad_18;        /* +0x18: null */
-    ico_u32  pad_1C;        /* +0x1C: null */
-    char     name[8];       /* +0x20: e.g. "ROPE\0\0\0\0" */
-};
+struct callback_storage_node {
+    ico_u64  next;          /* +0x00: linked list next ptr (8 bytes, ld/sd) */
+    ico_ptr32 data;          /* +0x08: callback data pointer */
+    ico_u32  type;           /* +0x0C: callback type (e.g. 0x13 = cloth) */
+    ico_u8   body[0x84];    /* +0x10: node body (132 bytes, sep alloc) */
+}; /* total: 0x94 bytes */
 
-/* Known physics type names (from Rev.049 scan):
- *   WOODBOX01, ROTOBJEC, BARREL, ROPE, CHAIN,
- *   FLEVER, WLEVER, NONE, CAMERADU, SEFFECT,
- *   BIRD, GENERATO, CANDLE, MOBJ, CHANDELI,
- *   WORM, POOL, DARKVOLU, MCOLTEST, ROPEFIX,
- *   CAGE, DYNAMICM, QUEEN, QUEENDEM, CAGEFIX, CLOTHTES
+/* Node allocated via 0x1A6E28 (x2 calls: node + body).
+ * 3-node scan limit. Fallback: [obj+0x1C] = data.
  */
 
 #endif /* ICO_CLOTH_STRUCTS_H */

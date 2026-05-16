@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-16 (Rev.057 — cloth dispatcher C model: 5-state FSM confirmado; clothSubForceApply model; ENEMY1 hC model; WOODBOX0 hC ASM-HOLD)
+> **Ultima atualizacao:** 2026-05-16 (Rev.059 — table reader correction: 0x1A48A0 is CODE; callback registration flow added; scene loader 0x1B7D00 documented; descriptor handler layout confirmed at +0x48/+0x50/+0x58)
 
 ---
 
@@ -9,6 +9,8 @@
 
 - [Cloth Physics Dispatch Flow](#cloth-physics-dispatch-flow)
 - [Physics Object Type Table Initialization](#physics-object-type-table-initialization)
+- [Callback Registration Flow](#callback-registration-flow)
+- [Scene Loader Flow](#scene-loader-flow)
 
 ---
 
@@ -309,3 +311,151 @@ clothSubForceApply(ctx, force_h, force_v):
 - **AP1 e o mais complexo**: 640B de estado, 4 child slots, state machine de 7 estados, frame offset randomization
 - **DEVIL_GI = GIRL alias**: todos os 4 handlers identicos. Provavelmente paleta alternativa ou versao de cutscene.
 - **Nenhum handler usa COP2**: COP2 exclusivo do sistema cloth BARREL (79 COP2 total em 2 funcoes)
+
+---
+
+## Callback Registration Flow
+
+> **Status:** Fluxo completo documentado (Rev.059). Funcoes 0x13F3F0/0x13F7A8/0x13F7D8.
+
+### Visao Geral
+
+O sistema de registro de callbacks do ICO usa uma lista ligada de nodes (stride 0x94) armazenada em cada entidade/objeto. Callbacks sao registrados com tipo 0x13 (cloth) e armazenam um ponteiro para dados de configuracao, nao para a funcao callback em si.
+
+### Diagrama de fluxo
+
+```
+Scene Loader (0x1B7D00)
+  │
+  ├─> 0x1B76F8(a0=buffer, a1=type_id)
+  │     │
+  │     ├─> obj = alloc_obj()          -- aloca estrutura do objeto
+  │     ├─> descriptor[+0x38](stack, obj)  -- init handler
+  │     ├─> if entry[+0x24] != NULL:
+  │     │     0x13F7A8(obj, entry[+0x24], 0, 0x13)
+  │     │   elif descriptor[+0x40] != NULL:
+  │     │     0x13F7A8(obj, descriptor[+0x40], 0, 0x13)
+  │     ├─> entry[+0x58](obj, stack)   -- entry handler
+  │     └─> descriptor[+0x34](obj, s5) -- construct handler
+  │
+  └─> 0x13F7A8(a0=obj, a1=data, a2=0, a3=0x13)
+        │
+        └─> 0x13F3F0(a0=obj, a1=0x13, a2=data, a3=&spill)
+              │
+              ├─> Busca linear (max 3 nodes)
+              │   Node match: armazena em [obj+0x1C]
+              │
+              └─> Aloca novo node via 0x1A6E28 (x2: node + body)
+                    └─> Se falha: armazena em [obj+0x1C] diretamente
+```
+
+### Funcoes
+
+| Funcao | VA | Tamanho | Descricao |
+|--------|-----|---------|-----------|
+| node_callback_storage | 0x13F3F0 | 576B (0x240) | Linked-list manager. Stack 144B. 2 alloc calls. |
+| callback_registration | 0x13F7A8 | 44B (0x2C) | Wrapper, chama 0x13F3F0 duas vezes (main + sister) |
+| callback_system_reg | 0x13F7D8 | 36B (0x24) | Variante sem contexto: a0=0x194, a1=0, t1=0x1800 |
+
+### Registros confirmados no runtime
+
+- 1249 chamadas de callback registration (Rev.051)
+- Todas com a3=0x13 (tipo cloth)
+- 10 data pointers distintos
+- Nenhum e 0x1D3A30 (callback e armazenado como DATA, nao como function pointer)
+
+### Observacoes
+
+- **0x13F7A8** faz 2 chamadas a 0x13F3F0: primeira para obj, segunda para obj+0x10 (sister)
+- **0x13F7D8** e usado para registro system-level (sem entidade, buffer fixo de 0x1800)
+- **+0x1C** e o offset de armazenamento do callback, que mapeia para ThreadParam.entry no EE SDK
+
+---
+
+## Scene Loader Flow
+
+> **Status:** Funcao aproximadamente em 0x1B7D00–0x1B7F00 documentada (Rev.059).
+
+### Visao Geral
+
+O scene loader e o ponto de entrada para inicializacao de todos os objetos de uma sala/zona. Ele itera sobre as tabelas de entries e descritores em 4 fases distintas, chamando 0x1B76F8 para criar cada objeto.
+
+### Fases de inicializacao
+
+```
+Fase 1: Tipos base (0-5)
+  Loop s0=0..5
+    0x1B7D90: jal 0x1B76F8(a0=ctx, a1=s0)
+  Cria: NULL(0), BOY(1), GIRL(2), ENEMY1(4), etc.
+
+Fase 2: Re-init tipos 2-5
+  Loop s0=2..5
+    0x1B7DB0: jal 0x1B7B88(a0=s0)
+  Segundo passo de inicializacao
+
+Fase 3: Objetos dinâmicos
+  Loop s0=s3..s1 (range de array)
+    0x1B7DF8: jal 0x1B76F8(a0=ctx, a1=s0)
+  Enemy objects carregados dinamicamente
+
+Fase 4: Scan tabela 0x4B3D10 (181 entries, stride 0x40)
+  Loop por 181 IDs (s1=181)
+    0x1B7E6C: jal 0x1B76F8(a0=ctx, a1=entry[+2])
+  Todos os IDs de objeto mapeados
+```
+
+### A funcao 0x1B76F8
+
+Processa UM objeto/entidade por chamada:
+
+```
+0x1B76F8(a0=buffer_ctx, a1=type_id):
+
+  01. entry = entry_table[type_id] (0x002A4C48 + type_id * 0x4C)
+  02. type_idx = entry[+0x46]            -- descriptor selector
+  03. desc = descriptor_table[type_idx]  (0x002A31B8 + type_idx * 0x64)
+  04. s5 = alloc_obj()                  -- heap alloc do objeto
+  05. if s5 == NULL: goto END
+  
+  06. entity_type = s5[+4] (lhu)
+  07. if entity_type != type_id: goto END
+
+  08. // Init handler from descriptor
+  09. if desc[+0x38] != NULL:
+  10.     desc[+0x38](stack_frame, s5)
+  
+  11. // Callback registration (type 19 = cloth)
+  12. if entry[+0x24] != NULL:
+  13.     0x13F7A8(obj, entry[+0x24], 0, 0x13)
+  14. elif desc[+0x40] != NULL:
+  15.     0x13F7A8(obj, desc[+0x40], 0, 0x13)
+
+  16. // Entry table handler
+  17. if entry[+0x58] != NULL:
+  18.     entry[+0x58](obj, stack_frame)
+
+  19. // Construct handler from descriptor
+  20. if desc[+0x34] != NULL:
+  21.     desc[+0x34](obj, s5)
+
+  22. Store obj in global pointer (gp-based)
+END:
+  return
+```
+
+### Correção importante
+
+A "physics type table" anteriormente documentada em 0x001A48A0 (Rev.049) NAO EXISTE como tabela de dados. O endereco 0x1A48A0 esta dentro de .text e decodifica como instrucao `move a0, s0`. As tabelas reais sao:
+
+| Tabela | VA | Secao | Stride | Entries | Uso |
+|--------|-----|-------|--------|---------|-----|
+| Entry table | 0x002A4C48 | .data | 0x4C | 512 | Objetos por sala/zona |
+| Descriptor table | 0x002A31B8 | .data | 0x64 | 68 | Descritores de tipo |
+
+### Observacoes
+
+- s2 e passado como contexto/buffer para toda a funcao loader (provavelmente um descritor de arquivo ou ponteiro de cena)
+- A funcao 0x1B7B88 e uma segunda fase de init chamada para tipos 2-5 (NÃO 0x1B76F8 novamente)
+- A tabela 0x4B3D10 tem 181 entries, stride 0x40, com type ID em [+2] (lhu)
+- O offset +0x1C em cada entidade e o slot onde callbacks sao armazenados
+- GIRL (type 5) nao tem handlers cloth diretamente — sua AI cria objetos cloth separadamente via BARREL descriptor

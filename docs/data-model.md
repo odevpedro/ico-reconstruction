@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-16 (Rev.057 — cloth dispatcher C model: 5-state FSM fields mapeados; cloth_state_block struct; ENEMY1 hC payload init; WOODBOX0 hC ASM-HOLD)
+> **Ultima atualizacao:** 2026-05-16 (Rev.059 — correction: 0x1A48A0 is CODE not data table; descriptor handler layout fixed at +0x48=hA/+0x50=hB/+0x58=hC; callback_storage_node entity added; callback registration chain 0x13F3F0/0x13F7A8/0x13F7D8 fully documented)
 
 ---
 
@@ -17,7 +17,7 @@
 
 ## Visao Geral
 
-Modelo de dados do sistema de objetos físicos do ICO, focado no subsistema cloth (corda/rope). O núcleo é uma hierarquia de 3 structs (context → entity → payload) mais uma tabela de tipos físicos (31 entries, stride 0x64).
+Modelo de dados do sistema de objetos físicos do ICO, focado no subsistema cloth (corda/rope). O núcleo é uma hierarquia de 3 structs (context → entity → payload) mais tabelas de descritores (68 entries, stride 0x64) e entries de sala (512 entries, stride 0x4C).
 
 - **Origem:** Engenharia reversa do ELF EE (MIPS R5900, ee-gcc 2.9-991111-01)
 - **Nível de confiança:** EXACT ou NEAR-STRUCTURAL para todos os campos documentados (verificados por compilação C contra assembly original)
@@ -30,12 +30,12 @@ Modelo de dados do sistema de objetos físicos do ICO, focado no subsistema clot
 ```mermaid
 erDiagram
     ENTRY_TABLE ||--|| DESCRIPTOR_RECORD : "+0x46 seleciona indice"
-    DESCRIPTOR_RECORD ||--|{ PHYSICS_TYPE_TABLE : "handlers compartilhados"
+    SCENE_LOADER ||--|{ ENTRY_TABLE : "itera 0x1B76F8"
     CLOTH_CONTEXT ||--|| CLOTH_ENTITY : "entity em +0x15C"
     CLOTH_ENTITY ||--|| CLOTH_PAYLOAD : "payload em +0x800"
-    CLOTH_PAYLOAD ||--|| PHYSICS_TYPE_TABLE : "variant_id indexa entry"
-    PHYSICS_TYPE_TABLE ||--|| CLOTH_PAYLOAD : "handler_c inicializa"
     CLOTH_PAYLOAD ||--|| STATE_BLOCK : "state_id em +0x48"
+    CALLBACK_STORAGE_NODE ||--|| CLOTH_ENTITY : "callback em +0x1C"
+    CALLBACK_REGISTRATION ||--|| CALLBACK_STORAGE_NODE : "cria nodes (stride 0x94)"
 ```
 
 ---
@@ -100,28 +100,18 @@ Dados de instância de um objeto cloth/rope. Inicializado por `func_0x001D27A8`.
 
 ---
 
-### physics_type_entry
+### ~~physics_type_entry~~ REMOVIDO
 
-Entrada na tabela de tipos de objeto físico. Tabela em `0x001A48A0`, stride 0x64, 31 entries.
+**A tabela de tipos físicos anteriormente documentada em 0x001A48A0 foi REMOVIDA (Rev.059).** O endereço 0x1A48A0 está dentro da seção `.text` (0x100000–0x26F5D4) e decodifica como código MIPS, não como tabela de dados.
 
-**Tabela:** `0x001A48A0` (dentro da secao `.text`)
-**Stride:** 0x64 (100 bytes)
+As tabelas reais que cumprem o papel da antiga "physics type table" são:
 
-| Campo | Offset | Tipo | Descricao |
-|-------|--------|------|-----------|
-| `count` | +0x00 | ico_u32 | Geralmente 1 |
-| `handler_a` | +0x04 | ico_ptr32 | Primeiro handler (cleanup/post-dispatch) |
-| `pad_08` | +0x08 | ico_ptr32 | Sempre null |
-| `handler_b` | +0x0C | ico_ptr32 | Segundo handler (update/callback principal) |
-| `pad_10` | +0x10 | ico_ptr32 | Sempre null |
-| `handler_c` | +0x14 | ico_ptr32 | Terceiro handler (init/payload init) |
-| `pad_18` | +0x18 | ico_u32 | Sempre null |
-| `pad_1C` | +0x1C | ico_u32 | Sempre null |
-| `name` | +0x20 | char[8] | Nome ASCII (ex: "ROPE\0\0\0\0") |
+| Tabela | VA | Seção | Stride | Entries |
+|--------|-----|-------|--------|---------|
+| Entry table | 0x002A4C48 | .data | 0x4C (76) | 512 |
+| Descriptor table | 0x002A31B8 | .data | 0x64 (100) | 68 |
 
-**Tipos conhecidos:** WOODBOX01, ROTOBJEC, BARREL, ROPE, CHAIN, FLEVER, WLEVER, NONE, CAMERADU, BIRD, GENERATO, CANDLE, MOBJ, CHANDELI, WORM, POOL, DARKVOLU, MCOLTEST, ROPEFIX, CAGE, DYNAMICM, QUEEN, QUEENDEM, CAGEFIX, CLOTHTES
-
-**Observacao:** Os tipos ROPE e ROPEFIX sao duas variantes da mesma categoria — ROPE usa funcoes cloth (0x1Dxxxx), ROPEFIX usa funcoes overlay (0x1Exxxx).
+Os nomes de tipo (WOODBOX01, ROTOBJEC, BARREL, ROPE, etc.) fazem parte do campo `name` (+0x00) do descritor, não de uma tabela separada.
 
 ---
 
@@ -283,7 +273,31 @@ State 4 (IDLE):
 
 ---
 
-### ico_ptr32 (tipo provisorio)
+### callback_storage_node
+
+Node de lista ligada usado pelo sistema de registro de callbacks. Gerenciado por `0x13F3F0` (576 bytes, stride 0x94).
+
+**Offset base:** apontado por `entity_or_context + 0x10` (head da lista)
+
+| Campo | Offset | Tamanho | Tipo | Descricao |
+|-------|--------|---------|------|-----------|
+| `next` | +0x00 | 8 | ico_ptr64 | Proximo node na lista ligada (ld/sd) |
+| `data` | +0x08 | 4 | ico_ptr32 | Ponteiro para dados do callback |
+| `type` | +0x0C | 4 | ico_u32 | Tipo do callback (ex: 0x13 = cloth) |
+| `body` | +0x10 | 0x84 | u8[132] | Corpo do node (allocado separadamente) |
+
+**Stride total:** 0x94 (148 bytes)
+
+**Behavior (Rev.059):**
+- `0x13F7A8(a0=obj, a1=data, a2=type, a3=&spill)`: wrapper que chama 0x13F3F0 duas vezes
+  - Primeira: a0 = obj (callback na lista principal)
+  - Segunda: a0 = obj+0x10 (sister callback storage)
+- `0x13F7D8()`: variante sem contexto, a0=0x194, a1=0, t1=0x1800
+- `0x13F3F0()`: busca linear (max 3 nodes). Se não encontra: alloc via 0x1A6E28
+- Fallback: se alloc falha, armazena em `[obj+0x1C]` diretamente (mesmo offset de ThreadParam.entry no EE SDK)
+- Runtime confirmou 1249 chamadas, todas com a3=0x13, 10 data pointers distintos (Rev.051)
+
+---
 
 | Propriedade | Valor |
 |-------------|-------|
