@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-16 (Rev.056 — handler wave 3: 13 entidades mapeadas; hB dispatcher diversity confirmada; DEVIL_GI = GIRL alias)
+> **Ultima atualizacao:** 2026-05-16 (Rev.057 — cloth dispatcher C model: 5-state FSM confirmado; clothSubForceApply model; ENEMY1 hC model; WOODBOX0 hC ASM-HOLD)
 
 ---
 
@@ -82,13 +82,13 @@ Physics Type Table (0x001A48A0, stride 0x64) -- nomes APENAS, handlers duplicado
    └─> Node system (0x13F9D0/0x13FB70) ou chamada direta
        └─> Chama descriptor[+0x50] (handler_b = 0x001D3A30)
            └─> ROPE callback prepara contexto
-               └─> Chama dispatcher 0x001D37C8
-                   └─> state_id de [payload + 0x48] → jump table 0x00618FB0
-                       ├─> State 0: 0x001D3818
-                       ├─> State 1: 0x001D3844
-                       ├─> State 2: 0x001D391C
-                       ├─> State 3: 0x001D39E0
-                       └─> State 4: 0x001D3A10
+                └─> Chama dispatcher 0x001D37C8
+                    └─> state_id de [payload + 0x48] → jump table 0x00618FB0
+                        ├─> State 0 (0x1D3818): GUARD — check 0x1F2148. If pass: setup_1, setup_2, [payload+0x64]=1, state=1
+                        ├─> State 1 (0x1D3844): PREPARE/TIMING — seed quaternion from 0x4C4750, timer calc, counter--. If 0: state=2
+                        ├─> State 2 (0x1D391C): SIMULATE — matrix init, CD collision (0x12ABE0/0x12AC28), callbacks, result alloc. state=3
+                        ├─> State 3 (0x1D39E0): CHECK — 0x12A7F8. If pass: state=4, [payload+0]=1, clear extra. Else: retry
+                        └─> State 4 (0x1D3A10): IDLE/DONE — no-op. External code resets state to 0
 ```
 
 ### Funcoes envolvidas
@@ -103,7 +103,7 @@ Physics Type Table (0x001A48A0, stride 0x64) -- nomes APENAS, handlers duplicado
 | Matrix init | `0x00105F00` | Nao tentado | ??? | Matrix init (chamado de 0x1D27A8) |
 | Sound/event reg | `0x001AE6F8` | Nao tentado | ??? | Chamado em ambos paths de 0x1D27A8 |
 | ROPE callback (handler_b) | `0x001D3A30` | Confirmado runtime | ??? | Update callback |
-| Dispatcher | `0x001D37C8` | BLOCKED/ASM-HOLD | 616B | 5-state dispatch |
+| Dispatcher | `0x001D37C8` | NEAR-STRUCTURAL | 616B | 5-state FSM (guard→prepare→simulate→check→done) |
 | Node callback dispatcher | `0x0013FB70` | Mapeado | ??? | Node system dispatch |
 | Callback register | `0x0013F7A8` | Mapeado | ??? | Registra callback no node system |
 
@@ -281,6 +281,24 @@ chamado atraves do mesmo mecanismo de dispatcher do descritor. Padroes observado
 
 A busca por um dispatcher centralizado (Rev.055) falhou porque o dispatcher nao existe —
 o runtime le `descriptor[+0x50]` e chama `jalr` diretamente para cada entidade.
+
+### Cloth Force Application (0x1D3F78)
+
+```
+clothSubForceApply(ctx, force_h, force_v):
+  1. alloc_entity(19) → s1        // 64B heap alloc
+  2. if null: return 1
+  3. Loop: for each entity in chain:
+     ├─ rand() * 65536.0f → s16 angle
+     ├─ Check extra/count: mark for update if inactive
+     ├─ [es+0x130] = force_h * sin(angle)   // X-force
+     ├─ [es+0x134] = force_v * rand()        // Y-force
+     ├─ [es+0x138] = force_h * cos(angle)    // Z-force
+     └─ s1 = alloc_next(s1)                  // next chain entity
+  4. return 1
+```
+
+**EE-only (zero COP2):** usa sin/cos do FPU do EE via 0x008BAC0/0x008BB20
 
 ### Observacoes
 

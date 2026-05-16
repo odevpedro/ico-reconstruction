@@ -125,3 +125,85 @@ ico_ptr32 attackch62_hC(struct entity_context *entity, ico_ptr32 initializer)
     *(u32 *)parent_slot = 0;
     return alloc;
 }
+
+/* =================================================================
+ * ENEMY1 hC (0x1CE220) — NEAR-STRUCTURAL
+ *
+ * Constructor for shadow enemy (ENEMY1, desc idx 4, init_fn=0x164440).
+ * 80B heap alloc, 10-element child arrays, resource init, state reg.
+ *
+ * Control flow:
+ *   1. Alloc 80B from heap → s0
+ *   2. Zero-fill 80B (2x 32B chunks + 16B remainder = 3 stores)
+ *   3. Copy initializer data (64B from initializer to alloc)
+ *   4. sub_1CEF90(s0+0x30, 10, 4) — child array batch 1
+ *   5. sub_1CEF90(s0+0x58, 10, 4) — child array batch 2
+ *   6. sub_1CF288(6)              — resource/event register
+ *   7. sub_1CEF90(s0+0x44, s1, 4) — child array from s1-sized batch
+ *   8. Init fields at alloc+0x50..0x59, set alloc+0x18=0x3F
+ *   9. entity_state_reg(entity, 0, s0) — store s0 as payload
+ *  10. Tail: entity_dispatch_update(entity) — continue to update handler
+ * ================================================================= */
+ico_ptr32 sub_1CEF90(ico_ptr32 dst, ico_s32 count, u32 stride);
+void sub_1CF288(u32 resource_id);
+void sub_1E46B8(ico_ptr32 heap, ico_ptr32 alloc, u32 size, ico_ptr32 tag, u32 line);
+void sub_202A18(struct entity_context *, u32, ico_ptr32);
+void sub_106190(struct entity_context *);
+ico_ptr32 sub_1D3B28(ico_ptr32);
+
+ico_ptr32 enemy1_hC(struct entity_context *entity, ico_ptr32 initializer)
+{
+    ico_ptr32 heap = *(ico_ptr32 *)0x00719720;
+    ico_ptr32 s0 = sub_13A0F8(heap, 80, 0x0056B160, 409);
+
+    if (!s0)
+        return 0;
+
+    sub_2641D8(s0, 0, 80);
+    sub_105F00(s0, initializer);
+
+    sub_1CEF90(s0 + 0x30, 10, 4);
+    sub_1CEF90(s0 + 0x58, 10, 4);
+
+    sub_1CF288(6);
+
+    {
+        ico_s32 count = *(ico_s32 *)((u8 *)initializer + 0x18);
+        if (!count) count = *(ico_s32 *)((u8 *)initializer + 0x1C);
+        sub_1CEF90(s0 + 0x44, count, 4);
+    }
+
+    *(u32 *)((u8 *)s0 + 0x50) = 0;
+    *(u32 *)((u8 *)s0 + 0x54) = 0;
+    *(u32 *)((u8 *)s0 + 0x58) = 0;
+    *(u8  *)((u8 *)s0 + 0x59) = 0;
+    *(u8  *)((u8 *)s0 + 0x18) = 0x3F;
+    *(u32 *)((u8 *)s0 + 0x4C) = 0;
+
+    sub_202A18(entity, 0, s0);
+    sub_106190(entity);
+    return s0;
+}
+
+/* =================================================================
+ * WOODBOX0 hC (0x1C00C0) — ASM-HOLD
+ *
+ * Constructor for breakable crate (WOODBOX0, desc idx 17, init_fn=0x17D1D0).
+ * ~286 instructions, 400B heap alloc with data copy from 0x4CF560.
+ *
+ * Key pattern (partial):
+ *   1. Alloc 400B from heap → s1
+ *   2. Zero-fill 400B (large block via sub_2641D8)
+ *   3. Data copy: 384B from 0x4CF560 to s1+0x10 (96 word loop via lw/sw)
+ *   4. Init fields at s1+0x04, s1+0x0C, s1+0x08
+ *   5. sub_1B7FE8(entity, 0x1C6F40, ...) — spawn child entity
+ *   6. sub_1CEF90 × multiple calls for child arrays
+ *   7. Multiple resource registrations (sub_1CF288)
+ *   8. sub_202A18(entity, 0, s1) — reg payload
+ *   9. Tail: entity_dispatch_update
+ *
+ * NOT YET written as C model. Function is too large for NEAR-STRUCTURAL
+ * without deeper analysis of the data copy loop and initialization table at
+ * 0x4CF560. The hB (0x1C0538) and hA (0x1C08A0) are also large.
+ * ================================================================= */
+/* TO DO: write WOODBOX0 hC C model after 0x4CF560 data table analysis */

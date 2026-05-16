@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-16 (Rev.056 — handler wave 3: BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR; descriptor index correction; hB dispatcher diversity; 13 entries with init_fn mapped)
+> **Ultima atualizacao:** 2026-05-16 (Rev.057 — cloth dispatcher C model: 5-state FSM fields mapeados; cloth_state_block struct; ENEMY1 hC payload init; WOODBOX0 hC ASM-HOLD)
 
 ---
 
@@ -90,8 +90,11 @@ Dados de instância de um objeto cloth/rope. Inicializado por `func_0x001D27A8`.
 | `flag_08` | +0x08 | ico_u64 | ld | Bandeira 64-bit. zero = ativo |
 | `pad_10` | +0x10 | u8[0x30] | — | Gap nao mapeado (dados de pose no runtime) |
 | `field_40` | +0x40 | ico_s32 | lw | Preenchido com retorno de 0x1B7FE8 quando variant == 1 |
-| `field_44` | +0x44 | ico_s32 | swc1 | Resultado do calculo timing/speed em 0x1D2978 |
+| `field_44` | +0x44 | ico_s32 | sw/lw | Timer/counter (decrementado em state 1 do dispatcher) |
 | `state_id` | +0x48 | ico_u32 | lw | 0-4, indexa jump table do dispatcher 0x1D37C8 |
+| `matrix_ptr` | +0x50 | ico_ptr32 | sw | Ponteiro para matriz de transform (state 2) |
+| `result_ptr` | +0x60 | ico_ptr32 | sw | Ponteiro para resultado allocado (state 2 via 0x12A618) |
+| `field_64` | +0x64 | ico_u32 | sw | Flag de fase (1=state 0 ativo, 0=state 2 limpa, 4=state 3 completa) |
 
 **Evidencia:** 3 EXACT matches, runtime confirmacao de `[a1+0x30]` como area ID, `[a1+0x58]` como slot de callback vazio. `field_40` e `field_44` confirmados no disassembly de 0x1D27A8 (Rev.050).
 
@@ -230,23 +233,53 @@ Tabela de entries de objetos por sala/zona. Tabela em `0x002A4C48`, stride 0x4C.
 
 ---
 
-### state_block
+### cloth_state_block
 
-Bloco interno de estado do dispatcher `0x1D37C8`.
+Sub-bloco dentro de cloth_payload (offset +0x40). Contém estado local do dispatcher de 5 estados.
 
-| Campo | Offset | Tipo | Acesso | Descricao |
-|-------|--------|------|--------|-----------|
-| `state_id` | +0x48 | ico_u32 | lw | 0-4, seleciona state block |
+**Offset base:** `payload + 0x40` (referenciado como `s1` no dispatcher)
 
-**State blocks:**
+| Campo | Offset absoluto | Offset relativo a s1 | Tipo | Acesso | Descricao |
+|-------|-----------------|----------------------|------|--------|-----------|
+| `field_40` | payload+0x40 | +0x00 | ico_ptr32 | lw | Passado para guard function 0x1F2148 |
+| `counter` | payload+0x44 | +0x04 | ico_s32 | sw/lw | Timer decrementado em state 1; quando 0 → state 2 |
+| `state_id` | payload+0x48 | +0x08 | ico_u32 | lw | 0-4, seleciona handler no dispatcher 0x1D37C8 |
+| `matrix` | payload+0x50 | +0x10 | ico_ptr32 | — | Workspace de matriz (state 2) |
+| `result` | payload+0x60 | +0x20 | ico_ptr32 | sw | Result struct allocado (state 2, via 0x12A618) |
 
-| ID | VA | Tamanho provavel |
-|----|-----|-----------------|
-| 0 | 0x001D3818 | ~44 bytes |
-| 1 | 0x001D3844 | ~216 bytes |
-| 2 | 0x001D391C | ~196 bytes |
-| 3 | 0x001D39E0 | ~48 bytes |
-| 4 | 0x001D3A10 | ~24 bytes |
+**State machine (Rev.057):**
+
+```
+State Flow: 0 → 1 → 2 → 3 → 4 (terminal). External code resets state to 0.
+
+State 0 (GUARD, 0x1D3818):
+  - Chama 0x1F2148(field_40, ctx)
+  - Se retornar != 0: setup_1, setup_2, flag=1, state=1
+  - Se retornar 0: exit (state fica 0)
+
+State 1 (PREPARE/TIMING, 0x1D3844):
+  - Copia quaternion seed de 0x4C4750 para stack
+  - Calculo com dados de 0x274EC0/0x274EC4 (timing params)
+  - ee_sqrt, ee_atan2, ee_cos para compute force
+  - Copia quaternion resultante para [entity_state+0xA0]
+  - counter--; se 0: state=2
+
+State 2 (SIMULATE, 0x1D391C):
+  - Limpa [payload+0x64]
+  - CD functions (0x12ABE0/0x12AC28/0x12ADE8/0x12A618)
+  - Matrix init + entity callback (0x181BF8)
+  - cloth_phase_2 (0x1D12D8)
+  - Alloca result struct, init quat, copy data de 0x276140
+  - state=3
+
+State 3 (CHECK, 0x1D39E0):
+  - Chama 0x12A7F8(result_ptr)
+  - Se pass: state=4, [payload+0]=1, [ctx+0x16C]=0
+  - Se fail: retry (state fica 3)
+
+State 4 (IDLE):
+  - No-op. Epilogo direto
+```
 
 ---
 
@@ -265,14 +298,14 @@ Bloco interno de estado do dispatcher `0x1D37C8`.
 
 ### state_id (cloth_payload +0x48)
 
-| Valor | Significado |
-|-------|-------------|
-| 0 | State block 0 (0x001D3818) no dispatcher |
-| 1 | State block 1 (0x001D3844) |
-| 2 | State block 2 (0x001D391C) |
-| 3 | State block 3 (0x001D39E0) |
-| 4 | State block 4 (0x001D3A10) |
-| >=5 | Bounds check — cai no guard do dispatcher |
+| Valor | Handler | Fase | Descricao |
+|-------|---------|------|-----------|
+| 0 | 0x001D3818 | GUARD | Check condition. Se pass: setup, state→1 |
+| 1 | 0x001D3844 | PREPARE/TIMING | Quaternion seed, counter--. Quando 0: state→2 |
+| 2 | 0x001D391C | SIMULATE | Matrix, CD functions, result alloc, entity callback. state→3 |
+| 3 | 0x001D39E0 | CHECK | Verifica resultado. Se ok: state→4, cleanup. Se nao: retry |
+| 4 | 0x001D3A10 | IDLE/DONE | No-op. Algo externo reseta state para 0 |
+| >=5 | — | INVALIDO | Bounds check → executa state 0 guard |
 
 ### variant_id (cloth_payload +0x04)
 

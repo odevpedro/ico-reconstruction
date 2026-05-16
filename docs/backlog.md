@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 69 |
+| Completed | 70 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -160,6 +160,17 @@ Handler decompilation wave 2 — GIRL, QUEEN, BGA, AP1
 - Padrao hC/hB/hA confirmado em 7 entidades
 - Documentado em research/elf/ghidra-rev054-handler-decompilation-wave2.md
 - src/entity/types.h, src/entity/structs.h, src/entity/near_matches.c criados (4 NEAR-STRUCTURAL models)
+
+### [x] [SQUAD-RUNTIME | rev.057 | 2026-05-16]
+C models for cloth dispatcher, clothSubForceApply, ENEMY1 hC; factory analysis integration
+
+- Cloth dispatcher (0x1D37C8) state machine fully analyzed: 5 states (0=guard→1=prepare→2=simulate→3=check→4=done), target fields confirmed (state_block = payload+0x40, state_id=[payload+0x48], counter=[payload+0x44], matrix=[payload+0x50], result=[payload+0x60])
+- NEAR-STRUCTURAL C model written to src/cloth/near_matches.c: switch-based dispatch, guard function, timing/prepare phase, simulation phase, post-check, idle state
+- clothSubForceApply (0x1D3F78) C model: entity chain iteration, rand()→sin/cos force projection, 3 force components at es+0x130/0x134/0x138
+- ENEMY1 hC model in src/entity/near_matches.c: 80B heap alloc, 2x child arrays (10 elements each), resource reg, state field init
+- WOODBOX0 hC skeleton with ASM-HOLD status (286 insns, 400B alloc, 384B data copy from 0x4CF560)
+- Factory analysis (0x240D40/0x240EA0) integrated from Rev.052 and runtime session 3 — both excluded as paths for ROPE callback
+- 2 commits: Rev.056-057 docs + descriptor correction, NEAR-STRUCTURAL C models
 
 ### [x] [SQUAD-RUNTIME | rev.056 | 2026-05-16]
 Handler decompilation wave 3 — BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR; descriptor index correction
@@ -464,6 +475,7 @@ Call graph analysis
 | 2026-05-16 | 2026-05-16 | SQUAD-RUNTIME | 0x0024xxxx callers investigated: 0x240D40/0x240EA0 are object factories, excluded for ROPE callback |
 | rev.054 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 2: GIRL, QUEEN, BGA, AP1 — 12 funcoes disassembled, padrao hC/hB/hA confirmado em 7 entidades |
 | rev.056 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 3: BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR — 12 handlers disassembled; descriptor index correction (WOODBOX0=17, BGA=30, AP1=61); hB dispatcher diversity confirmed (no unified dispatch); 13 entries with non-null init_fn |
+| rev.057 | 2026-05-16 | SQUAD-RUNTIME | C models: cloth dispatcher (5-state FSM), clothSubForceApply (EE sin/cos force), ENEMY1 hC (80B constructor); WOODBOX0 hC ASM-HOLD; factory analysis integration |
 
 ---
 
