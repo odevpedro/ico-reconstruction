@@ -116,7 +116,7 @@ index 70cd58d..da423d0 100644
  	// and it expects the PC counter to be pre-incremented
  	cpuRegs.pc += 4;
 diff --git a/pcsx2/x86/ix86-32/iR5900.cpp b/pcsx2/x86/ix86-32/iR5900.cpp
-index a75e23c..0daac68 100644
+index a75e23c..3ae91b1 100644
 --- a/pcsx2/x86/ix86-32/iR5900.cpp
 +++ b/pcsx2/x86/ix86-32/iR5900.cpp
 @@ -22,6 +22,9 @@
@@ -129,7 +129,7 @@ index a75e23c..0daac68 100644
  // Only for MOVQ workaround.
  #include "common/emitter/internal.h"
  
-@@ -65,6 +68,133 @@ bool g_cpuFlushedPC, g_cpuFlushedCode, g_recompilingDelaySlot, g_maySignalExcept
+@@ -65,6 +68,130 @@ bool g_cpuFlushedPC, g_cpuFlushedCode, g_recompilingDelaySlot, g_maySignalExcept
  
  eeProfiler EE::Profiler;
  
@@ -187,9 +187,6 @@ index a75e23c..0daac68 100644
 +	const u32 s7 = cpuRegs.GPR.n.s7.UL[0];
 +	const u32 t0 = cpuRegs.GPR.n.t0.UL[0];
 +
-+	if (probe_pc == 0x0013f7a8 && (a3 != 0x13 || (a1 != 0x001d3a30 && ra != 0x00201edc)))
-+		return;
-+
 +	FILE* fp = IcoRecProbeGetLogFile();
 +	if (!fp)
 +		return;
@@ -202,7 +199,7 @@ index a75e23c..0daac68 100644
 +	else if (probe_pc == 0x00201ed4)
 +		label = "runtime_candidate_00201ed4";
 +	else if (probe_pc == 0x0013f7a8)
-+		label = "callback_register_a3_13";
++		label = "callback_register";
 +
 +	std::fprintf(fp,
 +		"{\"session\":\"ico_probe_rec\","
@@ -263,7 +260,7 @@ index a75e23c..0daac68 100644
  ////////////////////////////////////////////////////////////////
  // Static Private Variables - R5900 Dynarec
  
-@@ -1652,6 +1782,12 @@ void recompileNextInstruction(bool delayslot, bool swapped_delay_slot)
+@@ -1652,6 +1779,12 @@ void recompileNextInstruction(bool delayslot, bool swapped_delay_slot)
  	if (EmuConfig.EnablePatches)
  		Patch::ApplyDynamicPatches(pc);
  
