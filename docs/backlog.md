@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 73 |
+| Completed | 74 |
 | In Progress | 0 |
 | Pending | 3 |
 
@@ -493,6 +493,7 @@ Call graph analysis
 | 2026-05-16 | 2026-05-16 | SQUAD-EXTERNAL | ICO-decomp thread.c cross-reference: thread.c decompiled C source found, struct IosThreadInfo layout (0x70 bytes), callback offset +0x1C maps to ThreadParam.entry |
 | 2026-05-16 | 2026-05-16 | SQUAD-EXTERNAL | ICO-decomp fumi.h revealed: struct IosThreadInfo details (entry at +0x38, ThreadParam at +0x00), struct IosMsgQueue layout, memory partition constants |
 | rev.059 | 2026-05-16 | SQUAD-ARCH | Table reader correction + callback chain full analysis: 0x1A48A0 is CODE not data (Rev.049 correction); descriptor handler layout fixed (+0x48=hA, +0x50=hB, +0x58=hC); scene loader 0x1B7D00 documented (4-phase init, calls 0x1B76F8); 0x13F3F0 (576B linked-list, stride 0x94) + 0x13F7A8 + 0x13F7D8 fully disassembled; GIRL cloth delegation explained (AI system creates cloth objects independently); data-model.md corrected |
+| rev.060 | 2026-05-16 | SQUAD-RUNTIME | Consolidated hB analysis + callback pool correction: 0x1A6E28 is print/assert stub (NOT allocator, 32B save+return); 0x13F3F0 is POOL MANAGER (slot stride 0x94, gp-based, sorted doubly-linked per-entity list); 0x13D1B0 does heap_alloc(0x13A0F8) with t1 size/tag=173/"NodeCallback"; 0x13D3C8 jumps to kernel 0x100340 (queue insert); HOY hB (176 insns, 3 sub-fns: cloth+movement, collision/transform, head/weapon); ENEMY1 hB (142 insns, 3-state AI, counter÷10, 2-pass child sprite); GIRL hB (113 insns, BOY-similar + GIRL AI at 0x243AE8/0x243950); WOODBOX0 hC (286 insns, 400B alloc, 2 children); AP1 hC (367 insns, 6 heap_allocs, 4 children); runtime plan prepared; call graphs for 5 entities extracted |
 
 ---
 
