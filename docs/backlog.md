@@ -9,9 +9,9 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 66 |
+| Completed | 67 |
 | In Progress | 0 |
-| Pending | 2 |
+| Pending | 3 |
 
 ---
 
@@ -43,6 +43,15 @@ _(none)_
 - Deliverable: reproducible local-only notes and tooling that do not distribute proprietary data
 
 ---
+
+### [SQUAD-RUNTIME | rev.054 | Pending]
+**Handler decompilation wave 2 — GIRL, QUEEN, BGA, AP1**
+
+- Disassemblar handlers de GIRL/Yorda (0x1D1A98/0x1D17F8/0x1D1668)
+- Disassemblar handlers de QUEEN boss (0x19A9A0/0x19A8F0/0x19A7E8)
+- Disassemblar BGA (0x203EE8 init_fn, sem handlers)
+- Disassemblar AP1 (0x1BA530/0x1BA330/0x1B8720)
+- Verificar padrão hC/hB/hA se mantém
 
 ### [SQUAD-TOOLING | Pending | Pending]
 **PCSX2 Generic Runtime Logpoints Proposal**
@@ -140,15 +149,15 @@ Five-way consolidation — descriptor table full map, sister_callbacks, event_cl
 - Modelo híbrido EE+VU0 para física cloth; hB é event-driven, não per-frame
 - Documented in research/elf/ghidra-rev052-five-way-consolidation.md
 
-- Breakpoint 0x1D3A30 added to PCSX2 instrumented build
-- ~90 min gameplay across varied areas (cable car, castle, Yorda, animations)
-- **1419 eventos capturados: ZERO hits at 0x1D3A30**
-- 145 cloth_payload_init hits with 50/50 variant split
-- 1249 callback_register hits, all a3=0x13, 10 distinct callback types, none is 0x1D3A30
-- .text section corrected: 0x00100000..0x0026F5D4 (not 0x001Fxxxx)
-- Callers 0x00240E58/0x00240F98 traced to functions 0x240D40/0x240EA0 (object factories + multi-callback registration)
-- Both callers definitively excluded as path for ROPE callback
-- Documented in research/runtime/pcsx2-recompiler-session3-2026-05-16.md
+### [x] [SQUAD-RUNTIME | rev.053 | 2026-05-16]
+Handler decompilation wave 1 — COP2 cloth, WOODBOX0, ENEMY1, BOY
+
+- Real COP2 functions: 0x1D3E80 (distance², 6 COP2) and 0x1D45B0 (plane clip, 74 COP2 + 4×4 transform + AABB X/Y)
+- WOODBOX0: hC=primary init (286 insns, 400B alloc, 2 children, 18 jals), hB=update (27 insns, 31-frame counter), hA=post-init
+- ENEMY1: hC=constructor (80B, 2×10 child collections, 7 jals), hB=per-frame AI+attack+draw (14 jals including seeker, shadow_draw, anim_seq), hA=reset/cleanup chain
+- BOY: hA=warm/cold init (80 insns, 12 jals, conditional map-39 logic), hB=5 update calls + collision + tail
+- Handler convention corrected: hC=constructor, hB=update, hA=post-init/reset
+- Documented in research/elf/ghidra-rev053-handler-decompilation-wave1.md
 
 ### [x] [SQUAD-ARCH | 2026-05-16]
 Cloth struct model committed — first C source files in repo
@@ -439,6 +448,7 @@ Call graph analysis
 | 2026-05-16 | 2026-05-16 | SQUAD-ARCH | docs/data-model.md + docs/system-feature-flows.md created |
 | rev.051 | 2026-05-16 | SQUAD-RUNTIME | Runtime session 3: 0 hits at 0x1D3A30 across ~90 min / 1419 events — refutes per-frame model |
 | rev.052 | 2026-05-16 | SQUAD-ARCH | Five-way consolidation: descriptor map (68 entries), sister_callbacks, event_clear decomp, VU0 cloth physics |
+| rev.053 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 1: COP2 cloth (dist check + plane clip), WOODBOX0 init/update/post-init, ENEMY1 full lifecycle (19+ subfns), BOY warm/cold init paths |
 | 2026-05-16 | 2026-05-16 | SQUAD-RUNTIME | 0x0024xxxx callers investigated: 0x240D40/0x240EA0 are object factories, excluded for ROPE callback |
 | 2026-05-16 | 2026-05-16 | SQUAD-ARCH | .text end corrected: 0x0026F5D4 (not 0x001Fxxxx) |
 
