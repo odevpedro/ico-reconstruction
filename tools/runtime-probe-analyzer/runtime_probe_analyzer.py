@@ -17,6 +17,7 @@ KNOWN_CALLSITES = {
     0x001B7AB0: "entry +0x24 callback registration",
     0x001B7ACC: "descriptor_label +0x40 fallback registration",
     0x00201ED4: "runtime-dependent 0x00201e70 registration candidate",
+    0x00203080: "caller of 0x00201e70 using table-loaded s0 as callback",
     0x00203EA0: "caller of 0x00201e70 using [s0+4] as callback",
     0x00240F90: "literal t0 callback registration path",
     0x00082618: "ELF entry sentinel caller",
