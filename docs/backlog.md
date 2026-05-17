@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 75 |
+| Completed | 76 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -68,6 +68,59 @@ _(none)_
 ---
 
 ## Completed
+
+### [x] [SQUAD-RUNTIME | rev.064 | 2026-05-16]
+Live scene init dispatch at 0x00166E10, cold paths, struct map
+
+- **0x00167230 NÃO é função standalone** — é cold path (split de compilador EE GCC)
+- **Função REAL**: 0x00166E10 (corpo principal, 400B stack, 250+ insns, itera runtime ptr list)
+- **3 cold paths**: 0x00167230 (14 JALRs via gp-25856, limpa +176/+148/+136), 0x00167258 (6 JALRs via gp-25852, limpa só +148), 0x00167270 (J encontrado)
+- **0x00166E10 tem ZERO referências estáticas** — só alcançada via J dos cold paths
+- **gp-25904 (0x006323C0)**: 8 bytes `00 00 00 00 FF FF FF FF` = estado padrão (ptr=0, flag=-1)
+- **0x00105F00**: função utilitária geral (665 JALs), primeira instrução LL (operação atômica)
+- **Callback dispatch**: [context+0x0C] via JALR por entidade/slot (corrigido Rev.066: slot table, não desc array)
+- **CORREÇÃO CRÍTICA**: Rev.059 modelo de scene loader (0x1B76F8/0x1B7D00) refutado — ambos são DEAD CODE
+- Documentado em research/elf/ghidra-rev064-cold-paths-and-live-dispatch.md
+
+### [x] [SQUAD-RUNTIME | rev.066 | 2026-05-17]
+Static live dispatch callsite map
+
+- **0x00167230 e 0x00167258** confirmados como cold paths que saltam para 0x00166E10
+- **0x00167270 rejeitado** como cold path independente — é o `j 0x00166E10` no final do cold path B
+- **gp-25856 -> 0x00167230**, com 14 wrappers JALR
+- **gp-25852 -> 0x00167258**, com 6 wrappers JALR
+- **gp-25848** inicializado como 0x00000000, não é cold path slot
+- **0x00166E10** sem JAL direto ou ponteiro literal no ELF — confirmado modelo de entrada via cold paths
+- **0x00167020** confirmado como dispatch JALR, target vindo de [0x00282690 + slot * 0x10 + 0x0C]
+- **Correção 0x006AAC80**: lista runtime em 0x006AAC80 (não 0x006AAC00)
+- Documentado em research/elf/ghidra-rev066-static-live-dispatch-callsite-map.md
+
+### [x] [SQUAD-RUNTIME | rev.067 | 2026-05-17]
+Consolidated live dispatch model — slot table, callbacks, callers, alternate impl, probe plan
+
+- **Slot table 0x00282690**: 17 entries stride 0x10, 14 unique callbacks parametricos
+- **Callback structure**: todas 14 funções compartilham skeleton (0x90 frame, iteram 0x6AB080 BSS)
+- **Group 1 (w0=1)**: posicao/rotacao via 0x166258, elem_size=0x50, escreve [+0x88/0x80/0x84]
+- **Group 2 (w0=0)**: orientacao via 0x1667E0, elem_size=0x70, escreve [+0x94/0x8C/0x90/0x88]
+- **w1=1**: triplet guard (`[ctx+0x74/78/7C]`), slots 4/5/13
+- **Callers 0x00166028**: 3 JAL diretos (`0x00101ee8`, `0x001af974`, `0x001b7b50`) + 14 GP wrappers
+- **Callers 0x00168650**: 0 JAL, 1 tail-call J (`0x001a3334` dentro de `0x001A3208`) + 6 GP wrappers (slots 12-16)
+- **Alternate impl 0x00169F80/0x0016A058**: self-contained (80B frame), JAL cold path + extra init (6 callees, 2x 0x1D4A58 two-pass pattern)
+- **Cold paths são leaf fragments**: sem stack, sem epilogue, terminal J para 0x00166E10
+- **Alternates são standalone functions**: prologue/epilogue proprios
+- **Runtime probe plan**: 9 breakpoints prioritarios definidos
+- Documentado em research/elf/ghidra-rev067-consolidated-live-dispatch-model.md
+
+### [x] [SQUAD-RUNTIME | rev.068 | 2026-05-17]
+Naked init caller (0x001A3208) and transform orchestrator (0x1D4A58)
+
+- **0x001A3208** — função naked (0 byte frame, sem prologue/epilogue) que inicializa ~70 GP slots com defaults (0, 1, 4, 15, 3, 5, 25, 100) e tail-calls `0x00168650` com `a0=0` (sempre cold paths)
+- **Único caller**: `JAL 0x1A3208` em `0x00101D58` (dentro de `0x00101C80`, função engine init com stack 128B)
+- **Init chain confirmada**: `0x00101C80 → JAL 0x1A3208 → J 0x00168650 → JR $ra` (volta direto para caller de 0x00101C80 via tail-call)
+- **0x1D4A58** — transform orchestrator/packetizer VU0 (192B frame, 7 callee-saves): constroi matrix 4×4 via `0x1D45B0`, copia condicionalmente, submete ao ring buffer VU0 em `0x4C7710` via `0x1D43F8`
+- **Correção**: `t0` NÃO é branchado dentro de `0x1D4A58` — é forwardeado para `0x1D43F8`. Two-pass está nos callers (0x169F80/0x16A058) que carregam blocos de constantes diferentes por passada.
+- **Seleção do alternate impl ainda desconhecida** — a única cadeia de init conhecida (`0x00101C80`) sempre usa `a0=0` (cold paths)
+- Documentado em research/elf/ghidra-rev068-naked-init-caller-and-transform-packetizer.md
 
 ### [x] [SQUAD-RUNTIME | rev.063 | 2026-05-16]
 VU0 cloth compute and writer functions
@@ -521,6 +574,7 @@ Call graph analysis
 | ~~rev.060~~ | 2026-05-16 | ~~SQUAD-TOOLING~~ | ~~Compiler correction: ee-gcc 2.9-991111-01 IS available on decomp.me via game-specific presets (not generic PS2). Backlog line 83 corrected. Test plan created at research/external/decompme-ee-gcc-991111-test-plan.md~~ **(subsumed into Pending Rev.060)** |
 | rev.062 | 2026-05-16 | SQUAD-ARCH | GP-relative data map (11,547 accesses, 2,131 offsets): GP=0x006388F0 confirmed, 853 .sdata vars mapped, 40 entity type tags decoded, cloth VU0 function pointer in .sdata, world state block, seeker data cluster |
 | rev.063 | 2026-05-16 | SQUAD-RUNTIME | VU0 cloth compute and writer functions: 0x001D9020 resolved (part of 0x1D8E40, 295 insns, VU0), 2 writers of gp[-18868] (0x1DFBC8 scene init + 0x1E00F8 entity init), cloth struct cluster gp[-18892..-18844] (48B, 12 slots), both writers outside clothAnimation.c range |
+| rev.064 | 2026-05-16 | SQUAD-RUNTIME | Live scene init dispatch at 0x00166E10: cold path split (3 entry points), 400B stack, array iteration at 0x006AAC00, callback dispatch via [context+0x0C]; gp-25904 default state (0/0xFFFFFFFF); Rev.059 refuted (0x1B76F8/0x1B7D00 are DEAD CODE) |
 
 ---
 

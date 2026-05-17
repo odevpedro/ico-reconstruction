@@ -78,16 +78,13 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
-research/elf/ghidra-rev039-cloth-domain-correction.md                 (latest domain correction)
-research/ico-decomp-cross-reference-2026-05-14.md                      (ICO-decomp source-tree cross-reference)
-research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md           (static registration gap)
+research/elf/ghidra-rev067-consolidated-live-dispatch-model.md        (live dispatch consolidated model — slot table, callbacks, callers, alternate impl)
+research/elf/ghidra-rev066-static-live-dispatch-callsite-map.md       (cold paths, GP slots, dispatch point confirmed)
+research/elf/ghidra-rev064-cold-paths-and-live-dispatch.md            (live dispatch at 0x00166E10, cold paths, struct map)
+research/elf/ghidra-rev039-cloth-domain-correction.md                 (cloth domain for 0x001d37c8/0x001d3a30)
+research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md          (static registration gap)
 research/elf/ghidra-rev025-runtime-confirmed-caller-context.md         (runtime validation)
-research/elf/ghidra-rev023-dispatcher-table-resolution.md              (dispatcher foundation)
-research/external/sotc-tooling-relevance-survey.md                     (SOTC tooling/process relevance)
-research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md        (independent instruction decoding check)
-research/external/ico-splat-minimal-experiment.md                      (minimal splat split experiment)
-research/external/ico-splat-promoted-ranges-experiment.md              (verified ranges promoted from monolithic asm)
-research/external/ico-splat-adjacent-promoted-ranges-experiment.md     (adjacent verified ranges promoted from monolithic asm)
+research/external/ico-splat-promoted-ranges-experiment.md              (verified splat ranges)
 ```
 
 ---
@@ -305,7 +302,7 @@ Those names require evidence.
 
 The static analysis phase (Rev.001-037) is complete. The verified chain covers:
 
-1. Dispatcher model (`0x001d37c8` + 5 state blocks)
+1. Cloth dispatcher model (`0x001d37c8` + 5 state blocks)
 2. ROPE callback (`0x001d3a30` confirmed at runtime)
 3. Callback registration chain (`0x0013f7a8` -> `0x0013f3f0` -> node+0x1c)
 4. 5 callsites of registration function mapped; 3 excluded for ROPE
@@ -313,36 +310,23 @@ The static analysis phase (Rev.001-037) is complete. The verified chain covers:
 6. Domain corrected to cloth physics via ICO-decomp cross-reference
 7. Dispatcher/callback byte-level anchors independently checked with Rabbitizer
 
-The project has entered a new phase: **External Integration**.
+The project has moved into a new analysis phase: **Live Dispatch System**.
 
-```txt
-Phase 2 — External Integration
-```
+The live scene init dispatcher at `0x00166E10` has been fully mapped (Rev.064-067):
 
-Objective:
+- 17-entry slot table at `0x00282690` with 14 unique parametric callbacks (Group 1: position/rotation via `0x166258`, Group 2: orientation via `0x1667E0`)
+- Two cold paths (`0x00167230`/`0x00167258`) as leaf fragments tail-calling `0x00166E10`
+- Alternate implementation (`0x00169F80`/`0x0016A058`) with extra transform/matrix init
+- Runtime pointer list at `0x006AAC80` (corrected from `0x006AAC00`)
+- All 14 callbacks iterate a runtime-populated halfword table at `0x006AB080` (BSS)
 
-1. Submit scratches to decomp.me for crowd-sourced matching (Rev.038 in progress)
-2. Cross-reference findings with ICO-decomp project (if feasible)
-3. Validate compiler flags through PS2 dev community knowledge
-4. Prepare runtime breakpoints for the unresolved ROPE gap
-5. Build a minimal, auditable tooling baseline inspired by SOTC:
-   - minimal ICO `splat` YAML experiment (completed);
-   - Rabbitizer/spimdisasm selected-range decoding;
-   - SDK/library recognition pass;
-   - decomp.me compiler package availability check.
+Current objectives:
 
-Near-term research files for the new tooling front:
-
-```txt
-research/external/sotc-tooling-relevance-survey.md                  (created)
-research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md     (created)
-research/external/ico-splat-minimal-experiment.md                   (created)
-research/external/ico-splat-promoted-ranges-experiment.md           (created)
-research/external/ico-splat-adjacent-promoted-ranges-experiment.md  (created)
-```
-
-Only create different research files if explicitly instructed or if a result
-does not belong in the active note.
+1. Runtime validation: capture hits at cold paths (`0x00167230`, `0x00167258`), main body (`0x00166E10`), and dispatch point (`0x00167020`)
+2. Confirm which slot indices (a1=0..16) fire during gameplay vs cutscenes vs menus
+3. Check if the alternate implementation is ever reached
+4. Map the halfword table at `0x006AB080` population mechanism
+5. Understand the semantic meaning of each slot
 
 ---
 
@@ -364,7 +348,7 @@ Unless explicitly asked, do not investigate:
 
 These are important, but they are not the current priority.
 
-The current priority is understanding the confirmed dispatcher and its five internal blocks.
+The current priority is understanding the live dispatch system (0x00166E10 and its 17-slot table).
 
 ---
 
@@ -495,11 +479,16 @@ Do not assume zero static callers means high importance.
 
 ## Runtime validation next
 
-The Rev.025 session confirmed dispatcher reachability. Next runtime targets for the ROPE gap:
+The Rev.025 session confirmed cloth dispatcher reachability. The project has since completed static analysis for the **Live Dispatch System** (0x00166E10, Rev.064-067). Next runtime targets:
 
 ```txt
-breakpoint at 0x0013f7a8  (capture a1 when a3 == 0x13)
-breakpoint at 0x001d37c8  (monitor state_id distribution)
+breakpoint at 0x00167230  (cold path A — capture a0, gp, gp-25856 value)
+breakpoint at 0x00167258  (cold path B — capture a0, gp, gp-25852 value)
+breakpoint at 0x00166E10  (main body — capture a0 context, a1 slot index)
+breakpoint at 0x00167020  (dispatch — capture v1 callback target, a0-a2)
+breakpoint at 0x001683B4  (wrapper for slot 0 — capture a0, a1, target from GP slot)
+breakpoint at 0x00169F80  (alternate impl A — check if ever reached)
+breakpoint at 0x0016A058  (alternate impl B — check if ever reached)
 ```
 
 Useful values to capture:
@@ -517,33 +506,11 @@ a1 at 0x0013f7a8 entry (which callback is being registered?)
 
 Useful questions:
 
-- Which state IDs appear during gameplay?
-- Which internal block is reached most often?
-- Does `candidate_state_id` change?
-- Who writes `[candidate_state_block_ptr + 0x48]`?
-- Does the dispatcher trigger during normal gameplay, death, capture, menu, or transition?
-
----
-
-## Blog persona prompt maintenance
-
-The file below is a required companion context for narrative/blog-style writing about this project:
-
-```txt
-prompt_persona_ico_reconstruction.md
-```
-
-Whenever a validated research revision changes the current understanding of the project, update this persona/blog prompt as part of the same work.
-
-This is a project condition, not an optional cleanup task.
-
-The prompt must stay aligned with the latest validated research while preserving the same caution rules:
-
-- separate confirmed facts from hypotheses;
-- do not turn narrative scenes into technical evidence;
-- do not invent discoveries;
-- prefer the newest validated research note when older notes conflict;
-- keep the archaeology/digital-reconstruction tone grounded in reproducible evidence.
+- Which slot indices (a1=0..16) appear during gameplay?
+- Are the cold path slots ever swapped to the alternate implementation?
+- Which Group 1 vs Group 2 callbacks fire?
+- Does the halfword table at 0x6AB080 contain entity/object type indices?
+- What is the real callback distribution at 0x00167020?
 
 ---
 

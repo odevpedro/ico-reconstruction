@@ -67,6 +67,8 @@ The project does not currently define a database, backend API, ORM, authenticati
 
 The project has moved into **decompilation and struct modeling**. A verified structural model of the cloth physics system exists in `src/`, with 3 EXACT C matches and 5 NEAR-STRUCTURAL validated models (Rev.048). The ROPE callback is confirmed to live in a static physics object type table at `0x001A48A0` with 31 types (Rev.049), not in the dynamic callback registry. A third PCSX2 runtime session (Rev.051, ~90 min, 1419 events) with a direct probe at `0x001D3A30` confirmed **zero hits during normal gameplay**, refuting the per-frame update model for this function.
 
+**Rev.066-067 live dispatch consolidation:** The live scene init dispatcher at `0x00166E10` has been fully mapped: a 17-entry slot table at `0x00282690` with 14 unique parametric callbacks (two templates: Group 1 for position/rotation via `0x166258`, Group 2 for orientation checks via `0x1667E0`), a runtime pointer list at `0x006AAC80` (corrected from `0x006AAC00`), cold paths as leaf fragments at `0x00167230`/`0x00167258`, and an alternate implementation at `0x00169F80`/`0x0016A058` with extra transform/matrix init. See [`research/elf/ghidra-rev067-consolidated-live-dispatch-model.md`](./research/elf/ghidra-rev067-consolidated-live-dispatch-model.md).
+
 No reconstructed game code, assets, binaries, or ISO-derived copyrighted data are included in this repository.
 
 Current repository contents are mostly operational documents:
@@ -435,6 +437,9 @@ The project treats these as research topics, not solved problems.
 [x] rev.052 - Five-way consolidation: descriptor table full map, sister_callbacks, event_clear decomp, VU0 cloth
 [x] rev.053 - Handler decompilation wave 1: COP2 cloth, WOODBOX0, ENEMY1, BOY
 [x] rev.054 - Handler decompilation wave 2: GIRL, QUEEN, BGA, AP1 — 12 functions disassembled
+[x] rev.064 - Live dispatch at 0x00166E10: cold paths, struct map (400B stack, iterates desc array)
+[x] rev.066 - Static live dispatch callsite map: GP slots confirmed, cold paths validated, 0x006AAC80 correction
+[x] rev.067 - Consolidated dispatch model: slot table 0x282690 (17 entries, 14 parametric callbacks), runtime ptr list 0x6AAC80, alternate impl 0x169F80/0x16A058, runtime probe plan
 ```
 
 ## How To Contribute

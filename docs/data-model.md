@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-16 (Rev.063 — VU0 cloth compute resolved, cloth struct cluster expanded to 48 bytes, 2 writer functions identified)
+> **Ultima atualizacao:** 2026-05-17 (Rev.066-067 — Slot table em 0x00282690 (17 entries, stride 0x10), 14 callbacks parametricos (2 templates), desc_array corrigido para 0x006AAC80, implementacao alternativa 0x00169F80/0x0016A058 mapeada, modelo de dispatch consolidado)
 
 ---
 
@@ -18,7 +18,7 @@
 
 ## Visao Geral
 
-Modelo de dados do sistema de objetos físicos do ICO, focado no subsistema cloth (corda/rope). O núcleo é uma hierarquia de 3 structs (context → entity → payload) mais tabelas de descritores (68 entries, stride 0x64) e entries de sala (512 entries, stride 0x4C).
+Modelo de dados do sistema de objetos físicos do ICO, focado no subsistema cloth (corda/rope) e no pipeline de init de cena. O núcleo é composto por: hierarquia de 3 structs cloth (context → entity → payload), tabela de descritores (68 entries, stride 0x64), tabela de entries de sala (512 entries, stride 0x4C), a **tabela de slots** em 0x00282690 (17 entries, stride 0x10, 14 callbacks únicos) iterada pelo dispatcher 0x00166E10, e a **lista runtime de ponteiros** em 0x006AAC80. **Correção Rev.064:** O modelo anterior de scene loader (0x1B76F8/0x1B7D00) foi refutado — ambos são DEAD CODE. **Correção Rev.066-067:** O array de descritores previamente documentado como 0x006AAC00 é na verdade uma lista de ponteiros (stride 4) em **0x006AAC80**. A tabela de slots em 0x00282690 (não 0x006AAC00) fornece os callbacks e flags de configuração para cada slot 0-16.
 
 - **Origem:** Engenharia reversa do ELF EE (MIPS R5900, ee-gcc 2.9-991111-01)
 - **Nível de confiança:** EXACT ou NEAR-STRUCTURAL para todos os campos documentados (verificados por compilação C contra assembly original)
@@ -42,6 +42,151 @@ erDiagram
 ---
 
 ## Entidades
+
+### scene_init_context
+
+Contexto de inicialização de cena/entidade, passado como `a0` para o dispatcher `0x00166E10` (e seus cold paths `0x00167230`/`0x00167258`). Operado pela função principal de init de cena (400B stack, itera lista em 0x006AAC80).
+
+**Offset base:** passado como argumento (`$a0`), salvo em `$s1`
+
+**Nota Rev.066-067:** Os campos `desc_slot_0` a `callback_fn` (+0x00 a +0x0C) foram originalmente descritos como vindos do "desc array em 0x006AAC00", mas a análise Rev.066-067 mostra que o dispatcher carrega esses valores da **slot table** em `0x00282690` (indexada por `a1 * 0x10`). O campo `callback_fn` (+0x0C) é o `slot_table[N].callback`. A descrição abaixo mantém os offsets originais do contexto mas corrige a fonte: os dados vêm da slot table, não da runtime_ptr_list em 0x006AAC80.
+
+| Campo | Offset | Tipo | Acesso | Descricao |
+|-------|--------|------|--------|-----------|
+| `desc_slot_0` | +0x000 | ico_ptr32 | lw | Slot 0 da slot table em 0x00282690 |
+| `desc_slot_1` | +0x004 | ico_ptr32 | lw | Slot 1 |
+| `desc_slot_2` | +0x008 | ico_ptr32 | lw | Slot 2 |
+| `callback_fn` | +0x00C | ico_ptr32 | lw | **Callback dispatch** — JALR em 0x00167020(a0=s1, a1=s2, a2=s0), vindo de slot_table[N]+0x0C |
+| `stream_16` | +0x010 | ico_ptr32 | — | Ponteiro para stream secundário (s1+16) |
+| `stream_32` | +0x020 | ico_ptr32 | — | Transform/init stream (s1+32, s6) |
+| `float_2C` | +0x02C | float | swc1 | Float (setado em 0x00166FE4, 0x00167030) |
+| `check_ptr_74` | +0x074 | ico_ptr32 | lw | Ptr de matching (comparado com entity s2) |
+| `match_idx_78` | +0x078 | ico_s32 | lw | Índice de matching (comparado com s0 loop) |
+| `gate_ptr_7C` | +0x07C | ico_ptr32 | lw | Gate null-check para init |
+| `sub_entity` | +0x080 | ico_ptr32 | lw | **Sub-entidade** (init = 0 via cold path, gp-25904 low) |
+| `sub_idx` | +0x084 | ico_s32 | lw | **Índice sub** (init = -1 via cold path, gp-25904 high) |
+| `data_ptr_88` | +0x088 | ico_ptr32 | lw | Ptr (+76 lido para dados) |
+| `sub_ptr_8C` | +0x08C | ico_ptr32 | lw | Sub-struct +348 (path alternativo) |
+| `sub_idx_90` | +0x090 | ico_s32 | lw | Índice (path alternativo) |
+| `data_ptr_94` | +0x094 | ico_ptr32 | lw | Ptr (+96 dereferenciado) |
+| `written_98` | +0x098 | ico_ptr32 | sw | Valor escrito de [+148+96] |
+| `matrix_A0` | +0x0A0 | float[?] | — | Início matriz transform (0x002438B8) |
+| `float_AC` | +0x0AC | float | swc1 | Float na matriz [s0+12] |
+| `flag_B0` | +0x0B0 | ico_s32 | sw | Limpado pelo cold path 1 (0x00167234) |
+
+**Evidencia:** Disassembly completo de 0x00166E10 (Rev.064), cold paths 0x00167230/0x00167258, confirmado por 14+6 JALRs via GP. Slot table confirmada via byte-level leitura (Rev.066-067).
+
+---
+
+### ~~desc_array_0x006AAC00~~ CORRIGIDO
+
+**O label `desc_array_0x006AAC00` está INCORRETO (corrigido Rev.066-067).**  
+Não há referência estática direta a `0x006AAC00` no código. A referência real vai para `0x006AAC80`.
+
+### runtime_ptr_list_0x006AAC80
+
+Lista de ponteiros de runtime para entidades/contextos. Iterada pelo dispatcher `0x00166E10` usando contagem em `gp-25896`.
+
+**Tabela:** `0x006AAC80` (secao `.bss`)
+**Iterador:** `0x00166E10` (função principal de dispatch)
+**Count:** `gp-25896` = `0x006323C8` (resetado por 0x00166028, incrementado por entry)
+**Max:** `< 0x100` (verificado por `slti` em 0x001660C8)
+**Elemento:** 4 bytes (`index << 2`)
+**Populado por:** `0x00166028` (build_runtime_pointer_list)
+
+O dispatcher lê a lista assim:
+
+```asm
+0x00166EB8: lui      $a1, 0x6b
+0x00166EC8: lw       $s2, -0x5380($a1)   ; s2 = *(0x006AAC80)
+```
+
+A leitura é de um ponteiro (primeira entry), não de um descritor completo. Cada entry é um ponteiro de 32-bit para uma estrutura de entidade/contexto.
+
+**Callers de 0x00166028** (construtor da lista):
+| Caller | Contexto |
+|---|---|
+| `0x00101ee8` | Cadeia principal de init: JAL 0x1AA098 → JAL 0x166028 → JAL 0x103370... |
+| `0x001af974` | Init de entidade: carrega fn ptr de `[base+0x154]`, JALR, depois JAL 0x166028 |
+| `0x001b7b50` | Init de subsistema: última chamada antes do epílogo |
+
+Também alcançado via 14 wrappers GP-slot (gp-25856, slots 0-11).
+
+**Relação com slot_table_0x00282690:** A lista runtime em 0x006AAC80 contém ponteiros para as entidades/contextos que serão processados pelo dispatcher. A slot table fornece a configuração de **como** processar (qual callback, qual grupo, com/sem guarda). As entradas da lista são itens de dados, não descritores de configuração.
+
+**Relação com descriptor_table (0x002A31B8):** Desconhecida. A runtime_ptr_list em 0x006AAC80 contém ponteiros de entidades já criadas. A descriptor_table em 0x002A31B8 contém descritores de tipo (68 entries, stride 0x64) usados pelo sistema de criação de objetos.
+
+---
+
+### gp-25904 default state
+
+Valor de 8 bytes em `0x006323C0` usado como estado padrão para campos de entidade.
+
+```c
+// gp-25904 (0x006323C0):
+uint8_t default_state[8] = { 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF };
+// = 0xFFFFFFFF00000000
+```
+
+| Metade (32-bit) | Valor | Uso |
+|-----------------|-------|-----|
+| Lower (offset 0) | 0x00000000 | [context+0x080] = null pointer (sub_entity init) |
+| Upper (offset 4) | 0xFFFFFFFF | [context+0x084] = -1 (sub_idx init, "disabled" flag) |
+
+**Carregado por:** Cold paths 0x00167230/0x00167258 via LDL/LDR unaligned (gp-25904).
+**Armazenado em:** [context+128..135] via SDL/SDR unaligned store.
+
+---
+
+### slot_table_0x00282690
+
+Tabela de configuração de 17 slots (indices 0-16) para o dispatcher `0x00166E10`. Cada slot tem stride 0x10 e define o callback e flags de processamento.
+
+**Tabela:** `0x00282690` (secao `.data`)
+**Stride:** 0x10 (16 bytes por slot)
+**Indexado por:** `a1 * 0x10` (slot index passado pelas wrappers)
+**Acessado por:** dispatcher `0x00166E10` em `0x00166E24`
+
+| Campo | Offset | Tipo | Descricao |
+|-------|--------|------|-----------|
+| `w0` | +0x00 | ico_s32 | **Grupo**: 0=Group2 (orientacao, elem_size=0x70), 1=Group1 (posicao, elem_size=0x50) |
+| `w1` | +0x04 | ico_s32 | **Guarda**: 1=habilita triplet guard (`[ctx+0x74/78/7C]`) |
+| `w2` | +0x08 | ico_s32 | **Flag extra**: armazenado em `sp+0xCC`, passado aos callbacks |
+| `callback` | +0x0C | ico_ptr32 | **Função callback** (JALR em 0x00167020) — 14 funções únicas, 2 templates |
+
+**Slots mapeados (Rev.067):**
+
+| Slot | VA | w0 | w1 | w2 | Callback | Callback role |
+|-----:|----:|:-:|:-:|:-:|--------:|---------------|
+| 0 | 0x282690 | 1 | 0 | 0 | 0x168DA8 | Group1, sem mascara |
+| 1 | 0x2826A0 | 1 | 0 | 0 | 0x168ED0 | Group1, mask `0xF000`/`0xF==1` |
+| 2 | 0x2826B0 | 1 | 0 | 0 | 0x1692F0 | Group1, mask idem, **a2=1** |
+| 3 | 0x2826C0 | 1 | 0 | 0 | 0x169440 | Group1, mask `0xF000` |
+| 4 | 0x2826D0 | 1 | 1 | 0 | 0x169020 | Group1, mask + **triplet guard** |
+| 5 | 0x2826E0 | 1 | 1 | 0 | 0x169190 | Group1, mask + **triplet guard** |
+| 6 | 0x2826F0 | 1 | 0 | 0 | 0x1696C0 | Group1, mask `0xC000==0x4000` |
+| 7 | 0x282700 | 1 | 0 | 0 | 0x169580 | Group1, mask `0x3000!=0` |
+| 8 | 0x282710 | 1 | 0 | 1 | 0x168ED0 | (reusa slot 1) |
+| 9 | 0x282720 | 1 | 0 | 1 | 0x169440 | (reusa slot 3) |
+| 10 | 0x282730 | 1 | 0 | 0 | 0x169800 | Group1, mask `0x7000`/`0xC000==0x8000` |
+| 11 | 0x282740 | 1 | 0 | 0 | 0x169968 | Group1, mask `0xC000==0xC000` |
+| 12 | 0x282750 | 0 | 0 | 0 | 0x169AA8 | Group2, sem mascara |
+| 13 | 0x282760 | 0 | 1 | 0 | 0x169BD0 | Group2, **triplet guard** |
+| 14 | 0x282770 | 0 | 0 | 0 | 0x169E58 | Group2, **a2=1** |
+| 15 | 0x282780 | 0 | 0 | 0 | 0x169D18 | Group2, mask `[+0x60]&0xF==2` |
+| 16 | 0x282790 | 0 | 0 | 1 | 0x169AA8 | (reusa slot 12) |
+
+**Funções chamadas pelos callbacks:**
+
+| Funcao | Stack | Proposito |
+|--------|-------|-----------|
+| `0x166258` | 0xE0 + `$f20-$f24` | Setup de posicao/rotacao: matrizes e float ops em `+0x20`, `+0x40`, `+0x4C` |
+| `0x1667E0` | 0x30, sem FPU | Check de orientacao: dot products, comparacao float contra zero |
+| `0x243B60` | — | Matrix library, provavelmente `ApplyMatrix` PS2 SDK |
+
+**Tabela de halfwords em 0x006AB080 (BSS):** Todos os 14 callbacks iteram esta tabela populada em runtime (uint16 entries). Ela mapeia IDs de objeto para indices em uma tabela de ponteiros. O bound do loop e o tamanho de elemento (`0x50` ou `0x70`) sao controlados por `w0`.
+
+---
 
 ### cloth_context
 

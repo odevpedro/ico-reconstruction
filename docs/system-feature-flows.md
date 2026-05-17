@@ -131,6 +131,138 @@ A entry table (dados de sala) usa **BARREL** (indice 0x13) para objetos cloth. O
 
 ---
 
+## Live Dispatch Flow — Slot Table + Runtime Pointer List
+
+> **Status:** Modelo consolidado (Rev.066-067). Slot table em 0x00282690 (17 entries), callbacks parametricos (2 templates), runtime ptr list em 0x006AAC80.
+
+### Visao Geral
+
+O sistema de live dispatch do ICO usa dois mecanismos independentes:
+
+1. **Slot table** (`0x00282690`, 17 entries stride 0x10): configuração por slot (callback target, flags de grupo, guarda)
+2. **Runtime pointer list** (`0x006AAC80`, populada por `0x00166028`): ponteiros para entidades/contextos a processar
+
+O dispatcher `0x00166E10` combina os dois: para cada slot index, ele carrega a config da slot table e itera a runtime pointer list, aplicando filtros e chamando callbacks.
+
+### Fluxo completo
+
+```
+Inicializacao:
+  0x00166028() --- constroi lista runtime em 0x006AAC80 (max 0x100 entries, stride 4)
+    └─ gp-25896 = count
+    └─ 0x006AAC80[0..count-1] = pointers
+
+  gp-25856 e gp-25852 sao inicializados com:
+    └─ a0 == 0: 0x00167230 / 0x00167258 (cold paths, imagem inicial ELF)
+    └─ a0 != 0: 0x00169F80 / 0x0016A058 (implementacao alternativa com extra init)
+    └─ Configurado por 0x00168650 (tail-call J em 0x001A3334, ou via wrappers slots 12-16)
+
+Dispatch (por slot index a1 = 0..16):
+  Wrapper (0x001683A8-0x00168628)
+    └─ a0 = context pointer
+    └─ a1 = slot index (0..16)
+    └─ a1 0-11: gp-25856 (cold path A ou alt A)
+    └─ a1 12-16: gp-25852 (cold path B ou alt B)
+    │
+    ├─ Cold path A (0x00167230): limpa +0xB0/+0x94/+0x88, copia default state gp-25904 para +0x80
+    │  └─ tail-call J 0x00166E10
+    │
+    ├─ Cold path B (0x00167258): limpa +0x94, copia default state gp-25904 para +0x8C
+    │  └─ tail-call J 0x00166E10
+    │
+    ├─ Alt A (0x00169F80): JAL cold path A, depois extra init (80B frame, 6 callees, 2x 0x1D4A58)
+    │  └─ jr $ra
+    │
+    └─ Alt B (0x0016A058): JAL cold path B, depois extra init (constantes deslocadas -0x20)
+       └─ jr $ra
+    │
+    └─── dispatcher 0x00166E10:
+          │
+          1. slot_entry = 0x00282690 + a1 * 0x10
+          2. callback = slot_entry[+0x0C]
+          3. w0 = slot_entry[+0x00]  (Group 1 or 2)
+          4. w1 = slot_entry[+0x04]  (duplicate guard)
+          5. w2 = slot_entry[+0x08]  (extra flag)
+          6. matrix_init via 0x243B60 x3
+          7. Loop sobre runtime_ptr_list em 0x006AAC80:
+             ├─ Para cada entry na lista (count gp-25896):
+             │  ├─ Filtra por [ctx+0x74/0x78/0x7C] (se w1==1)
+             │  └─ Se passar:
+             │     └─ Dispatch callback via 0x00167020:
+             │        └─ v1 = callback target
+             │        └─ a0 = ctx (s1)
+             │        └─ a1 = entry (s2)
+             │        └─ a2 = loop index (s0)
+             │        └─ JALR v1
+             │           └─ Se v0 == 0: executa fallback copy path em 0x00167048
+             │
+             └─ Fim do loop
+
+Callback (vindo de slot_table[N].callback):
+  14 funcoes parametricas, todas com mesmo skeleton:
+    addiu $sp, -0x90, salva $ra+$s0-$s7, itera halfword table em 0x6AB080 (BSS)
+
+    ├─ Group 1 (w0=1, slots 0-11, elem_size=0x50):
+    │  ├─ Chama JAL 0x166258(a0=ctx, a1=struct*, a2=idx, a3=mode)
+    │  │  └─ Setup de posicao/rotacao (matriz, float ops)
+    │  └─ Escreve [ctx+0x88]=struct*, [ctx+0x80]=a1, [ctx+0x84]=a2
+    │
+    └─ Group 2 (w0=0, slots 12-16, elem_size=0x70):
+       ├─ Chama JAL 0x1667E0(a0=ctx, a1=struct*, a2=idx)
+       │  └─ Check de orientacao (dot products, bc1t)
+       └─ Escreve [ctx+0x94]=struct*, [ctx+0x8C]=a1, [ctx+0x90]=a2, [ctx+0x88]=0
+```
+
+### Funcoes envolvidas
+
+| Funcao | VA | Tamanho | Proposito |
+|--------|-----|---------|-----------|
+| Dispatcher main body | 0x00166E10 | ~400B stack, 250+ insns | Itera runtime list, dispatch por slot |
+| Cold path A | 0x00167230 | — | Leaf fragment: limpa +0xB0/+0x94/+0x88, copia default, J para main |
+| Cold path B | 0x00167258 | — | Leaf fragment: limpa +0x94, copia default offset +0x8C, J para main |
+| Alternate A | 0x00169F80 | 80B frame | JAL cold path A + extra init (6 callees, 2x 0x1D4A58) |
+| Alternate B | 0x0016A058 | 80B frame | JAL cold path B + extra init (constantes deslocadas) |
+| Runtime list builder | 0x00166028 | — | Constroi lista em 0x006AAC80, max 0x100 |
+| Slot initializer | 0x00168650 | — | Configura gp-25856/gp-25852 (cold vs alt) |
+| Group 1 sub | 0x166258 | 0xE0 stack | Setup de posicao/rotacao |
+| Group 2 sub | 0x1667E0 | 0x30 stack | Check de orientacao |
+| Matrix lib | 0x243B60 | — | Matrix copy/transform (PS2 SDK) |
+
+### Tabela de slots
+
+| Slot | w0 | w1 | Callback | Grupo | Guarda | Mascara +0x48 |
+|-----:|---:|---:|---------|-------|--------|---------------|
+| 0 | 1 | 0 | 0x168DA8 | Group1 | — | (nenhuma) |
+| 1 | 1 | 0 | 0x168ED0 | Group1 | — | 0xF000 / 0xF==1 |
+| 2 | 1 | 0 | 0x1692F0 | Group1, a2=1 | — | 0xF000 / 0xF==1 |
+| 3 | 1 | 0 | 0x169440 | Group1 | — | 0xF000 |
+| 4 | 1 | 1 | 0x169020 | Group1 | Triplet | 0xF000 / 0xF==1 |
+| 5 | 1 | 1 | 0x169190 | Group1 | Triplet | 0xF000 |
+| 6 | 1 | 0 | 0x1696C0 | Group1 | — | 0xC000==0x4000 |
+| 7 | 1 | 0 | 0x169580 | Group1 | — | 0x3000!=0 |
+| 8 | 1 | 0 | 0x168ED0 | Group1 (w2=1) | — | (reusa slot 1) |
+| 9 | 1 | 0 | 0x169440 | Group1 (w2=1) | — | (reusa slot 3) |
+| 10 | 1 | 0 | 0x169800 | Group1 | — | 0x7000 / 0xC000==0x8000 |
+| 11 | 1 | 0 | 0x169968 | Group1 | — | 0xC000==0xC000 |
+| 12 | 0 | 0 | 0x169AA8 | Group2 | — | (nenhuma) |
+| 13 | 0 | 1 | 0x169BD0 | Group2 | Triplet | — |
+| 14 | 0 | 0 | 0x169E58 | Group2, a2=1 | — | — |
+| 15 | 0 | 0 | 0x169D18 | Group2 | — | [+0x60]&0xF==2 |
+| 16 | 0 | 0 | 0x169AA8 | Group2 (w2=1) | — | (reusa slot 12) |
+
+### Halfword table em 0x006AB080 (BSS)
+
+Todos os 14 callbacks iteram esta tabela runtime-populada. Ela contem uint16 entries que mapeiam IDs de objeto para indices em uma tabela de ponteiros. O loop percorre a tabela, e para cada indice valido, carrega o struct correspondente de `table_base[index]` e verifica o campo `+0x48` contra a mascara do slot.
+
+### O que falta
+
+- Validacao runtime: capturar quais slots disparam durante gameplay vs cutscene vs menu
+- Capturar se a implementacao alternativa (0x00169F80/0x0016A058) e atingida
+- Mapear como 0x006AB080 e populada
+- Entender o significado semantico de cada slot (ex: slot 0 = BOY? slot 2 = GIRL?)
+
+---
+
 ## Physics Object Type Table — Relacao com Descriptor/Entry Systems
 
 > **Status:** Estrutura mapeada (Rev.049). Tabela e de consulta, nao de inicializacao direta.
