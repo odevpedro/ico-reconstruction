@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-17 (Rev.069 — VU0 ring buffer packet flow adicionado; VU0 kick stub documentado; halfword table writers mapeados no fluxo de dispatch)
+> **Ultima atualizacao:** 2026-05-17 (Rev.071 — 404-byte room entity table flow adicionado; slot table stride corrigido para 0x10; halfword table populacao como grid 32x32; templates Group1/2 internos; main loop chain documentado)
 
 ---
 
@@ -139,8 +139,8 @@ A entry table (dados de sala) usa **BARREL** (indice 0x13) para objetos cloth. O
 
 O sistema de live dispatch do ICO usa dois mecanismos independentes:
 
-1. **Slot table** (`0x00282690`, 17 entries stride 0x10): configuração por slot (callback target, flags de grupo, guarda)
-2. **Runtime pointer list** (`0x006AAC80`, populada por `0x00166028`): ponteiros para entidades/contextos a processar
+1. **Slot table** (`0x00282690`, 17 entries stride 0x10 — confirmado via `sll $a1,$a1,4` em 0x00166E1C): cada entry tem 4 campos de 4 bytes: w0 (grupo), w1 (guarda), w2 (flag extra), callback ptr. **14 callbacks unicos** em 17 slots (slots 8/9/16 reusam callbacks de slots 1/3/12).
+2. **Runtime pointer list** (`0x006AAC80`, populada por `0x00166028`): ponteiros para entidades/contextos a processar.
 
 O dispatcher `0x00166E10` combina os dois: para cada slot index, ele carrega a config da slot table e itera a runtime pointer list, aplicando filtros e chamando callbacks.
 
@@ -227,6 +227,40 @@ Callback (vindo de slot_table[N].callback):
 | Group 1 sub | 0x166258 | 0xE0 stack | Setup de posicao/rotacao |
 | Group 2 sub | 0x1667E0 | 0x30 stack | Check de orientacao |
 | Matrix lib | 0x243B60 | — | Matrix copy/transform (PS2 SDK) |
+
+### Internals dos templates Group1 e Group2
+
+**Group 1 template (0x00166258) — Position/Rotation Proximity Check:**
+- Stack: -224 bytes, salva s0-s4, ra, f20-f24
+- Entrada: a0=context, a1=entity, a2=iteration_flag
+- Fluxo:
+  1. Carrega posicao alvo de [entity+76] (data pointer)
+  2. Memcpy da posicao de referencia de [context+32] para stack
+  3. Calcula deltas: ΔX = ref - entity.X, ΔZ = ref - entity.Z
+  4. Comparacoes FPU com thresholds configuraveis (por eixo)
+  5. Operacoes LQ/PS (VU0 SIMD) para comparacao em quadword
+  6. Retorna 0 (sem match) ou 1 (match)
+
+**Group 2 template (0x001667E0) — Orientation/Origin Matching:**
+- Stack: -48 bytes
+- Entrada: a0=context, a1=entity
+- Fluxo:
+  1. Carrega dados de orientacao 4-component de [entity+64..80]
+  2. Carrega posicao do contexto de [context+32..40]
+  3. Calcula diferencas de componentes via FPU sub.s
+  4. Normaliza via div.s por 1.0f
+  5. Itera lista ligada (stride 16 bytes) comparando contra threshold
+
+**Callback skeleton (representative: 0x00168DA8):**
+Todos os 14 callbacks compartilham este padrao:
+  1. Le contador halfword de GP-19396 (0x633D2C)
+  2. Itera tabela em 0x6AB080
+  3. Extrai `row = halfword >> 5`
+  4. Lookup row em tabela secundaria de ponteiros
+  5. Itera lista ligada (structs de 80 bytes cada)
+  6. Chama template Group1 ou Group2 para cada candidato
+  7. Se match: armazena ponteiro do objeto em context, retorna 1
+  8. Se nao: retorna 0
 
 ### Tabela de slots
 
@@ -331,32 +365,144 @@ O SQC2 block emparelhado (`0x117C80`) salva VF3/11/19/27.
 
 ---
 
-## Halfword Table Population (0x006AB080)
+## Room Entity Table Flow (0x005F2F98, 404-byte stride)
 
-> **Status:** Escritores encontrados (Rev.069). Localizados em 0x00166D1C e 0x00166D78.
+> **Status:** Tabela mapeada (Rev.071). 32 rooms, callback index 0x4B em +340.
 
 ### Visao Geral
 
-A tabela de halfwords em `0x006AB080` (BSS) e populada por uma funcao imediatamente anterior ao dispatcher `0x00166E10`. A funcao itera uma lista de objetos/entidades e escreve `(a2 << 5) + t0` em cada posicao, incrementando um contador em `gp-19396`.
+O sistema de init de sala usa uma tabela de 32 entradas (stride 404) em `.data` nao-BSS, indexada pelo world_state armazenado em `gp-28512` (0x00631990). Cada entrada tem 404 bytes com nome da sala (32 bytes), callback index (+340), e varios campos de configuracao.
+
+### Fluxo de acesso
+
+```
+Main loop (0x00101C80):
+  │
+  ├─ Jal 0x00166028 (build runtime pointer list)  @ 0x00101EE8
+  ├─ Jal 0x001AF190 (scene/room init)             @ 0x00101F00
+  │    │
+  │    └─ 0x001AF190:
+  │         ├─ lw $v1, -28512($gp)           ; world_state = [0x00631990]
+  │         ├─ ... outros setup ...
+  │         └─ 0x001AF948-0x001AF970:
+  │              ├─ world_state_value = [0x00631990] (pre-multiplicado: idx*404-32)
+  │              ├─ base = 0x005F2FB8 (= 0x005F2F98 + 0x20)
+  │              ├─ addr = base + world_state_value + 0x154
+  │              ├─ callback = [addr]
+  │              ├─ if callback == 0: skip (row 0 = NULL)
+  │              └─ jalr callback              ; dispatch room init callback
+  │                   │
+  │                   └─ (Provavelmente) patcheado em runtime de 0x4B para ptr real
+  │
+  └─ Jal 0x00166028 (novamente) via 0x1AF974 (tail do room init)
+```
+
+### Callback index 0x4B
+
+Todas as 31 salas tem `callback_idx = 0x4B` (= 75). O valor 0x4B esta em `.data` nao-BSS e DEVE ser patcheado para um ponteiro de funcao real antes do primeiro acesso. O mecanismo de patcheamento e desconhecido.
+
+### Tabela de salas
+
+Ver [`research/elf/ghidra-rev071-404-table-room-names-callbacks-and-dispatch-system-consolidation.md`](../research/elf/ghidra-rev071-404-table-room-names-callbacks-and-dispatch-system-consolidation.md) para lista completa dos 32 nomes.
+
+---
+
+## Main Loop Flow (0x00101C80)
+
+> **Status:** Estrutura mapeada (Rev.071). Dispatch chain completa, idle loop via VSync.
+
+### Visao Geral
+
+O main loop em 0x00101C80 e o ponto de entrada do frame processing. Ele executa uma cadeia de 5+ funcoes de init/dispatch por frame e, no final, decide se volta ao processamento normal ou entra em idle (VSync wait).
 
 ### Fluxo
 
 ```
-Funcao iteradora (antes de 0x00166E10):
-  └─> Para cada objeto na lista (a2 = object type, t0 = sub-index):
-       ├─> lw a1, -0x4BC4($gp)     ; a1 = index counter (gp-19396)
-       ├─> sll v1, a2, 5           ; v1 = object_type << 5
-       ├─> addu a0, v1, t0         ; a0 = object_type << 5 + sub_index
-       ├─> sll v0, a1, 1           ; v0 = counter * 2 (halfword offset)
-       └─> sh a0, 0x6AB080(v0)     ; 0x6AB080[counter] = value
-
-Tabela resultante: uint16[count] em 0x6AB080
-Contador: gp-19396 (0x00633D2C), resetado externamente
+0x00101C80: addiu $sp, $sp, -128
+  │
+  ├── Init & timer:
+  │    ├─ Check gp_var (20160) → select string path
+  │    ├─ jal 0x1A6E28 (print/init com string A)
+  │    ├─ jal 0x1A6E28 (print/init com string B)
+  │    ├─ mult/mflo timer calculation
+  │    └─ jal 0x1A6E28 (print timer value)
+  │
+  ├── Dispatch chain (0x001EE0-0x001F08):
+  │    ├─ jal 0x001AA098
+  │    ├─ jal 0x00166028      ← BUILD runtime pointer list
+  │    ├─ jal 0x00103370
+  │    ├─ jal 0x00104C80
+  │    └─ jal 0x001AF190      ← ROOM INIT (lê tabela 404-byte!)
+  │         └─ [tail] jal 0x00166028 (build pointer list again)
+  │
+  ├── Conditional path (gp-28384 check):
+  │    ├─ lw $v0, -28384($gp)
+  │    ├─ if v0 != 0: skip two calls
+  │    ├─ else: jal 0x00104A78, jal 0x00104AA8
+  │    └─ jal 0x00103BF8
+  │
+  ├── Post-processing:
+  │    ├─ lw + bne check (gp-28384 de novo)
+  │    ├─ (conditional) jal 0x00104A78
+  │    ├─ jal 0x00103FC0
+  │    └─ jal 0x00101068
+  │
+  ├── Loop decision (0x001F50-0x001F54):
+  │    ├─ lw $v0, -28384($gp)
+  │    └─ if v0 == 0: beq to 0x1E10 (volta ao processamento de frame)
+  │
+  └── Idle/VSync (0x001F60-0x001F6C):
+       └─ tight loop:
+            jal 0x00104D3C    (VSync/idle wait)
+            beq $zero, $zero, -3  (loop infinito ate interrupcao)
 ```
 
-### Funcoes envolvidas
+---
 
-A funcao escritora esta no mesmo range do dispatcher (provavelmente faz parte do setup que antecede a iteracao por slots). A identificacao do inicio exato dessa funcao requer analise de prologo e scan de referencias GP no range 0x00166CXX-0x00166E0X.
+## Halfword Table Population (0x006AB080)
+
+> **Status:** Mapeado (Rev.071). Grid rasterizacao 32x32 dentro do dispatcher.
+
+### Visao Geral
+
+A tabela de halfwords em `0x006AB080` (BSS, uint16) e populada por uma funcao iteradora `0x00166C80` imediatamente anterior ao dispatcher `0x00166E10`. A funcao traca uma linha/ray atraves de um grid 32x32 e registra todas as celulas intersectadas.
+
+**Valor codificado:** `(a2 << 5) + t0` onde:
+- `a2` ∈ [0,31] = coordenada Y/row
+- `t0` ∈ [0,31] = coordenada X/col
+- Cada halfword = `(row << 5) | col`
+
+### Writers (exatamente 2)
+
+| Endereco | Contexto |
+|:--------:|----------|
+| `0x00166D1C` | Path A: primeiros bounds-check e write |
+| `0x00166D78` | Path B: segundos bounds-check e write (duplicata no mesmo loop) |
+
+### Fluxo
+
+```
+Funcao iteradora 0x00166C80:
+  └─> Loop de rasterizacao:
+       ├─> a2 = coordenada Y (bounds check: 0 <= a2 < 32)
+       ├─> t0 = coordenada X (bounds check: 0 <= t0 < 32)
+       ├─> t7 = step X, t5 = step Y
+       ├─> Se dentro dos bounds:
+       │    ├─> lw a1, -0x4BC4($gp)  ; a1 = index counter (gp-19396 = 0x00633D2C)
+       │    ├─> halfword = (a2 << 5) | t0
+       │    ├─> v0 = counter * 2 (halfword offset)
+       │    ├─> [0x6AB080 + v0] = halfword  ; store via sh
+       │    └─> counter++
+       ├─> Avanca a2 por t5, t0 por t7
+       └─> Loop while a3 >= t2
+
+Tabela resultante: uint16[count] em 0x6AB080
+Contador: 0x00633D2C (GP-19396), resetado para 0 por sw $zero em 0x00166BDC
+```
+
+### Consumo
+
+Todos os 14 callbacks da slot table leem o contador (GP-19396 = 30 acc) e iteram a tabela para extrair `row = halfword >> 5`, usar como indice em uma tabela secundaria de ponteiros para structs de 80 bytes, e entao testar cada struct contra o template Group1/Group2.
 
 ---
 

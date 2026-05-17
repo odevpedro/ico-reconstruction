@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-17 (Rev.069 — VU0 ring-buffer packet builder 0x1D43F8 mapeado, VU0 kick stub 0x117C40 identificado como inline asm, escritores de 0x6AB080 encontrados em 0x00166D1C/0x00166D78, constantes das implementacoes alternativas lidas em 0x55F260, nenhum caller estatico com a0!=0 para 0x00168650)
+> **Ultima atualizacao:** 2026-05-17 (Rev.071 — Tabela 404-byte de 32 rooms mapeada com nomes e callback index=0x4B em +340; slot table corrigida para stride 0x10; escritores de halfword confirmados como grid 32x32 dentro do dispatcher; templates Group1/2 disassemblados; main loop 0x101C80 documentado)
 
 ---
 
@@ -168,21 +168,69 @@ Inline asm para upload VIF (VU0) com terminação via `J 0x3800C`.
 ### Halfword table (0x006AB080, BSS)
 
 Tabela runtime-populada de `uint16`, iterada por todos os 14 callbacks da slot table.
-Populada por 2 escritores na funcao anterior ao dispatcher `0x00166E10`.
+Populada por exatamente 2 escritores na funcao iteradora `0x00166C80` (dentro do mesmo range do dispatcher `0x00166E10`).
 
-**Tabela:** `0x006AB080` (secao `.bss`, provavelmente tamanho <512 bytes)
+**Tabela:** `0x006AB080` (secao `.bss`)
 **Index counter:** `gp-19396` = `0x00633D2C`
-**Valor escrito:** `(a2 << 5) + t0` (codifica 2 parametros em 1 halfword)
+**Valor escrito:** `(a2 << 5) + t0` codifica coordenadas de grid 32x32
+**Significado:** Cada halfword = `(row << 5) | col` onde row ∈ [0,31], col ∈ [0,31]
+
+**Processo de populacao:** A funcao `0x00166C80` traca uma linha/ray atraves de um grid 32x32 e registra todas as celulas intersectadas como halfwords. Ambos a2 (row) e t0 (col) sao bounds-checked contra [0,31].
+
 **Escritores:**
 
 | Endereco | Contexto |
 |:--------:|----------|
-| `0x00166D1C` | Path A da funcao iteradora (antes do dispatcher) |
-| `0x00166D78` | Path B da funcao iteradora |
+| `0x00166D1C` | Path A da funcao iteradora |
+| `0x00166D78` | Path B (duplicata) |
 
-**Funcoes relacionadas no range `0x006Axxxx`:** tabela adjacente em `0x006AA4B0` com escritores em `0x0014A2B0`, `0x0014AF70`, `0x0014AFB8` — familia de tabelas de halfword em BSS.
+**Contador = 30 leituras** no range 0x168xxx (todos os 14 callbacks consomem o contador).
 
 ---
+
+### room_entity_table_0x005F2F98
+
+Tabela de entidades/contextos por sala/zona (world_state). Stride 404 bytes, 32 rows em `.data`.
+
+**Base:** `0x005F2F98` (secao `.data`)
+**Stride:** 0x194 (404 bytes)
+**Rows:** 32 (indices 0-31)
+**Nome da sala:** offset +0x00, 32 bytes ASCII null-padded
+**Callback index:** offset +0x154 (340), u32 — valor 0x4B (75) para todas as salas, 0 para NULL
+
+**Code read pattern (0x001AF948-0x001AF970):**
+```
+world_state_value = [0x00631990] (pre-multiplied: index * 404 - 32)
+base = 0x005F2FB8 (= 0x005F2F98 + 0x20, skipping row 0 name "NULL\0...")
+callback = [base + world_state_value + 0x154]
+if callback != 0: jalr callback
+```
+
+| Campo | Offset | Tipo | Descricao |
+|-------|--------|------|-----------|
+| `name` | +0x00 | char[32] | Nome ASCII da sala (ex: "logo", "sacrifice", "jail") |
+| `field_00` | +0x00 | u32 | Flag/tipo (row 0=1, salas=0) |
+| `field_04` | +0x04 | u32 | (row 0=0x0001001A, salas=2) |
+| `field_08` | +0x08 | u32 | (sempre 1) |
+| `view_dist` | +0x0C | float | Distancia de visao/fog (row 0=~0, salas=1500.0) |
+| `...` | +0x10..+0x150 | — | (diversos floats e ints) |
+| `callback_idx` | +0x154 | u32 | Indice do callback de init (0x4B=75, 0=NULL) |
+| `flag_158` | +0x158 | u32 | 1 |
+| `flag_15C` | +0x15C | u32 | 1 |
+| `param_160` | +0x160 | u32 | 1 |
+| `param_164` | +0x164 | u32 | 1 |
+| `param_168` | +0x168 | u32 | 0x56 (86) |
+| `count_16C` | +0x16C | u32 | Contador (1 row 0, 2 rows 1-31) |
+| `pad_170` | +0x170 | u32 | 0 |
+| `float_178` | +0x178 | float | 0.5f |
+| `float_17C` | +0x17C | float | 1.0f |
+| `mode_180` | +0x180 | u32 | 2 |
+| `room_specific_184` | +0x184 | u32 | Especifico por sala (ex: logo=0x94, NULL=0x2B9) |
+| `room_specific_188` | +0x188 | u32 | 0 |
+| `room_specific_18C` | +0x18C | u32 | 0 |
+| `room_specific_190` | +0x190 | u32 | Especifico por sala (ex: logo=0x7F, NULL=0x2B9) |
+
+**Nota:** O valor 0x4B no campo `callback_idx` NAO e um ponteiro de funcao. E um indice que deve ser substituido por um ponteiro real em runtime (provavelmente durante o init da sala). A JALR em 0x001AF96C com argumento 0x0000004B causaria crash.
 
 ### Alternate implementation constants (0x55F260)
 
@@ -230,13 +278,14 @@ uint8_t default_state[8] = { 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF };
 Tabela de configuração de 17 slots (indices 0-16) para o dispatcher `0x00166E10`. Cada slot tem stride 0x10 e define o callback e flags de processamento.
 
 **Tabela:** `0x00282690` (secao `.data`)
-**Stride:** 0x10 (16 bytes por slot)
+**Stride:** 0x10 (16 bytes por slot, confirmado via `sll $a1, $a1, 4` em 0x00166E1C)
 **Indexado por:** `a1 * 0x10` (slot index passado pelas wrappers)
 **Acessado por:** dispatcher `0x00166E10` em `0x00166E24`
+**Callbacks unicos:** 14 (em 17 slots; slots 8/9/16 reusam callbacks de slots 1/3/12)
 
 | Campo | Offset | Tipo | Descricao |
 |-------|--------|------|-----------|
-| `w0` | +0x00 | ico_s32 | **Grupo**: 0=Group2 (orientacao, elem_size=0x70), 1=Group1 (posicao, elem_size=0x50) |
+| `w0` | +0x00 | ico_s32 | **Grupo**: 0=Group2 (orientacao), 1=Group1 (posicao/rotacao) |
 | `w1` | +0x04 | ico_s32 | **Guarda**: 1=habilita triplet guard (`[ctx+0x74/78/7C]`) |
 | `w2` | +0x08 | ico_s32 | **Flag extra**: armazenado em `sp+0xCC`, passado aos callbacks |
 | `callback` | +0x0C | ico_ptr32 | **Função callback** (JALR em 0x00167020) — 14 funções únicas, 2 templates |

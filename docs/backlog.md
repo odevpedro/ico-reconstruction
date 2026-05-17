@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 78 |
+| Completed | 79 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -307,6 +307,24 @@ SDK/library recognition — PS2 SDK functions identified in USA .text
 - USA likely uses inlined libc or different SDK linking strategy
 - Documented in research/external/sdk-library-recognition.md
 
+### [x] [SQUAD-RUNTIME | rev.071 | 2026-05-17]
+5-way consolidation: 404-room table, halfword grid, callbacks, main loop
+
+- 404-byte room entity table at 0x005F2F98 fully scanned: 32 rooms (NULL + 31 named rooms)
+- Room names at offset +32: logo, title, sacrifice, jail, warehouse, ico_brigde, proto, troko, chandelier, entrance, gate, gate2, grave, shadows, windmill, plaza, stone, symmetry_L, crest_L1-3, taki, sluice, underground, gondola, watertower, symmetry_R, crest_R1-3, cliff
+- Callback index at offset +340 = 0x4B (=75) for all non-NULL rooms, 0 for NULL
+- Code reads via base 0x005F2FB8 with pre-multiplied world_state_value (= index*404-32)
+- Halfword table at 0x6AB080 confirmed as 32x32 grid rasterization encoding (row<<5)|col
+- Exactly 2 writers at 0x00166D1C/0x00166D78 inside dispatcher function
+- Counter at GP-19396 (0x633D2C), 30 reads by all callbacks
+- Slot table stride corrected: 16 bytes (sll $a1,$a1,4), 4 fields per entry
+- 17 slots, 14 unique callbacks (slots 8/9/16 reuse)
+- Group 1 template (0x166258, position/rotation proximity) disassembled: FPU comparisons
+- Group 2 template (0x1667E0, orientation matching) disassembled: quaternion-linked list
+- Callback skeleton: iterate halfword table → resolve 80B structs → run template → store match
+- Main loop 0x101C80 dispatch chain: 0x166028 → 0x1AF190 (reads 404 table) → dispatch, VSync idle at 0x101F60
+- Documented in research/elf/ghidra-rev071-404-table-room-names-callbacks-and-dispatch-system-consolidation.md
+
 ### [x] [SQUAD-TOOLING | 2026-05-15]
 Full cloth cluster splat promotion — 22 functions isolated
 
@@ -512,6 +530,7 @@ Call graph analysis
 |----------|------|-------|---------|
 | rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
 | rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
+| rev.071 | 2026-05-17 | SQUAD-RUNTIME | 5-way consolidation: 404-room table (32 rooms, callback idx 0x4B), halfword grid rasterization (32x32), slot table stride 0x10 (17 entries, 14 callbacks), Group1/2 templates disassembled, main loop 0x101C80 dispatch chain documented |
 | rev.001 | 2026-05-12 | SQUAD-ARCH | Initial strategic planning and prompt workflow |
 | rev.002 | 2026-05-12 | SQUAD-ARCH | Project retargeted to ICO Reconstruction |
 | rev.003 | 2026-05-12 | SQUAD-ARCH | Public README created for community collaboration |
