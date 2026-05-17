@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 82 |
+| Completed | 83 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -318,6 +318,20 @@ Room init callback system: descriptor table, entry table, corrected callback fie
 - **Funcao correta**: 0x1AF4A0 (scene init com 176B stack), NAO 0x1AF190 (preamble separado que retorna em 0x1AF494).
 - Documentado em research/elf/ghidra-rev072-callback-systems-descriptor-table-and-entry-table.md
 
+### [x] [SQUAD-RUNTIME | rev.074 | 2026-05-17]
+Runtime session (9.1M events): main loop dispatch chain validated, slot 0 dead, alt_impl unused, VU0 kick confirmed gameplay-only
+
+- **Runtime session**: ~15 min, 9,151,217 eventos, 4.5GB log. PCSX2 build instrumentada com 10 probes (main_dispatcher, cold_path_A/B, dispatch_point, vu0_kick_trigger, alt_impl_A/B, callback_register, cloth_payload_init)
+- **Slot 0 = DEAD**: zero hits em toda a sessao. Confirmado slot reservado/fallback. Slots 8/9/13/16 tambem nunca disparam.
+- **Slot 12 mais ativo**: 38.7% das 1,094,546 dispatchos (Group 2 orientation, no mask). Slot 1: 27.0% (Group 1 mask_A).
+- **Alt_impl A/B: 0 hits** — codigo morto em gameplay normal. Cold paths A/B sao as unicas entradas.
+- **VU0 kick**: 59,224 eventos, SEMPRE com world_state=0 (gameplay mode). Nunca durante menus.
+- **Match rate**: 58% match (v0=1), 23% no match (v0=0), 19% residual
+- **Pool de entidades**: 615 contextos unicos, 20 entidades vivas por frame. GP=0x006388F0 confirmado.
+- **Callback register**: 619 eventos, callers = scene loader (0x1B7AD4/0x1B7AB8) e factory functions (0x240E58/0x240F98)
+- Log salvo em `.local/ico-pcsx2-probe-events-20260517-182237-rev074-runtime-complete.jsonl`
+- Documentado em research/elf/ghidra-rev074-runtime-session-main-loop-dispatch-confirmed.md
+
 ### [x] [SQUAD-RUNTIME | rev.073 | 2026-05-17]
 Main loop dispatch chain (12 steps), corrected callback masks, secondary pointer table, struct field maps
 
@@ -551,6 +565,7 @@ Call graph analysis
 |----------|------|-------|---------|
 | rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
 | rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
+| rev.074 | 2026-05-17 | SQUAD-RUNTIME | Runtime session (9.1M events): slot 0 dead, slot 12 most active, alt_impl unused, VU0 kick gameplay-only, 58% match rate, 615 contexts/20 live entities, GP=0x6388F0 verified |
 | rev.073 | 2026-05-17 | SQUAD-RUNTIME | Main loop dispatch chain (12 steps), corrected callback masks (bits 28-31), secondary pointer table (0x00633D30), struct field maps (80B/112B), linked-list flow with pre-multiplied offsets |
 | rev.072 | 2026-05-17 | SQUAD-RUNTIME | Room init callbacks corrigidos: 19 function pointers reais (offset +0x174 absoluto), tabela de descritores (68 entries), tabela de entries (512 entries), instrucao 0x1AF954 = mult (dead code), 0x00143290 processa inner structs (nao callback) |
 | rev.071 | 2026-05-17 | SQUAD-RUNTIME | 5-way consolidation: 404-room table (32 rooms, callback idx 0x4B), halfword grid rasterization (32x32), slot table stride 0x10 (17 entries, 14 callbacks), Group1/2 templates disassembled, main loop 0x101C80 dispatch chain documented |
