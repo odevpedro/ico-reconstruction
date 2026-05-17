@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-17 (Rev.076 — Consolidacao: 2 sistemas de entidade independentes; 17-slot dispatch table mapeada; mask_set usa so bit 0; tabela 404B = stage config; halfword table = spatial hash grid; callback dispatch 0x13F9D0 mapeado; 28 init_fn classificados. Ver research/elf/ghidra-rev076-post-runtime-consolidation.md)
+> **Ultima atualizacao:** 2026-05-17 (Rev.077 — Analise estatica final: 8-step scene loader kanban.c; descriptor table 68 entity types; entry table 512 spawns; BARREL usa cloth dispatcher 0x1D3A30; slot 0 callback sem filtro; VU0 kick = linked-list queue; GP map 1032 offsets; debug table 47 entries. Ver research/elf/ghidra-rev077-final-static-analysis.md)
 
 ---
 

@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 101 |
+| Completed | 124 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -23,14 +23,15 @@ _(none)_
 
 ## Pending
 
-### [ ] [SQUAD-RUNTIME | rev.077 | Pending]
-**Runtime validation of mask toggle during cutscenes and world_state tracking**
+### [ ] [SQUAD-RUNTIME | rev.078 | Pending]
+**Runtime validation of mask toggle, world_state, and slot 0**
 
-- Probe mask register gp+0x98DC during cutscene transitions (does bit 0 toggle on/off?)
-- Probe gp+0x31990 (world_state) to map room transitions and correlate with entity lifecycle
+- Probe mask register gp+0x6724 (0x006321CC = callback_mask_reg) during cutscene transitions (does bit 0 toggle on/off?)
+- Probe gp+0x6F60 (0x00631990 = world_state_main) to map room transitions and correlate with entity lifecycle
 - Probe halfword table writers 0x166D1C/0x166D78 with bounding box capture to verify spatial hash theory
-- Investigate slot 0 callback 0x168DA8 (did not appear in any runtime capture — when does it fire?)
-- Ver mais em `research/elf/ghidra-rev076-post-runtime-consolidation.md`
+- Probe gp-0x49B4 (0x00633F3C, most-referenced GP variable) to identify its purpose
+- Investigate slot 0 callback 0x168DA8 (when does it fire? what condition selects slot 0?)
+- Ver mais em `research/elf/ghidra-rev077-final-static-analysis.md`
 
 ### [ ] [SQUAD-EXTERNAL | rev.060 | Pending]
 **Correção: verificar ee-gcc 2.9-991111-01 no decomp.me via presets de jogo**
@@ -586,7 +587,8 @@ Call graph analysis
 | rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
 | rev.074 | 2026-05-17 | SQUAD-RUNTIME | Runtime session (9.1M events): slot 0 dead, slot 12 most active, alt_impl unused, VU0 kick gameplay-only, 58% match rate, 615 contexts/20 live entities, GP=0x6388F0 verified |
 | rev.075 | 2026-05-17 | SQUAD-RUNTIME | Init_fn identification (0x1C3760=cloth_sys, 0x1F2370=cloth_tramp 5-mode, 0x17D128=env_effect), callback dispatch 0x13F9D0 (two-phase 8-bit mask + typed IDs 0x13-0x1B), cb_dispatch2 0x13FC00 (0x281AB0 table), ASM-HANDLER full analysis (BOY/GIRL/ENEMY1/WOODBOX0/AP1 — 15 functions) |
-| rev.076 | 2026-05-17 | SQUAD-ARCH | Post-runtime consolidation: 28 init_fn classified (6 groups: generic 60%, HUD 15%, UI 9%, cloth 5%, env 3%, special 0.4%). 17-slot table fully mapped (3 callback tiers). mask_set only uses bit 0. 404-byte table = stage config. Halfword table = 32x32 spatial hash. VU0 "kick" = COP2 macro utility. Alternates = VU0 DMA (unreachable). Two independent entity systems discovered (register vs dispatch). ICO-decomp cross-ref: 0x13ED40=ShockRequestBox_RequestCancel |
+| rev.077 | 2026-05-17 | SQUAD-ARCH | Final static analysis: 8-step scene loader (kanban.c, GP=0x27A7A8). Descriptor table 0x2A31B8 (68 entity types, full structure). BARREL uses 0x1D3A30 (ROPE gap RESOLVED). Entry table 0x2A4C48 (512 spawns). Slot0 callback 0x168DA8 (no filter). VU0 kick 0x117768 = linked-list queue (NOT VU0). 1032 GP offsets mapped. Debug table 0x613E00 (47 debug entries, 0x168650=CollisionOldProc). Resource check 0x17B230 (bitmap). Wait/yield 0x203AA0 (syscall50). HUD pool 0x4Dxxxx debug display. GP data map consolidated. |
+| rev.076 | 2026-05-17 | SQUAD-ARCH | Post-runtime consolidation: 28 init_fn classified (6 groups). 17-slot table fully mapped. mask_set only uses bit 0. 404-byte = stage config. Halfword table = spatial hash. VU0 "kick" = COP2 macro utility. Two independent entity systems. ICO-decomp cross-ref. |
 | rev.073 | 2026-05-17 | SQUAD-RUNTIME | Main loop dispatch chain (12 steps), corrected callback masks (bits 28-31), secondary pointer table (0x00633D30), struct field maps (80B/112B), linked-list flow with pre-multiplied offsets |
 | rev.072 | 2026-05-17 | SQUAD-RUNTIME | Room init callbacks corrigidos: 19 function pointers reais (offset +0x174 absoluto), tabela de descritores (68 entries), tabela de entries (512 entries), instrucao 0x1AF954 = mult (dead code), 0x00143290 processa inner structs (nao callback) |
 | rev.071 | 2026-05-17 | SQUAD-RUNTIME | 5-way consolidation: 404-room table (32 rooms, callback idx 0x4B), halfword grid rasterization (32x32), slot table stride 0x10 (17 entries, 14 callbacks), Group1/2 templates disassembled, main loop 0x101C80 dispatch chain documented |

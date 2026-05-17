@@ -99,17 +99,18 @@ Before doing new analysis, read these files in this order if they exist:
 2. `.local/key-concepts.md`
 3. `.local/ai-context.md`
 4. `key-concepts.md`
-5. `research/elf/ghidra-rev076-post-runtime-consolidation.md`
-6. `research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md`
-7. `research/elf/ghidra-rev074-runtime-session-main-loop-dispatch-confirmed.md`
-8. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
-9. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
-10. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
-11. `research/ico-decomp-cross-reference-2026-05-14.md`
-12. `research/elf/ghidra-rev039-cloth-domain-correction.md`
-13. `research/external/sotc-tooling-relevance-survey.md`
-14. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
-15. `research/external/ico-splat-promoted-ranges-experiment.md`
+5. `research/elf/ghidra-rev077-final-static-analysis.md`
+6. `research/elf/ghidra-rev076-post-runtime-consolidation.md`
+7. `research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md`
+8. `research/elf/ghidra-rev074-runtime-session-main-loop-dispatch-confirmed.md`
+9. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
+10. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
+11. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
+12. `research/ico-decomp-cross-reference-2026-05-14.md`
+13. `research/elf/ghidra-rev039-cloth-domain-correction.md`
+14. `research/external/sotc-tooling-relevance-survey.md`
+15. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
+16. `research/external/ico-splat-promoted-ranges-experiment.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -301,21 +302,19 @@ Those names require evidence.
 
 The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-075) are complete. The **live dispatch system** is now fully mapped and understood.
 
-### Confirmed results (Rev.074-076)
+### Confirmed results (Rev.074-077)
 
-- **Two independent entity systems**: callback_register (52 scene objects via 28 init_fn) and live dispatch (8 core entities, 20 ctx/frame). Only 3 entities overlap.
+- **Descriptor table** at 0x2A31B8: 68 entity types fully mapped (BOY, GIRL, ENEMY1, BARREL, ROPE, QUEEN, BIRD, etc.). Three vtable groups: main characters (0x202A60), physics props (0x23D660), entity-specific. Only 12/68 have init_fn.
+- **ROPE gap RESOLVED**: 0x1D3A30 is BARREL's cb_routine2 (physics constraint solver), registered via descriptor table +0x50, not callback_register.
+- **8-step scene loader** in `kanban.c` with GP=0x27A7A8 (separate compilation unit).
+- **Two independent entity systems**: callback_register (52 scene objects via 28 init_fn) and live dispatch (8 core entities, 20 ctx/frame).
 - **28 init_fn classified** into 6 groups: Generic (60%), HUD/status lights (15%), UI/menu (9%), cloth/physics aux (5%), env effect sub-dispatcher (3%), special one-shots (0.4%)
-- **17-slot dispatch table** at 0x282690 fully mapped with 12 callback targets in 3 tiers:
-  - Tier 1: Leaf pos/rot (Group1 only) — 0x168ED0, 0x1692F0, 0x169020, 0x169190
-  - Tier 2: Hybrid (Group1+Group2) — 0x169440, 0x1696C0, 0x169580, 0x169800, 0x169968
-  - Tier 3: Full pipeline (Group2 + math utils + cloth + cold paths) — 0x169AA8, 0x169E58, 0x169D18
-- **Mask system uses only bit 0**: mask_set(0x13ED40) = ShockRequestBox_RequestCancel. Scene init clears bit 0 (block callbacks during loading), then set after entity setup.
-- **404-byte table** at 0x005F2F98 = room/stage config (indexed by world_state), not entity data
-- **Halfword table** at 0x006AB080 = 32×32 spatial hash grid rebuilt per dispatch cycle
-- **VU0 "kick"** at 0x117C40 = COP2 macro-mode vector clamp utility (22 callers, no actual VU0 kick)
-- **Alt implementations** at 0x169F80/0x16A058 = VU0 DMA pipeline (unreachable at runtime, zero static callers)
-- **Cloth init** at 0x1C3778: stride 0x50/0x1A0, DMA+VU0 packet build. Guard at 0x1C3760 is dead code.
-- **ICO-decomp cross-ref**: 0x13ED40 matches ShockRequestBox_RequestCancel. All others fall between PAL symbols in specific source files.
+- **17-slot dispatch table** at 0x282690 fully mapped with 12 callback targets in 3 tiers.
+- **Mask system uses only bit 0**: mask_set(0x13ED40) = ShockRequestBox_RequestCancel.
+- **404-byte table** at 0x005F2F98 = room/stage config.
+- **Halfword table** at 0x006AB080 = 32×32 spatial hash grid rebuilt per dispatch cycle.
+- **VU0 "kick"** at 0x117C40 = COP2 macro-mode vector clamp utility. Queue at 0x117768 = linked-list deferred processing (NOT a VU0 kick).
+- **Debug table** at 0x613E00: 47 debug visualization entries. 0x168650 = CollisionOldProc callback.
 
 ### Runtime-verified slot distribution
 
@@ -333,12 +332,13 @@ The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-07
 ### Current objectives
 
 1. Runtime: probe mask bit 0 during cutscene transitions (does it toggle on/off?)
-2. Runtime: probe gp+0x31990 (world_state) to map room transitions and correlate with entity lifecycle
+2. Runtime: probe gp+0x6F60 (world_state_main at 0x00631990) to map room transitions
 3. Runtime: probe halfword table writers with bounding box capture to verify spatial hash theory
-4. Runtime: investigate slot 0 callback 0x168DA8 (never captured — when does it fire?)
-5. Static: disassemble step dispatcher 0x1B08E4 (remaining 7 cases of jump table at 0x616CC0)
-6. Static: extract 7-type table at 0x29A640 (env effect subtype dispatch)
-7. Static: search for what allocates the 8 core dispatch entities (not through callback_register)
+4. Runtime: probe gp-0x49B4 (0x00633F3C, most-referenced GP variable, 434 refs)
+5. Runtime: investigate slot 0 callback 0x168DA8 (when does it fire?)
+6. Investigate the 0x29A640 env effect table more deeply (7-type × 0x30, spatial trigger zones)
+7. Study the descriptor table cb_routine4 pattern (only GIRL, ENEMY1, DEVIL_GIRL)
+8. Analyze vtable dispatch for the 3 vtable groups (0x202A60, 0x23D660, entity-specific)
 
 ---
 

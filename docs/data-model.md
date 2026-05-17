@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-17 (Rev.076 — Consolidacao pos-runtime: 28 init_fn em 6 grupos; 17-slot table mapeada (3 tiers callback); mask_set usa so bit 0; tabela 404B = config stage; halfword table = spatial hash 32x32; VU0 "kick" = util COP2 macro-mode; 2 sistemas de entidade independentes (register vs dispatch). Ver research/elf/ghidra-rev076-post-runtime-consolidation.md)
+> **Ultima atualizacao:** 2026-05-17 (Rev.077 — Analise estatica final: 68 entity types na descriptor table 0x2A31B8; 512 spawns na entry table 0x2A4C48; BARREL usa 0x1D3A30 (ROPE gap resolvido); 8-step scene loader em kanban.c; VU0 kick 0x117768 = linked-list queue; debug table 0x613E00 com 47 entries; resource bitmap 0x28A520; wait/yield via syscall50; GP map consolidado com 1032 offsets unicos. Ver research/elf/ghidra-rev077-final-static-analysis.md)
 
 ---
 
