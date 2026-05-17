@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 77 |
+| Completed | 78 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -78,6 +78,16 @@ VU0 ring-buffer packet builder (0x1D43F8), VU0 kick stub (0x117C40), halfword ta
 - **Writers de 0x6AB080**: 2 sites em 0x00166D1C/0x00166D78 (mesma funcao, antes de 0x00166E10). Escrevem `(a2 << 5) + t0` como halfword, indexados por `gp-19396`.
 - **Nenhum caller estatico com a0 != 0** para 0x00168650 — alternate impl selection point desconhecido. Unico caller (J 0x1A3334) sempre passa a0=0.
 - Documentado em research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md
+
+### [x] [SQUAD-RUNTIME | rev.070 | 2026-05-17]
+Callers of 0x00166028 (build runtime pointer list) and rodata init table at 0x613E00
+
+- **0x101C80** (128B stack): main game loop. Calls 0x166028 once during scene init (when gp-24768==0). Also calls: 0x1A3208 (naked init, ~70 GP slots), 0x13D9C8 (event system), 0x13D3F0 (callback pool), 0x1AA098, 0x13FC00 (slot dispatch).
+- **0x1AF4A0** (176B stack): scene/subsystem init. Reads s5=[a0+0]. Calls 0x1B7408, 0x1FBC48, 0x1B7CE0, 0x1F51C0. Entity callback from **404-byte stride table** at 0x005F2F98+340 — if non-null, JALR v0 then JAL 0x166028. Tail-calls J 0x13D3F8 (pool flush).
+- **0x1B76F8** (304B stack): entry iteration/object creation (Rev.050). Confirms: JALR [s0+88]=hC constructor (cloth_payload_init), JAL 0x13F7A8(a3=0x13), JAL 0x1AE6F8 (event clear). JAL 0x166028 at end of every successful entry.
+- **Nova tabela**: 404-byte stride entity table at 0x005F2F98, indexed by world state (gp-28512). Callback at offset +340.
+- **Rodata 0x613E00**: tabela debug com string names (ClothInfo, CollisionOldProc, Skelton, etc.) + ponteiro 0x00168650. Zero referencias de codigo — artifact de debug build.
+- Documentado em research/elf/ghidra-rev070-callers-of-166028-and-rodata-init-table.md
 
 ### [x] [SQUAD-RUNTIME | rev.064 | 2026-05-16]
 Live scene init dispatch at 0x00166E10, cold paths, struct map
@@ -501,6 +511,7 @@ Call graph analysis
 | Revision | Date | Squad | Summary |
 |----------|------|-------|---------|
 | rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
+| rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
 | rev.001 | 2026-05-12 | SQUAD-ARCH | Initial strategic planning and prompt workflow |
 | rev.002 | 2026-05-12 | SQUAD-ARCH | Project retargeted to ICO Reconstruction |
 | rev.003 | 2026-05-12 | SQUAD-ARCH | Public README created for community collaboration |

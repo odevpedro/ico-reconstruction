@@ -71,6 +71,8 @@ The project has moved into **decompilation and struct modeling**. A verified str
 
 **Rev.069 static mop-up:** The VU0 ring-buffer packet builder at `0x1D43F8` was fully disassembled (5-entry VIF packet, 80 bytes, terminator via `t0=-1`). The VU0 kick stub `0x117C40` was identified as inline asm (4× LUI VIF codes + `J 0x3800C`). The halfword table writer at `0x6AB080` was located at `0x00166D1C`/`0x00166D78` (same function range as the dispatcher — writes `(a2 << 5) + t0`). No static caller of `0x00168650` with `a0 != 0` exists — the alternate implementation selection point remains a runtime-only question. See [`research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md`](./research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md).
 
+**Rev.070 callers of 0x166028:** All 3 direct callers of the runtime pointer list builder were fully disassembled. `0x101C80` is the main game loop (128B stack) — calls `0x166028` once during scene init. `0x1AF4A0` is a scene/subsystem init (176B stack) — calls `0x166028` after an entity callback from a previously undocumented 404-byte stride entity table at `0x005F2F98`. `0x1B76F8` is the entry iteration/object creation function (304B stack, Rev.050) — calls `0x166028` at the end of every successful entry. The rodata table at `0x613E00` with `0x00168650` was identified as a debug build artifact (strings: `ClothInfo`, `CollisionOldProc`, `Skelton`, etc.) with no code references. See [`research/elf/ghidra-rev070-callers-of-166028-and-rodata-init-table.md`](./research/elf/ghidra-rev070-callers-of-166028-and-rodata-init-table.md).
+
 No reconstructed game code, assets, binaries, or ISO-derived copyrighted data are included in this repository.
 
 Current repository contents are mostly operational documents:
@@ -443,6 +445,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.066 - Static live dispatch callsite map: GP slots confirmed, cold paths validated, 0x006AAC80 correction
 [x] rev.067 - Consolidated dispatch model: slot table 0x282690 (17 entries, 14 parametric callbacks), runtime ptr list 0x6AAC80, alternate impl 0x169F80/0x16A058, runtime probe plan
 [x] rev.069 - VU0 ring-buffer packet builder (0x1D43F8), kick stub (0x117C40), halfword table writers (0x00166D1C/0x00166D78), alternate constants, zero static callers for alternate selection
+[x] rev.070 - Callers of 0x166028 (main loop 0x101C80, scene init 0x1AF4A0, entry iter 0x1B76F8), 404-byte stride entity table, rodata debug table with ClothInfo/CollisionOldProc
 ```
 
 ## How To Contribute

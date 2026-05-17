@@ -78,6 +78,7 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
+research/elf/ghidra-rev070-callers-of-166028-and-rodata-init-table.md  (callers of 0x166028: main loop 0x101C80, scene init 0x1AF4A0, entry iter 0x1B76F8; 404-byte stride entity table; debug table at 0x613E00 with ClothInfo/CollisionOldProc strings and 0x168650)
 research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md  (VU0 packet builder 0x1D43F8, kick stub 0x117C40, 0x6AB080 writers, alternates constants)
 research/elf/ghidra-rev067-consolidated-live-dispatch-model.md        (live dispatch consolidated model — slot table, callbacks, callers, alternate impl)
 research/elf/ghidra-rev066-static-live-dispatch-callsite-map.md       (cold paths, GP slots, dispatch point confirmed)
@@ -328,6 +329,7 @@ Current objectives:
 3. Check if the alternate implementation is ever reached (no static path known)
 4. Map the halfword table at `0x006AB080` population mechanism — writers confirmed at `0x00166D1C`/`0x00166D78` (same function as dispatcher)
 5. Understand the semantic meaning of each slot
+6. Investigate the 404-byte stride entity table at `0x005F2F98` indexed by world state
 
 ---
 
