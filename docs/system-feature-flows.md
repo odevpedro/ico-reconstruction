@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-17 (Rev.072 — Room init callback field corrigido: +0x154 de row_base (= +0x174 absoluto), 19 function pointers pre-carregados; instrucao 0x1AF954 corrigida para mult (nao and); NOTA: 0x001AF190 NAO e scene loader — e init de sala que le da tabela 404)
+> **Ultima atualizacao:** 2026-05-17 (Rev.073 — Main loop dispatch chain corrigida: 12 steps reais mapeados, VU0 kick em step 6a; mask dos callbacks corrigida para bits 28-31; tabela secundaria de ponteiros em 0x00633D30; modelo de lista ligada com offsets pre-multiplicados; struct 80B/112B mapeadas)
 
 ---
 
@@ -251,37 +251,47 @@ Callback (vindo de slot_table[N].callback):
   4. Normaliza via div.s por 1.0f
   5. Itera lista ligada (stride 16 bytes) comparando contra threshold
 
-**Callback skeleton (representative: 0x00168DA8):**
-Todos os 14 callbacks compartilham este padrao:
-  1. Le contador halfword de GP-19396 (0x633D2C)
-  2. Itera tabela em 0x6AB080
-  3. Extrai `row = halfword >> 5`
-  4. Lookup row em tabela secundaria de ponteiros
-  5. Itera lista ligada (structs de 80 bytes cada)
-  6. Chama template Group1 ou Group2 para cada candidato
-  7. Se match: armazena ponteiro do objeto em context, retorna 1
-  8. Se nao: retorna 0
+**Callback skeleton (all 14 callbacks):**
+Todos os callbacks compartilham este padrao (corrigido Rev.073):
+
+```txt
+1. halfword = table[loop_counter]           # 16-bit index (0-1023)
+2. ptr = secondary_ptr_array[halfword]      # from 0x00633D30 + 0x18 (G1) or +0x1C (G2)
+3. For each entry in linked list at ptr:
+   a. entry_val = *ptr (16-bit signed; <0 = chain end)
+   b. struct_ptr = struct_array_base + entry_val  # entry_val is pre-multiplied by stride!
+   c. Apply mask to struct_ptr->field_48 (G1) or field_60 (G2 slot 15)
+   d. If passes: jal template (0x166258 G1, 0x1667E0 G2)
+   e. Store result in ctx+0x88 (G1) or ctx+0x94 (G2)
+   f. ptr += 2 (next entry in list)
+4. Return 1 if match, 0 if none
+```
+
+**Group 1 (w0=1, slots 0-11):** struct stride 0x50 (80 bytes), template 0x166258.
+**Group 2 (w0=0, slots 12-16):** struct stride 0x70 (112 bytes), template 0x1667E0.
+
+Os valores de entry na lista ligada sao **byte offsets pre-multiplicados** pelo stride — nao indices crus. O `mult $v0, 0x50`/`mult $v0, 0x70` em cada callback e dead code (artefato de compilador O2, confirmado para todo o codigo ICO).
 
 ### Tabela de slots
 
-| Slot | w0 | w1 | Callback | Grupo | Guarda | Mascara +0x48 |
-|-----:|---:|---:|---------|-------|--------|---------------|
+| Slot | w0 | w1 | Callback | Grupo | Guarda | Mascara +0x48 (bits 28-31) |
+|-----:|---:|:--:|---------|-------|--------|---------------|
 | 0 | 1 | 0 | 0x168DA8 | Group1 | — | (nenhuma) |
-| 1 | 1 | 0 | 0x168ED0 | Group1 | — | 0xF000 / 0xF==1 |
-| 2 | 1 | 0 | 0x1692F0 | Group1, a2=1 | — | 0xF000 / 0xF==1 |
-| 3 | 1 | 0 | 0x169440 | Group1 | — | 0xF000 |
-| 4 | 1 | 1 | 0x169020 | Group1 | Triplet | 0xF000 / 0xF==1 |
-| 5 | 1 | 1 | 0x169190 | Group1 | Triplet | 0xF000 |
-| 6 | 1 | 0 | 0x1696C0 | Group1 | — | 0xC000==0x4000 |
-| 7 | 1 | 0 | 0x169580 | Group1 | — | 0x3000!=0 |
+| 1 | 1 | 0 | 0x168ED0 | Group1 | — | 0xF0000000==0 AND 0x000F0000!=0x00010000 |
+| 2 | 1 | 0 | 0x1692F0 | Group1, a2=1 | — | same as slot 1 |
+| 3 | 1 | 0 | 0x169440 | Group1 | — | 0xF0000000==0 |
+| 4 | 1 | 1 | 0x169020 | Group1 | Triplet | same as slot 1 |
+| 5 | 1 | 1 | 0x169190 | Group1 | Triplet | same as slot 3 |
+| 6 | 1 | 0 | 0x1696C0 | Group1 | — | 0xC0000000==0x40000000 |
+| 7 | 1 | 0 | 0x169580 | Group1 | — | 0x30000000!=0 |
 | 8 | 1 | 0 | 0x168ED0 | Group1 (w2=1) | — | (reusa slot 1) |
 | 9 | 1 | 0 | 0x169440 | Group1 (w2=1) | — | (reusa slot 3) |
-| 10 | 1 | 0 | 0x169800 | Group1 | — | 0x7000 / 0xC000==0x8000 |
-| 11 | 1 | 0 | 0x169968 | Group1 | — | 0xC000==0xC000 |
-| 12 | 0 | 0 | 0x169AA8 | Group2 | — | (nenhuma) |
-| 13 | 0 | 1 | 0x169BD0 | Group2 | Triplet | — |
-| 14 | 0 | 0 | 0x169E58 | Group2, a2=1 | — | — |
-| 15 | 0 | 0 | 0x169D18 | Group2 | — | [+0x60]&0xF==2 |
+| 10 | 1 | 0 | 0x169800 | Group1 | — | 0x70000000==0 AND 0xC0000000==0x80000000 |
+| 11 | 1 | 0 | 0x169968 | Group1 | — | 0xC0000000==0xC0000000 |
+| 12 | 0 | 0 | 0x169AA8 | Group2 | — | (nenhuma, struct+0x60) |
+| 13 | 0 | 1 | 0x169BD0 | Group2 | Triplet | (nenhuma) |
+| 14 | 0 | 0 | 0x169E58 | Group2, a2=1 | — | (nenhuma) |
+| 15 | 0 | 0 | 0x169D18 | Group2 | — | [+0x60] & 0x000F0000 == 0x00020000 |
 | 16 | 0 | 0 | 0x169AA8 | Group2 (w2=1) | — | (reusa slot 12) |
 
 ### Halfword table em 0x006AB080 (BSS)
@@ -356,6 +366,18 @@ O SQC2 block emparelhado (`0x117C80`) salva VF3/11/19/27.
 | Ring buffer push | 0x111918 | 0x24 (36B) | Escreve sd(a1)+sd(a0), avanca head 16 |
 | Transform orchestrator | 0x1D4A58 | — | Matrix init + packet submission |
 | VU0 kick stub | 0x117C40 | 0x1C (28B) | Inline asm, 4 LUI + J 0x3800C |
+
+### VU0 kick trigger (Rev.073)
+
+O VU0 kick stub em `0x117C40` e chamado por **step 6a do main loop** (`0x129A78`), que tail-calls `j 0x117768` quando `gp-28384 == 0` (gameplay mode). Durante menus/cutscenes (gp-28384 != 0), o VU0 NAO e kicking.
+
+```txt
+Main loop (0x101C80) @ step 6a:
+  if gp-28384 == 0:
+    0x129A78() → cleanup + j 0x117768 → VU0 kick
+```
+
+Isto significa que o VU0 microcode (20KB cloth physics) so roda durante gameplay, nao em menus ou cutscenes.
 
 ### O que falta
 
@@ -449,55 +471,102 @@ Ver [`research/elf/ghidra-rev071-404-table-room-names-callbacks-and-dispatch-sys
 
 ---
 
-## Main Loop Flow (0x00101C80)
+## Main Loop Dispatch Chain (0x00101C80)
 
-> **Status:** Estrutura mapeada (Rev.071). Dispatch chain completa, idle loop via VSync.
+> **Status:** 12-step pipeline mapeado (Rev.073). VU0 kick em step 6a, callback dispatch em steps 7/9, idle via VSync.
 
 ### Visao Geral
 
-O main loop em 0x00101C80 e o ponto de entrada do frame processing. Ele executa uma cadeia de 5+ funcoes de init/dispatch por frame e, no final, decide se volta ao processamento normal ou entra em idle (VSync wait).
+O main loop em 0x00101C80 executa 12 steps por frame. O conditional gp-28384 (0=gameplay, !=0=menu/cutscene) controla se VU0 kick e entity cleanup rodam. Steps 5-9 incluem input, audio, e callback dispatch de entidades.
 
-### Fluxo
+### Pipeline completo
 
+```txt
+Step   Address   Function       Stack   Role
+----   -------   --------       -----   ----
+  1    0x1AA098  framebuf_reset   0     Clear flag block + HW register (0x10000000)
+  2    0x166028  live_dispatch   96     Entity pool iteration, collect live entities
+  3    0x103370  entity_regtab   64     Index entities into type-based slots (max 64)
+  4    0x104C80  entity_xform   352     COP1-heavy matrix/transform prep (60.0, 20.0)
+  5    0x1AF190  game_systems    48     Input polling, frame timer, audio tick
+  6a   0x129A78  vu0_kick_cond   16     If gp-28384==0: cleanup + j 0x117768 (VU0 kick)
+  6b   0x129AA8  scene_cleanup   80     If gp-28384==0: entity flags reset, counters
+  7    0x13FBF8  →0x13F9D0      160     Callback dispatch (linked list A, two-level)
+  8    0x129C90  scene_proc2     64     If gp-28384==0: additional scene processing
+  9    0x13FC00  cb_dispatch2    —      Same as step 7 (second pass, full function)
+ 10    0x102680  table_clear    128     Zero 256-entry table, set completion flag
+ 11    0x13D3F0  vsync_wait      48     Busy-wait for VSync (idle loop)
 ```
-0x00101C80: addiu $sp, $sp, -128
+
+### Fluxo de execucao
+
+```asm
+0x00101C80:
+  │ gp-28176 = exit check
   │
-  ├── Init & timer:
-  │    ├─ Check gp_var (20160) → select string path
-  │    ├─ jal 0x1A6E28 (print/init com string A)
-  │    ├─ jal 0x1A6E28 (print/init com string B)
-  │    ├─ mult/mflo timer calculation
-  │    └─ jal 0x1A6E28 (print timer value)
+  ├── Step 1: 0x1AA098  (@0x1EE0)  - framebuf reset
+  ├── Step 2: 0x166028  (@0x1EE8)  - live dispatch: build runtime ptr list (max 256)
+  ├── Step 3: 0x103370  (@0x1EF0)  - entity registration: index pool into type slots
+  ├── Step 4: 0x104C80  (@0x1EF8)  - entity transform: COP1 matrix ops
+  ├── Step 5: 0x1AF190  (@0x1F00)  - game systems: input, timer, audio
   │
-  ├── Dispatch chain (0x001EE0-0x001F08):
-  │    ├─ jal 0x001AA098
-  │    ├─ jal 0x00166028      ← BUILD runtime pointer list
-  │    ├─ jal 0x00103370
-  │    ├─ jal 0x00104C80
-  │    └─ jal 0x001AF190      ← ROOM INIT (lê tabela 404-byte!)
-  │         └─ [tail] jal 0x00166028 (build pointer list again)
+  ├── gp-28384 check (@0x1F08):
+  │   ├─ lw $v0, -28384($gp)
+  │   └─ if v0 != 0: goto skip_a
   │
-  ├── Conditional path (gp-28384 check):
-  │    ├─ lw $v0, -28384($gp)
-  │    ├─ if v0 != 0: skip two calls
-  │    ├─ else: jal 0x00104A78, jal 0x00104AA8
-  │    └─ jal 0x00103BF8
+  ├── gp-28384==0 (gameplay):
+  │   ├─ Step 6a: 0x129A78 (@0x1F14)  - cleanup + VU0 kick (tail-J 0x117768)
+  │   ├─ Step 6b: 0x129AA8 (@0x1F1C)  - scene cleanup (entity flags, counters)
   │
-  ├── Post-processing:
-  │    ├─ lw + bne check (gp-28384 de novo)
-  │    ├─ (conditional) jal 0x00104A78
-  │    ├─ jal 0x00103FC0
-  │    └─ jal 0x00101068
+  ├── skip_a (@0x1F24):
+  │   Step 7: 0x13FBF8 (@0x1F24)  - callback dispatch (first pass)
   │
-  ├── Loop decision (0x001F50-0x001F54):
-  │    ├─ lw $v0, -28384($gp)
-  │    └─ if v0 == 0: beq to 0x1E10 (volta ao processamento de frame)
+  ├── gp-28384 check again (@0x1F28):
+  │   ├─ lw $v0, -28384($gp)
+  │   ├─ if v0 != 0: goto skip_b
+  │   └─ Step 8: 0x129C90 (@0x1F30) - scene proc2 (conditional)
   │
-  └── Idle/VSync (0x001F60-0x001F6C):
+  ├── skip_b (@0x1F38):
+  │   Step 9: 0x13FC00 (@0x1F38)  - callback dispatch (second pass)
+  │
+  ├── Step 10: 0x102680 (@0x1F48) - table clear (256 entries)
+  │
+  ├── Loop decision (@0x1F50):
+  │   ├─ lw $v0, -28384($gp)
+  │   └─ if v0 == 0: beq to 0x1E10 (next frame)
+  │
+  └── Step 11: VSync idle (@0x1F60):
        └─ tight loop:
-            jal 0x00104D3C    (VSync/idle wait)
-            beq $zero, $zero, -3  (loop infinito ate interrupcao)
+            jal 0x13D3F0     // vsync_wait
+            beq $zero, 0x1F60  // back to wait
 ```
+
+### GP Variable System Map
+
+| Offset | Access | Step(s) | Role |
+|--------|--------|---------|------|
+| -28384 | R+BEQ | 6a/6b/8 | Mode flag: 0=gameplay, !=0=menu/cutscene |
+| -28176 | R+BEQ | main loop | Loop termination flag |
+| -28112 | R+SW | 10 | Table iteration counter |
+| -28108 | SW | 10 | Table clear completion flag |
+| -28084 | R+SW | 3 | Entity registration counter (max 64) |
+| -26936 | R | 5 | Interrupt/timer state |
+| -26404 | R | 7/9 | Callback bitmask (8 bits) |
+| -26396 | R | 7/9 | Linked list head ptr |
+| -25896 | R+SW | 2 | Live dispatch counter (max 256) |
+| -23628..-23648 | SW | 1 | Flag block (7× zeros) |
+| -23548 | R+BNE | 5 | Frame counter |
+| -23588 | R+BNE | 5 | Input mode flag |
+
+### Observacoes
+
+- **VU0 kick (step 6a) so roda em gameplay** — durante menus/cutscenes, VU0 nao e kicking
+- **Callback dispatch (steps 7, 9) e UNCONDITIONAL** — roda todo frame
+- **Step 10 table clear** usa tabela em 0x0065ED20, stride 1024 (256 × 4 bytes)
+- **GP var -28384** e o seletor gameplay(0) vs menu/cutscene(!=0)
+- As funcoes 0x103BF8 e 0x103FC0 sao **mid-function labels** dentro de 0x103B48 e 0x103F00 — NAO sao pontos de entrada independentes
+- O contador de entidades para step 7/9 (callback dispatch) esta em 0x00674058 (gp-19612)
+- VU0 kick stub (0x117C40) esta mapeado e confirmado como tail-call de step 6a (0x129A78)
 
 ---
 

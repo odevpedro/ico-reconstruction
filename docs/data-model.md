@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-17 (Rev.072 — Campo de callback da tabela 404 corrigido: offset +0x174 absoluto (= +0x154 de row_base), 19 function pointers pre-carregados para salas de gameplay, NAO indice 0x4B; instrucao 0x1AF954 corrigida para mult (nao and); tabela de 68 descritores (0x002A31B8, stride 0x64) mapeada; tabela de 512 entries (0x002A4C48, stride 0x4C) com distribuicao desc_idx; funcao 0x001AF190 NAO e scene loader — e init de sala que le da tabela 404)
+> **Ultima atualizacao:** 2026-05-17 (Rev.073 — Mask dos callbacks da slot table corrigida para bits 28-31 com valores corretos; tabela secundaria de ponteiros mapeada em 0x00633D30 (BSS); modelo de dados da halfword table expandido com fluxo de lista ligada; struct 80B Group 1 e struct 112B Group 2 documentadas)
 
 ---
 
@@ -186,6 +186,65 @@ Populada por exatamente 2 escritores na funcao iteradora `0x00166C80` (dentro do
 
 **Contador = 30 leituras** no range 0x168xxx (todos os 14 callbacks consomem o contador).
 
+### Consumo pelos callbacks (fluxo de lista ligada)
+
+Todos os 14 callbacks compartilham este fluxo:
+
+```txt
+1. halfword = table[loop_counter]           # 16-bit index (0-1023)
+2. ptr = pointer_array[halfword]            # from secondary_table+0x18 (G1) or +0x1C (G2)
+3. For each entry in linked list at ptr:
+   a. entry_val = *ptr (16-bit signed; <0 = chain end)
+   b. struct_ptr = struct_array_base + entry_val  # entry_val is pre-multiplied by stride!
+   c. Apply mask to struct_ptr->field_48 (G1) or field_60 (G2 slot 15)
+   d. If passes: jal template (0x166258 G1, 0x1667E0 G2)
+   e. ptr += 2 (next entry in list)
+```
+
+**Group 1 (w0=1, slots 0-11):** struct stride 0x50 (80 bytes), template 0x166258 (position/rotation proximity).
+**Group 2 (w0=0, slots 12-16):** struct stride 0x70 (112 bytes), template 0x1667E0 (orientation matching).
+
+Os valores de entry na lista ligada sao **byte offsets pre-multiplicados** pelo stride — nao indices crus. O `mult $v0, 0x50`/`mult $v0, 0x70` em cada callback e dead code (artefato de compilador O2).
+
+### secondary_table_0x00633D30
+
+Tabela secundaria de ponteiros populada em runtime, usada por todos os 14 callbacks para resolver halfword indices em structs.
+
+**Endereco:** `0x00633D30` (.sbss+0x130, GP-0x4BC0)
+**Tipo:** BSS — setada em runtime pelo dispatcher init (0x166E10)
+**Carregada por:** `lw $a1, -0x4BC0($gp)` em todos os callbacks
+
+A tabela tem duas metades (Group 1 e Group 2):
+
+| Offset | Group 1 (w0=1) | Group 2 (w0=0) |
+|--------|---------------|----------------|
+| +0x10  | struct array base (stride 0x50=80) | — |
+| +0x14  | — | struct array base (stride 0x70=112) |
+| +0x18  | pointer array (indexed by halfword) | — |
+| +0x1C  | — | pointer array (indexed by halfword) |
+
+### 80-byte struct (Group 1)
+
+| Offset | Size | Field |
+|--------|------|-------|
+| +0x00  | 2    | Linked list entry (signed byte offset; <0 = chain end) |
+| +0x02  | 2    | Unknown |
+| +0x08  | 4    | Index/link |
+| +0x10  | 16   | Position data (consumed by Group1 template 0x166258) |
+| +0x40  | 4    | Template data |
+| +0x44  | 4    | Template data |
+| +0x48  | 4    | **Flags** — tested by slot-specific mask (all G1 slots except 0) |
+| +0x74  | 4    | Entity guard 1 (used by slots 4/5 with triplet guard) |
+| +0x78  | 4    | Entity guard 2 |
+| +0x7C  | 4    | Entity guard 3 |
+
+### 112-byte struct (Group 2)
+
+| Offset | Size | Field |
+|--------|------|-------|
+| +0x00  | 2    | Linked list entry |
+| +0x60  | 4    | **Flags** — tested by slot 15 mask (`& 0x000F0000 == 0x00020000`) |
+
 ---
 
 ### room_entity_table_0x005F2F98
@@ -325,24 +384,24 @@ Tabela de configuração de 17 slots (indices 0-16) para o dispatcher `0x00166E1
 
 **Slots mapeados (Rev.067):**
 
-| Slot | VA | w0 | w1 | w2 | Callback | Callback role |
+| Slot | VA | w0 | w1 | w2 | Callback | Callback role (mask bits 28-31) |
 |-----:|----:|:-:|:-:|:-:|--------:|---------------|
 | 0 | 0x282690 | 1 | 0 | 0 | 0x168DA8 | Group1, sem mascara |
-| 1 | 0x2826A0 | 1 | 0 | 0 | 0x168ED0 | Group1, mask `0xF000`/`0xF==1` |
-| 2 | 0x2826B0 | 1 | 0 | 0 | 0x1692F0 | Group1, mask idem, **a2=1** |
-| 3 | 0x2826C0 | 1 | 0 | 0 | 0x169440 | Group1, mask `0xF000` |
-| 4 | 0x2826D0 | 1 | 1 | 0 | 0x169020 | Group1, mask + **triplet guard** |
-| 5 | 0x2826E0 | 1 | 1 | 0 | 0x169190 | Group1, mask + **triplet guard** |
-| 6 | 0x2826F0 | 1 | 0 | 0 | 0x1696C0 | Group1, mask `0xC000==0x4000` |
-| 7 | 0x282700 | 1 | 0 | 0 | 0x169580 | Group1, mask `0x3000!=0` |
+| 1 | 0x2826A0 | 1 | 0 | 0 | 0x168ED0 | G1, `0xF0000000==0 AND 0x000F0000!=0x00010000` |
+| 2 | 0x2826B0 | 1 | 0 | 0 | 0x1692F0 | G1, mask idem, **a2=1** |
+| 3 | 0x2826C0 | 1 | 0 | 0 | 0x169440 | G1, `0xF0000000==0` |
+| 4 | 0x2826D0 | 1 | 1 | 0 | 0x169020 | G1, mask slot 1 + **triplet guard** |
+| 5 | 0x2826E0 | 1 | 1 | 0 | 0x169190 | G1, mask slot 3 + **triplet guard** |
+| 6 | 0x2826F0 | 1 | 0 | 0 | 0x1696C0 | G1, `0xC0000000==0x40000000` |
+| 7 | 0x282700 | 1 | 0 | 0 | 0x169580 | G1, `0x30000000!=0` |
 | 8 | 0x282710 | 1 | 0 | 1 | 0x168ED0 | (reusa slot 1) |
 | 9 | 0x282720 | 1 | 0 | 1 | 0x169440 | (reusa slot 3) |
-| 10 | 0x282730 | 1 | 0 | 0 | 0x169800 | Group1, mask `0x7000`/`0xC000==0x8000` |
-| 11 | 0x282740 | 1 | 0 | 0 | 0x169968 | Group1, mask `0xC000==0xC000` |
+| 10 | 0x282730 | 1 | 0 | 0 | 0x169800 | G1, `0x70000000==0 AND 0xC0000000==0x80000000` |
+| 11 | 0x282740 | 1 | 0 | 0 | 0x169968 | G1, `0xC0000000==0xC0000000` |
 | 12 | 0x282750 | 0 | 0 | 0 | 0x169AA8 | Group2, sem mascara |
 | 13 | 0x282760 | 0 | 1 | 0 | 0x169BD0 | Group2, **triplet guard** |
 | 14 | 0x282770 | 0 | 0 | 0 | 0x169E58 | Group2, **a2=1** |
-| 15 | 0x282780 | 0 | 0 | 0 | 0x169D18 | Group2, mask `[+0x60]&0xF==2` |
+| 15 | 0x282780 | 0 | 0 | 0 | 0x169D18 | G2, mask `[+0x60] & 0x000F0000 == 0x00020000` |
 | 16 | 0x282790 | 0 | 0 | 1 | 0x169AA8 | (reusa slot 12) |
 
 **Funções chamadas pelos callbacks:**

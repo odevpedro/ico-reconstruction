@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 81 |
+| Completed | 82 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -318,6 +318,16 @@ Room init callback system: descriptor table, entry table, corrected callback fie
 - **Funcao correta**: 0x1AF4A0 (scene init com 176B stack), NAO 0x1AF190 (preamble separado que retorna em 0x1AF494).
 - Documentado em research/elf/ghidra-rev072-callback-systems-descriptor-table-and-entry-table.md
 
+### [x] [SQUAD-RUNTIME | rev.073 | 2026-05-17]
+Main loop dispatch chain (12 steps), corrected callback masks, secondary pointer table, struct field maps
+
+- **Main loop pipeline (12 steps):** framebuf_reset(0x1AA098) → live_dispatch(0x166028) → entity_regtab(0x103370) → entity_xform(0x104C80, 352B COP1) → game_systems(0x1AF190) → vu0_kick_cond(0x129A78, VU0 via j 0x117768) → scene_cleanup(0x129AA8) → callback_dispatch(0x13F9D0, linked-list 2-level) → scene_proc2(0x129C90) → cb_dispatch2(0x13FC00) → table_clear(0x102680) → vsync_wait(0x13D3F0). VU0 kick e condicional (gp-28384==0, gameplay). Callback dispatch e unconditional. GP variable map com 13 offsets.
+- **Correcao de mask dos callbacks:** bits 28-31 do field_48 (NAO bits 12-15). Slots 1/2/4: `0xF0000000==0 AND 0x000F0000!=0x00010000`. Slot 3/5/9: `0xF0000000==0`. Slot 6: `0xC0000000==0x40000000`. Slot 7: `0x30000000!=0`. Slot 10: `0x70000000==0 AND 0xC0000000==0x80000000`. Slot 11: `0xC0000000==0xC0000000`. Slot 15 (field_60): `&0x000F0000==0x00020000`.
+- **Tabela secundaria (0x00633D30, BSS):** struct array base +0x10(G1 stride 80)/+0x14(G2 stride 112), pointer array +0x18(G1)/+0x1C(G2).
+- **Fluxo de lista ligada:** halfword → pointer_array → linked list entries (byte offsets pre-multiplicados). Dead mult instructions em todos os callbacks (artefato O2).
+- **Context store pattern:** G1: ctx+0x88=struct, ctx+0x80=a1, ctx+0x84=a2. G2: ctx+0x94=struct, ctx+0x8C=a1, ctx+0x90=a2, ctx+0x88=0.
+- Documentado em research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md
+
 ### [x] [SQUAD-RUNTIME | rev.071 | 2026-05-17]
 5-way consolidation: 404-room table, halfword grid, callbacks, main loop
 
@@ -541,6 +551,7 @@ Call graph analysis
 |----------|------|-------|---------|
 | rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
 | rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
+| rev.073 | 2026-05-17 | SQUAD-RUNTIME | Main loop dispatch chain (12 steps), corrected callback masks (bits 28-31), secondary pointer table (0x00633D30), struct field maps (80B/112B), linked-list flow with pre-multiplied offsets |
 | rev.072 | 2026-05-17 | SQUAD-RUNTIME | Room init callbacks corrigidos: 19 function pointers reais (offset +0x174 absoluto), tabela de descritores (68 entries), tabela de entries (512 entries), instrucao 0x1AF954 = mult (dead code), 0x00143290 processa inner structs (nao callback) |
 | rev.071 | 2026-05-17 | SQUAD-RUNTIME | 5-way consolidation: 404-room table (32 rooms, callback idx 0x4B), halfword grid rasterization (32x32), slot table stride 0x10 (17 entries, 14 callbacks), Group1/2 templates disassembled, main loop 0x101C80 dispatch chain documented |
 | rev.001 | 2026-05-12 | SQUAD-ARCH | Initial strategic planning and prompt workflow |
