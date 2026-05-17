@@ -99,20 +99,17 @@ Before doing new analysis, read these files in this order if they exist:
 2. `.local/key-concepts.md`
 3. `.local/ai-context.md`
 4. `key-concepts.md`
-5. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
-6. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
-7. `research/elf/ghidra-rev023-dispatcher-table-resolution.md`
-8. `research/elf/ghidra-rev022-dispatcher-ground-truth.md`
-9. `research/elf/ghidra-rev021-continue-menu-pivot.md`
-10. `research/elf/ghidra-rev018-state-transition-dispatch.md`
-11. `research/elf/ghidra-rev019-state-resolver-caller-context.md`
-12. `research/ico-decomp-cross-reference-2026-05-14.md`
-13. `research/elf/ghidra-rev039-cloth-domain-correction.md`
-14. `research/external/sotc-tooling-relevance-survey.md`
-15. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
-16. `research/external/ico-splat-minimal-experiment.md`
-17. `research/external/ico-splat-promoted-ranges-experiment.md`
-18. `research/external/ico-splat-adjacent-promoted-ranges-experiment.md`
+5. `research/elf/ghidra-rev076-post-runtime-consolidation.md`
+6. `research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md`
+7. `research/elf/ghidra-rev074-runtime-session-main-loop-dispatch-confirmed.md`
+8. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
+9. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
+10. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
+11. `research/ico-decomp-cross-reference-2026-05-14.md`
+12. `research/elf/ghidra-rev039-cloth-domain-correction.md`
+13. `research/external/sotc-tooling-relevance-survey.md`
+14. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
+15. `research/external/ico-splat-promoted-ranges-experiment.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -302,34 +299,46 @@ Those names require evidence.
 
 ## Current priority
 
-The static analysis phase (Rev.001-037) is complete. The verified chain covers:
+The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-075) are complete. The **live dispatch system** is now fully mapped and understood.
 
-1. Cloth dispatcher model (`0x001d37c8` + 5 state blocks)
-2. ROPE callback (`0x001d3a30` confirmed at runtime)
-3. Callback registration chain (`0x0013f7a8` -> `0x0013f3f0` -> node+0x1c)
-4. 5 callsites of registration function mapped; 3 excluded for ROPE
-5. Compiler identified: EE GCC (Sony fork for R5900)
-6. Domain corrected to cloth physics via ICO-decomp cross-reference
-7. Dispatcher/callback byte-level anchors independently checked with Rabbitizer
+### Confirmed results (Rev.074-076)
 
-The project has moved into a new analysis phase: **Live Dispatch System**.
+- **Two independent entity systems**: callback_register (52 scene objects via 28 init_fn) and live dispatch (8 core entities, 20 ctx/frame). Only 3 entities overlap.
+- **28 init_fn classified** into 6 groups: Generic (60%), HUD/status lights (15%), UI/menu (9%), cloth/physics aux (5%), env effect sub-dispatcher (3%), special one-shots (0.4%)
+- **17-slot dispatch table** at 0x282690 fully mapped with 12 callback targets in 3 tiers:
+  - Tier 1: Leaf pos/rot (Group1 only) — 0x168ED0, 0x1692F0, 0x169020, 0x169190
+  - Tier 2: Hybrid (Group1+Group2) — 0x169440, 0x1696C0, 0x169580, 0x169800, 0x169968
+  - Tier 3: Full pipeline (Group2 + math utils + cloth + cold paths) — 0x169AA8, 0x169E58, 0x169D18
+- **Mask system uses only bit 0**: mask_set(0x13ED40) = ShockRequestBox_RequestCancel. Scene init clears bit 0 (block callbacks during loading), then set after entity setup.
+- **404-byte table** at 0x005F2F98 = room/stage config (indexed by world_state), not entity data
+- **Halfword table** at 0x006AB080 = 32×32 spatial hash grid rebuilt per dispatch cycle
+- **VU0 "kick"** at 0x117C40 = COP2 macro-mode vector clamp utility (22 callers, no actual VU0 kick)
+- **Alt implementations** at 0x169F80/0x16A058 = VU0 DMA pipeline (unreachable at runtime, zero static callers)
+- **Cloth init** at 0x1C3778: stride 0x50/0x1A0, DMA+VU0 packet build. Guard at 0x1C3760 is dead code.
+- **ICO-decomp cross-ref**: 0x13ED40 matches ShockRequestBox_RequestCancel. All others fall between PAL symbols in specific source files.
 
-The live scene init dispatcher at `0x00166E10` has been fully mapped (Rev.064-067):
+### Runtime-verified slot distribution
 
-- 17-entry slot table at `0x00282690` with 14 unique parametric callbacks (Group 1: position/rotation via `0x166258`, Group 2: orientation via `0x1667E0`)
-- Two cold paths (`0x00167230`/`0x00167258`) as leaf fragments tail-calling `0x00166E10`
-- Alternate implementation (`0x00169F80`/`0x0016A058`) with extra transform/matrix init
-- Runtime pointer list at `0x006AAC80` (corrected from `0x006AAC00`)
-- All 14 callbacks iterate a runtime-populated halfword table at `0x006AB080` (BSS)
+| Slot | Count | % | Type |
+|------|-------|---|------|
+| 12 | 851,346 | 38.5% | Full pipeline (most active) |
+| 1 | 591,922 | 26.8% | Leaf pos/rot |
+| 3 | 316,996 | 14.3% | Hybrid G1+G2 |
+| 2 | 202,906 | 9.2% | Leaf pos/rot |
+| 6 | 134,228 | 6.1% | Hybrid G1+G2 |
+| 14 | 62,898 | 2.8% | Full pipeline |
+| 15 | 22,418 | 1.0% | Full pipeline |
+| 4,7,10,11,5 | 58,696 | 2.7% | Various |
 
-Current objectives:
+### Current objectives
 
-1. Runtime validation: capture hits at cold paths (`0x00167230`, `0x00167258`), main body (`0x00166E10`), and dispatch point (`0x00167020`)
-2. Confirm which slot indices (a1=0..16) fire during gameplay vs cutscenes vs menus
-3. Check if the alternate implementation is ever reached (no static path known)
-4. Map the halfword table at `0x006AB080` population mechanism — writers confirmed at `0x00166D1C`/`0x00166D78` (same function as dispatcher)
-5. Understand the semantic meaning of each slot
-6. Investigate the 404-byte stride entity table at `0x005F2F98` indexed by world state
+1. Runtime: probe mask bit 0 during cutscene transitions (does it toggle on/off?)
+2. Runtime: probe gp+0x31990 (world_state) to map room transitions and correlate with entity lifecycle
+3. Runtime: probe halfword table writers with bounding box capture to verify spatial hash theory
+4. Runtime: investigate slot 0 callback 0x168DA8 (never captured — when does it fire?)
+5. Static: disassemble step dispatcher 0x1B08E4 (remaining 7 cases of jump table at 0x616CC0)
+6. Static: extract 7-type table at 0x29A640 (env effect subtype dispatch)
+7. Static: search for what allocates the 8 core dispatch entities (not through callback_register)
 
 ---
 

@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-17 (Rev.073 — Mask dos callbacks da slot table corrigida para bits 28-31 com valores corretos; tabela secundaria de ponteiros mapeada em 0x00633D30 (BSS); modelo de dados da halfword table expandido com fluxo de lista ligada; struct 80B Group 1 e struct 112B Group 2 documentadas)
+> **Ultima atualizacao:** 2026-05-17 (Rev.076 — Consolidacao pos-runtime: 28 init_fn em 6 grupos; 17-slot table mapeada (3 tiers callback); mask_set usa so bit 0; tabela 404B = config stage; halfword table = spatial hash 32x32; VU0 "kick" = util COP2 macro-mode; 2 sistemas de entidade independentes (register vs dispatch). Ver research/elf/ghidra-rev076-post-runtime-consolidation.md)
 
 ---
 
@@ -18,7 +18,7 @@
 
 ## Visao Geral
 
-Modelo de dados do sistema de objetos físicos do ICO, focado no subsistema cloth (corda/rope) e no pipeline de init de cena. O núcleo é composto por: hierarquia de 3 structs cloth (context → entity → payload), tabela de descritores (68 entries, stride 0x64), tabela de entries de sala (512 entries, stride 0x4C), a **tabela de slots** em 0x00282690 (17 entries, stride 0x10, 14 callbacks únicos) iterada pelo dispatcher 0x00166E10, e a **lista runtime de ponteiros** em 0x006AAC80. **Correção Rev.064:** O modelo anterior de scene loader (0x1B76F8/0x1B7D00) foi refutado — ambos são DEAD CODE. **Correção Rev.066-067:** O array de descritores previamente documentado como 0x006AAC00 é na verdade uma lista de ponteiros (stride 4) em **0x006AAC80**. A tabela de slots em 0x00282690 (não 0x006AAC00) fornece os callbacks e flags de configuração para cada slot 0-16.
+Modelo de dados do sistema de objetos físicos do ICO, focado no subsistema cloth (corda/rope), pipeline de init de cena, sistema de callback dispatch, e handlers de entidade. O núcleo é composto por: hierarquia de 3 structs cloth (context → entity → payload), tabela de descritores (68 entries, stride 0x64), tabela de entries de sala (512 entries, stride 0x4C), a **tabela de slots** em 0x00282690 (17 entries, stride 0x10, 14 callbacks únicos) iterada pelo dispatcher 0x00166E10, a **lista runtime de ponteiros** em 0x006AAC80, o **sistema de callback dispatch** em 0x13F9D0 (tabela 0x281A70, mask register gp+0x98DC, type IDs 0x13-0x1B), e o **cb_dispatch2** em 0x13FC00 (tabela 0x281AB0). **Correção Rev.064:** O modelo anterior de scene loader (0x1B76F8/0x1B7D00) foi refutado — ambos são DEAD CODE. **Correção Rev.066-067:** O array de descritores previamente documentado como 0x006AAC00 é na verdade uma lista de ponteiros (stride 4) em **0x006AAC80**. A tabela de slots em 0x00282690 (não 0x006AAC00) fornece os callbacks e flags de configuração para cada slot 0-16.
 
 - **Origem:** Engenharia reversa do ELF EE (MIPS R5900, ee-gcc 2.9-991111-01)
 - **Nível de confiança:** EXACT ou NEAR-STRUCTURAL para todos os campos documentados (verificados por compilação C contra assembly original)
@@ -416,6 +416,43 @@ Tabela de configuração de 17 slots (indices 0-16) para o dispatcher `0x00166E1
 
 ---
 
+### callback_dispatch_system (0x13F9D0, step 7 e 9 do main loop)
+
+Sistema de dois niveis de callback dispatch, parte dos steps 7/9 do pipeline em 0x101C80.
+
+**Funcao principal:** 0x0013F9D0 (stack -0xA0 = 160 bytes)
+**Mask register:** `gp+0x98DC` (8-bit mask, controla quais grupos de callback disparam)
+**Tabela de grupos:** 0x00281A70 (8 entries, indexadas por bit da mask)
+**Tabela secundaria (cb_dispatch2):** 0x00281AB0
+
+**Estrutura do dispatch (Phase 1):**
+
+| Endereco | Operacao | Descricao |
+|----------|----------|-----------|
+| 0x13FA10 | lw a0, gp+0x98DC | Carrega mask register |
+| 0x13FA1C | srl v0, a1; andi v1, 0x1 | Testa bit a1 (itera de 0 a 7) |
+| 0x13FA28 | lw s0, 0x281A70[a1*4] | Carrega linked list head |
+| 0x13FA58 | lw v0, s0+0x28 | Callback function pointer |
+| 0x13FA64 | jalr v0 | Dispara callback |
+| 0x13FA6C | lw s0, s0+0x10 | Avanca para proximo node |
+
+**Estrutura do dispatch (Phase 2 — typed handlers):**
+
+Para cada entrada s2 na lista:
+- Acessa sub-lista via s2->field_2C (inner linked list)
+- Cada inner node s0 tem field_14 = type ID (0x13 a 0x1B = 9 tipos)
+- Se field_10 == 0: chama 0x13D8A0 ou 0x13F6B8 (handlers especiais)
+- Se field_10 != 0: chama JALR s0->field_1C (custom callback)
+
+**cb_dispatch2 (0x0013FC00, stack -0x50):**
+
+- Tabela de cabecas em 0x281AB0
+- Entrada s2 tem: field_48 (callback fn), field_4C (mask A), field_50 (mask B)
+- AND entre field_4C e field_50 decide se callback dispara
+- Sub-lista via s0->field_34
+
+---
+
 ### cloth_context
 
 Contexto de frame passado como `a0` para funções cloth.
@@ -542,6 +579,24 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 
 **13 entradas com init_fn nao-nulo:** BOY, GIRL, ENEMY1, WOODBOX0, BGA, BIRD, QUEEN, DEVIL_GI, AP1, ATTACKCH x2, BOSS_CTR
 **10 enderecos unicos init_fn:** GIRL/DEVIL_GI compartilham 0x174BA0, ATTACKCH 62/63 compartilham 0x1BBF78
+
+**Rev.075 handler structural analysis (5 ASM-HOLD entities):**
+
+| Entity | init_fn Role | hA Role | hB Role | hC Role | Pattern |
+|--------|-------------|---------|---------|---------|---------|
+| BOY | Allocator (352B stack, 7 JALs) | Heavy reset (46 JALs, 14× boy_fn1, callback reg) | Per-frame update (27 JALs, pos lerp, flags) | Constructor (570 ins, 16 JALs, 4× subsystem hook) | Uses flags_0x480, NOT flags_0x48 |
+| GIRL | Animation setup (29 JALs, 20 FPU ops) | Minimal reset (3 JALs) | Per-frame anim (16 JALs, 19 FPU ops, quaternion interp) | State block pop (9 JALs, 4× table init) | Shared with DEVIL_GI, heavy FPU |
+| ENEMY1 | Heavy struct init (24 JALs, 30 FPU ops, 28 dwords at +0x0C0) | Conditional reset on flags_0x48 | Same as init_fn pattern + polling loop | Same as init_fn (ctor==init_fn) | **Only entity using flags_0x48** |
+| WOODBOX0 | Lookup table match (2 JALs, table 0x28A640) | Stub (0 JALs) | Tick counter + wrap at 0x1F (2 JALs) | Same as init_fn | Simplest entity, no FPU |
+| AP1 | Data-driven from 0x623468 (9 JALs, pos table stride 32) | Deactivation (1 JAL) | State-guarded cleanup (4 JALs) | Same as init_fn | Action point spawner |
+
+**Rev.075 init_fn identification (3 previously unknown):**
+
+| Address | Identity | Evidence |
+|---------|----------|----------|
+| 0x001C3760 | Cloth system init | stride 0x50/0x1A0, tables at 0x6288E0/0x6288F0, calls 0x1D49C0 |
+| 0x001F2370 | Cloth trampoline (5-mode) | Entries tail-call 0x1D12A8 with 0x40/0x41/0x42/0x57/0x58 |
+| 0x0017D128 | Environment effect (fog/BGA) | Resource loads IDs 356/361, gp gate 0x90A0==0xB |
 
 **Observacao:** BARREL (idx 19) e ROPE (idx 20) sao descritores diferentes, mas na tabela de tipos fisicos (0x001A48A0) ambos aparecem com os mesmos handlers. Rev.056 corrigiu indices de varios descritores: WOODBOX0=17 (era 6), BGA=30 (era 50), AP1=61 (era 56).
 

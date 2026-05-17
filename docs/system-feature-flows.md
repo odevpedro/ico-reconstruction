@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-17 (Rev.073 — Main loop dispatch chain corrigida: 12 steps reais mapeados, VU0 kick em step 6a; mask dos callbacks corrigida para bits 28-31; tabela secundaria de ponteiros em 0x00633D30; modelo de lista ligada com offsets pre-multiplicados; struct 80B/112B mapeadas)
+> **Ultima atualizacao:** 2026-05-17 (Rev.076 — Consolidacao: 2 sistemas de entidade independentes; 17-slot dispatch table mapeada; mask_set usa so bit 0; tabela 404B = stage config; halfword table = spatial hash grid; callback dispatch 0x13F9D0 mapeado; 28 init_fn classificados. Ver research/elf/ghidra-rev076-post-runtime-consolidation.md)
 
 ---
 
@@ -473,7 +473,7 @@ Ver [`research/elf/ghidra-rev071-404-table-room-names-callbacks-and-dispatch-sys
 
 ## Main Loop Dispatch Chain (0x00101C80)
 
-> **Status:** 12-step pipeline mapeado (Rev.073). VU0 kick em step 6a, callback dispatch em steps 7/9, idle via VSync.
+> **Status:** 12-step pipeline mapeado (Rev.073). VU0 kick em step 6a, callback dispatch em steps 7/9, idle via VSync. Callback dispatch interno analisado (Rev.075): mask register gp+0x98DC, tabelas 0x281A70/0x281AB0, type IDs 0x13-0x1B.
 
 ### Visao Geral
 
@@ -567,6 +567,51 @@ Step   Address   Function       Stack   Role
 - As funcoes 0x103BF8 e 0x103FC0 sao **mid-function labels** dentro de 0x103B48 e 0x103F00 — NAO sao pontos de entrada independentes
 - O contador de entidades para step 7/9 (callback dispatch) esta em 0x00674058 (gp-19612)
 - VU0 kick stub (0x117C40) esta mapeado e confirmado como tail-call de step 6a (0x129A78)
+
+### Callback Dispatch Interno (Rev.075)
+
+**Step 7: 0x13FBF8 → 0x13F9D0** (stack -0xA0 = 160 bytes)
+
+Two-phase dispatch:
+
+**Phase 1** (bits 0-7 da mask `gp+0x98DC`, tabela `0x281A70`):
+```txt
+mask = gp+0x98DC    // 8-bit mask register
+for a1 = 0..7:
+    if mask_bit[a1]:
+        s0 = table_281A70[a1]  // linked list head
+        while s0:
+            if s0->field_028:
+                jalr s0->field_028  // callback function
+            s0 = s0->field_010     // next node
+```
+
+**Phase 2** (typed handlers, mesma mask):
+```txt
+for a1 = 0..7:
+    if mask_bit[a1]:
+        s2 = table_281A70[a1]  // different list walk
+        while s2:
+            gp+0x98EC = s2
+            inner = s2->field_02C
+            for type_id = 0x13..0x1B:  // 9 handler types
+                while inner:
+                    if inner->field_014 == type_id:
+                        if inner->field_010 == 0:
+                            // special handler path
+                            call 0x13D8A0(inner+0x24)
+                            if return == 0x22: call 0x13F6B8
+                            else: call 0x13D928
+                        else:
+                            jalr inner->field_01C  // custom callback
+                    inner = inner->field_008
+            s2 = s2->field_010
+```
+
+**Step 9: 0x13FC00** (cb_dispatch2, stack -0x50 = 80 bytes)
+- Tabela base: `0x281AB0`
+- Entrada `s2`: field_48 (callback fn), field_4C (mask A), field_50 (mask B)
+- Sub-lista: `s0->field_034`
 
 ---
 
@@ -797,10 +842,31 @@ clothSubForceApply(ctx, force_h, force_v):
 - **AP1 e o mais complexo**: 640B de estado, 4 child slots, state machine de 7 estados, frame offset randomization
 - **DEVIL_GI = GIRL alias**: todos os 4 handlers identicos. Provavelmente paleta alternativa ou versao de cutscene.
 - **Nenhum handler usa COP2**: COP2 exclusivo do sistema cloth BARREL (79 COP2 total em 2 funcoes)
+- **ENEMY1 e o unico que acessa flags_0x48**: consistente com o uso de mask-based slot selection (live dispatch Rev.073)
+
+### Init_fn Identification (Rev.075)
+
+Tres init_fn previamente desconhecidos foram identificados no runtime Rev.074 (18 registrations cada):
+
+| init_fn | Identidade | Evidencia |
+|---------|-----------|-----------|
+| 0x001C3760 | Cloth system init | stride 0x50 (Group 1 struct) + stride 0x1A0 (cloth data), tables 0x6288E0/0x6288F0 |
+| 0x001F2370 | Cloth trampoline (5-mode) | 6 entry points, tail-calls 0x1D12A8 com modos 0x40/0x41/0x42/0x57/0x58 |
+| 0x0017D128 | Environment effect (fog/BGA) | Resource loads IDs 356/361, data load from 0x18BA00, gp gate 0x90A0==0xB |
+
+### ASM-HANDLER Structural Summary (Rev.075)
+
+15 funcoes analisadas em 5 entidades:
+
+| Entity | init_fn Stack | hA Role | hB Role | hC Role | Notas |
+|--------|--------------|---------|---------|---------|-------|
+| BOY | -0x160 (352B), 7 JALs | 46 JALs, 14x boy_fn1 | 27 JALs, pos lerp, flags | 570 ins, 4x subsystem hook | flags_0x480, NOT flags_0x48 |
+| GIRL | 29 JALs, 20 FPU ops | 3 JALs minimal | 16 JALs, 19 FPU, quaternion | 9 JALs, 4x table init | FPU-heavy animation blend |
+| ENEMY1 | 24 JALs, 30 FPU, 28 dwords | Conditional on flags_0x48 | Same as init_fn+loop | ==init_fn (ctor==init_fn) | **Only flags_0x48 user** |
+| WOODBOX0 | 2 JALs, lookup table 0x28A640 | Stub, 0 JALs | 2 JALs, tick counter wrap 0x1F | ==init_fn | Simplest, no COP1 |
+| AP1 | 9 JALs, pos table 0x623468 | 1 JAL, deactivation | 4 JALs, state-guarded | ==init_fn | Data-driven action point |
 
 ---
-
-## Callback Registration Flow
 
 > **Status:** Fluxo completo documentado (Rev.059). Funcoes 0x13F3F0/0x13F7A8/0x13F7D8.
 

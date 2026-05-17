@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 83 |
+| Completed | 101 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -22,6 +22,15 @@ _(none)_
 ---
 
 ## Pending
+
+### [ ] [SQUAD-RUNTIME | rev.077 | Pending]
+**Runtime validation of mask toggle during cutscenes and world_state tracking**
+
+- Probe mask register gp+0x98DC during cutscene transitions (does bit 0 toggle on/off?)
+- Probe gp+0x31990 (world_state) to map room transitions and correlate with entity lifecycle
+- Probe halfword table writers 0x166D1C/0x166D78 with bounding box capture to verify spatial hash theory
+- Investigate slot 0 callback 0x168DA8 (did not appear in any runtime capture — when does it fire?)
+- Ver mais em `research/elf/ghidra-rev076-post-runtime-consolidation.md`
 
 ### [ ] [SQUAD-EXTERNAL | rev.060 | Pending]
 **Correção: verificar ee-gcc 2.9-991111-01 no decomp.me via presets de jogo**
@@ -342,6 +351,16 @@ Main loop dispatch chain (12 steps), corrected callback masks, secondary pointer
 - **Context store pattern:** G1: ctx+0x88=struct, ctx+0x80=a1, ctx+0x84=a2. G2: ctx+0x94=struct, ctx+0x8C=a1, ctx+0x90=a2, ctx+0x88=0.
 - Documentado em research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md
 
+### [x] [SQUAD-RUNTIME | rev.071a | 2026-05-17]
+404-table full struct analysis — 624-entry capacity, 519 named, complete field map
+
+- **Capacity**: 624 entries of 404 bytes, 519 with stage names (not 32 rooms as previously documented). Entries 0=placeholder, 1-2=logo/title, 3-41=game stages, 42+=demo/test configurations
+- **Base address**: 0x005F2FB8 (entry+0x20), NOT 0x005F2F98. 51 LUI+ADDIU references confirmed
+- **8 additional nearby address references**: 0x005F2F00, 0x2FD8, 0x2FF8, 0x3038, 0x3084, 0x30C8, 0x30D8, 0x3120 — code accesses fields throughout the 404-byte struct
+- **Dead MULT confirmed**: MULT ac3,$s0,$v1 at 0x1B7314 with $v1=404 — result overwritten by subsequent MULT without MFLO. Compiler artifact from -O2
+- **Full field map** (30+ fields): name8 (+0x20), desc8 (+0x40), name_dup (+0x60), float data (+0x80), STG label (+0xA0), transform floats (+0x100), callback index (+0x154=0x4B), link IDs (+0x158..+0x164=1), sound ID, fade alpha, room-specific fields
+- Documentado em research/elf/ghidra-rev076-404-table-full-struct-analysis.md
+
 ### [x] [SQUAD-RUNTIME | rev.071 | 2026-05-17]
 5-way consolidation: 404-room table, halfword grid, callbacks, main loop
 
@@ -566,6 +585,8 @@ Call graph analysis
 | rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
 | rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
 | rev.074 | 2026-05-17 | SQUAD-RUNTIME | Runtime session (9.1M events): slot 0 dead, slot 12 most active, alt_impl unused, VU0 kick gameplay-only, 58% match rate, 615 contexts/20 live entities, GP=0x6388F0 verified |
+| rev.075 | 2026-05-17 | SQUAD-RUNTIME | Init_fn identification (0x1C3760=cloth_sys, 0x1F2370=cloth_tramp 5-mode, 0x17D128=env_effect), callback dispatch 0x13F9D0 (two-phase 8-bit mask + typed IDs 0x13-0x1B), cb_dispatch2 0x13FC00 (0x281AB0 table), ASM-HANDLER full analysis (BOY/GIRL/ENEMY1/WOODBOX0/AP1 — 15 functions) |
+| rev.076 | 2026-05-17 | SQUAD-ARCH | Post-runtime consolidation: 28 init_fn classified (6 groups: generic 60%, HUD 15%, UI 9%, cloth 5%, env 3%, special 0.4%). 17-slot table fully mapped (3 callback tiers). mask_set only uses bit 0. 404-byte table = stage config. Halfword table = 32x32 spatial hash. VU0 "kick" = COP2 macro utility. Alternates = VU0 DMA (unreachable). Two independent entity systems discovered (register vs dispatch). ICO-decomp cross-ref: 0x13ED40=ShockRequestBox_RequestCancel |
 | rev.073 | 2026-05-17 | SQUAD-RUNTIME | Main loop dispatch chain (12 steps), corrected callback masks (bits 28-31), secondary pointer table (0x00633D30), struct field maps (80B/112B), linked-list flow with pre-multiplied offsets |
 | rev.072 | 2026-05-17 | SQUAD-RUNTIME | Room init callbacks corrigidos: 19 function pointers reais (offset +0x174 absoluto), tabela de descritores (68 entries), tabela de entries (512 entries), instrucao 0x1AF954 = mult (dead code), 0x00143290 processa inner structs (nao callback) |
 | rev.071 | 2026-05-17 | SQUAD-RUNTIME | 5-way consolidation: 404-room table (32 rooms, callback idx 0x4B), halfword grid rasterization (32x32), slot table stride 0x10 (17 entries, 14 callbacks), Group1/2 templates disassembled, main loop 0x101C80 dispatch chain documented |
