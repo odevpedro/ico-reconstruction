@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-16 (Rev.059 — correction: 0x1A48A0 is CODE not data table; descriptor handler layout fixed at +0x48=hA/+0x50=hB/+0x58=hC; callback_storage_node entity added; callback registration chain 0x13F3F0/0x13F7A8/0x13F7D8 fully documented)
+> **Ultima atualizacao:** 2026-05-16 (Rev.063 — VU0 cloth compute resolved, cloth struct cluster expanded to 48 bytes, 2 writer functions identified)
 
 ---
 
@@ -12,6 +12,7 @@
 - [Entidades](#entidades)
 - [Dominio de Valores](#dominio-de-valores)
 - [Decisoes de Modelagem](#decisoes-de-modelagem)
+- [Anexo: GP-Relative Global Data Map](#anexo-gp-relative-global-data-map)
 
 ---
 
@@ -353,6 +354,89 @@ Node de lista ligada usado pelo sistema de registro de callbacks. Gerenciado por
 | **Decisao** | Manter nomes neutros ate que evidencia de gameplay confirme semantica |
 | **Alternativas** | Nomes especulativos ("is_active", "cloth_type", "animation_state") |
 | **Consequencias** | Documento e codigo fonte menos legiveis para leigos, mas evitam conclusao falsa |
+
+---
+
+## Anexo: GP-Relative Global Data Map
+
+**GP = 0x006388F0** (confirmado do boot code em `0x100034-0x10005C`)
+
+**Seccoes acessiveis via GP (`$28`):**
+
+| Seccao | VA | Tamanho | GP offset range | Tipo |
+|--------|-----|---------|-----------------|------|
+| `.lit4` | 0x00630900 | 0xFD0 | -32752 a -28708 | Float constant pool (LWC1/SWC1, read-only) |
+| `.sdata` | 0x00631900 | 0x22C6 | -28596 a -18960 | Initialized small data (853 vars, 8.669 acc) |
+| `.sbss` | 0x00633C00 | 0x3F4 | -18960 a -18588 | Uninitialized small data (248 vars, 1.831 acc) |
+
+**Variaveis globais mapeadas:**
+
+| GP offset | VA | Secao | Acessos | Escritores | Provavel uso |
+|-----------|-----|-------|---------|------------|-------------|
+| -28172 | 0x00631AE4 | .sdata+0x1E4 | 1.260 | descriptor_iteration | `girl_obj_ptr` — ponteiro para entidade GIRL |
+| -28168 | 0x00631AE8 | .sdata+0x1E8 | 986 | descriptor_iteration | `other_obj_ptr` — ponteiro para segunda entidade (BOY?) |
+| -28164 | 0x00631AEC | .sdata+0x1EC | 113 | scene_loader_approx | `obj_ptr_2` |
+| -18868 | 0x00633F3C | .sbss+0x33C | 434 | ? | Cloth vertex/state pointer (runtime) |
+| -28544 | 0x00631970 | .sdata+0x070 | 160 | — | `state_field_2` |
+| -28512 | 0x00631990 | .sdata+0x090 | 139 | descriptor_iteration | `world_state` — flag de estado global |
+| -23604 | 0x00632CBC | .sdata+0x13BC | 150 | print_stub_disabled | `texture_flag` |
+| -26388 | 0x006321DC | .sdata+0x8DC | 62 | callback_system_reg | `callback_system_state` |
+| -21424 | 0x00633540 | .sdata+0x1C40 | 52 | seeker_update | `seeker_state` |
+| -19528 | 0x00633CA8 | .sbss+0x0A8 | 4 | node_callback_storage | `pool_base` |
+| -19524 | 0x00633CAC | .sbss+0x0AC | 4 | node_callback_storage | `pool_capacity` |
+
+**Clusters de structs:**
+
+**Object Pointer Array** (gp[-28176..-28152], 6 ponteiros × 4B):
+- -28176: `obj_ptr_0` (2 acc)
+- -28172: `girl_obj_ptr` **HOT** (1.260 acc)
+- -28168: `other_obj_ptr` **HOT** (986 acc)
+- -28164: `obj_ptr_2` (113 acc)
+- -28160: `obj_ptr_3` (8 acc)
+- -28156: `obj_ptr_4` (3 acc)
+
+**Callback/Event System** (.sbss+0x0A0..+0x0D0):
+- -19536: `event_flag` (17 acc)
+- -19528: `pool_base` (4 acc, writer: node_callback_storage)
+- -19524: `pool_capacity` (4 acc, writer: node_callback_storage)
+- -19520: `event_feedback_state` (9 acc, writer: event_feedback)
+
+**Cloth System Struct Cluster** (.sbss+0x324..+0x364, 48 bytes, 12 slots, 2 writers):
+
+| Offset | GP offset | Writer (scene 0x1DFBC8) | Writer (entity 0x1E00F8) | Reader (0x1D8E40) | Acesso total |
+|---|---|---|---|---|---|
+| `.sbss+0x324` | -18892 | sim | sim | — | — |
+| `.sbss+0x328` | -18888 | sim | — | — | — |
+| `.sbss+0x32C` | -18884 | — | sim | — | — |
+| `.sbss+0x330` | -18880 | sim | — | — | — |
+| `.sbss+0x334` | -18876 | sim | — | — | — |
+| `.sbss+0x338` | -18872 | sim | sim | — | — |
+| `.sbss+0x33C` | **-18868** | **sim** | **sim** | **7×** | **434 (MAIS ACESSADO)** |
+| `.sbss+0x340` | **-18864** | **sim** | **sim** | **7×** | **117** |
+| `.sbss+0x344` | -18860 | — | sim | — | — |
+| `.sbss+0x348` | -18856 | sim | — | — | — |
+| `.sbss+0x350` | -18848 | — | — | — | — |
+| `.sbss+0x354` | -18844 | sim | — | — | — |
+
+**Writers:** 0x1DFBC8 (scene init, 12 GP vars) + 0x1E00F8 (entity init, 8 GP vars). Ambos estão FORA do range clothAnimation.c (0x1D27A8-0x1D45B0).
+
+**Function 0x1D8E40** (VU0 cloth render/compute, 295 insns, 656B stack, 20 JALs): acessa gp[-18868] e gp[-18864] em 2 blocos de VU0 kernel. Fora do range clothAnimation.c. Ver `research/elf/ghidra-rev063-vu0-cloth-compute-and-writer-functions.md`.
+
+**Init values nao-zero em .sdata:** 40 entity type tags (OBJ, BGA, ENE, ICO, CAM, ACT, etc.), format strings `"%s : %s"` / `"%s : %d"`, texture format names (PSMCT32, PSMT8, etc.), GS texture params (SELTEX, SCRL-U, SHINE, etc.), funcao pointer `0x001D9020` (cloth VU0 SIMD), e 0xFFFFFFFF sentinelas.
+
+**Init values no cluster callback** (.sdata+0x8E8..0x908):
+| Offset | Valor | Significado |
+|--------|-------|-------------|
+| gp-26376 | 0x00000001 | count/ID |
+| gp-26368 | 0x00000030 | 48 (size?) |
+| gp-26360 | 0x000A7325 | packed config |
+| gp-26352 | 0x00005010 | packed config |
+| gp-26348 | **0x001D9020** | **Function pointer (VU0 cloth SIMD)** |
+| gp-26344 | 0x0000000A | 10 (count?) |
+
+> Fonte: `research/elf/ghidra-rev062-gp-relative-data-map.md`
+
+---
 
 ### ADR-DM-003 — Entries da tabela de tipos tem stride fixo 0x64
 

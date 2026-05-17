@@ -9,9 +9,9 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 74 |
+| Completed | 75 |
 | In Progress | 0 |
-| Pending | 3 |
+| Pending | 4 |
 
 ---
 
@@ -22,6 +22,17 @@ _(none)_
 ---
 
 ## Pending
+
+### [ ] [SQUAD-EXTERNAL | rev.060 | Pending]
+**Correção: verificar ee-gcc 2.9-991111-01 no decomp.me via presets de jogo**
+
+- O ee-gcc 2.9-991111-01 está disponível no decomp.me como compiler package em presets específicos de jogos (Klonoa 2, PaRappa the Rapper 2)
+- Teste de matching pendente: submeter scratch de função já validada (EXACT status) para confirmar bit-identidade
+- Se confirmado: atualizar toolchain padrão do projeto para ee-gcc 2.9-991111-01 via decomp.me
+- Se não confirmado: investigar flags exatas usadas na build do jogo
+- Local ps2dev (GCC 15.2.0) mantido apenas para tooling local
+- Local GCC 2.95.2 PS2 Linux mantido como aproximação local
+- Ver mais em `research/external/decompme-ee-gcc-991111-test-plan.md`
 
 ### [SQUAD-ARCH | rev.012 | Pending]
 **Architectural Analysis E-G for ICO**
@@ -58,6 +69,19 @@ _(none)_
 
 ## Completed
 
+### [x] [SQUAD-RUNTIME | rev.063 | 2026-05-16]
+VU0 cloth compute and writer functions
+
+- **0x001D9020 resolvido**: não é função standalone — é parte de 0x1D8E40 (295 insns, 656B stack)
+- **0x1D8E40 disassembled**: VU0/COP2 cloth render/compute (10 COP2, 18 FPU, 110 mem, 52 branches, 30 JAL)
+- **0x1D8E40 está FORA do range clothAnimation.c** (0x1D27A8-0x1D45B0), provavelmente em `sugipon/src/girl/`
+- **2 writers de gp[-18868] (cloth_vertex_ptr) identificados**: 0x1DFBC8 (scene init, 12 GP vars) e 0x1E00F8 (entity init, 8 GP vars)
+- **Cluster struct de pano**: gp[-18892] a gp[-18844] (48 bytes, 12 slots em .sbss)
+- **0x1E00F8 lê entry[0x46]** (type byte) e tabela 0x002A4C48 — init por tipo de entidade
+- **0x1DFBC8 escreve todos os 12 globais de pano** de uma vez (init de cena)
+- Nenhum símbolo ICO-decomp cobre o range 0x1D8E40-0x1E0300
+- Documentado em research/elf/ghidra-rev063-vu0-cloth-compute-and-writer-functions.md
+
 ### [x] [SQUAD-RUNTIME | rev.046 | 2026-05-15]
 Runtime Capture — a1 source resolved in 0x001D27A8
 
@@ -80,7 +104,7 @@ decomp.me scratches regenerated + ee-gcc toolchain installed
 - EE GCC compiles R5900 MIPS64 code successfully (64-bit ELF output)
 - Full build pipeline tested: assembly works, linking needs path adjustments
 - Note: matching ee-gcc 2.9-991111-01 requires Sony PS2 Linux SDK (GCC 2.95.2 with R5900 patches)
-- decomp.me has NO ee-gcc compiler packages — only Metrowerks mwcps2 for PS2
+- ~~decomp.me has NO ee-gcc compiler packages — only Metrowerks mwcps2 for PS2~~ **CORRIGIDO Rev.060**: o ee-gcc 2.9-991111-01 está disponível no decomp.me via presets específicos de jogos (Klonoa 2, PaRappa the Rapper 2). O erro veio de procurar apenas no preset genérico PS2 (Metrowerks mwcps2)
 
 ### [x] [SQUAD-EXTERNAL | rev.048 | 2026-05-16]
 C scratch model synthesis — fixed taxonomy, ico_ptr32 rule, 9-function status matrix
@@ -494,6 +518,9 @@ Call graph analysis
 | 2026-05-16 | 2026-05-16 | SQUAD-EXTERNAL | ICO-decomp fumi.h revealed: struct IosThreadInfo details (entry at +0x38, ThreadParam at +0x00), struct IosMsgQueue layout, memory partition constants |
 | rev.059 | 2026-05-16 | SQUAD-ARCH | Table reader correction + callback chain full analysis: 0x1A48A0 is CODE not data (Rev.049 correction); descriptor handler layout fixed (+0x48=hA, +0x50=hB, +0x58=hC); scene loader 0x1B7D00 documented (4-phase init, calls 0x1B76F8); 0x13F3F0 (576B linked-list, stride 0x94) + 0x13F7A8 + 0x13F7D8 fully disassembled; GIRL cloth delegation explained (AI system creates cloth objects independently); data-model.md corrected |
 | rev.060 | 2026-05-16 | SQUAD-RUNTIME | Consolidated hB analysis + callback pool correction: 0x1A6E28 is print/assert stub (NOT allocator, 32B save+return); 0x13F3F0 is POOL MANAGER (slot stride 0x94, gp-based, sorted doubly-linked per-entity list); 0x13D1B0 does heap_alloc(0x13A0F8) with t1 size/tag=173/"NodeCallback"; 0x13D3C8 jumps to kernel 0x100340 (queue insert); HOY hB (176 insns, 3 sub-fns: cloth+movement, collision/transform, head/weapon); ENEMY1 hB (142 insns, 3-state AI, counter÷10, 2-pass child sprite); GIRL hB (113 insns, BOY-similar + GIRL AI at 0x243AE8/0x243950); WOODBOX0 hC (286 insns, 400B alloc, 2 children); AP1 hC (367 insns, 6 heap_allocs, 4 children); runtime plan prepared; call graphs for 5 entities extracted |
+| ~~rev.060~~ | 2026-05-16 | ~~SQUAD-TOOLING~~ | ~~Compiler correction: ee-gcc 2.9-991111-01 IS available on decomp.me via game-specific presets (not generic PS2). Backlog line 83 corrected. Test plan created at research/external/decompme-ee-gcc-991111-test-plan.md~~ **(subsumed into Pending Rev.060)** |
+| rev.062 | 2026-05-16 | SQUAD-ARCH | GP-relative data map (11,547 accesses, 2,131 offsets): GP=0x006388F0 confirmed, 853 .sdata vars mapped, 40 entity type tags decoded, cloth VU0 function pointer in .sdata, world state block, seeker data cluster |
+| rev.063 | 2026-05-16 | SQUAD-RUNTIME | VU0 cloth compute and writer functions: 0x001D9020 resolved (part of 0x1D8E40, 295 insns, VU0), 2 writers of gp[-18868] (0x1DFBC8 scene init + 0x1E00F8 entity init), cloth struct cluster gp[-18892..-18844] (48B, 12 slots), both writers outside clothAnimation.c range |
 
 ---
 
