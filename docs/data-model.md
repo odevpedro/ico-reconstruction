@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-17 (Rev.071 — Tabela 404-byte de 32 rooms mapeada com nomes e callback index=0x4B em +340; slot table corrigida para stride 0x10; escritores de halfword confirmados como grid 32x32 dentro do dispatcher; templates Group1/2 disassemblados; main loop 0x101C80 documentado)
+> **Ultima atualizacao:** 2026-05-17 (Rev.072 — Campo de callback da tabela 404 corrigido: offset +0x174 absoluto (= +0x154 de row_base), 19 function pointers pre-carregados para salas de gameplay, NAO indice 0x4B; instrucao 0x1AF954 corrigida para mult (nao and); tabela de 68 descritores (0x002A31B8, stride 0x64) mapeada; tabela de 512 entries (0x002A4C48, stride 0x4C) com distribuicao desc_idx; funcao 0x001AF190 NAO e scene loader — e init de sala que le da tabela 404)
 
 ---
 
@@ -195,42 +195,75 @@ Tabela de entidades/contextos por sala/zona (world_state). Stride 404 bytes, 32 
 **Base:** `0x005F2F98` (secao `.data`)
 **Stride:** 0x194 (404 bytes)
 **Rows:** 32 (indices 0-31)
-**Nome da sala:** offset +0x00, 32 bytes ASCII null-padded
-**Callback index:** offset +0x154 (340), u32 — valor 0x4B (75) para todas as salas, 0 para NULL
+**Header:** 32 bytes (0x00-0x1F), conteudo especifico da tabela
+**Nome da sala:** offset +0x20 (row_base), 32 bytes ASCII null-padded
+**Callback pointer:** offset +0x174 absoluto (= row_base + 0x154), u32 — function pointer pre-carregado (19 salas de gameplay tem ponteiros nao-nulos)
 
 **Code read pattern (0x001AF948-0x001AF970):**
 ```
-world_state_value = [0x00631990] (pre-multiplied: index * 404 - 32)
-base = 0x005F2FB8 (= 0x005F2F98 + 0x20, skipping row 0 name "NULL\0...")
-callback = [base + world_state_value + 0x154]
-if callback != 0: jalr callback
+v1 = [0x0062CD40]               ; GP-28512, pre-multiplicado: world_state * 404
+a0 = 404                        ; constant only for dead mult
+a1 = 0x005F0000                 ; table high
+mult v1, a0                     ; DEAD CODE — result unused
+v0 = 0x005F2FB8                 ; row base (header + 0x20)
+v0 = v0 + v1                    ; row_base + world_state * 404
+v0 = *(v0 + 340)                ; load callback from row_base + 0x154
+if v0 != 0: jalr v0             ; call room init callback
 ```
 
-| Campo | Offset | Tipo | Descricao |
-|-------|--------|------|-----------|
-| `name` | +0x00 | char[32] | Nome ASCII da sala (ex: "logo", "sacrifice", "jail") |
-| `field_00` | +0x00 | u32 | Flag/tipo (row 0=1, salas=0) |
-| `field_04` | +0x04 | u32 | (row 0=0x0001001A, salas=2) |
-| `field_08` | +0x08 | u32 | (sempre 1) |
-| `view_dist` | +0x0C | float | Distancia de visao/fog (row 0=~0, salas=1500.0) |
-| `...` | +0x10..+0x150 | — | (diversos floats e ints) |
-| `callback_idx` | +0x154 | u32 | Indice do callback de init (0x4B=75, 0=NULL) |
-| `flag_158` | +0x158 | u32 | 1 |
-| `flag_15C` | +0x15C | u32 | 1 |
-| `param_160` | +0x160 | u32 | 1 |
-| `param_164` | +0x164 | u32 | 1 |
-| `param_168` | +0x168 | u32 | 0x56 (86) |
-| `count_16C` | +0x16C | u32 | Contador (1 row 0, 2 rows 1-31) |
-| `pad_170` | +0x170 | u32 | 0 |
-| `float_178` | +0x178 | float | 0.5f |
-| `float_17C` | +0x17C | float | 1.0f |
-| `mode_180` | +0x180 | u32 | 2 |
-| `room_specific_184` | +0x184 | u32 | Especifico por sala (ex: logo=0x94, NULL=0x2B9) |
-| `room_specific_188` | +0x188 | u32 | 0 |
-| `room_specific_18C` | +0x18C | u32 | 0 |
-| `room_specific_190` | +0x190 | u32 | Especifico por sala (ex: logo=0x7F, NULL=0x2B9) |
+| Campo | Offset (rel row_base) | Offset (absoluto) | Tipo | Descricao |
+|-------|----------------------|-------------------|------|-----------|
+| `name` | +0x00 | +0x20 | char[32] | Nome ASCII da sala (ex: "logo", "sacrifice", "jail") |
+| `field_00` | — | +0x00 | u32 | Flag/tipo (row 0=1, salas=0) |
+| `field_04` | — | +0x04 | u32 | (row 0=0x0001001A, salas=2) |
+| `field_08` | — | +0x08 | u32 | (sempre 1) |
+| `view_dist` | — | +0x0C | float | Distancia de visao/fog (row 0=~0, salas=1500.0) |
+| `...` | — | +0x10..+0x16F | — | (diversos campos) |
+| `debug_type_id` | +0x134 | +0x154 | u32 | Valor 0x4B (75) para todas as salas (provavel debug/type ID) |
+| `callback_ptr` | **+0x154** | **+0x174** | **ico_ptr32** | **Room init function pointer (19 non-null, ver tabela abaixo)** |
+| `flag_158` | +0x158 | +0x178 | u32 | 1 |
+| `flag_15C` | +0x15C | +0x17C | u32 | 1 |
+| `param_160` | +0x160 | +0x180 | u32 | 1 |
+| `param_164` | +0x164 | +0x184 | u32 | 1 |
+| `param_168` | +0x168 | +0x188 | u32 | 0x56 (86) |
+| `count_16C` | +0x16C | +0x18C | u32 | Contador (1 row 0, 2 rows 1-31) |
+| `pad_170` | +0x170 | +0x190 | u32 | 0 |
+| `float_178` | +0x178 | +0x198 | float | 0.5f |
+| `float_17C` | +0x17C | +0x19C | float | 1.0f |
+| `mode_180` | +0x180 | +0x1A0 | u32 | 2 |
+| `room_specific_184` | +0x184 | +0x1A4 | u32 | Especifico por sala (ex: logo=0x94, NULL=0x2B9) |
+| `room_specific_188` | +0x188 | +0x1A8 | u32 | 0 |
+| `room_specific_18C` | +0x18C | +0x1AC | u32 | 0 |
+| `room_specific_190` | +0x190 | +0x1B0 | u32 | Especifico por sala (ex: logo=0x7F, NULL=0x2B9) |
 
-**Nota:** O valor 0x4B no campo `callback_idx` NAO e um ponteiro de funcao. E um indice que deve ser substituido por um ponteiro real em runtime (provavelmente durante o init da sala). A JALR em 0x001AF96C com argumento 0x0000004B causaria crash.
+**CORRECAO Rev.072:** O campo `callback_ptr` (row_base + 0x154, absoluto 0x005F2F98 + 0x174) contem **function pointers reais**, nao indices. 19 salas de gameplay tem ponteiros pre-carregados no ELF. O valor 0x4B encontrado anteriormente estava em offset **+0x134** de row_base (= 0x005F2F98 + 0x154) e e um debug/type ID, nao o callback. O `mult` em 0x1AF954 e dead code (sem `mflo`), e a multiplicacao e feita upstream — a GP var `0x0062CD40` ja contem `world_state * 404` em runtime.
+
+**Room init callbacks (19 non-null):**
+
+| Room index | Room name    | Callback pointer |
+|------------|--------------|------------------|
+| 4  | jail         | 0x00231AC8 |
+| 5  | warehouse    | 0x00234AB0 |
+| 7  | proto        | 0x0020FA98 |
+| 8  | troko        | 0x0022A838 |
+| 9  | chandelier   | 0x00228198 |
+| 10 | entrance     | 0x00239750 |
+| 14 | shadows      | 0x00210D78 |
+| 15 | windmill     | 0x0022B878 |
+| 16 | plaza        | 0x00213B88 |
+| 17 | stone        | 0x0022BFE8 |
+| 19 | crest_L1     | 0x0021A4D0 |
+| 20 | crest_L2     | 0x0021A6B8 |
+| 21 | crest_L3     | 0x0021A980 |
+| 22 | taki         | 0x00211780 |
+| 23 | sluice       | 0x00225F68 |
+| 25 | gondola      | 0x00237B78 |
+| 26 | watertower   | 0x0022D8F8 |
+| 28 | crest_R1     | 0x0021F828 |
+| 29 | crest_R2     | 0x0021FA30 |
+| 30 | crest_R3     | 0x0021FD20 |
+
+Null callbacks: logo (title screen), sacrifice (intro?), ico_brigde, gate, gate2, grave, symmetry_L, symmetry_R, underground, cliff — provavelmente salas sem gameplay ou carregamento por overlay.
 
 ### Alternate implementation constants (0x55F260)
 
@@ -659,7 +692,7 @@ Node de lista ligada usado pelo sistema de registro de callbacks. Gerenciado por
 | -28164 | 0x00631AEC | .sdata+0x1EC | 113 | scene_loader_approx | `obj_ptr_2` |
 | -18868 | 0x00633F3C | .sbss+0x33C | 434 | ? | Cloth vertex/state pointer (runtime) |
 | -28544 | 0x00631970 | .sdata+0x070 | 160 | — | `state_field_2` |
-| -28512 | 0x00631990 | .sdata+0x090 | 139 | descriptor_iteration | `world_state` — flag de estado global |
+| -28512 | 0x00631990 | .sdata+0x090 | 139 | descriptor_iteration | `world_state` — mundo atual * 404 (pre-multiplicado) |
 | -23604 | 0x00632CBC | .sdata+0x13BC | 150 | print_stub_disabled | `texture_flag` |
 | -26388 | 0x006321DC | .sdata+0x8DC | 62 | callback_system_reg | `callback_system_state` |
 | -21424 | 0x00633540 | .sdata+0x1C40 | 52 | seeker_update | `seeker_state` |

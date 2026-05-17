@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-17 (Rev.071 — 404-byte room entity table flow adicionado; slot table stride corrigido para 0x10; halfword table populacao como grid 32x32; templates Group1/2 internos; main loop chain documentado)
+> **Ultima atualizacao:** 2026-05-17 (Rev.072 — Room init callback field corrigido: +0x154 de row_base (= +0x174 absoluto), 19 function pointers pre-carregados; instrucao 0x1AF954 corrigida para mult (nao and); NOTA: 0x001AF190 NAO e scene loader — e init de sala que le da tabela 404)
 
 ---
 
@@ -367,11 +367,31 @@ O SQC2 block emparelhado (`0x117C80`) salva VF3/11/19/27.
 
 ## Room Entity Table Flow (0x005F2F98, 404-byte stride)
 
-> **Status:** Tabela mapeada (Rev.071). 32 rooms, callback index 0x4B em +340.
+> **Status:** Fluxo corrigido (Rev.072). Callback field e +0x154 de row_base (= +0x174 absoluto), contem function pointers reais pre-carregados (19 non-null), NAO indice 0x4B. A funcao chamada e 0x1AF4A0 (scene init), nao 0x1AF190 (preamble separado).
 
 ### Visao Geral
 
-O sistema de init de sala usa uma tabela de 32 entradas (stride 404) em `.data` nao-BSS, indexada pelo world_state armazenado em `gp-28512` (0x00631990). Cada entrada tem 404 bytes com nome da sala (32 bytes), callback index (+340), e varios campos de configuracao.
+O sistema de init de sala usa uma tabela de 32 entradas (stride 404) em `.data` nao-BSS, indexada pelo world_state armazenado em `gp-28512` (0x00631990). Cada entrada tem 404 bytes com nome da sala (+0x20, 32 bytes), callback pointer (row_base + 0x154), e varios campos de configuracao.
+
+### Correcao Rev.072 — Offset do callback
+
+O codigo em 0x1AF960 le de:
+
+```
+0x005F2FB8 + (v1) + 340
+= (0x005F2F98 + 0x20) + (world_state * 404) + 340
+= 0x005F2F98 + (world_state * 404) + 0x174
+```
+
+O valor 0x4B encontrado anteriormente estava em **+0x134 de row_base** (= 0x005F2F98 + 0x154), que e um campo separado (provavel debug/type ID). O campo real de callback esta em **+0x154 de row_base** (= 0x005F2F98 + 0x174) e contem **19 function pointers pre-carregados no ELF** para salas de gameplay.
+
+### Instrucao 0x1AF954 corrigida
+
+```
+0x001AF954: mult $v1,$a0    ; v1 * 404 → hi:lo  (DEAD CODE, mflo ausente)
+```
+
+O `mult` e dead code — nenhum `mflo` segue. O `addu $v0,$v0,$v1` usa o $v1 original, que ja esta pre-multiplicado (world_state * 404) antes de chegar nesta funcao. O GP variable `0x00631990` ja contem o valor pre-multiplicado.
 
 ### Fluxo de acesso
 
@@ -379,29 +399,51 @@ O sistema de init de sala usa uma tabela de 32 entradas (stride 404) em `.data` 
 Main loop (0x00101C80):
   │
   ├─ Jal 0x00166028 (build runtime pointer list)  @ 0x00101EE8
-  ├─ Jal 0x001AF190 (scene/room init)             @ 0x00101F00
+  ├─ Jal 0x001AF4A0 (scene/room init)            @ 0x00101F00
   │    │
-  │    └─ 0x001AF190:
-  │         ├─ lw $v1, -28512($gp)           ; world_state = [0x00631990]
+  │    └─ 0x001AF4A0 (scene init, NAO 0x1AF190 que e preamble separado):
   │         ├─ ... outros setup ...
   │         └─ 0x001AF948-0x001AF970:
-  │              ├─ world_state_value = [0x00631990] (pre-multiplicado: idx*404-32)
-  │              ├─ base = 0x005F2FB8 (= 0x005F2F98 + 0x20)
-  │              ├─ addr = base + world_state_value + 0x154
-  │              ├─ callback = [addr]
-  │              ├─ if callback == 0: skip (row 0 = NULL)
-  │              └─ jalr callback              ; dispatch room init callback
-  │                   │
-  │                   └─ (Provavelmente) patcheado em runtime de 0x4B para ptr real
+  │              ├─ v1 = [0x00631990]           ; world_state * 404 (pre-multiplicado)
+  │              ├─ a0 = 404                   ; constant
+  │              ├─ mult v1, a0                ; DEAD CODE (sem mflo)
+  │              ├─ v0 = 0x005F2FB8            ; row base
+  │              ├─ v0 = v0 + v1               ; row_base + world_state * 404
+  │              ├─ v0 = *(v0 + 340)           ; load callback ptr
+  │              ├─ if v0 == 0: skip           ; 13 rows tem NULL (sem gameplay)
+  │              └─ jalr v0                    ; dispatch room init callback
   │
   └─ Jal 0x00166028 (novamente) via 0x1AF974 (tail do room init)
 ```
 
-### Callback index 0x4B
+### Room init callbacks (19 non-null)
 
-Todas as 31 salas tem `callback_idx = 0x4B` (= 75). O valor 0x4B esta em `.data` nao-BSS e DEVE ser patcheado para um ponteiro de funcao real antes do primeiro acesso. O mecanismo de patcheamento e desconhecido.
+| Row | Room         | Callback ptr |
+|-----|--------------|-------------|
+|  4  | jail         | 0x00231AC8 |
+|  5  | warehouse    | 0x00234AB0 |
+|  7  | proto        | 0x0020FA98 |
+|  8  | troko        | 0x0022A838 |
+|  9  | chandelier   | 0x00228198 |
+| 10  | entrance     | 0x00239750 |
+| 14  | shadows      | 0x00210D78 |
+| 15  | windmill     | 0x0022B878 |
+| 16  | plaza        | 0x00213B88 |
+| 17  | stone        | 0x0022BFE8 |
+| 19  | crest_L1     | 0x0021A4D0 |
+| 20  | crest_L2     | 0x0021A6B8 |
+| 21  | crest_L3     | 0x0021A980 |
+| 22  | taki         | 0x00211780 |
+| 23  | sluice       | 0x00225F68 |
+| 25  | gondola      | 0x00237B78 |
+| 26  | watertower   | 0x0022D8F8 |
+| 28  | crest_R1     | 0x0021F828 |
+| 29  | crest_R2     | 0x0021FA30 |
+| 30  | crest_R3     | 0x0021FD20 |
 
-### Tabela de salas
+Null: logo (0), title(1), sacrifice(3), ico_brigde(6), gate(11), gate2(12), grave(13), symmetry_L(18), underground(24), symmetry_R(27), cliff(31). Salas sem init dedicado.
+
+### Tabela de salas (nomes)
 
 Ver [`research/elf/ghidra-rev071-404-table-room-names-callbacks-and-dispatch-system-consolidation.md`](../research/elf/ghidra-rev071-404-table-room-names-callbacks-and-dispatch-system-consolidation.md) para lista completa dos 32 nomes.
 

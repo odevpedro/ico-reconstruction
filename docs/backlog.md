@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 79 |
+| Completed | 81 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -307,6 +307,17 @@ SDK/library recognition — PS2 SDK functions identified in USA .text
 - USA likely uses inlined libc or different SDK linking strategy
 - Documented in research/external/sdk-library-recognition.md
 
+### [x] [SQUAD-RUNTIME | rev.072 | 2026-05-17]
+Room init callback system: descriptor table, entry table, corrected callback field
+
+- **Campo de callback corrigido**: offset real e +0x154 de row_base (= +0x174 absoluto), NAO +0x154 de 0x005F2F98. 19 function pointers pre-carregados para salas de gameplay (jail, warehouse, proto, troko, chandelier, entrance, shadows, windmill, plaza, stone, crest_L1-3, taki, sluice, gondola, watertower, crest_R1-3). Null para logo, title, sacrifice, ico_brigde, gate, gate2, grave, symmetry_L/R, underground, cliff.
+- **Instrucao 0x1AF954 corrigida**: `mult $v1,$a0` (NAO and). O `mult` e dead code (sem mflo); $v1 ja contem `world_state * 404` antes de chegar. GP variable em 0x00631990 (NAO 0x0062CD40 — erro de calculo de GP).
+- **Descritor table (68 entries)**: nome(8), handler_A +0x48, flags +0x44, handler_B +0x50, handler_C +0x58. Todos os 68 mapeados com nomes ASCII (BOY, GIRL, ENEMY1, BARREL, ROPE, WOODBOX0, AP1, ATTACKCH, BOSS_CTR, QUEEN, etc.)
+- **Entry table (512 entries)**: stride 0x4C, desc_idx em +0x46, flags em +0x48. Distribuicao mapeada: BGA(79), SOBJ(76), TORCH(46), ENEMY1(25), DYNAMICM(20), BARREL/CLOTH(17), GENERATO(17), CAMERADU(13), etc.
+- **0x00143290 nao e o patcher do callback**: processa inner structs em +0x110/+0x114, referencia tabela 0x005D1B60.
+- **Funcao correta**: 0x1AF4A0 (scene init com 176B stack), NAO 0x1AF190 (preamble separado que retorna em 0x1AF494).
+- Documentado em research/elf/ghidra-rev072-callback-systems-descriptor-table-and-entry-table.md
+
 ### [x] [SQUAD-RUNTIME | rev.071 | 2026-05-17]
 5-way consolidation: 404-room table, halfword grid, callbacks, main loop
 
@@ -530,6 +541,7 @@ Call graph analysis
 |----------|------|-------|---------|
 | rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
 | rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
+| rev.072 | 2026-05-17 | SQUAD-RUNTIME | Room init callbacks corrigidos: 19 function pointers reais (offset +0x174 absoluto), tabela de descritores (68 entries), tabela de entries (512 entries), instrucao 0x1AF954 = mult (dead code), 0x00143290 processa inner structs (nao callback) |
 | rev.071 | 2026-05-17 | SQUAD-RUNTIME | 5-way consolidation: 404-room table (32 rooms, callback idx 0x4B), halfword grid rasterization (32x32), slot table stride 0x10 (17 entries, 14 callbacks), Group1/2 templates disassembled, main loop 0x101C80 dispatch chain documented |
 | rev.001 | 2026-05-12 | SQUAD-ARCH | Initial strategic planning and prompt workflow |
 | rev.002 | 2026-05-12 | SQUAD-ARCH | Project retargeted to ICO Reconstruction |
