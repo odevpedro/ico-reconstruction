@@ -78,6 +78,7 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
+research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md  (VU0 packet builder 0x1D43F8, kick stub 0x117C40, 0x6AB080 writers, alternates constants)
 research/elf/ghidra-rev067-consolidated-live-dispatch-model.md        (live dispatch consolidated model — slot table, callbacks, callers, alternate impl)
 research/elf/ghidra-rev066-static-live-dispatch-callsite-map.md       (cold paths, GP slots, dispatch point confirmed)
 research/elf/ghidra-rev064-cold-paths-and-live-dispatch.md            (live dispatch at 0x00166E10, cold paths, struct map)
@@ -324,8 +325,8 @@ Current objectives:
 
 1. Runtime validation: capture hits at cold paths (`0x00167230`, `0x00167258`), main body (`0x00166E10`), and dispatch point (`0x00167020`)
 2. Confirm which slot indices (a1=0..16) fire during gameplay vs cutscenes vs menus
-3. Check if the alternate implementation is ever reached
-4. Map the halfword table at `0x006AB080` population mechanism
+3. Check if the alternate implementation is ever reached (no static path known)
+4. Map the halfword table at `0x006AB080` population mechanism — writers confirmed at `0x00166D1C`/`0x00166D78` (same function as dispatcher)
 5. Understand the semantic meaning of each slot
 
 ---
@@ -502,6 +503,7 @@ entity/context pointer
 state block pointer
 selected jump table entry
 a1 at 0x0013f7a8 entry (which callback is being registered?)
+a2 + t0 at 0x00166D38 (values written to 0x6AB080)
 ```
 
 Useful questions:
@@ -511,6 +513,8 @@ Useful questions:
 - Which Group 1 vs Group 2 callbacks fire?
 - Does the halfword table at 0x6AB080 contain entity/object type indices?
 - What is the real callback distribution at 0x00167020?
+- Is the VU0 kick stub (0x117C40) ever reached during gameplay?
+- Which function calls 0x00168650 with a0 != 0 (alternate selection)?
 
 ---
 

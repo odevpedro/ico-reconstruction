@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-16 (Rev.059 — table reader correction: 0x1A48A0 is CODE; callback registration flow added; scene loader 0x1B7D00 documented; descriptor handler layout confirmed at +0x48/+0x50/+0x58)
+> **Ultima atualizacao:** 2026-05-17 (Rev.069 — VU0 ring buffer packet flow adicionado; VU0 kick stub documentado; halfword table writers mapeados no fluxo de dispatch)
 
 ---
 
@@ -258,8 +258,105 @@ Todos os 14 callbacks iteram esta tabela runtime-populada. Ela contem uint16 ent
 
 - Validacao runtime: capturar quais slots disparam durante gameplay vs cutscene vs menu
 - Capturar se a implementacao alternativa (0x00169F80/0x0016A058) e atingida
-- Mapear como 0x006AB080 e populada
 - Entender o significado semantico de cada slot (ex: slot 0 = BOY? slot 2 = GIRL?)
+
+---
+
+## VU0 Ring Buffer Packet Flow
+
+> **Status:** Mapeado (Rev.069). Packet builder 0x1D43F8, push function 0x111918, VU0 kick stub 0x117C40.
+
+### Visao Geral
+
+O sistema de transform VU0 usa um buffer circular em `0x004C7710` para enviar pacotes VIF ao VU0 microcode. O packet builder `0x1D43F8` é chamado de `0x1D4A58` (transform orchestrator), que é chamado pela implementação alternativa do dispatch (`0x169F80`/`0x16A058`).
+
+### Fluxo
+
+```
+Alternate A/B (0x169F80/0x16A058)
+  └─> JAL cold path + extra init
+       └─> 0x1D4A58 (transform orchestrator, 192B frame)
+            ├─> 0x1D45B0 (matrix builder — COP2 plane clip)
+            ├─> Swap A↔C buffers (condicional)
+            └─> 0x1D43F8 (packet builder, 96B frame) × 2 (two-pass: pass0 t0=0, pass1 t0=-1)
+                 └─> 5× 0x111918 (ring_buffer_push, 16 bytes cada)
+                      └─> ring_buf.head avança 16 por push
+                           └─> Quando `t0=-1`: type-5 entries recebem 0xFFFFFFFF no upper 32 bits
+                                └─> VIF uploader em 0x3800C interpreta como terminator de batch
+
+Consumo:
+  J 0x3800C (runtime resident, fora do ELF)
+     └─> VIF packet upload → DMA → VU0 microcode
+```
+
+### Formato do pacote VU0 (80 bytes por invocacao de 0x1D43F8)
+
+```
+Entry 1: [type=0  ] [*(gp-0x54C4)]  — header
+Entry 2: [type=1  ] [4 bytes a1]    — atributos de vertice 1
+Entry 3: [type=5  ] [3 campos a0]   — transform matrix A (terminator se t0=-1)
+Entry 4: [type=1  ] [4 bytes a3]    — atributos de vertice 2
+Entry 5: [type=5  ] [3 campos a2]   — transform matrix C (terminator se t0=-1)
+```
+
+### VU0 kick stub
+
+O stub em `0x117C40` carrega comandos VIF em 4 GPRs e tail-call `0x3800C`:
+
+```asm
+0x117C40: lui $v1, 0xE74B   ; VF3
+0x117C44: lui $k1, 0xE64B   ; VF27
+0x117C48: lui $s3, 0xE54B   ; VF19
+0x117C4C: lui $t3, 0xE44B   ; VF11
+0x117C50: andi $zero, $s0, 0x0F4A  ; timing NOP
+0x117C54: j 0x03800C
+```
+
+O SQC2 block emparelhado (`0x117C80`) salva VF3/11/19/27.
+
+### Funcoes envolvidas
+
+| Funcao | VA | Tamanho | Proposito |
+|--------|-----|---------|-----------|
+| Packet builder | 0x1D43F8 | 0x1B4 (436B) | Constroi 5 entradas VIF no ring buffer |
+| Ring buffer push | 0x111918 | 0x24 (36B) | Escreve sd(a1)+sd(a0), avanca head 16 |
+| Transform orchestrator | 0x1D4A58 | — | Matrix init + packet submission |
+| VU0 kick stub | 0x117C40 | 0x1C (28B) | Inline asm, 4 LUI + J 0x3800C |
+
+### O que falta
+
+- Confirmar runtime se `0x117C40` (ou `0x3800C`) e atingido durante gameplay
+- Validar que o buffer circular em 0x4C7710 nao tem overflow (head avanca 80B por batch)
+- Verificar se o VU0 microcode em 0x3800C corresponde ao microcode DVP ou a codigo runtime independente
+
+---
+
+## Halfword Table Population (0x006AB080)
+
+> **Status:** Escritores encontrados (Rev.069). Localizados em 0x00166D1C e 0x00166D78.
+
+### Visao Geral
+
+A tabela de halfwords em `0x006AB080` (BSS) e populada por uma funcao imediatamente anterior ao dispatcher `0x00166E10`. A funcao itera uma lista de objetos/entidades e escreve `(a2 << 5) + t0` em cada posicao, incrementando um contador em `gp-19396`.
+
+### Fluxo
+
+```
+Funcao iteradora (antes de 0x00166E10):
+  └─> Para cada objeto na lista (a2 = object type, t0 = sub-index):
+       ├─> lw a1, -0x4BC4($gp)     ; a1 = index counter (gp-19396)
+       ├─> sll v1, a2, 5           ; v1 = object_type << 5
+       ├─> addu a0, v1, t0         ; a0 = object_type << 5 + sub_index
+       ├─> sll v0, a1, 1           ; v0 = counter * 2 (halfword offset)
+       └─> sh a0, 0x6AB080(v0)     ; 0x6AB080[counter] = value
+
+Tabela resultante: uint16[count] em 0x6AB080
+Contador: gp-19396 (0x00633D2C), resetado externamente
+```
+
+### Funcoes envolvidas
+
+A funcao escritora esta no mesmo range do dispatcher (provavelmente faz parte do setup que antecede a iteracao por slots). A identificacao do inicio exato dessa funcao requer analise de prologo e scan de referencias GP no range 0x00166CXX-0x00166E0X.
 
 ---
 

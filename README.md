@@ -69,6 +69,8 @@ The project has moved into **decompilation and struct modeling**. A verified str
 
 **Rev.066-067 live dispatch consolidation:** The live scene init dispatcher at `0x00166E10` has been fully mapped: a 17-entry slot table at `0x00282690` with 14 unique parametric callbacks (two templates: Group 1 for position/rotation via `0x166258`, Group 2 for orientation checks via `0x1667E0`), a runtime pointer list at `0x006AAC80` (corrected from `0x006AAC00`), cold paths as leaf fragments at `0x00167230`/`0x00167258`, and an alternate implementation at `0x00169F80`/`0x0016A058` with extra transform/matrix init. See [`research/elf/ghidra-rev067-consolidated-live-dispatch-model.md`](./research/elf/ghidra-rev067-consolidated-live-dispatch-model.md).
 
+**Rev.069 static mop-up:** The VU0 ring-buffer packet builder at `0x1D43F8` was fully disassembled (5-entry VIF packet, 80 bytes, terminator via `t0=-1`). The VU0 kick stub `0x117C40` was identified as inline asm (4× LUI VIF codes + `J 0x3800C`). The halfword table writer at `0x6AB080` was located at `0x00166D1C`/`0x00166D78` (same function range as the dispatcher — writes `(a2 << 5) + t0`). No static caller of `0x00168650` with `a0 != 0` exists — the alternate implementation selection point remains a runtime-only question. See [`research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md`](./research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md).
+
 No reconstructed game code, assets, binaries, or ISO-derived copyrighted data are included in this repository.
 
 Current repository contents are mostly operational documents:
@@ -440,6 +442,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.064 - Live dispatch at 0x00166E10: cold paths, struct map (400B stack, iterates desc array)
 [x] rev.066 - Static live dispatch callsite map: GP slots confirmed, cold paths validated, 0x006AAC80 correction
 [x] rev.067 - Consolidated dispatch model: slot table 0x282690 (17 entries, 14 parametric callbacks), runtime ptr list 0x6AAC80, alternate impl 0x169F80/0x16A058, runtime probe plan
+[x] rev.069 - VU0 ring-buffer packet builder (0x1D43F8), kick stub (0x117C40), halfword table writers (0x00166D1C/0x00166D78), alternate constants, zero static callers for alternate selection
 ```
 
 ## How To Contribute

@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 76 |
+| Completed | 77 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -68,6 +68,16 @@ _(none)_
 ---
 
 ## Completed
+
+### [x] [SQUAD-RUNTIME | rev.069 | 2026-05-17]
+VU0 ring-buffer packet builder (0x1D43F8), VU0 kick stub (0x117C40), halfword table population (0x6AB080), alternate constants (0x55F260)
+
+- **0x1D43F8** — VU0 packet builder (96B frame): pushes 5 entradas (80 bytes) ao ring buffer em 0x4C7710. t0=-1 marca entries tipo-5 com 0xFFFFFFFF (terminator). Unico sub: 0x111918 (ring_buffer_push).
+- **0x117C40** — VU0 kick stub inline asm: 4× LUI (VIF codes 0xE74B/0xE64B/0xE54B/0xE44B) + ANDI timing NOP + J 0x3800C. Ocorre 2x + 1 truncated variant. Paired SQC2 block em 0x117C80/0x1181EC.
+- **Constantes 0x55F260-0x55F298**: inteiros pequenos (388, 442, 4, 2, 1431024) — indices de bone/object matrix para VU0 transform. Alternate A (0x55F280) tem 4 QWORDs com dados; Alternate B (0x55F260) tem 3 zeros + 388.
+- **Writers de 0x6AB080**: 2 sites em 0x00166D1C/0x00166D78 (mesma funcao, antes de 0x00166E10). Escrevem `(a2 << 5) + t0` como halfword, indexados por `gp-19396`.
+- **Nenhum caller estatico com a0 != 0** para 0x00168650 — alternate impl selection point desconhecido. Unico caller (J 0x1A3334) sempre passa a0=0.
+- Documentado em research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md
 
 ### [x] [SQUAD-RUNTIME | rev.064 | 2026-05-16]
 Live scene init dispatch at 0x00166E10, cold paths, struct map
@@ -490,6 +500,7 @@ Call graph analysis
 
 | Revision | Date | Squad | Summary |
 |----------|------|-------|---------|
+| rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
 | rev.001 | 2026-05-12 | SQUAD-ARCH | Initial strategic planning and prompt workflow |
 | rev.002 | 2026-05-12 | SQUAD-ARCH | Project retargeted to ICO Reconstruction |
 | rev.003 | 2026-05-12 | SQUAD-ARCH | Public README created for community collaboration |

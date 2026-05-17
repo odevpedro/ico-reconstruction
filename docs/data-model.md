@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-17 (Rev.066-067 — Slot table em 0x00282690 (17 entries, stride 0x10), 14 callbacks parametricos (2 templates), desc_array corrigido para 0x006AAC80, implementacao alternativa 0x00169F80/0x0016A058 mapeada, modelo de dispatch consolidado)
+> **Ultima atualizacao:** 2026-05-17 (Rev.069 — VU0 ring-buffer packet builder 0x1D43F8 mapeado, VU0 kick stub 0x117C40 identificado como inline asm, escritores de 0x6AB080 encontrados em 0x00166D1C/0x00166D78, constantes das implementacoes alternativas lidas em 0x55F260, nenhum caller estatico com a0!=0 para 0x00168650)
 
 ---
 
@@ -115,6 +115,93 @@ Também alcançado via 14 wrappers GP-slot (gp-25856, slots 0-11).
 **Relação com slot_table_0x00282690:** A lista runtime em 0x006AAC80 contém ponteiros para as entidades/contextos que serão processados pelo dispatcher. A slot table fornece a configuração de **como** processar (qual callback, qual grupo, com/sem guarda). As entradas da lista são itens de dados, não descritores de configuração.
 
 **Relação com descriptor_table (0x002A31B8):** Desconhecida. A runtime_ptr_list em 0x006AAC80 contém ponteiros de entidades já criadas. A descriptor_table em 0x002A31B8 contém descritores de tipo (68 entries, stride 0x64) usados pelo sistema de criação de objetos.
+
+---
+
+### VU0 ring buffer (0x004C7710)
+
+Buffer circular para pacotes VIF/VU0 usado pelo transform orchestrator 0x1D4A58. Cada entrada tem 16 bytes (8 data + 8 type tag).
+
+**Tabela:** `0x004C7710` (BSS/runtime)
+
+| Campo | Offset | Tipo | Descricao |
+|-------|--------|------|-----------|
+| `base` | +0x00 | u32 | Base/limit do buffer (usado para wrap-around) |
+| `head` | +0x10 | ico_ptr32 | **Head pointer** — posicao atual de escrita (avanca 16 por push) |
+
+**Formato do pacote (5 entradas por invocacao de 0x1D43F8):**
+
+| Entry | Type tag | Data | Descricao |
+|:-----:|:--------:|------|-----------|
+| 1 | 0 | `*(gp-0x54C4)` | Header global (scene/entity context id) |
+| 2 | 1 | 4 campos byte de struct B | Atributos de vertice/RGBA |
+| 3 | 5 | 3 campos de struct A (matrix) | Vetor transform, upper 32 bits = 0xFFFFFFFF se `t0=-1` |
+| 4 | 1 | 4 campos byte de struct D | Atributos de vertice/RGBA |
+| 5 | 5 | 3 campos de struct C (matrix) | Vetor transform (tail-call), terminator se `t0=-1` |
+
+**Push function:** `0x111918` — escreve sd(a1), sd(a0) no head, avança 16.
+**Consumidor:** Codigo runtime em `0x3800C` (VIF uploader, fora do ELF).
+**Acesso GP:** Apenas `lw -0x54C4($gp)` para o header value.
+
+---
+
+### VU0 kick stub (0x117C40)
+
+Inline asm para upload VIF (VU0) com terminação via `J 0x3800C`.
+
+| Endereco | Patrao | Tipo |
+|:--------:|--------|:---:|
+| `0x117C40` | 4× LUI (0xE74B/0xE64B/0xE54B/0xE44B) + ANDI + J | Full stub |
+| `0x117C60` | 4× LUI + ANDI + J | Full stub (duplicate) |
+| `0x117CE0` | 1× LUI + J | Truncated variant |
+
+**VIF command pattern (4 registradores VF):**
+- VF3 (`$v1`, LUI 0xE74B)
+- VF27 (`$k1`, LUI 0xE64B)
+- VF19 (`$s3`, LUI 0xE54B)
+- VF11 (`$t3`, LUI 0xE44B)
+
+**SQC2 block emparelhado em `0x117C80`/`0x1181EC`:** sqc2 $vf3/$vf11/$vf19/$vf27.
+
+---
+
+### Halfword table (0x006AB080, BSS)
+
+Tabela runtime-populada de `uint16`, iterada por todos os 14 callbacks da slot table.
+Populada por 2 escritores na funcao anterior ao dispatcher `0x00166E10`.
+
+**Tabela:** `0x006AB080` (secao `.bss`, provavelmente tamanho <512 bytes)
+**Index counter:** `gp-19396` = `0x00633D2C`
+**Valor escrito:** `(a2 << 5) + t0` (codifica 2 parametros em 1 halfword)
+**Escritores:**
+
+| Endereco | Contexto |
+|:--------:|----------|
+| `0x00166D1C` | Path A da funcao iteradora (antes do dispatcher) |
+| `0x00166D78` | Path B da funcao iteradora |
+
+**Funcoes relacionadas no range `0x006Axxxx`:** tabela adjacente em `0x006AA4B0` com escritores em `0x0014A2B0`, `0x0014AF70`, `0x0014AFB8` — familia de tabelas de halfword em BSS.
+
+---
+
+### Alternate implementation constants (0x55F260)
+
+Blocos de 4 QWORDs em `.data` usados pelas implementações alternativas `0x169F80`/`0x16A058`.
+
+**Alternate A (0x55F280, usado por 0x169F80):**
+
+| VA | i32 lo | i32 hi | Significado provavel |
+|:---|---:|---:|:---|
+| 0x55F280 | 442 | 4 | count, base index |
+| 0x55F288 | 1431024 | 2 | bone/object ID, subtype |
+| 0x55F290 | 0 | 1431024 | zero, bone/object ID |
+| 0x55F298 | 0 | 0 | zero sentinel |
+
+**Alternate B (0x55F260, usado por 0x16A058):** 3 QWORDs zero + 1 com hi=388.
+
+---
+
+### gp-25904 default state
 
 ---
 
