@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-18 (Rev.084 — Runtime session estendida: 43.8M eventos, 122 min, 3+ areas. slot 5+11 ativados primeira vez. Todos probes raros ZERO (3a sessao confirmada). 1913 contextos unicos. Cutscene=100% slot12 (Group 1 suspenso). Slot 0 root cause encontrada (static: zero sites addiu a1,0+JALR). Total 66.9M eventos em 3 sessoes. Ver research/elf/ghidra-rev084-runtime-validation-extended-session.md)
+> **Ultima atualizacao:** 2026-05-18 (Rev.088 — WOODBOX0 entity handler decompilado para near-structural C; indice de descritor corrigido de 3 para 17; hA/hB/hC mapeados com work struct 0x190B, template ROM 0x4B5560, behavior Group B 0x23D660. 7o handler decompilado (src/entity/woodbox0.c). Ver secao WOODBOX0 Entity Handler Flow abaixo.)
 
 ---
 
@@ -1147,5 +1147,297 @@ fn_1CE5F8 (destruction/cleanup, 37 insns)
 ### Arquivos
 
 - `src/entity/enemy1.c` — decompilacao near-structural das 5 funcoes
+- `src/entity/barrel.c` — decompilacao near-structural de 12 funcoes BARREL/ROPE
 - `src/entity/structs.h` — definicoes de struct base (descriptor_record, entity_context)
 - `research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md` — analise estrutural dos handlers
+
+---
+
+## BARREL / ROPE Entity Handler Flow
+
+> **Status:** Decompilado em NEAR-STRUCTURAL C (Rev.088).
+> **Arquivo:** `src/entity/barrel.c`
+> **Source file confirmed:** `src/item.c` (assertion string 0x618F68 = "src/item.c", line 434)
+> **init_fn source:** `src/fieldCollision.c` (assertion 0x5591F0 = "TOO MANY COLLISION DEPEND GOBJS", line 533)
+
+### Visao Geral
+
+BARREL (descriptor index 5) e ROPE (descriptor index 8) compartilham o mesmo
+codigo para init_fn, hA, e cb_routine2 (hB). O hC difere: BARREL faz allocacao
+completa + criacao de filhos; ROPE tem versao simplificada sem alocacao.
+
+O **cb_routine2** em 0x1D3A30 foi o centro do mistério do projeto (Rev.001-036:
+erroneamente chamado de "ROPE callback"). Na verdade e o **constraint solver
+de fisica** para objetos BARREL, operando como maquina de 5 estados via
+dispatcher 0x1D37C8 (jump table 0x618FB0).
+
+### Fluxo Principal
+
+```
+init_fn (0x166028) — coleta objetos dependentes de colisao
+    |
+    | 1. Zera contador gp-0x6528
+    | 2. Itera cena com sub_13ECA8/13ECF8
+    | 3. Para cada entity: valida
+    |      entity_state != NULL
+    |      entity_state+0x70 != NULL
+    |      entity+0x16C != 0
+    |      entity+4 == 1 (type)
+    |      entity+8 >= 0 (subtype)
+    |      entity_state+0x74 != 0
+    | 4. Adiciona entidade valida ao array 0x6AAC80
+    | 5. Se count >= 256: assert "TOO MANY COLLISION DEPEND GOBJS"
+    v
+    (fim — executa uma vez no load da cena)
+```
+
+```
+BARREL hC (0x1D27A8) — construtor (descriptor +0x58, src/item.c:434)
+    |
+    | 1. heap_alloc(0x90) — estado de 144 bytes
+    | 2. Copia template de 0x4C46B0 (0x80B) + zeros (0x10B)
+    | 3. Template defaults:
+    |      +0x00 = variant (0)
+    |      +0x04 = rope_segments (entry param_30)
+    |      +0x08 = active (0)
+    |      +0x18 = identity_scale (1.0f)
+    |      +0x48 = max_segments (300)
+    | 4. Se rope_segments == 1:
+    |      Cria child entities (tipo 2, sub_1B7FE8)
+    |      Aplica transform template 0x4C4750 (pos 0,-50,0, scale 1)
+    |      Registra no grupo de fisica 10
+    v
+    Retorna state_block
+```
+
+```
+ROPE hC (0x1D3B28) — construtor simplificado
+    |
+    | 1. Se variant == 1: early return
+    | 2. Se state_id != 1: tail-call sub_10ECB8 (update transform)
+    | 3. Senao: verifica contador + world state
+    |      Se world_state flag em 0x276ED4:
+    |        Se entity+0x64 != 0: sub_1D12D8, limpa flag
+    |      Senao:
+    |        Se entity+0x64 == 0: sub_1D12D8
+    |        Senao: sub_1D12A8 (hA)
+    | 4. Tail-call sub_10ECB8
+    v
+```
+
+```
+cb_routine2 (0x1D3A30) — constraint solver (descriptor +0x50)
+    |
+    | 1. Carrega state_block, variant == 1? early exit
+    | 2. Se child attached (state_block+0x0C):
+    |      sub_1D29B8 (physica com child)
+    |   Senao se state_block+0x08 == 0:
+    |      sub_1D2BF0 (fisica sem child)
+    |   Senao:
+    |      Salva/limpa entity_state+0x74
+    |      sub_1D2BF0 (fisica com child state)
+    |      Restaura entity_state+0x74 se necessario
+    | 3. Verifica child entity:
+    |      Se child existe e type == 0x11 (WOODBOX0):
+    |        Se sub_1C05A8(child) == 2 (interagindo):
+    |          Limpa state_block+0x14
+    |          sub_1D2738 (attach callback)
+    | 4. sub_102858 (update transform)
+    | 5. Se state_id == 1:
+    |      sub_1D37C8 (dispatcher 5-state)
+    v
+```
+
+```
+Dispatcher 0x1D37C8 — 5-state jump table 0x618FB0
+    |
+    | state 0 (0x1D3818): idle / wait
+    | state 1 (0x1D3844): physics step 1
+    | state 2 (0x1D391C): physics step 2
+    | state 3 (0x1D39E0): physics step 3
+    | state 4 (0x1D3A10): post-process
+    |
+    | Cada state chama fn_1D3BF0 como sub-dispatcher.
+    v
+```
+
+```
+fn_1D3BF0 (0x1D3BF0) — sub-dispatcher por estado
+    |
+    | Se state_id == 1 (idle):
+    |   state_block+0x48 = 2 (completion flag)
+    |   return
+    |
+    | 1. sub_104508 (captura transform entity)
+    | 2. Lookup model_id na tabela 0x4D4188:
+    |      stride 0x14, field[2] = model_id
+    |      sentinel 0x32F (815) = sem modelo
+    | 3. Se model_id != 0x32F:
+    |      Build transform chain (sub_2641D8, sub_105F00)
+    |      Calcular heading angle (sub_10EC08, sub_10E158)
+    |      sub_1EBC10 (attach model)
+    | 4. sub_1D12A8(entity, 0x2A) (seta state)
+    | 5. Se state_id == 6 (destruicao):
+    |      sub_181BF8(entity, 0x11, pos, 0) — raio 100.0
+    | 6. entity_state+0x74 = 0, variant = 1 (complete)
+    |    entity+0x16C = 0
+    v
+```
+
+```
+fn_1D3DD8 (0x1D3DD8) — iterador de limpeza BARREL
+    |
+    | Itera todas entidades tipo 0x13 (BARREL)
+    | Para cada entidade com flag ativa e state_index < 2:
+    |   sub_19F530 (destroy)
+    |   Limpa state_block+0x74
+    |   Marca state_block+0x08 = 1 (processado)
+    v
+    Retorna 1
+```
+
+### Template de Inicializacao (0x4C46B0, 144 bytes)
+
+| Offset | Tamanho | Valor | Descricao |
+|--------|---------|-------|-----------|
+| +0x00 | 4 | 0 | variant (state id) |
+| +0x04 | 4 | param_30 | rope_segments (entry) |
+| +0x08 | 4 | 0 | active_flag |
+| +0x0C | 4 | 0 | child_attached |
+| +0x10 | 4 | 0 | attached_flag |
+| +0x14 | 4 | 0 | external_arg |
+| +0x18 | 4 | 1.0f | identity_scale |
+| +0x1C..+0x44 | 40 | 0 | padding |
+| +0x48 | 4 | 300 | max_segments |
+| +0x4C..+0x8F | 68 | 0 | padding |
+
+### Tabela de Modelos (0x4D4188, 8+ entries, stride 0x14)
+
+Cada entry: 5 × u32. field[0..3] = model_ids, field[4] = flags (0=skip, 1=valid).
+Sentinel 0x32F = sem modelo.
+
+| Entry | field[0] | field[1] | field[2] | field[3] | flags |
+|-------|----------|----------|----------|----------|-------|
+| 0 | 0x032F | 0x032F | **0x01BA** | 0x032F | 0 |
+| 1 | 0x032F | 0x032F | 0x032F | 0x032F | 0 |
+| 2 | **0x01BC** | **0x01BB** | **0x01BB** | **0x01BB** | 1 |
+| 3 | **0x01BE** | **0x01BD** | **0x01BD** | **0x01BD** | 1 |
+| 4 | **0x01B8** | **0x01B8** | **0x01B8** | **0x01B8** | 1 |
+| 5 | **0x01AC** | **0x01AC** | **0x01AC** | **0x01AC** | 1 |
+| 6 | 0x032F | 0x032F | **0x01B8** | 0x032F | 0 |
+| 7 | 0x0000 | **0x0210** | **0x0211** | **0x0217** | — |
+
+---
+
+## WOODBOX0 Entity Handler Flow
+
+> **Status:** Mapeado (Rev.088). hA (0x1C05D0), hB (0x1C0538), hC (0x1C00C0) decompilados para near-structural C.
+> **Descriptor:** Index 17 (0x2A385C), stride 0x64, behavior_fn = 0x23D660 (Group B — physics props).
+
+### Fluxo de Inicializacao (hC, 0x1C00C0)
+
+hC e o constructor chamado via `descriptor[+0x58]`. Aloca e inicializa o work struct de 400 bytes:
+
+```
+hC (0x1C00C0, ~288 insns)
+  a0 = entity_context, a1 = initializer (scene_entry pointer)
+  |
+  1. Aloca 0x190 bytes (sub_13A0F8, heap, tag 0x7AC)
+  2. scene_obj[0x800] = work_ptr
+  3. Copia template de 0x4B5560 → work (0x190 bytes, 8-byte stride)
+  4. work[+0x2C] = scene_obj[+0x70] (scale_factor / type_id)
+  5. work[+0x58] = scene_obj[+0x30] (flags)
+  6. sub_1B7FE8(entity) → work[+0x180] (scene_obj_ptr)
+  7. sub_19F310(type_id, initializer) → work[+0x160] (child_entity)
+  8. scene_obj[+0x7EC] = 0x1C11C0 (collision callback)
+  9. Se flags != 0: path alternativo de dados de animacao
+     Senao: path principal (dados de 0x1C0AEC)
+  10. sub_1BDA70 → sub_1BDC58 (matriz/transform + physics init)
+  11. sub_1BD408 → sub_1BCC18 (cloth assignment + init)
+  12. work[+0x134] = *(entity_scene_area + 0x34) (destruct_time)
+  v  return work_ptr
+```
+
+### Fluxo de Update (hB, 0x1C0538)
+
+```
+hB (0x1C0538, ~45 insns)
+  a0 = entity_context
+  |
+  1. scene_obj = entity[0x15C]; wk = scene_obj[0x800]
+  2. wk->counter++ (mod 31, 0x1F)
+  3. sub_1BF2C8(&wk->scale_x) -- scale/animation update
+  4. sub_102858(&wk->scale_x) -- transform update
+  5. Se counter == 0 (wrapped):
+       sub_1AE460(wk->scene_obj_ptr, 0x14)
+  v  return
+```
+
+### Fluxo Condicional (hA, 0x1C05D0)
+
+```
+hA (0x1C05D0, ~40 insns)
+  a0 = entity_context
+  |
+  1. scene_obj = entity[0x15C]; wk = scene_obj[0x800]
+  2. sub_10ECD8() -- audio event
+  3. sub_10ECB8(entity) -- audio setup
+  4. Se wk->flags != 0:
+       sub_1BD668(entity, wk->flags) -- physics update c/ flags
+  5. Checa WORLD_STATE (gp-0x4ED4)
+     Se match: sub_10BBB0(wk->child_entity)
+  6. wk->destruct_state = 0
+  v  return
+```
+
+### Funcoes envolvidas
+
+| Funcao | VA | Proposito |
+|--------|-----|----------|
+| hC (constructor) | 0x1C00C0 | Alloc 400B work, template copy, child entity, collision callback, init chain |
+| hB (update) | 0x1C0538 | Counter 31-frame, scale/anim update, transform, tail-call on wrap |
+| hA (handler) | 0x1C05D0 | Audio events, conditional physics, world state check, destruct clear |
+| Collision cb | 0x1C11C0 | Collision callback at scene_obj[+0x7EC] |
+| sub_13A0F8 | — | Heap allocator (tag 0x7AC) |
+| sub_1B7FE8 | — | Scene object init/retrieval |
+| sub_19F310 | — | Child entity creation |
+| sub_1BF2C8 | — | Scale/animation update (work+0x20..+0x28) |
+| sub_102858 | — | Transform update (work+0x20..+0x28) |
+| sub_1AE460 | — | Tail-call on counter wrap (param 0x14) |
+| sub_10ECD8/ECB8 | — | Audio system |
+| sub_1BD668 | — | Physics update with flags |
+| sub_10BBB0 | — | World-state conditional child interaction |
+| sub_1BDA70/DC58/D408/CC18 | — | Common init chain (matrix → physics → cloth → init) |
+
+### Observacoes estruturais
+
+- **Nenhuma dependencia FPU/VU0** — CPU-bound apenas (sem float ops alem de loads/stores)
+- **Maior work struct (0x190)** vs BOY (0x4C) / ENEMY1 (0x50) — template-copiado de ROM com defaults
+- **Behavior Group B** (0x23D660) — compartilhado com BARREL/ROPE/physics props
+- **Collision callback 0x1C11C0** — gravado em tempo de construcao; provavel funcao generica
+- **Nenhum uso de flags_0x48** — WOODBOX0 nao usa mascara de slot do ENEMY1
+- **Nao tem init_fn propria** — descriptor[+0x34] = 0x1C0838 (papel ainda nao classificado)
+
+### Arquivos
+
+- `src/entity/woodbox0.c` — decompilacao near-structural de hC/hB/hA + struct work
+- `src/entity/structs.h` — definicoes de struct base
+
+---
+
+### Decisoes Estruturais
+
+| Decisao | Justificativa |
+|---------|---------------|
+| state_block size 0x90 | Confirmado por argumento a1=0x90 em sub_13A0F8 (hC) |
+| template copy 0x80B | Loop de 8 qwords (0x4C46B0 -> state_block) |
+| child type 2 | Constante 2 em [sp+0x40] para sub_1B7FE8 |
+| sentinel 0x32F | Comparacao beq com 0x32F em fn_1D3BF0 |
+| max_segments 300 | Valor 0x12C no template em +0x48 |
+
+### Arquivos
+
+- `src/entity/barrel.c` — decompilacao near-structural de 12 funcoes
+- `src/entity/structs.h` — definicoes de struct base
+- `research/elf/ghidra-rev039-cloth-domain-correction.md` — correcao do dominio cloth
+- `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md` — confirmacao runtime do caller

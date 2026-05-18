@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-18 (Rev.084 — Runtime session estendida confirmou slot 5+11 ativados pela primeira vez; cutscene=100% slot12; todos probes raros ZERO (3a sessao); 1913 contextos; slot 0 root cause encontrada. Ver research/elf/ghidra-rev084-runtime-validation-extended-session.md)
+> **Ultima atualizacao:** 2026-05-18 (Rev.088 — WOODBOX0 entity handler decompilado para near-structural C; indice de descritor corrigido de 3 para 17; hA/hB/hC mapeados; work struct 0x190B documentado; 7o handler decompilado. Ver research/elf/ghidra-rev088-woodbox0-decompilation.md)
 
 ---
 
@@ -548,6 +548,7 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 | (pad) | +0x54 | u32 | Zero |
 | **hC** | **+0x58** | **ico_ptr32** | **Constructor/Init handler** (chamado por 0x1B76F8) |
 | (pad) | +0x5C | u32 | Zero |
+| **behavior_fn** | **+0x60** | **ico_ptr32** | **Shared behavior/dispatch function** (Group A=0x202A60 main chars, Group B=0x23D660 physics props, 39 entities=none) |
 
 **Convencao de handlers (confirmada em 7 entidades, Rev.053-054):**
 
@@ -565,7 +566,7 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 | 1 | BOY | 0x153478 | 0x1C1F58 | 0x1C1DD8 | 0x1C1A98 | ? | NEAR-STRUCTURAL C |
 | 2 | GIRL | 0x174BA0 | 0x1D1A98 | 0x1D17F8 | 0x1D1668 | 64B | ASM |
 | 4 | ENEMY1 | 0x164440 | 0x1CE690 | 0x1CE3C0 | 0x1CE220 | 80B | ASM |
-| 17 | WOODBOX0 | 0x17D1D0 | 0x1C05D0 | 0x1C0538 | 0x1C00C0 | 400B | ASM |
+| 17 | WOODBOX0 | 0x17D1D0 | 0x1C05D0 | 0x1C0538 | 0x1C00C0 | 400B | NEAR-STRUCTURAL C |
 | 19 | BARREL | 0 | 0x1D3B28 | 0x1D3A30 | 0x1D27A8 | ~40B | CLOTH |
 | 20 | ROPE | 0 | 0x1E9630 | 0x1E9810 | 0x1E8F38 | — | OVERLAY |
 | 30 | BGA | 0x203EE8 | 0 | 0 | 0 | 0 | ASM |
@@ -587,7 +588,7 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 | BOY | 352B stack, 7 JALs, GP-data bit extraction, core alloc + anim init + model params | 79 insns, active/idle paths, world-state 0x27 proximity gate | 50 insns, cloth+shadow+anim state+movement solver (tail-call 0x103D50) | 106 insns, 76B alloc tag 0xFE, 5 models, 3 child entities (1/0xB/0xC) | NEAR-STRUCTURAL C in src/entity/boy.c |
 | GIRL | Animation setup (29 JALs, 20 FPU ops) | Minimal reset (3 JALs) | Per-frame anim (16 JALs, 19 FPU ops, quaternion interp) | State block pop (9 JALs, 4× table init) | Shared with DEVIL_GI, heavy FPU |
 | ENEMY1 | Heavy struct init (24 JALs, 30 FPU ops, 28 dwords at +0x0C0) | Conditional reset on flags_0x48 | Same as init_fn pattern + polling loop | Same as init_fn (ctor==init_fn) | **Only entity using flags_0x48** |
-| WOODBOX0 | Lookup table match (2 JALs, table 0x28A640) | Stub (0 JALs) | Tick counter + wrap at 0x1F (2 JALs) | Same as init_fn | Simplest entity, no FPU |
+| WOODBOX0 | Lookup table match (2 JALs, table 0x28A640) | Conditional handler: audio events, flags-based physics, world state check (3+ JALs) | Tick counter + wrap at 0x1F, anim+transform update (3 JALs) | Same as init_fn: 0x190B alloc, template copy from 0x4B5560, child entity, collision callback | No FPU, simplest entity |
 | AP1 | Data-driven from 0x623468 (9 JALs, pos table stride 32) | Deactivation (1 JAL) | State-guarded cleanup (4 JALs) | Same as init_fn | Action point spawner |
 
 **Rev.075 init_fn identification (3 previously unknown):**
@@ -636,6 +637,50 @@ Struct privada de instancia de ENEMY1 (descriptor idx 4). Alocada em hC (0x1CE22
 **hB state machine:** `state_counter` incrementa a cada frame ate 10. Quando entity flags bit 33 set, reseta para 0. Apos 10 frames sem reset, hB pula todo processamento e vai direto para epilogo (early return).
 
 **flags_0x48 processing:** init_fn (0x164440) le entry_record[type]->flags bit 18 em +0x48. Quando set, init_fn executa quaternion init opcional. O codigo de mascara em 0x16475C computa identity (AND com 0xFFFFFFFFFFFFFFFF, artefato de compilador).
+
+---
+
+### woodbox0_work
+
+Struct privada de instancia de WOODBOX0 (descriptor idx 17). Alocada em hC (0x1C00C0), 400 bytes via sub_13A0F8 (tag 0x7AC). Armazenada em scene_obj[0x800]. Conteudo integral copiado do template ROM em 0x4B5560 (0x190 bytes).
+
+**Tamanho:** 0x190 (400 bytes)
+**Allocada por:** `sub_13A0F8(heap, 0x190, 0x006186A0, 0x7AC)` em hC
+**Template ROM:** 0x4B5560 (copia integral de template de 0x190 bytes)
+**Behavior fn:** 0x23D660 (Group B — shared physics props behavior)
+
+| Campo | Offset | Tipo | Inicializado | Uso |
+|-------|--------|------|-------------|-----|
+| `counter` | +0x000 | u32 | template | Contador per-frame (mod 31, incrementado em hB) |
+| `template_quads` | +0x004 | ico_u64[3] | template | Dados de template (4 doubles consecutivos) |
+| `scale_x` | +0x020 | float | template | Escala X |
+| `scale_y` | +0x024 | float | template | Escala Y |
+| `scale_z` | +0x028 | float | template | Escala Z |
+| `scale_factor` | +0x02C | float | scene_obj[+0x70] | Fator de escala/tipo ID sobrescrito em hC |
+| `flags` | +0x058 | u32 | scene_obj[+0x30] | Flags (se !=0: hA chama sub_1BD668, hC usa alt path) |
+| `action` | +0x05C | u32 | template look-up | Indice de acao (populado em hC) |
+| `destruct_time` | +0x134 | float | world state + 0x34 | Tempo de destruicao (usado internamente) |
+| `destruct_state` | +0x138 | u32 | 1? | Estado de destruicao (limpo em hA para 0) |
+| `child_entity` | +0x160 | ico_ptr32 | sub_19F310 | Ponteiro para entidade filha |
+| `scene_obj_ptr` | +0x180 | ico_ptr32 | sub_1B7FE8 | Ponteiro para scene object |
+
+**hB state machine:** counter incrementa a cada frame, mod 31. Quando wrap (counter == 0), tail-call sub_1AE460(scene_obj_ptr, 0x14). Entre frames, chama sub_1BF2C8 (animacao/escala) e sub_102858 (transform).
+
+**hA paths:**
+- Sempre (audio): sub_10ECD8 + sub_10ECB8(entity)
+- Condicional (flags != 0): sub_1BD668(entity, flags) — physics update com flags
+- Sempre: clear work[+0x138] = 0
+
+**hC init chain:**
+1. Alloc sub_13A0F8 (0x190 bytes, tag 0x7AC)
+2. Template copy: 0x4B5560 → work (0x190 bytes)
+3. scale_factor = scene_obj[+0x70]
+4. flags = scene_obj[+0x30]
+5. sub_1B7FE8 → scene_obj_ptr
+6. sub_19F310(type_id, initializer) → child_entity
+7. scene_obj[+0x7EC] = 0x1C11C0 (collision callback)
+8. Two animation data paths based on flags (alt vs main)
+9. Common: sub_1BDA70 → sub_1BDC58 → sub_1BD408 → sub_1BCC18
 
 ---
 
@@ -888,6 +933,43 @@ Node de lista ligada usado pelo sistema de registro de callbacks. Gerenciado por
 **Function 0x1D8E40** (VU0 cloth render/compute, 295 insns, 656B stack, 20 JALs): acessa gp[-18868] e gp[-18864] em 2 blocos de VU0 kernel. Fora do range clothAnimation.c. Ver `research/elf/ghidra-rev063-vu0-cloth-compute-and-writer-functions.md`.
 
 **Init values nao-zero em .sdata:** 40 entity type tags (OBJ, BGA, ENE, ICO, CAM, ACT, etc.), format strings `"%s : %s"` / `"%s : %d"`, texture format names (PSMCT32, PSMT8, etc.), GS texture params (SELTEX, SCRL-U, SHINE, etc.), funcao pointer `0x001D9020` (cloth VU0 SIMD), e 0xFFFFFFFF sentinelas.
+
+### barrel_work (state_block, 0x90 bytes)
+
+Bloco de estado para BARREL/ROPE, alocado em hC (BARREL) ou herdado (ROPE).
+Template em 0x4C46B0 (0x80B copiados + 0x10B zeros).
+
+| Campo | Offset | Tipo | Valor Padrao | Descricao |
+|-------|--------|------|--------------|-----------|
+| `variant` | +0x00 | u32 | 0 | Indice do estado (0-4) |
+| `rope_segments` | +0x04 | u32 | entry param_30 | Numero de segmentos/cordas |
+| `active_flag` | +0x08 | u32 | 0 | Bandeira de atividade |
+| `child_attached` | +0x0C | u32 | 0 | Child entity attached? |
+| `attached_flag` | +0x10 | u32 | 0 | Attached flag (set em sub_1D2738) |
+| `external_arg` | +0x14 | u32 | 0 | Arg externo (passado via hA) |
+| `identity_scale` | +0x18 | float | 1.0 | Escala identidade |
+| `_pad_1C` | +0x1C | u8[44] | 0 | Padding |
+| `max_segments` | +0x48 | u32 | 300 | Maximo de segmentos (0x12C) |
+| `_pad_4C` | +0x4C | u8[68] | 0 | Padding |
+
+**Alocacao:** heap_alloc(0x90) em hC BARREL (0x1D27A8)
+**Destruicao:** Nao ha free explicito — liberado pelo garbage collector de cena
+
+### fn_1D3BF0 state table (0x4D4188, 8+ entries, stride 0x14)
+
+Tabela de modelos/fases para a sub-maquina de estados de BARREL/ROPE.
+Usada em fn_1D3BFO para selecionar modelos fisicos por state_id.
+
+| Entry | field[0] (u32) | field[1] (u32) | field[2] (u32) | field[3] (u32) | flags (u32) |
+|-------|---------------|---------------|---------------|---------------|-------------|
+| 0 | 0x032F | 0x032F | **0x01BA** | 0x032F | 0 |
+| 1 | 0x032F | 0x032F | 0x032F | 0x032F | 0 |
+| 2 | **0x01BC** | **0x01BB** | **0x01BB** | **0x01BB** | 1 |
+| 3 | **0x01BE** | **0x01BD** | **0x01BD** | **0x01BD** | 1 |
+| 4 | **0x01B8** | **0x01B8** | **0x01B8** | **0x01B8** | 1 |
+| 5 | **0x01AC** | **0x01AC** | **0x01AC** | **0x01AC** | 1 |
+| 6 | 0x032F | 0x032F | **0x01B8** | 0x032F | 0 |
+| 7 | 0x0000 | **0x0210** | **0x0211** | **0x0217** | — |
 
 **Init values no cluster callback** (.sdata+0x8E8..0x908):
 | Offset | Valor | Significado |

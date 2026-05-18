@@ -50,6 +50,24 @@ This repository is currently documentation-first. The technical stack below desc
 | CI/CD | Not configured yet |
 | Tests | No automated suite yet; synthetic fixture used for local tool validation |
 
+### Decompiled entity handlers (Rev.088)
+
+NEAR-STRUCTURAL C decompilation of 7 entity handler sets:
+
+| Entity | File | Functions | Status |
+|--------|------|-----------|--------|
+| BOY (1) | `src/entity/boy.c` | init_fn, hC, hB, hA, 5 helpers (632 lines) | NEAR-STRUCTURAL |
+| ENEMY1 (4) | `src/entity/enemy1.c` | init_fn, hC, hB, hA, destructor + helpers (572 lines) | NEAR-STRUCTURAL |
+| BARREL (5) / ROPE (8) | `src/entity/barrel.c` | init_fn, hA, hB (cb_routine2), hC (2 variants), 7 helpers (700+ lines) | NEAR-STRUCTURAL |
+| WOODBOX0 (17) | `src/entity/woodbox0.c` | hC, hB, hA, cb_collision, work struct (220+ lines) | NEAR-STRUCTURAL |
+| HB skeletons | `src/entity/hb_skeletons.c` | Common dispatch patterns | REFERENCE |
+| Near matches | `src/entity/near_matches.c` | Near-identical function pairs | REFERENCE |
+
+**Historically significant:** The function at 0x1D3A30 (cb_routine2) was
+erroneously called the "ROPE callback" during Rev.001-036. Corrected in
+Rev.039 via ICO-decomp cross-reference. It is BARREL's physics constraint
+solver (clothAnimation.c / src/item.c domain).
+
 Architectural approach:
 
 ```text

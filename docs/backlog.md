@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 126 |
+| Completed | 128 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -80,6 +80,22 @@ _(none)_
 - Evaluate an upstream-friendly design for PCSX2: configurable addresses, register filters, structured logs, optional memory windows, and no mandatory pause
 - Open PCSX2 issue/discussion before any PR if the design remains useful after stabilization
 - Deliverable: short technical proposal that does not include game data or project-specific hardcoded addresses
+
+---
+
+## Concluídas / Completed
+
+### [x] [SQUAD-ENTITY | rev.088 | 2026-05-18]
+WOODBOX0 entity handler full near-structural decompilation (hA/hB/hC)
+
+- **WOODBOX0 descriptor index corrected**: index 17 (base 0x2A385C), NOT index 3 as previously believed. Previous mapping (hA=0x1D1400, hB=0x1CF288, hC=0x1D15B0) belongs to GIRL (Yorda, descriptor index 2).
+- **hC (0x1C00C0, ~288 insns)**: per-instance constructor. Allocates 0x190-byte work struct (tag 0x7AC), copies 0x190-byte template from ROM 0x4B5560, creates child entity via sub_19F310, sets collision callback 0x1C11C0 at scene_obj[+0x7EC], has conditional animation data load path, calls common init chain (sub_1BDA70/sub_1BDC58/sub_1BD408/sub_1BCC18).
+- **hB (0x1C0538, ~45 insns)**: per-frame update handler. 31-frame counter (work+0x00) incremented per call, wraps at 0x1F. Calls sub_1BF2C8 (scale animation update) and sub_102858 (transform update). Tail-calls sub_1AE460 on wrap.
+- **hA (0x1C05D0, ~40 insns)**: conditional handler. Calls audio events (sub_10ECD8/sub_10ECB8). If flags (work+0x58) non-zero, calls sub_1BD668 (conditional physics). Checks WORLD_STATE. Clears work+0x138 (destruct_state).
+- **Work struct** (0x190 bytes): fields at +0x00=counter, +0x20/+0x24/+0x28=scale x/y/z, +0x2C=scale_factor, +0x58=flags, +0x5C=action, +0x134=destruct_time, +0x138=destruct_state, +0x160=child_entity, +0x180=scene_obj_ptr. Template-copied from 0x4B5560.
+- **Descriptor fields at 0x2A385C**: [+0x20]=0xF2 (phy_type), [+0x28]=-1.0f (scale), [+0x2C]=1.0f (damping), [+0x30]=3 (type ID), [+0x34]=0x1C0838, [+0x38]=0x1C0790, [+0x3C]=0x1C0840, [+0x40]=0x17D1D0, [+0x44]=1, [+0x48]=0x1C05D0 (hA), [+0x50]=0x1C0538 (hB), [+0x58]=0x1C00C0 (hC), [+0x60]=0x23D660 (behavior_fn Group B).
+- **Written to** `src/entity/woodbox0.c` with `struct woodbox0_work` (size 0x190), extern forward declarations, template copy loop.
+- Key structural insight: WOODBOX0 shares Group B behavior_fn (0x23D660) with other physics props. Not a standalone cloth entity — uses physics constraint solver pattern via shared behavior.
 
 ---
 
@@ -715,6 +731,7 @@ Call graph analysis
 | rev.062 | 2026-05-16 | SQUAD-ARCH | GP-relative data map (11,547 accesses, 2,131 offsets): GP=0x006388F0 confirmed, 853 .sdata vars mapped, 40 entity type tags decoded, cloth VU0 function pointer in .sdata, world state block, seeker data cluster |
 | rev.063 | 2026-05-16 | SQUAD-RUNTIME | VU0 cloth compute and writer functions: 0x001D9020 resolved (part of 0x1D8E40, 295 insns, VU0), 2 writers of gp[-18868] (0x1DFBC8 scene init + 0x1E00F8 entity init), cloth struct cluster gp[-18892..-18844] (48B, 12 slots), both writers outside clothAnimation.c range |
 | rev.064 | 2026-05-16 | SQUAD-RUNTIME | Live scene init dispatch at 0x00166E10: cold path split (3 entry points), 400B stack, array iteration at 0x006AAC00, callback dispatch via [context+0x0C]; gp-25904 default state (0/0xFFFFFFFF); Rev.059 refuted (0x1B76F8/0x1B7D00 are DEAD CODE) |
+| rev.088 | 2026-05-18 | SQUAD-ARCH | BARREL/ROPE handler decompilation: init_fn (0x166028), hA (0x1D2540/0x1D2550), hC BARREL (0x1D27A8), hC ROPE (0x1D3B28), cb_routine2 (0x1D3A30, ex-"ROPE callback"), fn_1D3BF0, fn_1D3D40, fn_1D3DD8 — 12 functions to NEAR-STRUCTURAL C in src/entity/barrel.c. Source files confirmed: src/item.c (hC assertions), src/fieldCollision.c (init_fn). Updated docs/data-model.md, docs/system-feature-flows.md, README.md. |
 
 ---
 
