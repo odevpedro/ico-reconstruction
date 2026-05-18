@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 125 |
+| Completed | 126 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -84,6 +84,17 @@ _(none)_
 ---
 
 ## Completed
+
+### [x] [SQUAD-RUNTIME | rev.087 | 2026-05-18]
+ENEMY1 entity handler full near-structural decompilation (hA/hB/hC/init_fn)
+
+- **hA (0x1CE690, 22 insns)**: conditional mask handler. Checks entity flags bit 33; if set and destruction ready, tail-calls fn_1CE5F8 cleanup. ENEMY1 is the ONLY descriptor that uses this dispatch path (confirmed Rev.075).
+- **hB (0x1CE3C0, 141 insns)**: per-frame AI + draw. State machine counter (0..10), shadow draw, animation blend (phase*70/50/0.5), conditional pose matrix, model draw, 2 child sprites (attr 0x24/0x25). Runs at dispatch slot 12 (~38.5% of events).
+- **hC (0x1CE220, 103 insns)**: per-instance constructor. Allocates 0x50-byte enemy1_work struct, 2 child sprites, model resource, child pointer array, seeds mod-10 counter.
+- **init_fn (0x164440, 278 insns)**: full entity init. Core alloc, 3-pass model setup, param copy, flags_0x48 processing (bit 18 -> controls quaternion init and flag clear at alloc+0x18), callback registrations x{0,3,4}, scale clamp to 10.0f.
+- **fn_1CE5F8 (37 insns)**: destruction/cleanup. Releases children and model; optional full entity destruction.
+- **Key structural insight**: flags_0x48 processing at 0x164730 reads entry_record[type]->flags bit 18; the mask-building code at 0x16475C evaluates to identity (AND with all-ones, likely compiler artifact), but s0_flag correctly controls the quaternion init at 0x16482C.
+- Written to `src/entity/enemy1.c` with `struct enemy1_work` (size 0x50), extern forward declarations, and per-field documentation.
 
 ### [x] [SQUAD-RUNTIME | rev.079 | 2026-05-18]
 Runtime session at windmill (14M events, 4.8GB log): slot distribution inverted, 12 callbacks mapped, probes documented
@@ -691,6 +702,7 @@ Call graph analysis
 | 2026-05-16 | 2026-05-16 | SQUAD-RUNTIME | 0x0024xxxx callers investigated: 0x240D40/0x240EA0 are object factories, excluded for ROPE callback |
 | rev.054 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 2: GIRL, QUEEN, BGA, AP1 — 12 funcoes disassembled, padrao hC/hB/hA confirmado em 7 entidades |
 | rev.056 | 2026-05-16 | SQUAD-RUNTIME | Handler decompilation wave 3: BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR — 12 handlers disassembled; descriptor index correction (WOODBOX0=17, BGA=30, AP1=61); hB dispatcher diversity confirmed (no unified dispatch); 13 entries with non-null init_fn |
+| 2026-05-18 | 2026-05-18 | SQUAD-ARCH | BOY full handler decompilation: init_fn (0x153478), hC (0x1C1A98), hB (0x1C1DD8), hA (0x1C1F58), sub_1C1C48, sub_1C1EA8, sub_1C2098, sub_1C20A8, sub_1C2170 — all to NEAR-STRUCTURAL C in src/entity/boy.c. Updated docs/data-model.md and docs/system-feature-flows.md. |
 | rev.057 | 2026-05-16 | SQUAD-RUNTIME | C models: cloth dispatcher (5-state FSM), clothSubForceApply (EE sin/cos force), ENEMY1 hC (80B constructor); WOODBOX0 hC ASM-HOLD; factory analysis integration |
 | 2026-05-16 | 2026-05-16 | SQUAD-TOOLING | Compile test with ee-gcc 15.2.0: EXACT models structurally validated but NOT bit-identical (-mabi=eabi unsupported); modern toolchain confirms all offsets correct |
 | 2026-05-16 | 2026-05-16 | SQUAD-TOOLING | Entity handler splat YAML (splat/SCUS_971.13.entity-handlers.yaml): 15 subsegments across 6 entities (BIRD, BOSS_CTR, ATTACKCH x2, WOODBOX0, ENEMY1) |

@@ -147,6 +147,7 @@ Current ELF research focus:
 - **Rev.055** — COP2 cloth decompilation: clothSubDistanceCheck (5 COP2, proximity wakeup), clothSubPlaneClip (74 COP2, 4×4 transform + frustum clip), clothSubForceApply (0 COP2 — EE sin/cos only). BOY hC analyzed: 76B alloc, 5 models, 3 child entities. hB dispatcher investigation: gap unresolved — no centralized dispatch found. [`research/elf/ghidra-rev055-cop2-cloth-boy-hc-hb-dispatcher.md`](./research/elf/ghidra-rev055-cop2-cloth-boy-hc-hb-dispatcher.md)
 - **Rev.056** — Handler decompilation wave 3 (final): BIRD, DEVIL_GI, ATTACKCH x2, BOSS_CTR — 12 handlers analyzed. Descriptor index correction (WOODBOX0=17, BGA=30, AP1=61). DEVIL_GI = GIRL alias. BIRD hB = 2 insns (delegate). ATTACKCH idx 63 hC = 176 insns (rotation matrix + dynamic child array). BOSS_CTR = 53-slot Queen boss arena manager. hB dispatcher diversity: 5 distinct patterns, no centralized dispatch. All 13 entries with non-null init_fn now mapped. [`research/elf/ghidra-rev056-handler-decompilation-wave3.md`](./research/elf/ghidra-rev056-handler-decompilation-wave3.md)
 - **Rev.057** — C models for cloth dispatcher (0x1D37C8, 5-state FSM: guard→prepare→simulate→check→done) and clothSubForceApply (0x1D3F78, EE sin/cos force projection) added to `src/cloth/near_matches.c`. ENEMY1 hC model (80B constructor, 2x child arrays) added to `src/entity/near_matches.c`. WOODBOX0 hC marked ASM-HOLD (286 insns, 400B alloc, 384B data copy). Factory analysis summary integrated (0x240D40/0x240EA0 documented in Rev.052/session3).
+- **Rev.087** — ENEMY1 entity handler fully decompiled to near-structural C. All 5 functions re-disassembled from raw ELF via capstone and written as C to `src/entity/enemy1.c`: hA (0x1CE690, 22 insns, conditional mask handler), hB (0x1CE3C0, 141 insns, per-frame AI+draw), hC (0x1CE220, 103 insns, 80B constructor), init_fn (0x164440, 278 insns, full entity init), fn_1CE5F8 (37 insns, destruction cleanup). Struct `enemy1_work` (0x50 bytes) defined with per-field documentation. Documentation updated (backlog, data-model, system-feature-flows). [`src/entity/enemy1.c`](./src/entity/enemy1.c)
 
 These notes describe structural evidence only. They do not assign definitive gameplay names to the internal states or lifecycle slots.
 
@@ -186,6 +187,7 @@ These notes describe structural evidence only. They do not assign definitive gam
     │   └── entity/                   # Entity system structs and handlers (Rev.056)
     │       ├── types.h               # 68-type enum, phy_type constants
     │       ├── structs.h             # descriptor_record, entry_record, state_block
+    │       ├── enemy1.c              # ENEMY1 full decompilation (hA/hB/hC/init_fn)
     │       └── near_matches.c        # 4 NEAR-STRUCTURAL handler models (GIRL hA, QUEEN hA/init, BGA init)
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures

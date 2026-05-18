@@ -11,6 +11,7 @@
 - [Physics Object Type Table Initialization](#physics-object-type-table-initialization)
 - [Callback Registration Flow](#callback-registration-flow)
 - [Scene Loader Flow](#scene-loader-flow)
+- [ENEMY1 Entity Handler Flow](#enemy1-entity-handler-flow)
 
 ---
 
@@ -792,7 +793,7 @@ hA     (+0x48) → Post-init / Reset (cleanup, reset condicional)
 
 | Indice | Nome | init_fn | hC (constructor) | hB (update) | hA (reset) | Status |
 |--------|------|---------|-------------------|-------------|------------|--------|
-| 1 | BOY | 0x153478 | 0x1C1A98 | 0x1C1DD8 (51 insns) | 0x1C1F58 (80 insns) | ASM |
+| 1 | BOY | 0x153478 | 0x1C1A98 | 0x1C1DD8 (50 insns) | 0x1C1F58 (79 insns) | NEAR-STRUCTURAL C |
 | 2 | GIRL | 0x174BA0 | 0x1D1668 (92 insns, 64B) | 0x1D17F8 (112 insns, anim blend) | 0x1D1A98 (16 insns) | ASM |
 | 4 | ENEMY1 | 0x164440 | 0x1CE220 (~103 insns, 80B) | 0x1CE3C0 (~135 insns, AI+draw) | 0x1CE690 (~23 insns) | ASM |
 | 17 | WOODBOX0 | 0x17D1D0 | 0x1C00C0 (286 insns, 400B) | 0x1C0538 (27 insns, counter) | 0x1C05D0 (28 insns) | ASM |
@@ -868,7 +869,7 @@ Tres init_fn previamente desconhecidos foram identificados no runtime Rev.074 (1
 
 | Entity | init_fn Stack | hA Role | hB Role | hC Role | Notas |
 |--------|--------------|---------|---------|---------|-------|
-| BOY | -0x160 (352B), 7 JALs | 46 JALs, 14x boy_fn1 | 27 JALs, pos lerp, flags | 570 ins, 4x subsystem hook | flags_0x480, NOT flags_0x48 |
+| BOY | -0x160 (352B), 7 JALs, GP-data bit extraction, core alloc + anim init | -0x60, 79 insns, active/idle paths, world-state gate | -0x30, 50 insns, cloth+shadow+phys+tailed movement solver (0x103D50) | -0x50, 106 insns, 76B tag 0xFE, 5 models, 3 children (1/0xB/0xC) | flags_0x480, NOT flags_0x48; src/entity/boy.c |
 | GIRL | 29 JALs, 20 FPU ops | 3 JALs minimal | 16 JALs, 19 FPU, quaternion | 9 JALs, 4x table init | FPU-heavy animation blend |
 | ENEMY1 | 24 JALs, 30 FPU, 28 dwords | Conditional on flags_0x48 | Same as init_fn+loop | ==init_fn (ctor==init_fn) | **Only flags_0x48 user** |
 | WOODBOX0 | 2 JALs, lookup table 0x28A640 | Stub, 0 JALs | 2 JALs, tick counter wrap 0x1F | ==init_fn | Simplest, no COP1 |
@@ -1019,3 +1020,132 @@ A "physics type table" anteriormente documentada em 0x001A48A0 (Rev.049) NAO EXI
 - A tabela 0x4B3D10 tem 181 entries, stride 0x40, com type ID em [+2] (lhu)
 - O offset +0x1C em cada entidade e o slot onde callbacks sao armazenados
 - GIRL (type 5) nao tem handlers cloth diretamente — sua AI cria objetos cloth separadamente via BARREL descriptor
+
+---
+
+## ENEMY1 Entity Handler Flow
+
+> **Versao:** 1.0
+> **Implementada em:** 2026-05-18 (Rev.087)
+> **Status:** NEAR-STRUCTURAL C decompiled
+
+### Resumo
+
+Fluxo completo de lifecycle do ENEMY1 (descriptor idx 4, nome "ENEMY1"). Quatro funcoes compoem o handler: init_fn (0x164440, asset/setup init), hC (0x1CE220, constructor por instancia), hB (0x1CE3C0, update por frame), e hA (0x1CE690, conditional mask dispatch). ENEMY1 e a UNICA entidade que usa flags_0x48 para controle de slot de dispatch.
+
+### Fluxo de Inicializacao
+
+```
+Scene Setup
+   |
+   | init_fn (0x164440, 278 insns)
+   |   sub_1A6E28(0x5591D8, entity) -- base init
+   |   sub_202208(entity) -> alloc -- core struct alloc
+   |   sub_202148, sub_203918, sub_203910 -- entity setup
+   |   type check (0xD7D) -> set alloc flag bit 0x20000
+   |   sub_14B580 / sub_14B1D0 / sub_14B260 -- model init
+   |   3x sub_14B358 -- model parameter setup (attr 0x12/0x13/0x14)
+   |   Copy 128B param block (sp+0x80 -> sp)
+   |   Store model params to scene_obj + inner struct
+   |   flags_0x48 check -- bit 18 of entry_record[type] flags
+   |   |-- if set: quaternion init (sub_104360 + sub_1CEC88 + sub_1651C8)
+   |   sub_203AA0(1), sub_203B78 callbacks, sub_1CEC60 scale clamp(10.0)
+   |   sub_203AA0(0)
+   v
+   --- hC (0x1CE220, 103 insns) per-instance constructor ---
+   |   alloc 0x50 enemy1_work via sub_13A0F8
+   |   store at scene_obj[0x800]
+   |   2x sub_1CEF90(10,0,10) -> child1, child2
+   |   sub_1CF288(6) -> model handle
+   |   init fields (0x38=cleanup_state, 0x2C=anim_guard, etc.)
+   |   alloc child_array[child_count] via sub_13A0F8, zero-fill
+   |   sub_1CD9B0(entity, count_from_init) -> result_08
+   |   sub_1E4798(...) -- model/animation init
+   |   seed mod-10 counter: (seed + 2) % 10
+   v
+   Entity instantiated, ready for dispatch
+```
+
+### Fluxo de Dispatch (por frame)
+
+```
+Live Dispatch @ 0x166E10 (slot table 0x282690)
+   |
+   | slot 12 (~38.5% of dispatch events): hB (0x1CE3C0)
+   | slot selection based on mask + entity state
+   v
+hB (0x1CE3C0, 141 insns, 112B stack)
+   |
+   | 1. Check entity flags bit 33
+   |    set    -> counter = 0 (forced revive)
+   |    clear  -> if counter < 11, increment; else epilogue
+   |
+   | 2. AI setup: scene_obj->{550=0, 54C=2, 548=0}
+   |    sub_1654C8(entity) -> if ==3: scene_obj->550=1
+   |
+   | 3. Shadow/body draw (sub_1E3FC8)
+   |
+   | 4. Animation blend: sub_103F00(entity, 4, 0, phase*70, phase*50, 0.5)
+   |
+   | 5. Conditional pose (if anim_ptr + anim_guard):
+   |      matrix = base_ptr + frame_idx*64 + 0x30
+   |      sub_104940(temp_buf, scene_obj+0x1D0, matrix)
+   |      sub_1CF6C0(model, temp_buf)
+   |
+   | 6. Model draw (sub_1CF548)
+   |
+   | 7. Increment mod-10 counter at scene_obj[0x558]
+   |
+   | 8. Average position from collision[0x20..0x28]:
+   |      avg = (x + y + z) / 3.0
+   |
+   | 9. Sprite 1 (child1, attr 0x24):
+   |      frame = sub_109F10(entity, 0x24) * 64
+   |      sub_1185D0(si, base+frame, 0x4C0DA0)
+   |      sub_1CF930(child1, data, avg)
+   |    Sprite 2 (child2, attr 0x25): same pattern
+   v
+   Return
+```
+
+### Fluxo de Mascara / Destruicao
+
+```
+Live Dispatch -- mask selects hA instead of hB
+   |
+   | hA (0x1CE690, 22 insns)
+   |   Check entity flags bit 33
+   |     clear -> return (no-op)
+   |     set   -> sub_1BB7E0()
+   |               -> sub_165F88(entity)
+   |                   |-- if != 0: return (not ready)
+   |                   |-- if == 0: tail-call fn_1CE5F8
+   v
+fn_1CE5F8 (destruction/cleanup, 37 insns)
+   |
+   | 1. If wk->cleanup_state: sub_1224E0()
+   | 2. If collision->[0x30] == 0.0:
+   |      sub_1CF998(child1) -- destroy child
+   |      sub_1CF998(child2) -- destroy child
+   | 3. sub_1CF770(model) -- release model
+   | 4. If wk->cleanup_flag: sub_1CDB28(entity) -- full destruction
+   v
+   Entity removed from dispatch rotation
+```
+
+### Decisoes Estruturais
+
+| Decisao | Justificativa |
+|---------|---------------|
+| enemy1_work size 0x50 | Confirmado por argumento a1=0x50 em sub_13A0F8 |
+| state_counter 0..10 | slti comparacao com 0xB (11) em 0x1CE408 |
+| flags bit 33 -> counter reset | dsrl32 por 1 (bit 33) and 1 em 0x1CE3EC-0x1CE3F0 |
+| flags_0x48 bit 18 | srl por 0x12 (18) e andi 1 em 0x164748-0x16474C |
+| mask-building nop | AND com 0xFFFFFFFFFFFFFFFF (compiler artifact) |
+| Mod-10 counter | div por 10 com mfhi em hC/hB |
+
+### Arquivos
+
+- `src/entity/enemy1.c` — decompilacao near-structural das 5 funcoes
+- `src/entity/structs.h` — definicoes de struct base (descriptor_record, entity_context)
+- `research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md` — analise estrutural dos handlers

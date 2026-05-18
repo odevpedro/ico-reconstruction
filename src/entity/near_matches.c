@@ -151,6 +151,7 @@ void sub_202A18(struct entity_context *, u32, ico_ptr32);
 void sub_106190(struct entity_context *);
 ico_ptr32 sub_1D3B28(ico_ptr32);
 
+// NOTE: This is an old incorrect draft. The correct decompilation is in enemy1.c.
 ico_ptr32 enemy1_hC(struct entity_context *entity, ico_ptr32 initializer)
 {
     ico_ptr32 heap = *(ico_ptr32 *)0x00719720;

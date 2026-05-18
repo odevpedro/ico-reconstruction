@@ -562,7 +562,7 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 
 | Indice | Label | init_fn (+0x40) | hA (+0x48) | hB (+0x50) | hC (+0x58) | Alloc hC | Status |
 |--------|-------|-----------------|-------------|-------------|-------------|----------|--------|
-| 1 | BOY | 0x153478 | 0x1C1F58 | 0x1C1DD8 | 0x1C1A98 | ? | ASM |
+| 1 | BOY | 0x153478 | 0x1C1F58 | 0x1C1DD8 | 0x1C1A98 | ? | NEAR-STRUCTURAL C |
 | 2 | GIRL | 0x174BA0 | 0x1D1A98 | 0x1D17F8 | 0x1D1668 | 64B | ASM |
 | 4 | ENEMY1 | 0x164440 | 0x1CE690 | 0x1CE3C0 | 0x1CE220 | 80B | ASM |
 | 17 | WOODBOX0 | 0x17D1D0 | 0x1C05D0 | 0x1C0538 | 0x1C00C0 | 400B | ASM |
@@ -584,7 +584,7 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 
 | Entity | init_fn Role | hA Role | hB Role | hC Role | Pattern |
 |--------|-------------|---------|---------|---------|---------|
-| BOY | Allocator (352B stack, 7 JALs) | Heavy reset (46 JALs, 14× boy_fn1, callback reg) | Per-frame update (27 JALs, pos lerp, flags) | Constructor (570 ins, 16 JALs, 4× subsystem hook) | Uses flags_0x480, NOT flags_0x48 |
+| BOY | 352B stack, 7 JALs, GP-data bit extraction, core alloc + anim init + model params | 79 insns, active/idle paths, world-state 0x27 proximity gate | 50 insns, cloth+shadow+anim state+movement solver (tail-call 0x103D50) | 106 insns, 76B alloc tag 0xFE, 5 models, 3 child entities (1/0xB/0xC) | NEAR-STRUCTURAL C in src/entity/boy.c |
 | GIRL | Animation setup (29 JALs, 20 FPU ops) | Minimal reset (3 JALs) | Per-frame anim (16 JALs, 19 FPU ops, quaternion interp) | State block pop (9 JALs, 4× table init) | Shared with DEVIL_GI, heavy FPU |
 | ENEMY1 | Heavy struct init (24 JALs, 30 FPU ops, 28 dwords at +0x0C0) | Conditional reset on flags_0x48 | Same as init_fn pattern + polling loop | Same as init_fn (ctor==init_fn) | **Only entity using flags_0x48** |
 | WOODBOX0 | Lookup table match (2 JALs, table 0x28A640) | Stub (0 JALs) | Tick counter + wrap at 0x1F (2 JALs) | Same as init_fn | Simplest entity, no FPU |
@@ -599,6 +599,43 @@ Entrada na tabela de descritores (descriptor table). Tabela em `0x002A31B8`, str
 | 0x0017D128 | Environment effect (fog/BGA) | Resource loads IDs 356/361, gp gate 0x90A0==0xB |
 
 **Observacao:** BARREL (idx 19) e ROPE (idx 20) sao descritores diferentes, mas na tabela de tipos fisicos (0x001A48A0) ambos aparecem com os mesmos handlers. Rev.056 corrigiu indices de varios descritores: WOODBOX0=17 (era 6), BGA=30 (era 50), AP1=61 (era 56).
+
+---
+
+### enemy1_work
+
+Struct privada de instancia de ENEMY1 (descriptor idx 4). Alocada em hC (0x1CE220), 80 bytes via sub_13A0F8. Armazenada em scene_obj[0x800].
+
+**Tamanho:** 0x50 (80 bytes)
+**Allocada por:** `sub_13A0F8(heap, 0x50, 0x00618CF0, 0x25D)` em hC
+**Destruida por:** `fn_1CE5F8` via hA conditional path
+
+| Campo | Offset | Tipo | Inicializado | Uso |
+|-------|--------|------|-------------|-----|
+| `count_init` | +0x00 | u32 | initializer[0x30] | Contagem de instancias da definicao de cena |
+| `next_free` | +0x04 | u32 | 0 | Proximo slot livre (sempre 0) |
+| `result_08` | +0x08 | ico_ptr32 | sub_1CD9B0 | Resultado de funcao auxiliar |
+| `field_0C` | +0x0C | ico_ptr32 | — | Nao usado |
+| `cleanup_flag` | +0x10 | u32 | 0 | Se != 0, fn_1CE5F8 chama sub_1CDB28 |
+| `child_array` | +0x14 | ico_ptr32 | alloc child_count*4 | Array de ponteiros para child sprites |
+| `child1` | +0x18 | ico_ptr32 | sub_1CEF90(10,0,10) | Handle child sprite 1 |
+| `field_1C` | +0x1C | u32 | 0 | — |
+| `child2` | +0x20 | ico_ptr32 | sub_1CEF90(10,0,10) | Handle child sprite 2 |
+| `field_24` | +0x24 | u32 | 0 | — |
+| `model` | +0x28 | ico_ptr32 | sub_1CF288(6) | Handle do modelo 3D |
+| `anim_guard` | +0x2C | u32 | 1 | Guard para atualizacao de pose (checked != 0) |
+| `field_30` | +0x30 | ico_ptr32 | — | Nao usado |
+| `field_34` | +0x34 | u32 | — | Nao usado |
+| `cleanup_state` | +0x38 | u32 | 0 | Se != 0, fn_1CE5F8 chama sub_1224E0 |
+| `field_3C` | +0x3C | u32 | 0 | — |
+| `field_40` | +0x40 | u16 | 0 | Halfword |
+| `field_44` | +0x44 | u32 | 0 | — |
+| `phase` | +0x48 | float | 0.0 | Fase de animacao (usada em blend phase*70/50/0.5) |
+| `state_counter` | +0x4C | u32 | 0 | Contador de estado (0..10, 11 frames ativos) |
+
+**hB state machine:** `state_counter` incrementa a cada frame ate 10. Quando entity flags bit 33 set, reseta para 0. Apos 10 frames sem reset, hB pula todo processamento e vai direto para epilogo (early return).
+
+**flags_0x48 processing:** init_fn (0x164440) le entry_record[type]->flags bit 18 em +0x48. Quando set, init_fn executa quaternion init opcional. O codigo de mascara em 0x16475C computa identity (AND com 0xFFFFFFFFFFFFFFFF, artefato de compilador).
 
 ---
 
