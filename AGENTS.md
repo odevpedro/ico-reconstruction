@@ -78,15 +78,18 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
-research/elf/ghidra-rev070-callers-of-166028-and-rodata-init-table.md  (callers of 0x166028: main loop 0x101C80, scene init 0x1AF4A0, entry iter 0x1B76F8; 404-byte stride entity table; debug table at 0x613E00 with ClothInfo/CollisionOldProc strings and 0x168650)
-research/elf/ghidra-rev069-vu0-ringbuffer-packet-builder-halfword-table-population.md  (VU0 packet builder 0x1D43F8, kick stub 0x117C40, 0x6AB080 writers, alternates constants)
-research/elf/ghidra-rev067-consolidated-live-dispatch-model.md        (live dispatch consolidated model — slot table, callbacks, callers, alternate impl)
-research/elf/ghidra-rev066-static-live-dispatch-callsite-map.md       (cold paths, GP slots, dispatch point confirmed)
-research/elf/ghidra-rev064-cold-paths-and-live-dispatch.md            (live dispatch at 0x00166E10, cold paths, struct map)
-research/elf/ghidra-rev039-cloth-domain-correction.md                 (cloth domain for 0x001d37c8/0x001d3a30)
-research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md          (static registration gap)
-research/elf/ghidra-rev025-runtime-confirmed-caller-context.md         (runtime validation)
-research/external/ico-splat-promoted-ranges-experiment.md              (verified splat ranges)
+research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md  (world_state transitions, gp_m49B4=current entity work area, 6 room values mapped)
+research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md         (BARREL/ROPE/WOODBOX0 near-structural C decompilation)
+research/elf/ghidra-rev087-enemy1-boy-decompilation.md                   (ENEMY1+BOY near-structural C decompilation)
+research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md  (final static analysis — behavior_fn, env_effect type matrix, cb_routine4, VBlank)
+research/elf/ghidra-rev085-death-validation-and-next-session-plan.md     (mask_set=I/O only, death zone=100% slot12)
+research/elf/ghidra-rev084-runtime-validation-extended-session.md        (43.8M events, slot 5/11 first fire, cutscene=100% slot12, 1913 entity contexts)
+research/elf/ghidra-rev079-runtime-validation-windmill-session.md        (14M events, slot distribution inverted per area)
+research/elf/ghidra-rev077-final-static-analysis.md                      (descriptor table, entry table, scene loader, VU0 queue, debug table, GP map)
+research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md  (entity types, init_fn groups, callback masks)
+research/elf/ghidra-rev074-runtime-session-main-loop-dispatch-confirmed.md  (9.1M events, slot distribution, callbacks)
+research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md  (12-step main loop, 17-slot dispatch)
+research/elf/ghidra-rev039-cloth-domain-correction.md                    (cloth domain for 0x001d37c8/0x001d3a30)
 ```
 
 ---
@@ -109,6 +112,7 @@ Before doing new analysis, read these files in this order if they exist:
 12. `research/ico-decomp-cross-reference-2026-05-14.md`
 13. `research/elf/ghidra-rev039-cloth-domain-correction.md`
 14. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
+15. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
 15. `research/external/sotc-tooling-relevance-survey.md`
 16. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
 17. `research/external/ico-splat-promoted-ranges-experiment.md`
@@ -333,13 +337,18 @@ The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-07
 ### Current objectives
 
 1. ~~Runtime: probe mask bit 0 during cutscene transitions~~ **DONE (Rev.085): mask_set = I/O only, zero gameplay hits across 66.9M events + death**
-2. Runtime: probe gp+0x6F60 (world_state at 0x00631990) to map room transitions — **prepared for next session (probe at 0x1AF948)**
+2. ~~Runtime: probe gp+0x6F60 (world_state at 0x00631990) to map room transitions~~ **DONE (Rev.089): 6 room values mapped across entrance → rooms 0x0A,0x10-0x13**
 3. ~~Runtime: probe halfword table writers~~ **DONE: zero hits across 3 sessions in 4 game areas. Condition unknown — requires new approach.**
-4. ~~Runtime: probe gp-0x49B4 (0x00633F3C)~~ **prepared for next session (probe at 0x166600)**
+4. ~~Runtime: probe gp-0x49B4 (0x00633F3C)~~ **DONE (Rev.089): confirmed as current entity work area pointer (22 distinct values, 344K reads)**
 5. ~~Investigate slot 0 callback 0x168DA8~~ **DONE (Rev.084): zero `addiu a1, 0 + JALR` sites in all .text — no code dispatches slot 0**
 6. ~~Investigate env effect table~~ **DONE (Rev.086): 395 entries × 0x30, type-to-type mapping matrix (NOT spatial zones)**
 7. ~~Study cb_routine4 pattern~~ **DONE (Rev.086): no-op stubs at +0x5C for GIRL/DEVIL_GI/ENEMY1/ENEMY_TEST only. Never called at runtime.**
 8. ~~Analyze vtable dispatch~~ **DONE (Rev.086): +0x60 = behavior_fn (shared dispatch function), NOT vtable. Group A=0x202A60 (main chars), Group B=0x23D660 (props), 39 entities have none.**
+9. ~~Decompile ENEMY1/BOY/BARREL/ROPE/WOODBOX0~~ **DONE (Rev.087-088): 7 handlers in near-structural C**
+10. ~~Populate historia.md~~ **DONE (Rev.089): chapter 15 added with full Rev.084-089 narrative**
+11. Fix dispatch_point slot index capture for next runtime session
+12. Reposition world_state_load probe to capture room init_fn
+13. Deploy memory watchpoint on VBlank counter 0x274EC0
 
 ---
 

@@ -1373,3 +1373,99 @@ Não pela magia. Pela engenharia.
 A escavação continua. Há muito mais abaixo da superfície. DATA.DF me
 espera. Os overlays DVP me esperam. A tela de morte ainda não foi
 encontrada. E eu ainda tenho as mãos sujas de terra.
+
+---
+
+## 15 — O que aprendemos em oitenta e nove revisões
+
+Passei mais três meses cavando.
+
+Três meses depois daquele primeiro grande mapa conceitual, o castelo está
+mais claro agora. Mas não está completo. Nunca vai estar completo, porque
+engenharia reversa não tem ponto final — tem pontos de parada.
+
+O que mudou desde o capítulo 14?
+
+Primeiro, o runtime. Consegui fazer o PCSX2 falar. Na Rev.074, coletei 9
+milhões de eventos em tempo real. A cada frame, o emulador me contava qual
+slot estava sendo chamado, qual callback estava rodando, qual entidade
+estava sendo processada. Na Rev.079, mais 14 milhões, confirmando o padrão.
+Na Rev.084, uma sessão massiva de 43 milhões de eventos cobrindo três áreas
+do jogo — a entrada do castelo, o moinho, e uma área mais adiante.
+
+A distribuição dos slots não é aleatória. Slot 12 domina com 44%. Slot 1
+vem com 38%. O resto se espalha pelos outros quinze slots. E durante
+cutscenes, tudo para — apenas o slot 12 roda, sozinho, segurando o jogo
+num estado de espera.
+
+O sistema de máscaras (o tal mask system que me intrigou tanto nas Rev.001
+a 037) foi finalmente resolvido na Rev.085. Não era um mecanismo de estado
+de jogo. Não era death callback. Não era menu. Era I/O puro — o
+ShockRequestBox_RequestCancel, um sistema de entrada do controle. Morrer
+não disparava a máscara. Cutscene não disparava a máscara. Só o input do
+jogador.
+
+Três sessões independentes, 66 milhões de eventos, zero hits.
+
+Isso é o que eu chamo de false positive bem enterrado.
+
+Na Rev.086, fiz a última rodada de análise estática. Quatro sistemas
+restantes, resolvidos em paralelo com agentes:
+
+O campo +0x60 do descritor não era uma vtable — era um ponteiro de função
+compartilhado, um dispatch central que BOY, GIRL, ENEMY1 e DEVIL_GI usam
+juntos. A tabela de efeitos ambientais não era zona espacial — era uma
+matriz de 395 entradas mapeando tipo de entidade para tipo de material.
+O cb_routine4 nunca é chamado em runtime. O contador VBlank em 0x274EC0
+não tem escritores no .text — é o IOP que escreve via DMA SIF.
+
+E então veio a Rev.087 e Rev.088: decompilação.
+
+Finalmente escrevi C que reflete o assembly de verdade. O ENEMY1 foi o
+primeiro — o único usuário do flags_0x48, a chave para entender como o
+mask system se conecta ao dispatch. Depois o BOY, o personagem principal,
+570 instruções de handler principal, dois caminhos (ativo e idle), sistema
+de interação gateado por world_state igual a 0x27.
+
+Depois o BARREL — o famoso "ROPE callback" que me perseguiu por meses.
+Aquela função em 0x1D3A30 que eu jurei que era do ROPE, que eu investiguei
+em seis revisões consecutivas, que aparecia em toda análise de callbacks...
+era o constraint solver de física do BARREL. O ROPE não tem callback
+próprio. Ele pega carona no BARREL. E eu só descobri isso porque o símbolo
+no ICO-decomp disse claramente: clothAnimation.c.
+
+Sete handlers decompilados no total. Mas sem o compilador ee-gcc 2.9
+funcionando, são rascunhos estruturais, não evidência forense.
+
+E finalmente a Rev.089: a sessão com os probes novos.
+
+Desta vez, capturei algo que nunca tinha conseguido antes: as transições
+de sala. Seis world states diferentes, de 0x01 (entrada) até 0x13 (uma
+sala mais adiante no castelo). O personagem passa de uma sala para outra,
+e o valor muda: 0x01, 0x11, 0x10, 0x0A, 0x12, 0x13. Seis salas. Seis
+números. Um roteiro.
+
+E o gp_m49B4 — a variável mais referenciada do GP, 434 referências em todo
+o .text, um mistério desde a Rev.077 — revelou sua natureza. É o ponteiro
+para a área de trabalho da entidade atual, um número que muda 821 vezes a
+cada 50 mil leituras, alternando entre 22 valores distintos conforme o
+dispatch itera pelas entidades ativas.
+
+Vinte e três milhões de eventos depois, o castelo está mais claro.
+
+Mas não está completo.
+
+A tabela halfword em 0x6AB080 continua muda — zero hits em cinco áreas
+diferentes do jogo, incluindo morte e cutscene. O gatilho continua
+desconhecido. O contador VBlank continua sem autor conhecido. A
+decompilação precisa do compilador para ser validada.
+
+Aos poucos, cada pergunta respondida revela duas novas.
+
+Mas talvez seja esse o ponto. Talvez engenharia reversa não seja sobre
+chegar a um destino. Talvez seja sobre aprender a fazer as perguntas
+certas. E a cada resposta, as perguntas ficam melhores.
+
+O castelo ainda está de pé. As mãos ainda estão sujas de terra.
+
+A escavação continua.
