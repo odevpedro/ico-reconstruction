@@ -159,9 +159,8 @@ def normalize_insn(line: str) -> str:
     # 2. All hex immediates ($0x15c or 0x15c) → decimal
     ops = re.sub(r'\$?0x([0-9a-fA-F]+)', lambda m: str(int(m.group(1), 16)), ops)
 
-    # 3. Strip leading $ from bare numbers in immediate positions
-    #    (after comma or at start of operand group)
-    ops = re.sub(r'(?<=[\s,(])\$(\d+)', r'\1', ops)
+    # 3. Strip leading $ from all bare register numbers
+    ops = re.sub(r'\$(\d+)', r'\1', ops)
 
     # 4. Normalize zero offset: 0($reg) or $0($reg) → ($reg)
     ops = re.sub(r'(?<=[\s,(])0\(', '(', ops)
@@ -173,9 +172,58 @@ def normalize_insn(line: str) -> str:
     # 6. Collapse spacing
     ops = re.sub(r'\s+', ' ', ops).strip()
 
-    # 6. Normalize mnemonics
-    if mnem == 'j' and (ops == '$31' or ops == '$ra'):
+    # 7. Normalize mnemonics
+    if mnem == 'j' and (ops == '$31' or ops == '$ra' or ops == '31' or ops == 'ra'):
         mnem = 'jr'
+
+    # 8. sltu $rd, $rs, 1 → sltiu $rd, $rs, 1
+    # GCC outputs sltu with immediate 1 as a macro, GAS assembles it as sltiu.
+    if mnem == 'sltu':
+        parts = ops.split(',')
+        if len(parts) == 3 and parts[2].strip() in ('1', '$1'):
+            mnem = 'sltiu'
+
+    # 9. subu $rd, $rs, N → addiu $rd, $rs, -N
+    # GCC outputs subu/addu as pseudo-ops for stack frame; GAS expands to addiu.
+    if mnem == 'subu':
+        parts = ops.split(',')
+        if len(parts) == 3 and parts[0].strip() == parts[1].strip():
+            mnem = 'addiu'
+            # Negate the immediate
+            imm_str = parts[2].strip()
+            try:
+                imm = int(imm_str)
+                ops = f"{parts[0].strip()}, {parts[1].strip()}, {-imm}"
+            except ValueError:
+                pass  # can't parse, leave as-is
+
+    # 10. addu $rd, $rs, N → addiu $rd, $rs, N (same macro pattern)
+    if mnem == 'addu':
+        parts = ops.split(',')
+        if len(parts) == 3 and parts[0].strip() == parts[1].strip():
+            mnem = 'addiu'
+
+    # 11. beqz $rs, target → beq $rs, $zero, target (pseudo-op)
+    if mnem == 'beqz':
+        ops_parts = ops.split(',', 1)
+        if len(ops_parts) == 2:
+            mnem = 'beq'
+            ops = f"{ops_parts[0].strip()}, $zero, {ops_parts[1].strip()}"
+
+    # 12. l.s → lwc1 (alias in GAS)
+    if mnem == 'l.s':
+        mnem = 'lwc1'
+
+    # 13. s.s → swc1
+    if mnem == 's.s':
+        mnem = 'swc1'
+
+    # 14. bnez $rs, target → bne $rs, $zero, target
+    if mnem == 'bnez':
+        ops_parts = ops.split(',', 1)
+        if len(ops_parts) == 2:
+            mnem = 'bne'
+            ops = f"{ops_parts[0].strip()}, $zero, {ops_parts[1].strip()}"
 
     return f"{mnem} {ops}"
 
@@ -204,6 +252,12 @@ def score_against_target(func_asm: str, target_va: int, func_size: int = 0x100):
     tgt_lines = []
     for insn in target_insns:
         tgt_lines.append(normalize_insn(f"{insn['mnemonic']} {insn['op_str']}"))
+
+    # Trim trailing nops from both sides (alignment padding)
+    while tgt_lines and tgt_lines[-1] == 'nop':
+        tgt_lines.pop()
+    while gen_lines and gen_lines[-1] == 'nop':
+        gen_lines.pop()
 
     print(f"Target instructions: {len(tgt_lines)}")
     print(f"Generated instructions: {len(gen_lines)}")
