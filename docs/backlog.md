@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 128 |
+| Completed | 129 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -733,6 +733,7 @@ Call graph analysis
 | rev.064 | 2026-05-16 | SQUAD-RUNTIME | Live scene init dispatch at 0x00166E10: cold path split (3 entry points), 400B stack, array iteration at 0x006AAC00, callback dispatch via [context+0x0C]; gp-25904 default state (0/0xFFFFFFFF); Rev.059 refuted (0x1B76F8/0x1B7D00 are DEAD CODE) |
 | rev.088 | 2026-05-18 | SQUAD-ARCH | BARREL/ROPE handler decompilation: init_fn (0x166028), hA (0x1D2540/0x1D2550), hC BARREL (0x1D27A8), hC ROPE (0x1D3B28), cb_routine2 (0x1D3A30, ex-"ROPE callback"), fn_1D3BF0, fn_1D3D40, fn_1D3DD8 — 12 functions to NEAR-STRUCTURAL C in src/entity/barrel.c. Source files confirmed: src/item.c (hC assertions), src/fieldCollision.c (init_fn). Updated docs/data-model.md, docs/system-feature-flows.md, README.md. |
 | rev.090 | 2026-05-18 | SQUAD-TOOLING | ee-gcc 2.9-991111-01 downloaded from decomp.me GitHub (github.com/decompme/compilers) and installed locally at toolchain/ee-gcc2.9-991111-01/bin/ee-gcc. Local compilation pipeline confirmed working with flags `-mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2`. Scoring tool created at tools/ee_gcc_compile.py. fn_1CE5F8 decompilation improved: frame 0x30 (was 0x40), delay slot nops inserted via asm barriers at 3 points (beq + 2 jals), 37 insn count matches target, all control-flow nops match. Ready for decomp.me v14 submission. |
+| rev.091 | 2026-05-18 | SQUAD-TOOLING | Fixed 28 compile errors across all entity/cloth .c files for ee-gcc 2.9 (C89 mode). Changes: added u64 typedef (types.h); replaced C99 compound literals in enemy1.c (5 occurrences); fixed void→correct return types for sub_1C8478, sub_109F10, sub_105278, sub_103D50, sub_10D180 (boy.c) and sub_1C05A8 (barrel.c); fixed C89 declaration ordering in cloth/near_matches.c (3 blocks) and entity/near_matches.c (3 functions); fixed sub_1F2148/sub_12A618 return types. Fixed --size arg to accept hex in ee_gcc_compile.py. Applied sub_105F20 3rd arg and sub_1D4B40 2-arg signature. Score_all.py now runs all 37 functions with zero compile errors (was 28 errors). decompme_submit.py: normalized register names (ABI→numeric), hex→decimal immediates, jr $31→j $31. |
 
 ---
 

@@ -12,6 +12,7 @@ import sys
 import os
 import urllib.request
 from capstone import *
+import re
 
 ELF_PATH = os.path.expanduser(
     "~/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf"
@@ -19,21 +20,29 @@ ELF_PATH = os.path.expanduser(
 PT_LOAD_VA = 0x100000
 PT_LOAD_FILE = 0x1000
 
-COMPILER = "ee-gcc2.9-991111-01"
+COMPILER = "EE GCC 2.9 build 991111-01"
 PLATFORM = "ps2"
-FLAGS = "-march=r5900 -mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2"
+FLAGS = "-mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2"
 
 
-def byteswap32(data):
-    result = bytearray()
-    for i in range(0, len(data), 4):
-        result.extend(
-            data[i + 3 : i + 4]
-            + data[i + 2 : i + 3]
-            + data[i + 1 : i + 2]
-            + data[i : i + 1]
-        )
-    return bytes(result)
+ABI_TO_NUM = {
+    "$zero": "$0", "$at": "$1", "$v0": "$2", "$v1": "$3",
+    "$a0": "$4", "$a1": "$5", "$a2": "$6", "$a3": "$7",
+    "$t0": "$8", "$t1": "$9", "$t2": "$10", "$t3": "$11",
+    "$t4": "$12", "$t5": "$13", "$t6": "$14", "$t7": "$15",
+    "$s0": "$16", "$s1": "$17", "$s2": "$18", "$s3": "$19",
+    "$s4": "$20", "$s5": "$21", "$s6": "$22", "$s7": "$23",
+    "$t8": "$24", "$t9": "$25", "$k0": "$26", "$k1": "$27",
+    "$gp": "$28", "$sp": "$29", "$fp": "$30", "$ra": "$31",
+    "$0": "$zero",
+}
+
+
+def abi_to_numeric(line: str) -> str:
+    """Convert ABI register names to numeric in a single asm line."""
+    for abi, num in ABI_TO_NUM.items():
+        line = line.replace(abi, num)
+    return line
 
 
 def disassemble(va, n_insns=200):
@@ -42,9 +51,23 @@ def disassemble(va, n_insns=200):
         f.seek(file_offset)
         raw = f.read(n_insns * 4)
 
-    raw_be = byteswap32(raw)
-    md = Cs(CS_ARCH_MIPS, CS_MODE_MIPS64 + CS_MODE_BIG_ENDIAN)
-    return [(i.address, i.mnemonic, i.op_str) for i in md.disasm(raw_be, va)]
+    # PS2 EE is little-endian
+    md = Cs(CS_ARCH_MIPS, CS_MODE_MIPS64 + CS_MODE_LITTLE_ENDIAN)
+    return [(i.address, i.mnemonic, abi_to_numeric(i.op_str))
+            for i in md.disasm(raw, va)]
+
+
+def normalize_target_asm(text: str) -> str:
+    """Normalize target ASM to match ee-gcc 2.9 output format."""
+    # Convert hex immediates ($0xNNN or 0xNNN) to decimal
+    text = re.sub(r'\$?0x([0-9a-fA-F]+)',
+                  lambda m: str(int(m.group(1), 16)), text)
+    # jr $31 → j $31 (GCC emits 'j $31', not 'jr $31')
+    text = re.sub(r'\bjr \$31\b', 'j $31', text)
+    # Remove extra whitespace, trailing commas
+    text = re.sub(r' +', ' ', text)
+    text = re.sub(r',\s+', ', ', text)
+    return text.strip()
 
 
 def asm_to_decompme(insns):
@@ -53,14 +76,18 @@ def asm_to_decompme(insns):
     for addr, mn, ops in insns:
         line = f"{mn} {ops}" if ops else mn
         lines.append(line)
-    return "\n".join(lines)
+    return normalize_target_asm("\n".join(lines))
 
 
-def submit(va, c_source, name=None, description=None):
-    insns = disassemble(va)
+def submit(va, c_source, name=None, description=None, n_insns=200):
+    insns = disassemble(va, n_insns)
     if not insns:
         print(f"ERROR: No instructions at 0x{va:X}")
         return None
+
+    # Trim trailing nops (padding)
+    while insns and insns[-1][1] == "nop":
+        insns = insns[:-1]
 
     print(f"Disassembled {len(insns)} instructions from 0x{va:X}")
 

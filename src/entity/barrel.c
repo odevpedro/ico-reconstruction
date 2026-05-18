@@ -70,7 +70,7 @@ void sub_1D12A8(struct entity_context *entity, u32 arg);
 void sub_1D12D8(struct entity_context *entity);
 void sub_1D0FA8(struct entity_context *entity, u32 arg, u32 zero);
 void sub_1D1158(u32 arg);
-void sub_1C05A8(struct entity_context *child);
+u32 sub_1C05A8(struct entity_context *child);
 void sub_102858(struct entity_context *entity);
 void sub_1185D0(ico_ptr32, ico_ptr32, ico_ptr32);
 void sub_1182F0(ico_ptr32, ico_ptr32);

@@ -41,13 +41,13 @@ void sub_203910(struct entity_context *);
 void sub_203AA0(u32);
 
 // Model / animation
-void sub_1C8478(struct entity_context *, ico_ptr32 data, ico_ptr32 tex);
+ico_ptr32 sub_1C8478(struct entity_context *, ico_ptr32 data, ico_ptr32 tex);
 void sub_104508(ico_ptr32 buf, struct entity_context *);
 void sub_102850(ico_ptr32 buf, struct entity_context *);
 void sub_10E158(ico_ptr32 buf, s32 heading);
 float sub_12A060(s32, ico_ptr32, ico_ptr32);
-void sub_109F10(struct entity_context *, u32 attr);
-void sub_105278(void);
+u32 sub_109F10(struct entity_context *, u32 attr);
+ico_ptr32 sub_105278(void);
 void sub_105F20(ico_ptr32 dst, ico_ptr32 src, u32 stride);
 void sub_104F48(s32 val);
 void sub_121D90(ico_ptr32 child, ico_ptr32 scene_obj);
@@ -65,13 +65,13 @@ void sub_243BD8(ico_ptr32 transform, ico_ptr32 state);
 // Scene setup / cloth / physics
 void sub_1E4798(struct entity_context *, u32, u32, u32, ico_ptr32, ico_ptr32);
 void sub_1C1380(struct entity_context *, ico_ptr32 initializer);
-void sub_1D4B40(struct entity_context *, u32, u32);
+void sub_1D4B40(struct entity_context *, u32);
 void sub_1D23E0(struct entity_context *);
 void sub_1E3FC8(struct entity_context *);
 void sub_1C12F0(struct entity_context *);
 void sub_1E4868(struct entity_context *);
 void sub_1BB8C0(struct entity_context *, u32, u32, u32);
-void sub_103D50(struct entity_context *, u32, float, float, float);
+u32 sub_103D50(struct entity_context *, u32, float, float, float);
 void sub_13FF88(struct entity_context *, u32, struct entity_context *);
 u32 sub_14A0D8(void);
 void sub_1E4938(struct entity_context *);
@@ -90,7 +90,7 @@ void sub_11E220(ico_ptr32, u32, u32);
 void sub_10F630(void);
 
 // Interaction
-void sub_10D180(struct entity_context *);
+u32 sub_10D180(struct entity_context *);
 void sub_10CB48(ico_ptr32, ico_ptr32, struct entity_context *);
 void sub_10CF88(ico_ptr32);
 
@@ -461,7 +461,7 @@ void sub_1C1EA8(struct entity_context *entity)
     sub_104F48((s32)-0x8000);
 
     buf_b = sub_105278();
-    sub_105F20(buf_b, *(ico_ptr32 *)((u8 *)bone_ptr + 0x0C));
+    sub_105F20(buf_b, *(ico_ptr32 *)((u8 *)bone_ptr + 0x0C), 0);
 
     sub_121D90((ico_ptr32)bone_ptr, scene_obj);
 }

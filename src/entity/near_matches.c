@@ -20,14 +20,17 @@ void sub_1C62D0(ico_ptr32, ico_ptr32, ico_ptr32);
 void queen_hA(struct entity_context *entity)
 {
     ico_ptr32 gp_data = *(ico_ptr32 *)0x007191F4;
+    struct entity_state_block *s;
+    ico_ptr32 es;
+    ico_ptr32 transform;
     if (gp_data)
         sub_1504D8(gp_data);
     sub_10ECD8();
     sub_10ECB8(entity);
 
-    struct entity_state_block *s = get_state_block(entity);
-    ico_ptr32 es = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
-    ico_ptr32 transform = *(ico_ptr32 *)((u8 *)es + 0x844);
+    s = get_state_block(entity);
+    es = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
+    transform = *(ico_ptr32 *)((u8 *)es + 0x844);
 
     if (*(u32 *)((u8 *)s + 0x0C))
         sub_1C62D0(*(ico_ptr32 *)((u8 *)s + 0x10), transform + 0x40, transform);
@@ -43,6 +46,7 @@ ico_ptr32 sub_1E29E8(struct entity_context *, u32, ico_ptr32);
 void queen_init(struct entity_context *entity)
 {
     ico_ptr32 s1 = sub_202208();
+    ico_ptr32 es;
     sub_202148(entity);
     sub_203AA0(1);
 
@@ -52,7 +56,7 @@ void queen_init(struct entity_context *entity)
 
     *(ico_ptr32 *)((u8 *)s1 + 0x120) = sub_1E29E8(entity, 238, (ico_ptr32)((u8 *)s1 + 0x610));
 
-    ico_ptr32 es = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
+    es = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
     *(u32 *)((u8 *)es + 0x7C) = 1;
 }
 
@@ -114,11 +118,13 @@ ico_ptr32 bird_hC(struct entity_context *entity, ico_ptr32 initializer)
  * ================================================================= */
 ico_ptr32 attackch62_hC(struct entity_context *entity, ico_ptr32 initializer)
 {
-    (void)entity;
     ico_ptr32 heap = *(ico_ptr32 *)0x00719720;
-    ico_ptr32 alloc = sub_13A0F8(heap, 12, 0x006285E8, 27);
+    ico_ptr32 alloc;
+    ico_ptr32 parent_slot;
+    (void)entity;
+    alloc = sub_13A0F8(heap, 12, 0x006285E8, 27);
 
-    ico_ptr32 parent_slot = *(ico_ptr32 *)(initializer + 0x30);
+    parent_slot = *(ico_ptr32 *)(initializer + 0x30);
     *(u32 *)(alloc + 0x00) = parent_slot;
     *(u32 *)(alloc + 0x04) = 0;
     *(u32 *)(alloc + 0x08) = 0;

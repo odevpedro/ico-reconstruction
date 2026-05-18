@@ -357,8 +357,8 @@ def main():
     parser.add_argument("c_file", help="C source file path")
     parser.add_argument("--fn", required=True, help="Function name to extract")
     parser.add_argument("--va", required=True, help="Target VA (e.g. 0x1CE5F8)")
-    parser.add_argument("--size", type=int, default=0x100,
-                        help="Function size in bytes (default 0x100)")
+    parser.add_argument("--size", type=str, default="0x100",
+                        help="Function size in bytes (e.g. 0x100, 256)")
     parser.add_argument("--whole-file", action="store_true",
                         help="Compile entire file, don't extract function")
     args = parser.parse_args()
@@ -367,15 +367,16 @@ def main():
         c_code = f.read()
 
     target_va = int(args.va, 16)
+    target_size = int(args.size, 16) if isinstance(args.size, str) and args.size.startswith("0x") else int(args.size)
 
     if not args.whole_file:
         extracted = extract_function_body(c_code, args.fn)
         if extracted is None:
             print(f"FAILED: function '{args.fn}' not found in {args.c_file}")
             return
-        compile_and_score(extracted, args.fn, target_va, args.size)
+        compile_and_score(extracted, args.fn, target_va, target_size)
     else:
-        compile_and_score(c_code, args.fn, target_va, args.size)
+        compile_and_score(c_code, args.fn, target_va, target_size)
 
 
 if __name__ == "__main__":

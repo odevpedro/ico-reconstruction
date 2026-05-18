@@ -426,7 +426,7 @@ void enemy1_init(struct entity_context *entity)
     sub_14B358();  // call 1: attr 0x12, params at 0x80+ area
     param[0xA8 / 4] = 0x13;
     param[0xAC / 4] = 0x32;
-    param[0x94 / 4] = *(u32 *)&(float){0.0f};  // result of call 1
+    param[0x94 / 4] = 0;  // result of call 1
     param[0x98 / 4] = *(u32 *)&f20_val;
     param[0x9C / 4] = 1;
     param[0xA0 / 4] = 1;
@@ -438,7 +438,7 @@ void enemy1_init(struct entity_context *entity)
     param[0xD0 / 4] = 0x32;
     param[0xC0 / 4] = 2;
     param[0xC8 / 4] = 0x16;
-    param[0xB4 / 4] = *(u32 *)&(float){0.0f};  // result of call 2
+    param[0xB4 / 4] = 0;  // result of call 2
     param[0xB8 / 4] = *(u32 *)&f20_val;
     param[0xBC / 4] = 0;
     param[0xC4 / 4] = 0x1D;
@@ -446,15 +446,15 @@ void enemy1_init(struct entity_context *entity)
 
     sub_14B358();  // call 3: attr 0x14
 
-    param[0xD4 / 4] = *(u32 *)&(float){0.0f};  // result of call 3
+    param[0xD4 / 4] = 0;  // result of call 3
     param[0xE0 / 4] = 2;
     param[0xE4 / 4] = 0x1C;
     param[0xE8 / 4] = 0x16;
     param[0xD8 / 4] = *(u32 *)&f20_val;
     param[0xDC / 4] = 0;
     param[0xF0 / 4] = 100;
-    param[0xF4 / 4] = *(u32 *)&(float){*(float *)((u8 *)0x006323AC)};
-    param[0xF8 / 4] = *(u32 *)&(float){343.0f};
+    param[0xF4 / 4] = 0x7F7FFFFF;  // FLT_MAX from 0x006323AC
+    param[0xF8 / 4] = 0x43AB8000;  // 343.0f as u32 bits
     param[0xFC / 4] = 1;
     param[0xEC / 4] = 0;
 

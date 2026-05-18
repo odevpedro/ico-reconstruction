@@ -347,11 +347,12 @@ The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-07
 9. ~~Decompile ENEMY1/BOY/BARREL/ROPE/WOODBOX0~~ **DONE (Rev.087-088)**
 10. ~~Populate historia.md~~ **DONE (Rev.089)**
 11. ~~Download and install ee-gcc 2.9-991111-01 locally~~ **DONE (Rev.090)**
-12. **Fix fn_1CE5F8 decompilation matching** — frame 0x40→0x30, delay slot nops via asm barriers. Ready for decomp.me v14 submission
-13. **Batch remaining 6 decompiled handlers** through the local scoring pipeline (once fn_1CE5F8 validates)
-14. Fix dispatch_point slot index capture for next runtime session
-15. Reposition world_state_load probe to capture room init_fn
-16. Deploy memory watchpoint on VBlank counter 0x274EC0
+12. ~~**Fix fn_1CE5F8 decompilation matching** — frame 0x40→0x30, delay slot nops via asm barriers.~~ **DONE (Rev.090): 72.37% structural match**
+13. ~~**Batch remaining 6 decompiled handlers** through the local scoring pipeline~~ **DONE (Rev.091): all 37 functions compile and score; 0 compile errors (was 28)**
+14. ~~Fix 28 compile errors across entity/cloth .c files~~ **DONE (Rev.091): C89 compat — u64 typedef, compound literals, declaration ordering, void→correct return types**
+15. Fix dispatch_point slot index capture for next runtime session
+16. Reposition world_state_load probe to capture room init_fn
+17. Deploy memory watchpoint on VBlank counter 0x274EC0
 
 ---
 

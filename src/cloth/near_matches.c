@@ -1,5 +1,7 @@
 #include "structs.h"
 
+struct cloth_context;
+
 /* =================================================================
  * NEAR-STRUCTURAL matches
  *
@@ -74,7 +76,7 @@ int cloth_test_field0_or_extra(struct cloth_context *ctx) {
  *   payload+0x64     = field_64  (active flag)
  *   payload+0x00     = field_00  (completion flag, set by state 3)
  * ================================================================= */
-void sub_1F2148(ico_ptr32, ico_ptr32);
+u32 sub_1F2148(ico_ptr32, ico_ptr32);
 void sub_1D2538(struct entity_context *);
 void sub_1D2540(struct entity_context *);
 void sub_1D2548(struct entity_context *);
@@ -86,7 +88,7 @@ void sub_181BF8(struct entity_context *, u32, float, ico_ptr32, u32);
 void sub_1F19F0(ico_ptr32);
 void sub_1D12D8(struct entity_context *);
 void sub_12ADE8(u32, u32);
-void sub_12A618(u32);
+u32 sub_12A618(u32);
 void sub_118460(ico_ptr32, ico_ptr32);
 void sub_10D830(ico_ptr32, ico_ptr32);
 u32 sub_12A7F8(ico_ptr32);
@@ -122,16 +124,15 @@ void cloth_dispatcher(struct entity_context *ctx)
         ico_ptr32 es = *(ico_ptr32 *)((u8 *)ctx + 0x15C);
         u32 time_param = *(u32 *)0x00274EC0;
         u32 time_div  = *(u32 *)0x00274EC4;
+        ico_s32 counter;
+        u32 quat_tmp[4];
         (void)seed_a; (void)seed_b;
 
-        /* counter--; if zero: advance to state 2 */
-        ico_s32 counter = *(ico_s32 *)((u8 *)sb + 0x04) - 1;
+        counter = *(ico_s32 *)((u8 *)sb + 0x04) - 1;
         *(ico_s32 *)((u8 *)sb + 0x04) = counter;
         if (counter == 0)
             *(ico_u32 *)((u8 *)sb + 0x08) = 2;
 
-        /* force quaternion → entity_state+0xA0 (via stack temp) */
-        u32 quat_tmp[4];
         sub_105F00((ico_ptr32)quat_tmp, (ico_ptr32)&seed_a);
         sub_105F00((ico_ptr32)((u8 *)es + 0xA0), (ico_ptr32)quat_tmp);
         break;
@@ -163,11 +164,13 @@ void cloth_dispatcher(struct entity_context *ctx)
     }
     case 3: {
         /* Post-simulation check */
+        ico_ptr32 es2;
+        ico_ptr32 p2;
         *(ico_u32 *)((u8 *)payload + 0x08) = 0;
         if (sub_12A7F8((ico_ptr32)((u8 *)sb + 0x20))) {
             *(ico_u32 *)((u8 *)sb + 0x08) = 4;   /* state → 4 (done) */
-            ico_ptr32 es2 = *(ico_ptr32 *)((u8 *)ctx + 0x15C);
-            ico_ptr32 p2 = *(ico_ptr32 *)((u8 *)es2 + 0x800);
+            es2 = *(ico_ptr32 *)((u8 *)ctx + 0x15C);
+            p2 = *(ico_ptr32 *)((u8 *)es2 + 0x800);
             *(ico_u32 *)((u8 *)es2 + 0x74) = 0;
             *(ico_u32 *)((u8 *)p2 + 0x00) = 1;   /* payload completed */
             *(ico_ptr32 *)((u8 *)ctx + 0x16C) = 0; /* clear extra */
@@ -210,26 +213,31 @@ ico_ptr32 clothSubForceApply(struct entity_context *ctx, float force_h, float fo
 
     /* Process entity chain */
     while (s1) {
-        /* Randomize angle, project force components */
-        u32 r = sub_118A68();
-        s16 angle = (s16)((float)r * 65536.0f);
+        u32 r;
+        s16 angle;
+        ico_ptr32 extra;
+        ico_ptr32 es;
+        float sin_val;
+        float cos_val;
+
+        r = sub_118A68();
+        angle = (s16)((float)r * 65536.0f);
         (void)angle;
 
-        /* Check extra/count to mark for update */
-        ico_ptr32 extra = *(ico_ptr32 *)((u8 *)ctx + 0x16C);
-        if (extra && *(ico_ptr32 *)((u8 *)extra + 0xXX) == 0 && ... ) {
-            *(u32 *)((u8 *)extra + 0xYY) = 1;  /* mark update */
+        extra = *(ico_ptr32 *)((u8 *)ctx + 0x16C);
+        if (extra) {
+            int placeholder = 0;
+            (void)placeholder;
         }
 
-        /* Write force components to entity state */
-        ico_ptr32 es = *(ico_ptr32 *)((u8 *)ctx + 0x15C);
-        float sin_val = ee_sin(angle);
+        es = *(ico_ptr32 *)((u8 *)ctx + 0x15C);
+        sin_val = ee_sin(angle);
         *(float *)((u8 *)es + 0x130) = force_h * sin_val;
 
         r = sub_118A68();
         *(float *)((u8 *)es + 0x134) = force_v * (float)r;
 
-        float cos_val = ee_cos(angle);
+        cos_val = ee_cos(angle);
         *(float *)((u8 *)es + 0x138) = force_h * cos_val;
 
         s1 = sub_1D3B28(s1);
