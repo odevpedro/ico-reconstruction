@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 124 |
+| Completed | 125 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -23,15 +23,21 @@ _(none)_
 
 ## Pending
 
-### [ ] [SQUAD-RUNTIME | rev.078 | Pending]
-**Runtime validation of mask toggle, world_state, and slot 0**
+### [ ] [SQUAD-RUNTIME | rev.080 | Pending]
+**Remaining runtime validation after Rev.079**
 
-- Probe mask register gp+0x6724 (0x006321CC = callback_mask_reg) during cutscene transitions (does bit 0 toggle on/off?)
-- Probe gp+0x6F60 (0x00631990 = world_state_main) to map room transitions and correlate with entity lifecycle
-- Probe halfword table writers 0x166D1C/0x166D78 with bounding box capture to verify spatial hash theory
-- Probe gp-0x49B4 (0x00633F3C, most-referenced GP variable) to identify its purpose
-- Investigate slot 0 callback 0x168DA8 (when does it fire? what condition selects slot 0?)
-- Ver mais em `research/elf/ghidra-rev077-final-static-analysis.md`
+- mask_set (0x13ED40) confirmed zero gameplay hits — need death/loading transition to see it toggle on/off
+- Halfword table writers (0x166D1C/0x166D78) confirmed 0 hits in windmill section — need different game area or trigger condition
+- Slot 0 callback (0x168DA8) confirmed dead in 2nd session — still unknown what activates it
+- gp-0x49B4 (0x00633F3C, most-referenced GP, 434 refs) — still unpicked
+- gp-0x6F60 (0x00631990 = world_state_main) — still unmapped at runtime (precisa de emulador)
+- Ver mais em `research/elf/ghidra-rev079-runtime-validation-windmill-session.md`
+
+### [ ] [SQUAD-RUNTIME | rev.081 | Pending]
+**Static gap resolved: slot 0 = empty slot — nunca referenciado**
+
+- Slot 0 callback (0x168DA8) NAO tem filter mask, mas NUNCA dispara porque **zero dispatch sites** chamam slot 0 em todo .text. Busca por `addiu a1, zero, 0 + JALR` retornou 0 matches. Slots 1-16 tem 1.170+ dispatch sites combinados (slot 1: 821, slot 2: 74, etc.).
+- Próximo passo: investigar quem cria a dispatch table — função que popula os 17 slots com callbacks e decide quais indices sao ativos.
 
 ### [ ] [SQUAD-EXTERNAL | rev.060 | Pending]
 **Correção: verificar ee-gcc 2.9-991111-01 no decomp.me via presets de jogo**
@@ -78,6 +84,22 @@ _(none)_
 ---
 
 ## Completed
+
+### [x] [SQUAD-RUNTIME | rev.079 | 2026-05-18]
+Runtime session at windmill (14M events, 4.8GB log): slot distribution inverted, 12 callbacks mapped, probes documented
+
+- **Runtime session**: windmill section, ~15 min gameplay, 14,027,223 eventos, 4.8GB log. PCSX2 build com 9 probes ativos (main_dispatcher, cold_path_A/B, dispatch_point, mask_set, halfword_store, slot0_v0_from_gp, alt_selection, vu0_kick_trigger, callback_register)
+- **Slot distribution INVERTIDA vs Rev.074**: Slot 1 #1 (45.7% vs 27.0% na entrada), Slot 12 #2 (37.1% vs 38.7% — similar), Slot 3 (9.0%), Slot 2 (5.6%), Slot 14 (1.0%), Slot 6 (0.8%), Slot 15 (0.7%), Slot 11 (0.3%), Slot 10 (0.2%), Slot 4 (<0.1%), Slots 0/5/7/8/9/13/16: 0 hits. Distribuição diferente por área do jogo, confirmando ativação seletiva de slots.
+- **12 callbacks fully mapped** e cross-referenciados: 0x168ED0 (43.66%), 0x169AA8 (39.31%), 0x169440 (8.04%), 0x1692F0 (4.84%), 0x1696C0 (2.66%), 0x169580 (0.72%), 0x169E58 (0.63%), 0x169020 (0.53%), 0x169D18 (0.40%), 0x169968 (0.10%), 0x169800 (<0.01%), 0x169190 (<0.01%)
+- **mask_set (0x13ED40)**: 2 hits totais — startup (v0=1) e transição loading/tela preta (v0=0). ZERO hits durante gameplay confirmado em 2 sessões independentes.
+- **Slot 0 (0x168DA8)**: 0 hits — confirmado morto em 2ª sessão. Análise: slot 0 não usa filter +0x48, slot 1 usa filter `0xF0000000==0 AND 0x000F0000!=0x00010000` — provavelmente slot 0 é fallback/empty nunca preenchido.
+- **Alt selection (0x168650)**: 0 hits — cold paths nunca trocados. Confirmado em 2 sessões.
+- **Halfword store (0x166D38/0x166D94)**: 0 hits — spatial hash NÃO é reconstruido na seção windmill. Requer condição específica para ativar.
+- **GP = 0x006388F0** confirmado em 2ª sessão independente.
+- **Probes que não dispararam**: alt_selection (0x168650), halfword_store (0x166D38/0x166D94), slot0_v0_from_gp (0x168DB4). Documentados como não-atingidos na sessão windmill.
+- **Novos arquivos**: `docs/historia.md` (narrativa, 10k palavras, 14 capítulos), `docs/prompt_persona_ico_reconstruction.md` (persona blog reescrito com backstory). Log salvo em `.local/ico-pcsx2-probe-events-20260518-rev078-windmill.jsonl.gz` (187MB comprimido, ~1GB raw).
+- Rev.074 (9.1M events, entrance) + Rev.079 (14M events, windmill) = **duas sessões independentes com resultados consistentes**.
+- Documentado em research/elf/ghidra-rev079-runtime-validation-windmill-session.md
 
 ### [x] [SQUAD-RUNTIME | rev.069 | 2026-05-17]
 VU0 ring-buffer packet builder (0x1D43F8), VU0 kick stub (0x117C40), halfword table population (0x6AB080), alternate constants (0x55F260)
@@ -588,6 +610,10 @@ Call graph analysis
 | rev.074 | 2026-05-17 | SQUAD-RUNTIME | Runtime session (9.1M events): slot 0 dead, slot 12 most active, alt_impl unused, VU0 kick gameplay-only, 58% match rate, 615 contexts/20 live entities, GP=0x6388F0 verified |
 | rev.075 | 2026-05-17 | SQUAD-RUNTIME | Init_fn identification (0x1C3760=cloth_sys, 0x1F2370=cloth_tramp 5-mode, 0x17D128=env_effect), callback dispatch 0x13F9D0 (two-phase 8-bit mask + typed IDs 0x13-0x1B), cb_dispatch2 0x13FC00 (0x281AB0 table), ASM-HANDLER full analysis (BOY/GIRL/ENEMY1/WOODBOX0/AP1 — 15 functions) |
 | rev.077 | 2026-05-17 | SQUAD-ARCH | Final static analysis: 8-step scene loader (kanban.c, GP=0x27A7A8). Descriptor table 0x2A31B8 (68 entity types, full structure). BARREL uses 0x1D3A30 (ROPE gap RESOLVED). Entry table 0x2A4C48 (512 spawns). Slot0 callback 0x168DA8 (no filter). VU0 kick 0x117768 = linked-list queue (NOT VU0). 1032 GP offsets mapped. Debug table 0x613E00 (47 debug entries, 0x168650=CollisionOldProc). Resource check 0x17B230 (bitmap). Wait/yield 0x203AA0 (syscall50). HUD pool 0x4Dxxxx debug display. GP data map consolidated. |
+| rev.079 | 2026-05-18 | SQUAD-RUNTIME | Runtime session at windmill (14M events): slot 1 most active (45.7% vs slot 12 at 37.1%), 12 callbacks fully mapped, mask_set 0 gameplay hits (confirmed in 2nd session), slot 0 dead (2nd session), halfword writers 0 hits, alt_selection 0 hits, GP=0x6388F0 reconfirmed |
+| rev.084 | 2026-05-18 | SQUAD-RUNTIME | Extended runtime session (43.8M events, ~122 min): entrance → windmill → cutscene → 3rd+ area. Slot 5 fired first time (triplet guard). All rare probes ZERO across 3rd independent session. 1,913 unique entity contexts. Cutscene period: 100% slot 12 (Group 1 suspended). Zone fingerprints confirmed: slot ratio shifts per area. Slot 0 root cause found (static analysis: 0 `addiu a1,0+JALR` sites). Total coverage: 66.9M events across 3 sessions. |
+| rev.085 | 2026-05-18 | SQUAD-RUNTIME | Death validation: user jumped off cliff. mask_set = 0 hits even during death. Death zone = 100% slot 12 (Group 2 only), identical to cutscene. Confirms mask_set is I/O system (ShockRequestBox_RequestCancel), not gameplay death callback. |
+| rev.086 | 2026-05-18 | SQUAD-ARCH | Final static analysis: descriptor +0x60 = behavior_fn (NOT vtable). Group A=0x202A60 (main chars), Group B=0x23D660 (props). Env effect table = 395 entries × 0x30 type-to-type mapping (NOT spatial zones). cb_routine4 +0x5C = no-op stubs (never called). VBlank counter 0x274EC0 = IOP-driven via SIF (no .text writer). GIRL=DEVIL_GI confirmed. |
 | rev.076 | 2026-05-17 | SQUAD-ARCH | Post-runtime consolidation: 28 init_fn classified (6 groups). 17-slot table fully mapped. mask_set only uses bit 0. 404-byte = stage config. Halfword table = spatial hash. VU0 "kick" = COP2 macro utility. Two independent entity systems. ICO-decomp cross-ref. |
 | rev.073 | 2026-05-17 | SQUAD-RUNTIME | Main loop dispatch chain (12 steps), corrected callback masks (bits 28-31), secondary pointer table (0x00633D30), struct field maps (80B/112B), linked-list flow with pre-multiplied offsets |
 | rev.072 | 2026-05-17 | SQUAD-RUNTIME | Room init callbacks corrigidos: 19 function pointers reais (offset +0x174 absoluto), tabela de descritores (68 entries), tabela de entries (512 entries), instrucao 0x1AF954 = mult (dead code), 0x00143290 processa inner structs (nao callback) |

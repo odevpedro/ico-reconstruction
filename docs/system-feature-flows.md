@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-17 (Rev.077 — Analise estatica final: 8-step scene loader kanban.c; descriptor table 68 entity types; entry table 512 spawns; BARREL usa cloth dispatcher 0x1D3A30; slot 0 callback sem filtro; VU0 kick = linked-list queue; GP map 1032 offsets; debug table 47 entries. Ver research/elf/ghidra-rev077-final-static-analysis.md)
+> **Ultima atualizacao:** 2026-05-18 (Rev.084 — Runtime session estendida: 43.8M eventos, 122 min, 3+ areas. slot 5+11 ativados primeira vez. Todos probes raros ZERO (3a sessao confirmada). 1913 contextos unicos. Cutscene=100% slot12 (Group 1 suspenso). Slot 0 root cause encontrada (static: zero sites addiu a1,0+JALR). Total 66.9M eventos em 3 sessoes. Ver research/elf/ghidra-rev084-runtime-validation-extended-session.md)
 
 ---
 
@@ -300,9 +300,17 @@ Todos os 14 callbacks iteram esta tabela runtime-populada. Ela contem uint16 ent
 
 ### O que falta
 
-- Validacao runtime: capturar quais slots disparam durante gameplay vs cutscene vs menu
-- Capturar se a implementacao alternativa (0x00169F80/0x0016A058) e atingida
-- Entender o significado semantico de cada slot (ex: slot 0 = BOY? slot 2 = GIRL?)
+- ~~Validacao runtime: capturar quais slots disparam durante gameplay vs cutscene vs menu~~ **FEITO (Rev.074 + Rev.079): slot distribution confirmada em 2 areas (entrance + windmill). Slot 1 dominante em windmill (45.7%), slot 12 na entrance (38.5%).**
+- ~~Capturar se a implementacao alternativa (0x00169F80/0x0016A058) e atingida~~ **FEITO (2 sessoes independentes): alt_selection nunca chamada em gameplay normal. Cold paths sao as unicas entradas.**
+- ~~Slot 0 (0x168DA8) esta morto?~~ **FEITO: confirmado morto em 2 sessoes. Provavelmente fallback/empty. Diferenca: slot 1 tem filtro `0xF0000000==0 AND 0x000F0000!=0x00010000`, slot 0 nao tem filtro — se nenhuma entidade tem field_48==0, slot 0 nunca matcha.**
+- ~~mask_set toggle durante gameplay?~~ **FEITO: zero hits em gameplay. So dispara em loading/tela preta. Confirmado em 3 sessoes (66.9M eventos).**
+- ~~Halfword table writers disparam?~~ **FEITO: zero hits em 3 sessoes distintas (entrance, windmill, 3+ areas). Condicao desconhecida.**
+- ~~Entender o significado semantico de cada slot~~ **Parcial: slot distribution varia por area do jogo (zone fingerprinting confirmado).**
+- ~~Investigar por que slot distribution muda entre areas~~ **FEITO: confirmado que slot ratio e area-dependent. Zone fingerprints sao distintos por sala/zona.**
+- ~~Slot 0 por que nunca dispara?~~ **FEITO: root cause estatica — zero `addiu a1, $zero, 0` + JALR em todo .text. Nenhum codigo dispatches slot 0.**
+- Investigar condicao que ativa halfword table writers (spatial hash rebuild)
+- Investigar world_state transitions (probe gp+0x6F60)
+- Investigar VBlank counter source (0x274EC0 — nao incrementado por .text)
 
 ---
 
@@ -381,7 +389,7 @@ Isto significa que o VU0 microcode (20KB cloth physics) so roda durante gameplay
 
 ### O que falta
 
-- Confirmar runtime se `0x117C40` (ou `0x3800C`) e atingido durante gameplay
+- ~~Confirmar runtime se `0x117C40` (ou `0x3800C`) e atingido durante gameplay~~ **FEITO (Rev.074+V079): VU0 kick stub 0x117C40 nunca executa diretamente. O J 0x117768 (linked-list queue) e o ponto real de kick.**
 - Validar que o buffer circular em 0x4C7710 nao tem overflow (head avanca 80B por batch)
 - Verificar se o VU0 microcode em 0x3800C corresponde ao microcode DVP ou a codigo runtime independente
 

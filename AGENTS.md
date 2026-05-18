@@ -108,9 +108,10 @@ Before doing new analysis, read these files in this order if they exist:
 11. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
 12. `research/ico-decomp-cross-reference-2026-05-14.md`
 13. `research/elf/ghidra-rev039-cloth-domain-correction.md`
-14. `research/external/sotc-tooling-relevance-survey.md`
-15. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
-16. `research/external/ico-splat-promoted-ranges-experiment.md`
+14. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
+15. `research/external/sotc-tooling-relevance-survey.md`
+16. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
+17. `research/external/ico-splat-promoted-ranges-experiment.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -331,14 +332,14 @@ The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-07
 
 ### Current objectives
 
-1. Runtime: probe mask bit 0 during cutscene transitions (does it toggle on/off?)
-2. Runtime: probe gp+0x6F60 (world_state_main at 0x00631990) to map room transitions
-3. Runtime: probe halfword table writers with bounding box capture to verify spatial hash theory
-4. Runtime: probe gp-0x49B4 (0x00633F3C, most-referenced GP variable, 434 refs)
-5. Runtime: investigate slot 0 callback 0x168DA8 (when does it fire?)
-6. Investigate the 0x29A640 env effect table more deeply (7-type × 0x30, spatial trigger zones)
-7. Study the descriptor table cb_routine4 pattern (only GIRL, ENEMY1, DEVIL_GIRL)
-8. Analyze vtable dispatch for the 3 vtable groups (0x202A60, 0x23D660, entity-specific)
+1. ~~Runtime: probe mask bit 0 during cutscene transitions~~ **DONE (Rev.085): mask_set = I/O only, zero gameplay hits across 66.9M events + death**
+2. Runtime: probe gp+0x6F60 (world_state at 0x00631990) to map room transitions — **prepared for next session (probe at 0x1AF948)**
+3. ~~Runtime: probe halfword table writers~~ **DONE: zero hits across 3 sessions in 4 game areas. Condition unknown — requires new approach.**
+4. ~~Runtime: probe gp-0x49B4 (0x00633F3C)~~ **prepared for next session (probe at 0x166600)**
+5. ~~Investigate slot 0 callback 0x168DA8~~ **DONE (Rev.084): zero `addiu a1, 0 + JALR` sites in all .text — no code dispatches slot 0**
+6. ~~Investigate env effect table~~ **DONE (Rev.086): 395 entries × 0x30, type-to-type mapping matrix (NOT spatial zones)**
+7. ~~Study cb_routine4 pattern~~ **DONE (Rev.086): no-op stubs at +0x5C for GIRL/DEVIL_GI/ENEMY1/ENEMY_TEST only. Never called at runtime.**
+8. ~~Analyze vtable dispatch~~ **DONE (Rev.086): +0x60 = behavior_fn (shared dispatch function), NOT vtable. Group A=0x202A60 (main chars), Group B=0x23D660 (props), 39 entities have none.**
 
 ---
 
@@ -396,7 +397,7 @@ If a previous note is wrong, create a new correction note or clearly mark the co
 The file below is a required companion context for narrative/blog-style writing about this project:
 
 ```txt
-prompt_persona_ico_reconstruction.md
+docs/prompt_persona_ico_reconstruction.md
 ```
 
 Whenever a validated research revision changes the current understanding of the project, update this persona/blog prompt as part of the same work.
@@ -491,41 +492,24 @@ Do not assume zero static callers means high importance.
 
 ## Runtime validation next
 
-The Rev.025 session confirmed cloth dispatcher reachability. The project has since completed static analysis for the **Live Dispatch System** (0x00166E10, Rev.064-067). Next runtime targets:
+The project has completed static analysis of all remaining systems (Rev.086). Next runtime targets (prepared as Rev.086 probes):
 
 ```txt
-breakpoint at 0x00167230  (cold path A — capture a0, gp, gp-25856 value)
-breakpoint at 0x00167258  (cold path B — capture a0, gp, gp-25852 value)
-breakpoint at 0x00166E10  (main body — capture a0 context, a1 slot index)
-breakpoint at 0x00167020  (dispatch — capture v1 callback target, a0-a2)
-breakpoint at 0x001683B4  (wrapper for slot 0 — capture a0, a1, target from GP slot)
-breakpoint at 0x00169F80  (alternate impl A — check if ever reached)
-breakpoint at 0x0016A058  (alternate impl B — check if ever reached)
-```
-
-Useful values to capture:
-
-```txt
-$3 before table load
-$4 before jr
-candidate_state_id
-candidate_state_block_ptr
-entity/context pointer
-state block pointer
-selected jump table entry
-a1 at 0x0013f7a8 entry (which callback is being registered?)
-a2 + t0 at 0x00166D38 (values written to 0x6AB080)
+breakpoint at 0x00166E10  (main_dispatcher       — slot_index, a0 context)
+breakpoint at 0x00167020  (dispatch_point         — v1 callback, a0-a2)
+breakpoint at 0x00167230  (cold_path_A            — a0 context, gp slots)
+breakpoint at 0x00167258  (cold_path_B            — a0 context, gp slots)
+breakpoint at 0x001AF948  (world_state_load       — room transitions)
+breakpoint at 0x00166600  (gp_m49B4_read          — most-referenced GP var)
 ```
 
 Useful questions:
 
-- Which slot indices (a1=0..16) appear during gameplay?
-- Are the cold path slots ever swapped to the alternate implementation?
-- Which Group 1 vs Group 2 callbacks fire?
-- Does the halfword table at 0x6AB080 contain entity/object type indices?
-- What is the real callback distribution at 0x00167020?
-- Is the VU0 kick stub (0x117C40) ever reached during gameplay?
-- Which function calls 0x00168650 with a0 != 0 (alternate selection)?
+- Which room transitions occur and what world_state values appear?
+- What is the most-referenced GP variable (gp-0x49B4, 434 refs)?
+- Does the VBlank counter at 0x274EC0 show frame beats consistent with IOP timing?
+- What entity contexts accompany room transitions?
+- Does slot distribution correlate with specific world_state values?
 
 ---
 

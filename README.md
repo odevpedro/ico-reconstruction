@@ -87,6 +87,14 @@ The project has moved into **decompilation and struct modeling**. A verified str
 
 **Rev.077 — Final static analysis:** Descriptor table at 0x2A31B8 fully parsed — **68 entity types** with names (BOY, GIRL, ENEMY1, BARREL, ROPE, QUEEN, BIRD, etc.), init_fn, 3-4 callback routines, mass, radius, threshold, and vtable pointers. **ROPE callback registration gap finally resolved**: `0x1D3A30` is BARREL's physics constraint solver registered via descriptor table `+0x50`, not callback_register. **Entry table** at 0x2A4C48: 512 entity instance spawns with positions, classes, model IDs. **8-step scene loading state machine** at 0x1B08E4 in `kanban.c` (GP=0x27A7A8, separate compilation unit). **VU0 "kick" function** at 0x117768 is actually a **linked-list deferred processing queue** (no VU0 instructions at all). **Debug visualization table** at 0x613E00 contains 47 runtime debug entries with names like CollisionOldProc, ClothInfo, BrainBar, and only one non-null callback: `0x168650`. **Resource check** at 0x17B230 is a bitmap-based readiness check (array at 0x28A520). **Wait/yield** at 0x203AA0 uses EE kernel syscall 50 (cooperative yield) with VBlank counter at 0x274EC0. **GP data map** consolidated: 1032 unique GP offsets referenced by 9971 instructions across `.text`; the most-referenced is `-0x49B4` (434 refs). With Rev.077, **all possible static analysis without emulator access is complete** — any further progress requires runtime validation via PCSX2 breakpoints. See [`research/elf/ghidra-rev077-final-static-analysis.md`](./research/elf/ghidra-rev077-final-static-analysis.md).
 
+**Rev.079 — Runtime session at windmill validates dispatch across areas:** A second independent PCSX2 runtime session (~15 min, 14M events, 4.8GB log) in the windmill section confirmed and expanded the Rev.074 findings. **Slot distribution inverted** (slot 1 at 45.7% vs 27.0% in the entrance section), confirming slot activation is area-dependent. **12 callbacks fully mapped** with cross-references. **mask_set (0x13ED40)** confirmed zero hits during gameplay across two sessions — only fires on loading transitions. **Slot 0 dead** in 2nd session (0/1.8M dispatches). **Halfword table writers** never triggered in windmill. **Alt selection** never called. GP=0x006388F0 reconfirmed. See [`research/elf/ghidra-rev079-runtime-validation-windmill-session.md`](./research/elf/ghidra-rev079-runtime-validation-windmill-session.md).
+
+**Rev.084 — Extended runtime session (43.8M events, ~122 min):** A third PCSX2 runtime session covering entrance → windmill → cutscene → 3rd+ area. **Slot 5** fired for the first time (triplet guard entity). **Slot 11** observed for the first time (mask 0xC0000000). **Cutscene period** detected: 100% slot 12 only (Group 1 suspended). All rare probes ZERO across 3rd independent session: mask_set, halfword_store, slot0, alt_selection — confirmed dead code or loading-only. **1,913 unique entity contexts** observed. **Slot 0 root cause found** via static analysis: zero `addiu a1, zero, 0` + JALR sites in all .text — no code path ever dispatches to slot 0. Total project coverage: **66.9M events** across 3 independent sessions. See [`research/elf/ghidra-rev084-runtime-validation-extended-session.md`](./research/elf/ghidra-rev084-runtime-validation-extended-session.md).
+
+**Rev.085 — Death validation:** User intentionally jumped off a cliff. **mask_set (0x13ED40) = 0 hits** even during death sequence. Death zone exhibits 100% slot 12 (Group 2 only, Group 1 suspended) — identical to cutscene behavior. Confirms mask_set is `ShockRequestBox_RequestCancel` (I/O system), not a gameplay death callback. See [`research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`](./research/elf/ghidra-rev085-death-validation-and-next-session-plan.md).
+
+**Rev.086 — Final static analysis (4 systems resolved):** (1) Descriptor `+0x60` = **behavior_fn** (shared dispatch function), not vtable — Group A at 0x202A60 (4 main character types), Group B at 0x23D660 (16 prop types). (2) **Env effect table** corrected: 395 entries × 0x30 (not 7), a type-to-type mapping matrix, NOT spatial trigger zones. (3) **cb_routine4 (+0x5C)**: no-op `jr $ra` stubs for GIRL/DEVIL_GI/ENEMY1/ENEMY_TEST only — never called at runtime. (4) **VBlank counter** 0x274EC0: no `.text` writer found — IOP-driven via SIF DMA. **GIRL = DEVIL_GI** confirmed (identical in all 5 fields). See [`research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`](./research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md).
+
 No reconstructed game code, assets, binaries, or ISO-derived copyrighted data are included in this repository.
 
 Current repository contents are mostly operational documents:
@@ -182,6 +190,7 @@ These notes describe structural evidence only. They do not assign definitive gam
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
 └── tools/
+    ├── runtime-probe-analyzer/   # PCSX2 runtime event log analyzer
     ├── data-df-index/            # Metadata-only DATA.DF triage tool
     ├── dvp-index/                # Metadata-only DVP overlay indexer
     ├── elf-index/                # Metadata-only ELF32 indexer
@@ -342,6 +351,8 @@ The project treats these as research topics, not solved problems.
 | [`docs/tooling-plan.md`](./docs/tooling-plan.md) | Planned local tooling direction before executable tools exist |
 | [`docs/ai-onboarding.md`](./docs/ai-onboarding.md) | Required reading path and current handoff context for new AI agents |
 | [`docs/local-logs-and-reports.md`](./docs/local-logs-and-reports.md) | Local project report directory and PCSX2 emulator log locations |
+| [`docs/historia.md`](./docs/historia.md) | Narrative blog (first-person student persona, 10k words, 14 chapters) |
+| [`docs/prompt_persona_ico_reconstruction.md`](./docs/prompt_persona_ico_reconstruction.md) | Blog persona prompt for narrative writing |
 | [`research/README.md`](./research/README.md) | Organization rules for future research notes |
 | [`tools/README.md`](./tools/README.md) | Scope and conventions for future local utilities |
 | [`tools/verify-local-copy/README.md`](./tools/verify-local-copy/README.md) | Metadata-only local input verifier |
@@ -374,6 +385,7 @@ The project treats these as research topics, not solved problems.
 | [`research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md`](./research/elf/ghidra-rev035-entry-table-and-descriptor-correction.md) | Entry-table and descriptor-index correction for the `ROPE` callback model |
 | [`research/elf/ghidra-rev036-registration-path-survey.md`](./research/elf/ghidra-rev036-registration-path-survey.md) | Registration path survey: zero-guard in `0x001b76f8`, all five callers of `0x0013f7a8` |
 | [`research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`](./research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md) | Complete analysis of remaining callers of `0x0013f7a8` and the ROPE registration gap |
+| [`research/elf/ghidra-rev079-runtime-validation-windmill-session.md`](./research/elf/ghidra-rev079-runtime-validation-windmill-session.md) | Runtime session at windmill (14M events): slot distribution inverted, 12 callbacks mapped, probes documented |
 | [`research/runtime/pcsx2-recompiler-session3-2026-05-16.md`](./research/runtime/pcsx2-recompiler-session3-2026-05-16.md) | Runtime session 3: 0 hits at 0x1D3A30, 0x0024xxxx callers investigation |
 | [`possible_ressources.md`](./possible_ressources.md) | Catalog of external projects, tools, and communities for integration |
 | [`tools/elf-extractor/README.md`](./tools/elf-extractor/README.md) | ELF extractor for disassembler import |
@@ -463,6 +475,10 @@ The project treats these as research topics, not solved problems.
 [x] rev.072 - Room init callback correction (offset +0x174), 19 function pointers, descriptor table (68 entries, 0x2A31B8), entry table (512 entries, 0x2A4C48), dead mult instruction
 [x] rev.073 - Main loop dispatch chain (12 steps), corrected callback masks (bits 28-31), secondary pointer table (0x00633D30), struct field maps (80B/112B), linked-list flow
 [x] rev.074 - Runtime session (9.1M events): slot 0 dead, slot 12 most active, alt_impl unused, VU0 kick only in gameplay, 58% match rate, 615 contexts/20 live entities
+[x] rev.079 - Runtime session at windmill (14M events): slot distribution inverted (slot 1 #1 at 45.7%, slot 12 #2 at 37.1%), 12 callbacks fully mapped, mask_set 0 gameplay hits (confirmed 2nd session), slot 0 dead (2nd session), halfword writers 0 hits, alt_selection 0 hits, GP=0x6388F0 reconfirmed
+[x] rev.084 - Extended runtime session (43.8M events, ~122 min): entrance→windmill→cutscene→3rd area. Slot 5+11 fired first time. Cutscene=100% slot12. All rare probes ZERO (3rd session). 1913 entity contexts. Slot 0 root cause (static: 0 dispatch sites). Total 66.9M events across 3 sessions.
+[x] rev.085 - Death validation: mask_set = 0 hits during death. Death = 100% slot12 (Group 2 only). Confirms mask_set = ShockRequestBox_RequestCancel (I/O system).
+[x] rev.086 - Final static analysis: +0x60 = behavior_fn (not vtable). Env effect table = 395-entry type-to-type matrix. cb_routine4 = no-op stubs. VBlank counter = IOP-driven. GIRL=DEVIL_GI confirmed.
 ```
 
 ## How To Contribute
