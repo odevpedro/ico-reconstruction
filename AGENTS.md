@@ -336,19 +336,22 @@ The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-07
 
 ### Current objectives
 
-1. ~~Runtime: probe mask bit 0 during cutscene transitions~~ **DONE (Rev.085): mask_set = I/O only, zero gameplay hits across 66.9M events + death**
-2. ~~Runtime: probe gp+0x6F60 (world_state at 0x00631990) to map room transitions~~ **DONE (Rev.089): 6 room values mapped across entrance → rooms 0x0A,0x10-0x13**
-3. ~~Runtime: probe halfword table writers~~ **DONE: zero hits across 3 sessions in 4 game areas. Condition unknown — requires new approach.**
-4. ~~Runtime: probe gp-0x49B4 (0x00633F3C)~~ **DONE (Rev.089): confirmed as current entity work area pointer (22 distinct values, 344K reads)**
-5. ~~Investigate slot 0 callback 0x168DA8~~ **DONE (Rev.084): zero `addiu a1, 0 + JALR` sites in all .text — no code dispatches slot 0**
-6. ~~Investigate env effect table~~ **DONE (Rev.086): 395 entries × 0x30, type-to-type mapping matrix (NOT spatial zones)**
-7. ~~Study cb_routine4 pattern~~ **DONE (Rev.086): no-op stubs at +0x5C for GIRL/DEVIL_GI/ENEMY1/ENEMY_TEST only. Never called at runtime.**
-8. ~~Analyze vtable dispatch~~ **DONE (Rev.086): +0x60 = behavior_fn (shared dispatch function), NOT vtable. Group A=0x202A60 (main chars), Group B=0x23D660 (props), 39 entities have none.**
-9. ~~Decompile ENEMY1/BOY/BARREL/ROPE/WOODBOX0~~ **DONE (Rev.087-088): 7 handlers in near-structural C**
-10. ~~Populate historia.md~~ **DONE (Rev.089): chapter 15 added with full Rev.084-089 narrative**
-11. Fix dispatch_point slot index capture for next runtime session
-12. Reposition world_state_load probe to capture room init_fn
-13. Deploy memory watchpoint on VBlank counter 0x274EC0
+1. ~~Runtime: probe mask bit 0 during cutscene transitions~~ **DONE (Rev.085)**
+2. ~~Runtime: probe gp+0x6F60 (world_state)~~ **DONE (Rev.089)**
+3. ~~Runtime: probe halfword table writers~~ **DONE — condition unknown**
+4. ~~Runtime: probe gp-0x49B4~~ **DONE (Rev.089): current entity work area ptr**
+5. ~~Investigate slot 0 callback 0x168DA8~~ **DONE (Rev.084)**
+6. ~~Investigate env effect table~~ **DONE (Rev.086)**
+7. ~~Study cb_routine4 pattern~~ **DONE (Rev.086)**
+8. ~~Analyze vtable dispatch~~ **DONE (Rev.086)**
+9. ~~Decompile ENEMY1/BOY/BARREL/ROPE/WOODBOX0~~ **DONE (Rev.087-088)**
+10. ~~Populate historia.md~~ **DONE (Rev.089)**
+11. ~~Download and install ee-gcc 2.9-991111-01 locally~~ **DONE (Rev.090)**
+12. **Fix fn_1CE5F8 decompilation matching** — frame 0x40→0x30, delay slot nops via asm barriers. Ready for decomp.me v14 submission
+13. **Batch remaining 6 decompiled handlers** through the local scoring pipeline (once fn_1CE5F8 validates)
+14. Fix dispatch_point slot index capture for next runtime session
+15. Reposition world_state_load probe to capture room init_fn
+16. Deploy memory watchpoint on VBlank counter 0x274EC0
 
 ---
 

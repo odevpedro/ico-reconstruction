@@ -72,7 +72,7 @@ void sub_1CF930(ico_ptr32, ico_ptr32, float);
 
 // Destruction / cleanup
 void fn_1CE5F8(struct entity_context *);
-void sub_1224E0(void);
+void sub_1224E0(ico_ptr32);
 void sub_1CF770(ico_ptr32);
 void sub_1CDB28(struct entity_context *);
 void sub_1CF998(ico_ptr32);
@@ -166,23 +166,24 @@ void enemy1_hA(struct entity_context *entity)
 // 2. Destroy child sprites if coll->0x30 == 0.0
 // 3. Release model resource
 // 4. Full entity destruction if cleanup_flag set
+//
+// NOTE: asm nop barriers used to match target's delay slot scheduling.
+// ee-gcc 2.9 fills delay slots aggressively; target uses .set noreorder.
 // ============================================================================
 void fn_1CE5F8(struct entity_context *entity)
 {
-    ico_ptr32 scene_obj;
     struct enemy1_work *wk;
 
-    scene_obj = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
     wk = (struct enemy1_work *)(
-        *(ico_ptr32 *)((u8 *)scene_obj + STATE_BLOCK_OFFSET)
+        *(ico_ptr32 *)((u8 *)(*(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET)) + STATE_BLOCK_OFFSET)
     );
 
-    if (wk->cleanup_state)
-        sub_1224E0();
-
-    {
-        ico_ptr32 coll = *(ico_ptr32 *)((u8 *)scene_obj + 0x840);
-        if (*(float *)((u8 *)coll + 0x30) == 0.0f) {
+    if (wk->cleanup_state) {
+        __asm__ __volatile__("nop");
+        sub_1224E0(*(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET));
+        __asm__ __volatile__("nop");
+        if (*(float *)((u8 *)(*(ico_ptr32 *)((u8 *)(*(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET)) + 0x840)) + 0x30) == 0.0f) {
+            __asm__ __volatile__("nop");
             sub_1CF998(wk->child1);
             sub_1CF998(wk->child2);
         }

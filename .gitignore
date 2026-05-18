@@ -43,3 +43,15 @@ Thumbs.db
 .idea/
 .vscode/
 prints/
+
+# Toolchain (downloadable from GitHub)
+toolchain/
+
+# Temp files from ee-gcc compilation
+*.s
+tmp*.s
+*.o
+*.o.tmp
+
+# Local scratch/output
+decomp/
