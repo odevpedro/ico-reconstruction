@@ -325,9 +325,17 @@ Análise estática completa. Tudo que podia ser descoberto sem runtime foi
 descoberto. Faltam apenas validações pontuais em runtime (probes em slots
 específicos, captura de estado de sala, verificação de VBlank counter).
 
-O projeto está em um ponto de transição: ou parte para runtime validation
-sistemática, ou expande o escopo para áreas deliberadamente excluídas
-(DATA.DF, overlays, assets).
+O projeto também entrou em uma frente de decompilação verificável: há um
+toolchain local `ee-gcc 2.9-991111-01`, scoring instrução-a-instrução contra o
+ELF original, 37 funções mapeadas no batch scorer e 7 funções `EXACT` sob a
+normalização local (Rev.091d). Esse progresso deve ser narrado com cautela:
+ele valida o método e fecha pequenas ilhas de código, mas ainda não representa
+uma porcentagem alta do jogo decompilado.
+
+O ponto de transição atual é pragmático: continuar fechando funções pequenas e
+médias com evidência reproduzível, consolidar structs apenas quando o score
+exigir, e deixar mineração runtime pesada ou áreas deliberadamente excluídas
+(DATA.DF, overlays, assets) para momentos específicos.
 
 ---
 
@@ -586,11 +594,26 @@ tabelas de efeito ambiental.
 
 Tom: orgulho discreto, senso de dever cumprido (parcialmente).
 
+## 12. A bancada pequena da decompilação local
+
+Depois do mapa do runtime, o personagem volta para funções pequenas: predicates
+de cloth, handlers curtos, diferenças de delay slot, normalização de pseudo-op
+e comparação instrução por instrução com `ee-gcc 2.9-991111-01`. O foco não é
+declarar grandes verdades sobre gameplay, mas fechar pequenos trechos de C que
+batem exatamente com o ELF.
+
+Conceitos: local scoring, exact match, near-exact, delay slot, pseudo-op,
+`enemy1_hA`, `fn_1CE5F8`, helpers de cloth.
+
+Tom: trabalho de bancada, paciência, satisfação técnica discreta.
+
 ## Epílogo — A escavação continua
 
 O personagem reflete sobre o que aprendeu, não apenas sobre ICO, mas sobre
-si mesmo. Fala sobre o próximo passo (runtime validation sistemática). E
-fala sobre o que ICO significa agora que ele viu o motor por baixo da pele.
+si mesmo. Fala sobre os próximos passos: runtime validation sistemática quando
+as sondas precisam ser corrigidas, e decompilação local quando uma função
+pequena pode ser fechada com evidência instrução por instrução. E fala sobre o
+que ICO significa agora que ele viu o motor por baixo da pele.
 
 Conceitos: próximos passos, perguntas abertas, limites da análise estática.
 

@@ -3,6 +3,7 @@
 Submit a decompiled function to decomp.me for ee-gcc 2.9-991111-01 matching.
 Usage:
   python3 decompme_submit.py <va> <c_source_file> [-n <name>] [-d <description>]
+      [--size <bytes>] [--asm-file <target_asm.txt>]
 
 Extracts assembly from the ICO ELF and submits with the given C source.
 """
@@ -11,8 +12,10 @@ import json
 import sys
 import os
 import urllib.request
+import urllib.error
 from capstone import *
 import re
+import argparse
 
 ELF_PATH = os.path.expanduser(
     "~/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf"
@@ -79,21 +82,23 @@ def asm_to_decompme(insns):
     return normalize_target_asm("\n".join(lines))
 
 
-def submit(va, c_source, name=None, description=None, n_insns=200):
-    insns = disassemble(va, n_insns)
-    if not insns:
-        print(f"ERROR: No instructions at 0x{va:X}")
-        return None
+def submit(va, c_source, name=None, description=None, n_insns=200,
+           target_asm=None):
+    if target_asm is None:
+        insns = disassemble(va, n_insns)
+        if not insns:
+            print(f"ERROR: No instructions at 0x{va:X}")
+            return None
 
-    # Trim trailing nops (padding)
-    while insns and insns[-1][1] == "nop":
-        insns = insns[:-1]
+        # Trim trailing nops (padding)
+        while insns and insns[-1][1] == "nop":
+            insns = insns[:-1]
 
-    print(f"Disassembled {len(insns)} instructions from 0x{va:X}")
-
-    target_asm = asm_to_decompme(insns)
-    slug_part = f"ico_{name or f'func_{va:X}'}_{len(insns)}i"
-
+        print(f"Disassembled {len(insns)} instructions from 0x{va:X}")
+        target_asm = asm_to_decompme(insns)
+    else:
+        print(f"Using provided target asm for 0x{va:X}")
+        target_asm = normalize_target_asm(target_asm)
     payload = {
         "compiler": COMPILER,
         "compiler_flags": FLAGS,
@@ -115,8 +120,15 @@ def submit(va, c_source, name=None, description=None, n_insns=200):
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        result = json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read())
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        print(f"HTTP ERROR {exc.code}: {exc.reason}")
+        if body:
+            print(body)
+        return None
 
     print(f"\nCreated: https://decomp.me/scratch/{result['slug']}")
     print(f"Score:   {result['score']}/{result['max_score']}")
@@ -126,24 +138,32 @@ def submit(va, c_source, name=None, description=None, n_insns=200):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print(__doc__)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("va")
+    parser.add_argument("c_source_file")
+    parser.add_argument("-n", "--name")
+    parser.add_argument("-d", "--description")
+    parser.add_argument("--size", type=lambda s: int(s, 0),
+                        help="Function size in bytes; used only when --asm-file is omitted")
+    parser.add_argument("--asm-file",
+                        help="Use a prepared target_asm.txt instead of disassembling by size")
+    args = parser.parse_args()
 
-    va = int(sys.argv[1], 16) if sys.argv[1].startswith("0x") else int(sys.argv[1])
-    c_path = sys.argv[2]
+    va = int(args.va, 16) if args.va.startswith("0x") else int(args.va)
 
-    name = None
-    description = None
-    for i, arg in enumerate(sys.argv[3:]):
-        if arg == "-n" and i + 1 < len(sys.argv[3:]):
-            name = sys.argv[3 + i + 1]
-        if arg == "-d" and i + 1 < len(sys.argv[3:]):
-            description = sys.argv[3 + i + 1]
-
-    with open(c_path) as f:
+    with open(args.c_source_file) as f:
         c_source = f.read()
 
-    result = submit(va, c_source, name, description)
+    target_asm = None
+    if args.asm_file:
+        with open(args.asm_file) as f:
+            target_asm = f.read()
+
+    n_insns = 200
+    if args.size is not None:
+        n_insns = (args.size + 3) // 4
+
+    result = submit(va, c_source, args.name, args.description, n_insns,
+                    target_asm=target_asm)
     if result:
         print("\nDONE")

@@ -1,0 +1,11 @@
+lw $3, 348($4)
+lw $3, 2048($3)
+lw $2, 4($3)
+xori $2, $2, 1
+bne $2, $zero, .Lret_zero
+nop
+j $31
+lw $2, 64($3)
+.Lret_zero:
+j $31
+move $2, $zero

@@ -1,0 +1,13 @@
+lw $2, 348($4)
+move $5, $zero
+lw $3, 364($4)
+beq $3, $zero, .Lret
+lw $4, 2048($2)
+ld $2, 8($4)
+bne $2, $zero, .Lret
+nop
+lw $2, 72($4)
+slti $5, $2, 2
+.Lret:
+j $31
+move $2, $5

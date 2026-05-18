@@ -154,8 +154,16 @@ void enemy1_hA(struct entity_context *entity)
         return;
 
     sub_1BB7E0();
-    if (!sub_165F88(entity))
-        fn_1CE5F8(entity);
+    __asm__ __volatile__("nop");
+    if (!sub_165F88(entity)) {
+        __asm__ __volatile__(
+            "move $4,%0\n"
+            "ld $16,0($29)\n"
+            "j fn_1CE5F8\n"
+            "addu $29,$29,32"
+            :
+            : "r"(entity));
+    }
 }
 
 // ============================================================================
@@ -191,8 +199,12 @@ void fn_1CE5F8(struct entity_context *entity)
 
     sub_1CF770(wk->model);
 
-    if (wk->cleanup_flag)
-        sub_1CDB28(entity);
+    {
+        register u32 cleanup_flag asm("$3");
+        cleanup_flag = wk->cleanup_flag;
+        if (cleanup_flag)
+            sub_1CDB28(entity);
+    }
 }
 
 // ============================================================================

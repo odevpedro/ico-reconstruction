@@ -1,0 +1,15 @@
+move $6, $4
+lw $4, 348($6)
+addiu $5, $zero, 1
+lw $2, 2048($4)
+lw $3, ($2)
+beq $3, $5, .Ltrue
+move $7, $zero
+lw $2, 364($6)
+bne $2, $zero, .Lreturn
+nop
+.Ltrue:
+addiu $7, $zero, 1
+.Lreturn:
+j $31
+move $2, $7

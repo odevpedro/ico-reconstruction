@@ -1,5 +1,6 @@
 typedef unsigned int u32;
 typedef int ico_ptr32;
+
 struct entity_context;
 
 void boy_set_state(struct entity_context *entity, u32 state)

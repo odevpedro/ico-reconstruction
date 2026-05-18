@@ -141,6 +141,13 @@ NUM_TO_ABI = {v: k for k, v in ABI_TO_NUM.items()}
 # CP1 register names
 FREG_ABI = {f"${i}": f"$f{i}" for i in range(32)}
 
+LOCAL_BRANCH_MNEMS = {
+    "beq", "bne", "beql", "bnel",
+    "bc1f", "bc1t", "bc1fl", "bc1tl",
+    "bltz", "bgez", "bgtz", "blez",
+    "j",
+}
+
 
 def normalize_insn(line: str) -> str:
     """Normalize MIPS instruction for structural comparison."""
@@ -158,6 +165,16 @@ def normalize_insn(line: str) -> str:
 
     # 2. All hex immediates ($0x15c or 0x15c) → decimal
     ops = re.sub(r'\$?0x([0-9a-fA-F]+)', lambda m: str(int(m.group(1), 16)), ops)
+
+    # 2b. External symbolic targets emitted from prototypes use address-like
+    # names in this repo (sub_1CF998, func_001D37C8, fn_1CE5F8).
+    # Normalize those to the
+    # same decimal target format Capstone emits for original ELF calls.
+    ops = re.sub(
+        r'\b(?:sub|func|fn)_([0-9a-fA-F]{6,8})\b',
+        lambda m: str(int(m.group(1), 16)),
+        ops,
+    )
 
     # 3. Strip leading $ from all bare register numbers
     ops = re.sub(r'\$(\d+)', r'\1', ops)
@@ -182,6 +199,18 @@ def normalize_insn(line: str) -> str:
         parts = ops.split(',')
         if len(parts) == 3 and parts[2].strip() in ('1', '$1'):
             mnem = 'sltiu'
+
+    # 8b. slt $rd, $rs, N → slti $rd, $rs, N
+    # GAS accepts slt with an immediate as a macro for slti.
+    if mnem == 'slt':
+        parts = [part.strip() for part in ops.split(',')]
+        if len(parts) == 3:
+            try:
+                int(parts[2], 0)
+            except ValueError:
+                pass
+            else:
+                mnem = 'slti'
 
     # 9. subu $rd, $rs, N → addiu $rd, $rs, -N
     # GCC outputs subu/addu as pseudo-ops for stack frame; GAS expands to addiu.
@@ -225,33 +254,238 @@ def normalize_insn(line: str) -> str:
             mnem = 'bne'
             ops = f"{ops_parts[0].strip()}, $zero, {ops_parts[1].strip()}"
 
+    # 15. li $rd, imm -> addiu $rd, $zero, imm for small constants.
+    if mnem == 'li':
+        parts = [part.strip() for part in ops.split(',')]
+        if len(parts) == 2:
+            try:
+                imm = int(parts[1], 0)
+            except ValueError:
+                imm = None
+            if imm is not None and -0x8000 <= imm <= 0x7fff:
+                mnem = 'addiu'
+                ops = f"{parts[0]}, $zero, {imm}"
+
+    # 16. GAS may print dsrl rd, rs, 33 where Capstone prints dsrl32 rd, rs, 1.
+    if mnem == 'dsrl':
+        parts = [part.strip() for part in ops.split(',')]
+        if len(parts) == 3:
+            try:
+                shift = int(parts[2], 0)
+            except ValueError:
+                shift = None
+            if shift is not None and shift >= 32:
+                mnem = 'dsrl32'
+                ops = f"{parts[0]}, {parts[1]}, {shift - 32}"
+
     return f"{mnem} {ops}"
 
 
-def parse_asm_lines(asm: str) -> list[str]:
+def _is_asm_instruction_line(stripped: str) -> bool:
+    if not stripped or stripped.endswith(":") or stripped.startswith("."):
+        return False
+    return True
+
+
+def _normalize_local_branch_target(insn: str, resolver) -> str:
+    parts = insn.split(None, 1)
+    if len(parts) < 2:
+        return insn
+
+    mnem, ops = parts
+    if mnem not in LOCAL_BRANCH_MNEMS:
+        return insn
+
+    operands = [op.strip() for op in ops.split(",")]
+    if not operands:
+        return insn
+
+    target = operands[-1]
+    resolved = resolver(target)
+    if resolved is None:
+        return insn
+
+    operands[-1] = resolved
+    return f"{mnem} {', '.join(operands)}"
+
+
+def parse_asm_lines(asm: str, resolve_local_labels: bool = True) -> list[str]:
     """Parse assembly into (mnemonic + operands) strings, stripping labels."""
+    label_to_idx = {}
+    if resolve_local_labels:
+        idx = 0
+        for raw in asm.splitlines():
+            stripped = raw.strip()
+            if stripped.endswith(":"):
+                label = stripped[:-1]
+                label_to_idx[label] = idx
+                label_to_idx[label.lstrip("$")] = idx
+                continue
+            if _is_asm_instruction_line(stripped) and normalize_insn(stripped):
+                idx += 1
+
+    def resolve_label(target: str) -> str | None:
+        if not resolve_local_labels:
+            return None
+        key = target.strip()
+        if key in label_to_idx:
+            return f"@{label_to_idx[key]}"
+        key = key.lstrip("$")
+        if key in label_to_idx:
+            return f"@{label_to_idx[key]}"
+        return None
+
     lines = []
     for line in asm.splitlines():
         line = line.strip()
-        if not line or line.endswith(":") or line.startswith("."):
+        if not _is_asm_instruction_line(line):
             continue
         norm = normalize_insn(line)
         if norm:
+            norm = _normalize_local_branch_target(norm, resolve_label)
             lines.append(norm)
     return lines
 
 
-def score_against_target(func_asm: str, target_va: int, func_size: int = 0x100):
-    """Score generated assembly against target ELF function."""
+def normalize_target_insns(target_insns: list[dict]) -> list[str]:
+    """Normalize target instructions and convert intra-function branches to @idx."""
+    va_to_idx = {insn["va"]: idx for idx, insn in enumerate(target_insns)}
+
+    def resolve_va(target: str) -> str | None:
+        try:
+            target_va = int(target, 10)
+        except ValueError:
+            return None
+        if target_va in va_to_idx:
+            return f"@{va_to_idx[target_va]}"
+        return None
+
+    lines = []
+    for insn in target_insns:
+        norm = normalize_insn(f"{insn['mnemonic']} {insn['op_str']}")
+        if norm:
+            norm = _normalize_local_branch_target(norm, resolve_va)
+            lines.append(norm)
+    return lines
+
+
+def align_instructions(tgt: list[str], gen: list[str]) -> list[tuple]:
+    """Align two instruction sequences using LCS.
+
+    Returns list of (tgt_idx | None, gen_idx | None, tgt_insn, gen_insn, status).
+    Status is 'match', 'mismatch', 'missing' (in gen), 'extra' (in gen).
+    """
+    n, m = len(tgt), len(gen)
+    # DP table
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            if tgt[i - 1] == gen[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    # Backtrack
+    result = []
+    i, j = n, m
+    while i > 0 or j > 0:
+        if i > 0 and j > 0 and tgt[i - 1] == gen[j - 1]:
+            result.append((i - 1, j - 1, tgt[i - 1], gen[j - 1], 'match'))
+            i -= 1
+            j -= 1
+        elif j > 0 and (i == 0 or dp[i][j - 1] >= dp[i - 1][j]):
+            result.append((None, j - 1, '(missing)', gen[j - 1], 'extra'))
+            j -= 1
+        else:
+            result.append((i - 1, None, tgt[i - 1], '(missing)', 'missing'))
+            i -= 1
+    result.reverse()
+    return coalesce_missing_extra_pairs(result)
+
+
+def _mnemonic(text: str) -> str:
+    if not text or text == "(missing)":
+        return ""
+    return text.split()[0]
+
+
+def coalesce_missing_extra_pairs(aligned: list[tuple]) -> list[tuple]:
+    """Pair adjacent missing/extra rows that are really operand mismatches.
+
+    LCS alignment is useful for inserted/deleted instructions, but it represents
+    same-mnemonic operand differences as a missing target row plus an extra
+    generated row. Coalescing those pairs restores the scorer's old partial
+    credit behavior and lets the diff classifier label branch-target/register
+    differences instead of reporting them as structural insertions.
+    """
+    result = []
+    i = 0
+    while i < len(aligned):
+        cur = aligned[i]
+        if cur[4] in ("missing", "extra"):
+            j = i
+            first_status = cur[4]
+            while j < len(aligned) and aligned[j][4] == first_status:
+                j += 1
+
+            second_status = "extra" if first_status == "missing" else "missing"
+            k = j
+            while k < len(aligned) and aligned[k][4] == second_status:
+                k += 1
+
+            first_block = aligned[i:j]
+            second_block = aligned[j:k]
+            if first_block and len(first_block) == len(second_block):
+                merged = []
+                can_merge = True
+                for a, b in zip(first_block, second_block):
+                    missing = a if a[4] == "missing" else b
+                    extra = a if a[4] == "extra" else b
+                    if _mnemonic(missing[2]) != _mnemonic(extra[3]):
+                        can_merge = False
+                        break
+                    merged.append((missing[0], extra[1], missing[2], extra[3], "mismatch"))
+                if can_merge:
+                    result.extend(merged)
+                    i = k
+                    continue
+
+        if i + 1 >= len(aligned):
+            result.append(cur)
+            i += 1
+            continue
+
+        nxt = aligned[i + 1]
+        cur_missing = cur[4] == "missing" and nxt[4] == "extra"
+        cur_extra = cur[4] == "extra" and nxt[4] == "missing"
+
+        if cur_missing or cur_extra:
+            missing = cur if cur[4] == "missing" else nxt
+            extra = cur if cur[4] == "extra" else nxt
+            if _mnemonic(missing[2]) == _mnemonic(extra[3]):
+                result.append((missing[0], extra[1], missing[2], extra[3], "mismatch"))
+                i += 2
+                continue
+
+        result.append(cur)
+        i += 1
+
+    return result
+
+
+def score_against_target(func_asm: str, target_va: int, func_size: int = 0x100,
+                         format: str = 'full'):
+    """Score generated assembly against target ELF function.
+
+    Args:
+        format: 'full' (default), 'compact', or 'json'
+    """
     target_bytes = extract_elf_func(target_va, func_size)
     target_insns = disassemble_mips64(target_bytes, target_va)
 
     gen_lines = parse_asm_lines(func_asm)
 
     # Normalize target instructions for comparison
-    tgt_lines = []
-    for insn in target_insns:
-        tgt_lines.append(normalize_insn(f"{insn['mnemonic']} {insn['op_str']}"))
+    tgt_lines = normalize_target_insns(target_insns)
 
     # Trim trailing nops from both sides (alignment padding)
     while tgt_lines and tgt_lines[-1] == 'nop':
@@ -259,58 +493,112 @@ def score_against_target(func_asm: str, target_va: int, func_size: int = 0x100):
     while gen_lines and gen_lines[-1] == 'nop':
         gen_lines.pop()
 
-    print(f"Target instructions: {len(tgt_lines)}")
-    print(f"Generated instructions: {len(gen_lines)}")
-    print()
+    # Align using LCS
+    aligned = align_instructions(tgt_lines, gen_lines)
 
-    # Score
-    max_score = len(tgt_lines) * 100
+    # Score: each match = 100, each mnemonic-only match = 50
     score = 0
-    mismatches = []
-
-    for i, tgt in enumerate(tgt_lines):
-        if i < len(gen_lines):
-            gen = gen_lines[i]
-            if gen == tgt:
-                score += 100
-            else:
-                mismatches.append((i, tgt, gen))
-                # Partial credit for matching mnemonic
-                gen_mnem = gen.split()[0] if gen else ""
-                tgt_mnem = tgt.split()[0] if tgt else ""
-                if gen_mnem == tgt_mnem:
-                    score += 50
+    max_score = len(tgt_lines) * 100
+    for tgt_i, gen_i, tgt_text, gen_text, status in aligned:
+        if status == 'match':
+            score += 100
+        elif status == 'missing':
+            pass
+        elif status == 'extra':
+            pass
         else:
-            mismatches.append((i, tgt, "(missing)"))
-            score += 0
-
-    # Extra instructions in generated code
-    for i in range(len(tgt_lines), len(gen_lines)):
-        mismatches.append((i, "(extra)", gen_lines[i]))
+            # mismatched — check mnemonic
+            tgt_mnem = tgt_text.split()[0] if tgt_text else ""
+            gen_mnem = gen_text.split()[0] if gen_text else ""
+            if tgt_mnem == gen_mnem:
+                score += 50
 
     pct = (score / max_score * 100) if max_score > 0 else 0
 
+    match_count = sum(1 for _, _, _, _, s in aligned if s == 'match')
+    missing_count = sum(1 for _, _, _, _, s in aligned if s == 'missing')
+    extra_count = sum(1 for _, _, _, _, s in aligned if s == 'extra')
+
+    print(f"Target instructions: {len(tgt_lines)}")
+    print(f"Generated instructions: {len(gen_lines)}")
+    print(f"Aligned matches: {match_count}")
+    print(f"Missing in generated: {missing_count}")
+    print(f"Extra in generated: {extra_count}")
+    print()
     print(f"Score: {score}/{max_score} = {pct:.2f}%")
     print()
 
+    if format == 'compact':
+        if match_count < min(len(tgt_lines), len(gen_lines)):
+            print(f"  {missing_count} missing, {extra_count} extra")
+            # Show first few structural diffs
+            shown = 0
+            for tgt_i, gen_i, tgt_text, gen_text, status in aligned:
+                if status == 'match':
+                    continue
+                if status == 'missing':
+                    print(f"  -{tgt_i}: {tgt_text}")
+                elif status == 'extra':
+                    print(f"  +{gen_i}: {gen_text}")
+                else:
+                    tgt_mnem = tgt_text.split()[0] if tgt_text else ""
+                    gen_mnem = gen_text.split()[0] if gen_text else ""
+                    if tgt_mnem == gen_mnem:
+                        print(f"  ~{tgt_i}: T:{tgt_text}  G:{gen_text}  (reg/imm)")
+                    else:
+                        print(f"  !{tgt_i}: T:{tgt_text}  G:{gen_text}  (diff mnem)")
+                shown += 1
+                if shown >= 10:
+                    remaining = sum(1 for _, _, _, _, s in aligned if s != 'match') - 10
+                    if remaining > 0:
+                        print(f"  ... +{remaining} more diffs")
+                    break
+        else:
+            print("  PERFECT MATCH!")
+        return pct
+
+    # Differences section
+    mismatches = [(tgt_i, gen_i, tgt_text, gen_text, status)
+                  for tgt_i, gen_i, tgt_text, gen_text, status in aligned
+                  if status != 'match']
+
     if mismatches:
-        print("Differences (line | target | generated):")
-        print("-" * 60)
-        for idx, tgt, gen in mismatches:
-            print(f"  +{idx:3d}: | {tgt:30s} | {gen}")
+        print("Differences (structural alignment):")
+        print("-" * 70)
+        for tgt_i, gen_i, tgt_text, gen_text, status in mismatches:
+            idx = tgt_i if tgt_i is not None else gen_i
+            if status == 'missing':
+                print(f"  -{idx:3d}: | {tgt_text:30s} | (missing in gen)")
+            elif status == 'extra':
+                print(f"  +{idx:3d}: | (extra in gen)        | {gen_text}")
+            elif status == 'mismatch':
+                tgt_mnem = tgt_text.split()[0] if tgt_text else ""
+                gen_mnem = gen_text.split()[0] if gen_text else ""
+                if tgt_mnem == gen_mnem:
+                    print(f"  ~{tgt_i:3d}: | {tgt_text:30s} | {gen_text}  (reg/imm)")
+                else:
+                    print(f"  !{tgt_i:3d}: | {tgt_text:30s} | {gen_text}  (diff mnem)")
         print()
     else:
         print("PERFECT MATCH!")
         print()
 
-    # Also print full comparison
-    print("Full comparison (target vs generated):")
-    print("-" * 60)
-    for i in range(max(len(tgt_lines), len(gen_lines))):
-        tgt = tgt_lines[i] if i < len(tgt_lines) else "(missing)"
-        gen = gen_lines[i] if i < len(gen_lines) else "(missing)"
-        marker = " " if tgt == gen else "X"
-        print(f"  {marker} +{i:3d}: T: {tgt:35s} G: {gen}")
+    # Full alignment
+    print("Full alignment (target vs generated):")
+    print("-" * 70)
+    for tgt_i, gen_i, tgt_text, gen_text, status in aligned:
+        idx = gen_i if gen_i is not None else (tgt_i if tgt_i is not None else 0)
+        if status == 'match':
+            marker = " "
+        elif status == 'missing':
+            marker = "M"
+        elif status == 'extra':
+            marker = "E"
+        else:
+            marker = "X"
+        tgt_disp = f"{tgt_i:3d}:{tgt_text}" if tgt_i is not None else "   --"
+        gen_disp = f"{gen_i:3d}:{gen_text}" if gen_i is not None else "   --"
+        print(f"  {marker} {tgt_disp:35s} {gen_disp}")
     print()
 
     return pct

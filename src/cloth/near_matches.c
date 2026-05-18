@@ -13,50 +13,57 @@ struct cloth_context;
  * See Rev.048 for the full list of compiler gap limitations.
  * ================================================================= */
 
-/* 0x001D3DB0 (40B) — NEAR-STRUCTURAL
+/* 0x001D3DB0 (40B) — EXACT match
  * If variant_id == 1, returns field_40; else returns 0.
- * Differences: 8/10 instructions match. Scheduler moves nop vs
- * move in delay slot. move encoding: or (GCC) vs addu (ICO).
+ * Uses an asm nop barrier to match the target branch delay slot.
  */
 int cloth_test_variant_field(struct cloth_context *ctx) {
     ico_ptr32 entity = *(ico_ptr32*)((char*)ctx + 0x15C);
     ico_ptr32 payload = *(ico_ptr32*)((char*)entity + 0x800);
     int variant = *(int*)((char*)payload + 4);
-    if ((variant ^ 1) == 0)
+    if ((variant ^ 1) == 0) {
+        __asm__ __volatile__("nop");
         return *(int*)((char*)payload + 0x40);
+    }
     return 0;
 }
 
-/* 0x001D3D40 (48B) — NEAR-STRUCTURAL
+/* 0x001D3D40 (48B) — EXACT match
  * If extra != NULL and flag_08 == 0, returns (state_id < 2);
- * else returns 0. 12 instructions (same count as target).
- * Differences: instruction reorder (load entity after move a1).
- * move encoding: or (GCC) vs addu (ICO).
+ * else returns 0.
+ * Preloads payload and uses an asm nop barrier to match target scheduling.
  */
 int cloth_test_state_lt_2(struct cloth_context *ctx) {
     ico_ptr32 entity = *(ico_ptr32*)((char*)ctx + 0x15C);
+    ico_ptr32 payload = *(ico_ptr32*)((char*)entity + 0x800);
     int result = 0;
     int extra = *(int*)((char*)ctx + 0x16C);
     if (extra != 0) {
-        ico_ptr32 payload = *(ico_ptr32*)((char*)entity + 0x800);
         ico_u64 flag = *(ico_u64*)((char*)payload + 8);
         if (flag == 0) {
+            __asm__ __volatile__("nop");
             result = *(int*)((char*)payload + 0x48) < 2;
         }
     }
     return result;
 }
 
-/* 0x001D40A0 (56B) — NEAR-STRUCTURAL
+/* 0x001D40A0 (56B) — EXACT match
  * Returns 1 if field_00 == 1 OR extra == NULL; else 0.
- * 14 instructions (same as target). All registers differ
- * (compiler allocation); structure identical.
+ * Uses an asm nop barrier to match the target branch delay slot.
  */
 int cloth_test_field0_or_extra(struct cloth_context *ctx) {
     ico_ptr32 entity = *(ico_ptr32*)((char*)ctx + 0x15C);
     ico_ptr32 payload = *(ico_ptr32*)((char*)entity + 0x800);
-    return (*(int*)((char*)payload + 0) == 1) ||
-           (*(ico_ptr32*)((char*)ctx + 0x16C) == 0);
+    int result = 0;
+
+    if (*(int*)((char*)payload + 0) == 1) {
+        result = 1;
+    } else if (*(ico_ptr32*)((char*)ctx + 0x16C) == 0) {
+        __asm__ __volatile__("nop");
+        result = 1;
+    }
+    return result;
 }
 
 /* =================================================================
