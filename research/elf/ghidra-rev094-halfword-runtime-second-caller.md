@@ -150,6 +150,15 @@ values `0x13..0x15` plus startup `0x01`.
 No new byte-level decoding was required beyond Rev.093b. The runtime evidence
 maps directly onto already verified instructions:
 
+| Address | Status | Notes |
+|---------|--------|-------|
+| `0x0016700C` | confirmed | Main `jal 0x00166BB0`, dominant caller |
+| `0x00167014` | confirmed | Main return address observed at scale |
+| `0x0016828C` | confirmed runtime | Second direct caller of `0x00166BB0` |
+| `0x00168294` | confirmed runtime | Return address for second caller |
+| `0x00166DFC` | inferred | Single-cell fast path; still needs direct probe |
+| `0x00166E00` | inferred | Counter set after the fast path |
+
 | Address | Instruction role | Rev.094 relevance |
 |---------|------------------|-------------------|
 | `0x0016700C` | Main `jal 0x00166BB0` | Dominant observed caller |
@@ -239,4 +248,3 @@ previously unobserved second direct caller is now runtime-confirmed, and the
 observed raster traces expanded from short 0-5-cell cases to rare 22-26-cell
 cases. The remaining minimum proof is a direct probe at `0x00166DFC` and a
 caller-side probe around `0x0016828C`.
-

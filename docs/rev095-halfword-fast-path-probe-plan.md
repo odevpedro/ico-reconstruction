@@ -20,7 +20,7 @@ The remaining unknowns are narrower:
 
 ## Probe Config
 
-### Probe 1: Fast Path (0x166DFC)
+### Probe 1: Fast Path (0x00166DFC)
 
 ```c
 if (pc == 0x00166DFC) {
@@ -53,7 +53,7 @@ if (pc == 0x00168294) {
 }
 ```
 
-### Probe 4: Main Caller Return (0x167014)
+### Probe 4: Main Caller Return (0x00167014)
 
 ```c
 if (pc == 0x00167014) {
@@ -71,6 +71,13 @@ if (pc == 0x00167014) {
 - `gp-0x4BC4` (`0x00633D2C`, final halfword count)
 - `gp+0x6F60` (`world_state_raw`)
 - `cycle`
+
+After the capture, run `tools/analyze_halfword_log.py` and inspect:
+
+- `entry_callsites`
+- `entry_callsite_vs_final_counter_and_writes`
+- `entry_world_state_raw`
+- `world_state_raw`
 
 ## Expected Results
 

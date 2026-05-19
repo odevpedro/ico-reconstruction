@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Summarize Rev.093b-style halfword writer probe logs.
+"""Summarize Rev.093b/Rev.094-style halfword writer probe logs.
 
 The script streams a JSONL or JSONL.GZ probe log and groups events by
-`halfword_entry`. It does not require valid JSON parsing; regex extraction is
-intentional because very large PCSX2 logs may end with a partial line.
+`halfword_entry`. It adds caller-side cuts for the inferred fast path and the
+second caller, which makes the next runtime capture easier to analyze without
+re-running ad hoc scripts. It does not require valid JSON parsing; regex
+extraction is intentional because very large PCSX2 logs may end with a partial
+line.
 """
 
 from __future__ import annotations
@@ -64,6 +67,9 @@ def main() -> int:
     counter_vs_writes = collections.Counter()
     cells = collections.Counter()
     sequences = collections.Counter()
+    entry_callsites = collections.Counter()
+    entry_callsite_buckets = collections.Counter()
+    entry_world_states = collections.Counter()
     a0_total = collections.Counter()
     a0_with_writes = collections.Counter()
     a0_write_events = collections.Counter()
@@ -89,6 +95,14 @@ def main() -> int:
             a0_with_writes[current["a0"]] += 1
             a0_write_events[current["a0"]] += write_count
         a0_total[current["a0"]] += 1
+        callsite = current.get("callsite")
+        if callsite is not None:
+            entry_callsites[callsite] += 1
+            if next_counter is not None:
+                entry_callsite_buckets[(callsite, next_counter, write_count)] += 1
+            world = current.get("world_state")
+            if world:
+                entry_world_states[(callsite, world)] += 1
         current = None
 
     with _open(args.log) as f:
@@ -110,9 +124,12 @@ def main() -> int:
 
             if label == "halfword_entry":
                 finish(_hex(COUNTER_RE.search(line)))
+                ra = _hex(RA_RE.search(line))
                 current = {
                     "a0": _text(INFO_A0_RE.search(line)),
                     "cells": [],
+                    "callsite": probable_callsite_from_ra(ra),
+                    "world_state": _text(WORLD_RE.search(line), ""),
                 }
             elif label in ("halfword_write_A", "halfword_write_B"):
                 write_labels[label] += 1
@@ -151,6 +168,18 @@ def main() -> int:
     show("top_a0_total", a0_total)
     show("top_a0_with_writes", a0_with_writes)
     show("top_a0_write_events", a0_write_events)
+    show("entry_callsites", entry_callsites)
+    print("\nentry_callsite_vs_final_counter_and_writes")
+    for (callsite, final_counter, write_count), value in entry_callsite_buckets.most_common(
+        args.top
+    ):
+        print(
+            f"{value:>10}  {fmt_addr(callsite)} "
+            f"final_counter={final_counter} writes={write_count}"
+        )
+    print("\nentry_world_state_raw")
+    for (callsite, world), value in entry_world_states.most_common(args.top):
+        print(f"{value:>10}  {fmt_addr(callsite)} world_state_raw={world}")
     show("world_state_raw", worlds)
     return 0
 
