@@ -926,8 +926,11 @@ def extract_function_body(c_code: str, func_name: str) -> str | None:
     brace_depth = 0
     for i in range(func_line_idx):
         stripped = lines[i].strip()
-        # Skip comment-only lines (including multi-line comment continuations)
-        if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
+        # Skip comment-only and comment-continuation lines,
+        # but NOT pointer dereferences like *(type *)(...
+        if stripped.startswith("//") or stripped.startswith("/*"):
+            continue
+        if stripped.startswith("*") and not stripped.startswith("*("):
             continue
         pre_lines.append(lines[i])
 

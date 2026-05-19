@@ -216,18 +216,12 @@ void fn_1CE5F8(struct entity_context *entity)
 ico_ptr32 enemy1_hC(struct entity_context *entity, ico_ptr32 initializer)
 {
     struct enemy1_work *wk;
-    ico_ptr32 scene_obj;
-    s32 child_count;
-    ico_ptr32 buffer;
-    s32 count_from_def;
     ico_ptr32 alloc;
-    int i;
 
     alloc = sub_13A0F8(HEAP_PTR, 0x50, (ico_ptr32)0x00618CF0, 0x25D);
     wk = (struct enemy1_work *)alloc;
 
-    scene_obj = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
-    *(ico_ptr32 *)((u8 *)scene_obj + STATE_BLOCK_OFFSET) = alloc;
+    *(ico_ptr32 *)((u8 *)(*(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET)) + STATE_BLOCK_OFFSET) = alloc;
 
     wk->field_1C = 0;
     wk->child1 = sub_1CEF90(10, 0, 10);
@@ -243,28 +237,32 @@ ico_ptr32 enemy1_hC(struct entity_context *entity, ico_ptr32 initializer)
     wk->field_40 = 0;
     wk->field_44 = 0;
 
-    count_from_def = *(s32 *)((u8 *)initializer + 0x30);
-    child_count = *(s32 *)((u8 *)scene_obj + 0x88);
-    buffer = sub_13A0F8(HEAP_PTR, child_count * 4, (ico_ptr32)0x00618CF0, 0x104);
-    wk->child_array = buffer;
-
-    wk->count_init = count_from_def;
-    if (child_count > 0)
-        for (i = 0; i < child_count; i++)
-            *(u32 *)((u8 *)buffer + i * 4) = 0;
-    wk->next_free = 0;
-
-    wk->result_08 = sub_1CD9B0(entity, count_from_def);
-    sub_1E4798(entity, 0x71C, 0x839, 0x18, (ico_ptr32)0x24, (ico_ptr32)0x314);
-
     {
-        u32 seed = COUNTER_SEED;
-        u32 rem;
-        *(u32 *)((u8 *)scene_obj + 0x558) = seed;
-        rem = (seed + 2) % 10;
-        COUNTER_SEED = rem;
-        *(u32 *)((u8 *)scene_obj + 0x550) = 0;
-        sub_1D4B40(entity, 2, rem);
+        ico_ptr32 so = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
+        s32 child_count = *(s32 *)((u8 *)so + 0x88);
+        s32 count_from_def = *(s32 *)((u8 *)initializer + 0x30);
+        ico_ptr32 buffer;
+        int i;
+
+        buffer = sub_13A0F8(HEAP_PTR, child_count * 4, (ico_ptr32)0x00618CF0, 0x104);
+        wk->child_array = buffer;
+
+        wk->count_init = count_from_def;
+        if (child_count > 0)
+            for (i = 0; i < child_count; i++)
+                *(u32 *)((u8 *)buffer + i * 4) = 0;
+        wk->next_free = 0;
+
+        wk->result_08 = sub_1CD9B0(entity, count_from_def);
+        sub_1E4798(entity, 0x71C, 0x839, 0x18, (ico_ptr32)0x24, (ico_ptr32)0x314);
+
+        {
+            u32 seed = COUNTER_SEED;
+            *(u32 *)((u8 *)so + 0x558) = seed;
+            COUNTER_SEED = (seed + 2) % 10;
+            *(u32 *)((u8 *)so + 0x550) = 0;
+            sub_1D4B40(entity, 2, (seed + 2) % 10);
+        }
     }
 
     return alloc;
