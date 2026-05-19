@@ -1,4 +1,4 @@
-#include "../types.h"
+#include "halfword_runtime.h"
 
 /*
  * Halfword writer session model
@@ -15,29 +15,6 @@
  * the confirmed runtime contract available in source form so later work can
  * refine it without re-deriving the bookkeeping from scratch.
  */
-
-#define HALFWORD_WRITER_CAPACITY 1024u
-
-struct halfword_writer_session {
-    u16      *cells;
-    u32       capacity;
-    u32       count;
-    u32       observed_writes;
-    u32       final_counter;
-    u32       world_state_raw;
-    ico_ptr32 entry_callsite;
-    ico_ptr32 return_pc;
-};
-
-static int halfword_writer_in_bounds(s32 row, s32 col)
-{
-    return row >= 0 && row < 32 && col >= 0 && col < 32;
-}
-
-static u16 halfword_writer_encode(u32 row, u32 col)
-{
-    return (u16)(((row & 31u) << 5) | (col & 31u));
-}
 
 void halfword_writer_session_init(struct halfword_writer_session *session,
                                   u16 *cells,
@@ -142,4 +119,3 @@ u32 halfword_writer_session_world_state(const struct halfword_writer_session *se
         return 0;
     return session->world_state_raw;
 }
-

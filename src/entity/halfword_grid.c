@@ -1,4 +1,4 @@
-#include "../types.h"
+#include "halfword_runtime.h"
 
 /*
  * Halfword grid model
@@ -17,35 +17,6 @@
  *   row/col are both clamped to [0, 31] by the writer path
  *   the table is indexed by a monotonic counter at 0x00633D2C
  */
-
-#define HALFWORD_GRID_DIM 32u
-#define HALFWORD_GRID_CAPACITY (HALFWORD_GRID_DIM * HALFWORD_GRID_DIM)
-
-struct halfword_grid_state {
-    u16 *cells;
-    u32  count;
-};
-
-static inline int halfword_grid_in_bounds(s32 row, s32 col)
-{
-    return row >= 0 && row < (s32)HALFWORD_GRID_DIM &&
-           col >= 0 && col < (s32)HALFWORD_GRID_DIM;
-}
-
-static inline u16 halfword_grid_encode(u32 row, u32 col)
-{
-    return (u16)(((row & 31u) << 5) | (col & 31u));
-}
-
-static inline u32 halfword_grid_row(u16 cell)
-{
-    return (u32)(cell >> 5);
-}
-
-static inline u32 halfword_grid_col(u16 cell)
-{
-    return (u32)(cell & 31u);
-}
 
 void halfword_grid_init(struct halfword_grid_state *grid, u16 *cells)
 {
