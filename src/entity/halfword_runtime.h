@@ -23,6 +23,14 @@ struct halfword_writer_session {
     ico_ptr32 return_pc;
 };
 
+enum halfword_writer_bucket {
+    HALFWORD_BUCKET_UNKNOWN = 0,
+    HALFWORD_BUCKET_EMPTY = 1,
+    HALFWORD_BUCKET_SINGLE_NO_WRITE = 2,
+    HALFWORD_BUCKET_SINGLE_ONE_WRITE = 3,
+    HALFWORD_BUCKET_MULTI_WRITE = 4,
+};
+
 static inline int halfword_grid_in_bounds(s32 row, s32 col)
 {
     return row >= 0 && row < (s32)HALFWORD_GRID_DIM &&
@@ -82,5 +90,9 @@ int  halfword_writer_session_matches_bucket(const struct halfword_writer_session
                                             u32 writes);
 u32  halfword_writer_session_cell_count(const struct halfword_writer_session *session);
 u32  halfword_writer_session_world_state(const struct halfword_writer_session *session);
+int  halfword_writer_session_is_main_callsite(const struct halfword_writer_session *session);
+int  halfword_writer_session_is_second_callsite(const struct halfword_writer_session *session);
+int  halfword_writer_session_world_state_is_observed(const struct halfword_writer_session *session);
+enum halfword_writer_bucket halfword_writer_session_bucket(const struct halfword_writer_session *session);
 
 #endif /* ICO_HALFWORD_RUNTIME_H */
