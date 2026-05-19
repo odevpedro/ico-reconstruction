@@ -28,9 +28,20 @@ Each function has:
 
 ## Near-matches
 
-The next local candidate is enemy1_hA (95.65% with corrected 0x60 target
-range). It still has one extra generated epilogue instruction after the
-tail-jump path.
+| Function | Score | Remaining gap |
+|---|---|---|
+| `boy_hB` | 97.06% | 1 missing `nop` (jal delay slot) + shifted branch label |
+| `boy_hC` | 76.64% | Register allocation, encoding differences (ori vs addiu for same values), float constant alignment |
+| `enemy1_hA` | 95.65% | 1 extra generated epilogue after tail-jump path |
+
+`boy_hB` improvement came from normalizer changes (`li.s` → `lui+mtc1`
+expansion, GP-relative address resolution), not source changes. The
+remaining gap is a codegen artifact of the original compiler that could
+not fill a jal delay slot.
+
+`boy_hC` improvement (62.62% → 76.64%) came from `li` pseudo-op expansion,
+`ori→addiu` pair normalization, and corrected source constants
+(model chunk addresses, sub_13A0F8 arguments).
 
 ## Manual browser procedure
 

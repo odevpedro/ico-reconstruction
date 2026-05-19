@@ -120,13 +120,13 @@ struct boy_work {
     ico_ptr32    child_shadow;    // +0x0C: child entity type 0xC (shadow)
     u32          active;          // +0x10: if non-zero → Path A (full anim+phys), else Path B
     s32          anim_time;       // +0x14: animation time result (stored from collision)
-    ico_ptr32    model_A;         // +0x18: model chunk 0x4CF7F0
-    ico_ptr32    model_B;         // +0x1C: model chunk 0x4CFAF0
-    ico_ptr32    model_D;         // +0x20: model chunk 0x4CFF30
-    ico_ptr32    model_C;         // +0x24: model chunk 0x4CFDF0
-    ico_ptr32    model_E;         // +0x28: model chunk 0x4C0070
-    float        config_A;        // +0x2C: configuration value A (initial 20)
-    float        config_B;        // +0x30: configuration value B (initial 20)
+    ico_ptr32    model_A;         // +0x18: model chunk at 0x4BF7F0
+    ico_ptr32    model_B;         // +0x1C: model chunk at 0x4BFAF0
+    ico_ptr32    model_D;         // +0x20: model chunk at 0x4BFF30
+    ico_ptr32    model_C;         // +0x24: model chunk at 0x4BFDF0
+    ico_ptr32    model_E;         // +0x28: model chunk at 0x4C0070
+    u32          config_A;        // +0x2C: configuration value A (initial 20)
+    u32          config_B;        // +0x30: configuration value B (initial 20)
     float        range_A;         // +0x34: range value A (initial 300.0f)
     float        range_B;         // +0x38: range value B (initial 300.0f)
     u32          field_3C;        // +0x3C: padding
@@ -216,7 +216,7 @@ void boy_init(struct entity_context *entity)
 // Called from descriptor[+0x58] (cb_routine3). Returns boy_work ptr.
 //
 // 1. Allocate 76B work struct (tag 0xFE)
-// 2. Load 5 model chunks from 0x4C0000 region via sub_1C8478
+    // 2. Load 5 model chunks from 0x4B0000/0x4C0000 region via sub_1C8478
 // 3. Create 3 child entities: type 1 (root), type 0xB (hitbox), type 0xC (shadow)
 // 4. Transform setup for child 0
 // 5. Scene setup (sub_1E4798 with a2=0x4C0=1216)
@@ -231,17 +231,17 @@ ico_ptr32 boy_hC(struct entity_context *entity, ico_ptr32 initializer)
     ico_ptr32 scene_obj;
     ico_ptr32 alloc;
 
-    alloc = sub_13A0F8(HEAP_PTR, 0x4C, (ico_ptr32)0x00618CF0, 0x25D);
+    alloc = sub_13A0F8(HEAP_PTR, 0x4C, (ico_ptr32)0x00618838, 0xFE);
     wk = (struct boy_work *)alloc;
 
     scene_obj = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
     *(ico_ptr32 *)((u8 *)scene_obj + STATE_BLOCK_OFFSET) = alloc;
 
     // Load 5 model chunks
-    wk->model_A = sub_1C8478(entity, (ico_ptr32)0x004CF7F0, (ico_ptr32)0x004C01B0);
-    wk->model_B = sub_1C8478(entity, (ico_ptr32)0x004CFAF0, (ico_ptr32)0x004C0270);
-    wk->model_C = sub_1C8478(entity, (ico_ptr32)0x004CFDF0, (ico_ptr32)0);
-    wk->model_D = sub_1C8478(entity, (ico_ptr32)0x004CFF30, (ico_ptr32)0);
+    wk->model_A = sub_1C8478(entity, (ico_ptr32)0x004BF7F0, (ico_ptr32)0x004C01B0);
+    wk->model_B = sub_1C8478(entity, (ico_ptr32)0x004BFAF0, (ico_ptr32)0x004C0270);
+    wk->model_C = sub_1C8478(entity, (ico_ptr32)0x004BFDF0, (ico_ptr32)0);
+    wk->model_D = sub_1C8478(entity, (ico_ptr32)0x004BFF30, (ico_ptr32)0);
     wk->model_E = sub_1C8478(entity, (ico_ptr32)0x004C0070, (ico_ptr32)0);
 
     *(u32 *)((u8 *)scene_obj + 0x554) = 1;
@@ -267,8 +267,8 @@ ico_ptr32 boy_hC(struct entity_context *entity, ico_ptr32 initializer)
     // Initialize state block fields
     wk->active    = 0;
     wk->anim_time = 0;
-    wk->config_A  = 20.0f;
-    wk->config_B  = 20.0f;
+    wk->config_A  = 20;
+    wk->config_B  = 20;
     wk->range_A   = 300.0f;
     wk->range_B   = 300.0f;
     wk->flag_mask = 0x80808080;
@@ -448,16 +448,21 @@ void sub_1C1EA8(struct entity_context *entity)
 
     frame_idx = sub_109F10(entity, 0x23);
 
-    if (wk->variant == 1)
+    switch (wk->variant) {
+    case 1:
         bone_ptr = wk->child_hitbox;
-    else if (wk->variant == 2)
+        break;
+    case 2:
         bone_ptr = wk->child_shadow;
-    else
+        break;
+    default:
         bone_ptr = wk->child_root;
+        break;
+    }
 
     buf_a = sub_105278();
     mtx_base = *(ico_ptr32 *)((u8 *)scene_obj + 0x0C);
-    sub_105F20(buf_a, (ico_ptr32)((u8 *)mtx_base + frame_idx * 64), frame_idx * 64);
+    sub_105F20(buf_a, (ico_ptr32)((u8 *)mtx_base + 6), frame_idx * 64);
     sub_104F48((s32)-0x8000);
 
     buf_b = sub_105278();

@@ -155,15 +155,10 @@ void enemy1_hA(struct entity_context *entity)
 
     sub_1BB7E0();
     __asm__ __volatile__("nop");
-    if (!sub_165F88(entity)) {
-        __asm__ __volatile__(
-            "move $4,%0\n"
-            "ld $16,0($29)\n"
-            "j fn_1CE5F8\n"
-            "addu $29,$29,32"
-            :
-            : "r"(entity));
-    }
+    if (sub_165F88(entity))
+        return;
+
+    fn_1CE5F8(entity);
 }
 
 // ============================================================================

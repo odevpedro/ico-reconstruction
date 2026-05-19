@@ -607,6 +607,18 @@ Conceitos: local scoring, exact match, near-exact, delay slot, pseudo-op,
 
 Tom: trabalho de bancada, paciência, satisfação técnica discreta.
 
+## 13. A forma do `switch`
+
+Um ajuste aparentemente pequeno na seleção de variantes de `sub_1C1EA8`
+mostra que a forma do C importa: o `switch` mudou o padrão de branch do
+compilador e elevou o score local de 60.47% para 68.60%, sem resolver a
+função. O personagem aprende a ler essas mudanças como sinais de direção,
+não como fechamento.
+
+Conceitos: branch shape, `switch`, `sub_1C1EA8`, score parcial, codegen.
+
+Tom: precisão experimental, sem concluir cedo demais.
+
 ## Epílogo — A escavação continua
 
 O personagem reflete sobre o que aprendeu, não apenas sobre ICO, mas sobre

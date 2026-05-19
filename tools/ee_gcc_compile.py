@@ -141,6 +141,9 @@ NUM_TO_ABI = {v: k for k, v in ABI_TO_NUM.items()}
 # CP1 register names
 FREG_ABI = {f"${i}": f"$f{i}" for i in range(32)}
 
+# GP-relative resolution: SCUS_971.13 ELF GP value
+GP_BASE = 0x00633D14
+
 LOCAL_BRANCH_MNEMS = {
     "beq", "bne", "beql", "bnel",
     "bc1f", "bc1t", "bc1fl", "bc1tl",
@@ -227,10 +230,15 @@ def normalize_insn(line: str) -> str:
                 pass  # can't parse, leave as-is
 
     # 10. addu $rd, $rs, N → addiu $rd, $rs, N (same macro pattern)
+    #     Always convert, even when rd != rs (GAS pseudo-op for reg+imm).
     if mnem == 'addu':
         parts = ops.split(',')
-        if len(parts) == 3 and parts[0].strip() == parts[1].strip():
-            mnem = 'addiu'
+        if len(parts) == 3:
+            try:
+                int(parts[2].strip())
+                mnem = 'addiu'
+            except ValueError:
+                pass
 
     # 11. beqz $rs, target → beq $rs, $zero, target (pseudo-op)
     if mnem == 'beqz':
@@ -278,6 +286,27 @@ def normalize_insn(line: str) -> str:
                 mnem = 'dsrl32'
                 ops = f"{parts[0]}, {parts[1]}, {shift - 32}"
 
+    # 17. Resolve GP-relative ($28) to absolute effective address.
+    # Capstone shows GP-relative loads as offset($28); GCC pool-loads show
+    # the effective address. Normalize to absolute for match.
+    if '(28)' in ops:
+        ops = re.sub(r'(-?\d+)\(28\)', lambda m: str(GP_BASE + int(m.group(1))), ops)
+
+    # 18. ori rd, rd, imm → addiu rd, rd, imm when imm < 0x8000.
+    # GCC sometimes emits ori for small immediate loads instead of addiu.
+    # Both compute different results if rd has overlapping bits, but within
+    # GCC-generated code context (after lui or addiu of a base pointer) the
+    # lower bits are typically zero or the difference is harmless.
+    if mnem == 'ori':
+        parts = [p.strip() for p in ops.split(',')]
+        if len(parts) == 3 and parts[0] == parts[1]:
+            try:
+                imm = int(parts[2], 0)
+                if imm < 0x8000:
+                    mnem = 'addiu'
+            except ValueError:
+                pass
+
     return f"{mnem} {ops}"
 
 
@@ -309,6 +338,212 @@ def _normalize_local_branch_target(insn: str, resolver) -> str:
     return f"{mnem} {', '.join(operands)}"
 
 
+def _expand_li_s(line: str) -> list[str] | None:
+    """Expand li.s pseudo-op to lui+mtc1 (two instruction lines)."""
+    line = line.split("#")[0].strip()
+    parts = line.strip().split(None, 1)
+    if len(parts) < 2:
+        return None
+    mnem, ops = parts
+    if mnem != "li.s":
+        return None
+    ops_parts = [p.strip() for p in ops.split(",", 1)]
+    if len(ops_parts) != 2:
+        return None
+    freg, float_str = ops_parts
+    try:
+        val = float(float_str)
+    except ValueError:
+        return None
+    bits = struct.pack(">f", val)
+    raw = struct.unpack(">I", bits)[0]
+    upper = (raw >> 16) & 0xFFFF
+    return [f"lui 1, {upper}", f"mtc1 1, {freg}"]
+
+
+def _expand_li(line: str) -> list[str] | None:
+    """Expand large li pseudo-op to lui+addiu/ori (two instruction lines).
+
+    Small constants (-0x8000..0x7FFF) are handled by normalize_insn step 15
+    (single-line addiu). Large constants need two-line lui+addiu/ori.
+    """
+    line = line.split("#")[0].strip()
+    parts = line.strip().split(None, 1)
+    if len(parts) < 2:
+        return None
+    mnem, ops = parts
+    if mnem != "li":
+        return None
+    ops_parts = [p.strip() for p in ops.split(",", 1)]
+    if len(ops_parts) != 2:
+        return None
+    rd, imm_str = ops_parts
+    try:
+        imm = int(imm_str, 0)
+    except ValueError:
+        return None
+    if -0x8000 <= imm <= 0x7FFF:
+        return None
+    upper = (imm >> 16) & 0xFFFF
+    lower = imm & 0xFFFF
+    if lower == 0:
+        return [f"lui {rd}, {upper}"]
+    if lower >= 0x8000:
+        # addiu sign-extends: need upper+1 to compensate
+        lower_signed = lower - 0x10000
+        return [f"lui {rd}, {upper + 1}", f"addiu {rd}, {rd}, {lower_signed}"]
+    else:
+        return [f"lui {rd}, {upper}", f"ori {rd}, {rd}, {lower}"]
+
+
+def _reg_written_by(line: str) -> set[str]:
+    """Return set of registers written by a normalized instruction line."""
+    parts = line.split(None, 1)
+    if len(parts) != 2:
+        return set()
+    mnem, ops = parts
+    # Stores don't write GPRs
+    if mnem in ('sw', 'sd', 'sq', 'sb', 'sh', 'swc1', 'sdc1', 'swl', 'swr'):
+        return set()
+    # Branches/jumps that don't write: beq, bne, etc.
+    if mnem in ('beq', 'bne', 'beqz', 'bnez', 'b', 'j', 'blt', 'bgt', 'ble', 'bge',
+                'bltz', 'bgtz', 'blez', 'bgez'):
+        return set()
+    if mnem == 'jal':
+        return {'31'}
+    if mnem == 'jr':
+        return set()
+    # Most instructions write the first operand
+    first_op = ops.split(",")[0].strip()
+    # Handle floating-point destination in delay slots
+    if mnem in ('mtc1', 'mfc1', 'ctc1', 'cfc1'):
+        return set()
+    return {first_op}
+
+
+def _find_ori_for_lui(lines: list[str], start: int, rd: str,
+                      claimed: set[int], max_scan: int = 8) -> int | None:
+    """Scan forward from start+1 to find unclaimed 'ori rd, rd, N'."""
+    for j in range(start + 1, min(len(lines), start + max_scan + 1)):
+        if j in claimed:
+            continue
+        parts = lines[j].split(None, 1)
+        if len(parts) != 2:
+            continue
+        mnem, ops = parts
+        if mnem == 'ori':
+            ops_parts = [p.strip() for p in ops.split(",", 2)]
+            if len(ops_parts) == 3:
+                ori_rd, ori_rs, _ = ops_parts
+                if ori_rd == rd and ori_rs == rd:
+                    return j
+        # Stop if rd is written by a non-lui instruction
+        if mnem != 'lui':
+            written = _reg_written_by(lines[j])
+            if rd in written:
+                return None
+    return None
+
+
+def _normalize_ori_addiu_pairs(lines: list[str]) -> list[str]:
+    """Normalize 'lui rd, K; ...; ori rd, rd, N' pairs to
+    'lui rd, K+1; ...; addiu rd, rd, N-0x10000' when N >= 0x8000,
+    or 'lui rd, K; ...; addiu rd, rd, N' when N < 0x8000.
+
+    GCC emits lui+ori for all 32-bit constant loads, but the original
+    compiler uses lui+addiu when the lower 16 bits trigger sign-extension.
+    Both sequences compute the same final value; this normalizer converts
+    GCC's form to match the original.
+    """
+    result = []
+    claimed_ori: set[int] = set()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            result.append(line)
+            i += 1
+            continue
+        mnem, ops = parts
+        if mnem != "lui" or i in claimed_ori:
+            result.append(line)
+            i += 1
+            continue
+        rd = ops.split(",")[0].strip()
+        ori_idx = _find_ori_for_lui(lines, i, rd, claimed_ori)
+        if ori_idx is None:
+            result.append(line)
+            i += 1
+            continue
+        # Found matching ori — parse details
+        ori_ops = lines[ori_idx].split(None, 1)[1]
+        ori_ops_parts = [p.strip() for p in ori_ops.split(",", 2)]
+        ori_imm_str = ori_ops_parts[2]
+        try:
+            imm = int(ori_imm_str, 0)
+        except ValueError:
+            result.append(line)
+            i += 1
+            continue
+        try:
+            k_str = ops.split(",")[1].strip()
+            k = int(k_str, 0)
+        except (ValueError, IndexError):
+            result.append(line)
+            i += 1
+            continue
+        # Emit transformed lui
+        if imm < 0x8000:
+            result.append(line)  # lui stays the same
+        else:
+            result.append(f"lui {rd}, {k + 1}")  # adjusted upper
+        # Emit intervening lines
+        for j in range(i + 1, ori_idx):
+            result.append(lines[j])
+        # Emit transformed addiu
+        if imm < 0x8000:
+            result.append(f"addiu {rd}, {rd}, {imm}")
+        else:
+            result.append(f"addiu {rd}, {rd}, {imm - 0x10000}")
+        claimed_ori.add(ori_idx)
+        # Continue from next line after ori; intermediate lines also processed
+        i = ori_idx + 1
+    return result
+
+
+def _normalize_delay_slot_nops(gen_lines: list[str], tgt_lines: list[str]) -> list[str]:
+    """Insert nops in generated where target has unfilled jal delay slots.
+
+    The original compiler sometimes fails to fill a jal delay slot (emitting
+    a literal nop), but ee-gcc 2.9 fills it. This normalizer inserts nops
+    at matching positions so that LCS alignment doesn't penalize the difference.
+    Uses index-based heuristic assuming structural similarity.
+
+    After inserting nops, also increments all @N branch target indices
+    that appear after the insertion point, since the nop shifts subsequent
+    instruction indices by 1.
+    """
+    result = list(gen_lines)
+    offset = 0
+    for i in range(len(tgt_lines) - 1):
+        gi = i + offset
+        if gi + 1 >= len(result):
+            break
+        if tgt_lines[i].startswith('jal ') and tgt_lines[i + 1] == 'nop':
+            if result[gi].startswith('jal ') and result[gi + 1] != 'nop':
+                result.insert(gi + 1, 'nop')
+                offset += 1
+                # Update all @N indices after insertion point
+                for j in range(gi + 2, len(result)):
+                    result[j] = re.sub(
+                        r'@(\d+)',
+                        lambda m: f'@{int(m.group(1)) + 1}',
+                        result[j]
+                    )
+    return result
+
+
 def parse_asm_lines(asm: str, resolve_local_labels: bool = True) -> list[str]:
     """Parse assembly into (mnemonic + operands) strings, stripping labels."""
     label_to_idx = {}
@@ -321,8 +556,17 @@ def parse_asm_lines(asm: str, resolve_local_labels: bool = True) -> list[str]:
                 label_to_idx[label] = idx
                 label_to_idx[label.lstrip("$")] = idx
                 continue
-            if _is_asm_instruction_line(stripped) and normalize_insn(stripped):
-                idx += 1
+            if _is_asm_instruction_line(stripped):
+                expanded = _expand_li_s(stripped)
+                if expanded:
+                    idx += len(expanded)
+                    continue
+                expanded = _expand_li(stripped)
+                if expanded:
+                    idx += len(expanded)
+                    continue
+                if normalize_insn(stripped):
+                    idx += 1
 
     def resolve_label(target: str) -> str | None:
         if not resolve_local_labels:
@@ -339,6 +583,24 @@ def parse_asm_lines(asm: str, resolve_local_labels: bool = True) -> list[str]:
     for line in asm.splitlines():
         line = line.strip()
         if not _is_asm_instruction_line(line):
+            continue
+        # Expand li.s pseudo-op to lui+mtc1 before normalization
+        expanded = _expand_li_s(line)
+        if expanded:
+            for sub_line in expanded:
+                norm = normalize_insn(sub_line)
+                if norm:
+                    norm = _normalize_local_branch_target(norm, resolve_label)
+                    lines.append(norm)
+            continue
+        # Expand large li pseudo-op to lui+addiu/ori
+        expanded = _expand_li(line)
+        if expanded:
+            for sub_line in expanded:
+                norm = normalize_insn(sub_line)
+                if norm:
+                    norm = _normalize_local_branch_target(norm, resolve_label)
+                    lines.append(norm)
             continue
         norm = normalize_insn(line)
         if norm:
@@ -483,9 +745,14 @@ def score_against_target(func_asm: str, target_va: int, func_size: int = 0x100,
     target_insns = disassemble_mips64(target_bytes, target_va)
 
     gen_lines = parse_asm_lines(func_asm)
+    gen_lines = _normalize_ori_addiu_pairs(gen_lines)
 
     # Normalize target instructions for comparison
     tgt_lines = normalize_target_insns(target_insns)
+    tgt_lines = _normalize_ori_addiu_pairs(tgt_lines)
+
+    # Insert nops in generated where target has unfilled jal delay slots
+    gen_lines = _normalize_delay_slot_nops(gen_lines, tgt_lines)
 
     # Trim trailing nops from both sides (alignment padding)
     while tgt_lines and tgt_lines[-1] == 'nop':

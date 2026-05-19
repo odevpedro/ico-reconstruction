@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 129 |
+| Completed | 130 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -84,6 +84,28 @@ _(none)_
 ---
 
 ## Concluídas / Completed
+
+### [x] [SQUAD-TOOLING | rev.091g | 2026-05-18]
+boy_hC 76.64% via li expansion + ori→addiu normalizer + constant fixes
+
+- **`_expand_li()`**: converts GCC's `li rd, large_imm` to `lui+addiu/ori` with inline comment stripping and proper sign-extension handling for lower bits >= 0x8000
+- **`_normalize_ori_addiu_pairs()`**: converts `lui rd, K; ori rd, rd, N` pairs to `lui rd, K+1; addiu rd, rd, N-0x10000` when N >= 0x8000 — matches original compiler's `addiu` usage pattern
+- **Fixed sub_13A0F8 args in boy_hC**: tag 0x00618CF0→0x00618838, line 0x25D→0xFE (swapped with size)
+- **Fixed model chunk addresses** (5): 0x4CF7F0→0x4BF7F0, 0x4CFAF0→0x4BFAF0, 0x4CFDF0→0x4BFDF0, 0x4CFF30→0x4BFF30 (off by 0x10000 due to ori-vs-addiu sign-extension)
+- **boy_hC**: 62.62% → **76.64%** (+14.02%), 78 matches (+13), 21 missing (-17), 17 extra (-17)
+- **Batch**: 0 regressions across all 38 functions
+- Documented in `research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md`
+
+### [x] [SQUAD-TOOLING | rev.091f | 2026-05-18]
+boy_hB near-exact (97.06%) via li.s normalization + GP-relative resolution
+
+- **boy_hB score**: 81.37% → **97.06%** (+15.69%) after normalizer enhancements
+- **li.s expansion**: `li.s $fxx, floatval` → `lui $1, upper; mtc1 $1, $fxx` (GAS pseudo-op to explicit machine instructions). Covers 50.0f/30.0f/15.0f constants in boy_hB
+- **GP-relative resolution**: `offset($28)` → `offset + GP_BASE` (converts Capstone's GP-relative display to absolute effective address, matching GCC pool-load format). GP_BASE = 0x00633D14
+- **No C source changes**: all improvements are normalizer-only; boy.c returned to original clean state
+- **Remaining gap**: 1 missing `nop` (original compiler could not fill jal delay slot) + 1 shifted branch label — both from the same root cause, not fixable via C restructuring
+- **Zero regressions**: all 8 exact matches intact, 0 compile errors across 38 functions
+- Documented in `research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md`
 
 ### [x] [SQUAD-ENTITY | rev.088 | 2026-05-18]
 WOODBOX0 entity handler full near-structural decompilation (hA/hB/hC)
@@ -641,6 +663,8 @@ Call graph analysis
 | rev.084 | 2026-05-18 | SQUAD-RUNTIME | Extended runtime session (43.8M events, ~122 min): entrance → windmill → cutscene → 3rd+ area. Slot 5 fired first time (triplet guard). All rare probes ZERO across 3rd independent session. 1,913 unique entity contexts. Cutscene period: 100% slot 12 (Group 1 suspended). Zone fingerprints confirmed: slot ratio shifts per area. Slot 0 root cause found (static analysis: 0 `addiu a1,0+JALR` sites). Total coverage: 66.9M events across 3 sessions. |
 | rev.085 | 2026-05-18 | SQUAD-RUNTIME | Death validation: user jumped off cliff. mask_set = 0 hits even during death. Death zone = 100% slot 12 (Group 2 only), identical to cutscene. Confirms mask_set is I/O system (ShockRequestBox_RequestCancel), not gameplay death callback. |
 | rev.086 | 2026-05-18 | SQUAD-ARCH | Final static analysis: descriptor +0x60 = behavior_fn (NOT vtable). Group A=0x202A60 (main chars), Group B=0x23D660 (props). Env effect table = 395 entries × 0x30 type-to-type mapping (NOT spatial zones). cb_routine4 +0x5C = no-op stubs (never called). VBlank counter 0x274EC0 = IOP-driven via SIF (no .text writer). GIRL=DEVIL_GI confirmed. |
+| rev.091g | 2026-05-18 | SQUAD-TOOLING | boy_hC 76.64% via li expansion + ori→addiu normalizer + constant fixes (model addresses, tag, line). Zero regressions. |
+| rev.091f | 2026-05-18 | SQUAD-TOOLING | boy_hB near-exact (97.06%) via li.s pseudo-op expansion and GP-relative resolution in scorer normalizer. Zero regressions, 8 exact matches intact. |
 | rev.076 | 2026-05-17 | SQUAD-ARCH | Post-runtime consolidation: 28 init_fn classified (6 groups). 17-slot table fully mapped. mask_set only uses bit 0. 404-byte = stage config. Halfword table = spatial hash. VU0 "kick" = COP2 macro utility. Two independent entity systems. ICO-decomp cross-ref. |
 | rev.073 | 2026-05-17 | SQUAD-RUNTIME | Main loop dispatch chain (12 steps), corrected callback masks (bits 28-31), secondary pointer table (0x00633D30), struct field maps (80B/112B), linked-list flow with pre-multiplied offsets |
 | rev.072 | 2026-05-17 | SQUAD-RUNTIME | Room init callbacks corrigidos: 19 function pointers reais (offset +0x174 absoluto), tabela de descritores (68 entries), tabela de entries (512 entries), instrucao 0x1AF954 = mult (dead code), 0x00143290 processa inner structs (nao callback) |

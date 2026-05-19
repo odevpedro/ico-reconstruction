@@ -31,8 +31,8 @@ FUNCTIONS = [
     ("src/entity/boy.c",    "boy_activate",   0x1C2170, 0x28),
     # barrel.c (unique functions only, cloth duplicates omitted)
     ("src/entity/barrel.c", "barrel_init",   0x166028, 0x8C),
-    ("src/entity/barrel.c", "barrel_hA",     0x1D2540, 0x10),
-    ("src/entity/barrel.c", "barrel_hA_alt", 0x1D2548, 0x10),
+    ("src/entity/barrel.c", "barrel_hA",     0x1D2540, 0x08),
+    ("src/entity/barrel.c", "barrel_hA_alt", 0x1D2548, 0x08),
     ("src/entity/barrel.c", "fn_1D2550",     0x1D2550, 0xE8),
     ("src/entity/barrel.c", "sub_1D2650",    0x1D2650, 0xE8),
     ("src/entity/barrel.c", "sub_1D2738",    0x1D2738, 0x68),

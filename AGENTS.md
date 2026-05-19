@@ -78,6 +78,8 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
+research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md  (boy_hC 76.64%). li expansion, ori→addiu normalizer, model address fix)
+research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md  (boy_hB 97.06% via li.s + GP-relative normalizer)
 research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md  (world_state transitions, gp_m49B4=current entity work area, 6 room values mapped)
 research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md         (BARREL/ROPE/WOODBOX0 near-structural C decompilation)
 research/elf/ghidra-rev087-enemy1-boy-decompilation.md                   (ENEMY1+BOY near-structural C decompilation)
@@ -102,16 +104,18 @@ Before doing new analysis, read these files in this order if they exist:
 2. `.local/key-concepts.md`
 3. `.local/ai-context.md`
 4. `key-concepts.md`
-5. `research/elf/ghidra-rev077-final-static-analysis.md`
-6. `research/elf/ghidra-rev076-post-runtime-consolidation.md`
-7. `research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md`
-8. `research/elf/ghidra-rev074-runtime-session-main-loop-dispatch-confirmed.md`
-9. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
-10. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
-11. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
-12. `research/ico-decomp-cross-reference-2026-05-14.md`
-13. `research/elf/ghidra-rev039-cloth-domain-correction.md`
-14. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
+5. `research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md`
+6. `research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md`
+7. `research/elf/ghidra-rev077-final-static-analysis.md`
+8. `research/elf/ghidra-rev076-post-runtime-consolidation.md`
+9. `research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md`
+10. `research/elf/ghidra-rev074-runtime-session-main-loop-dispatch-confirmed.md`
+11. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
+12. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
+13. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
+14. `research/ico-decomp-cross-reference-2026-05-14.md`
+15. `research/elf/ghidra-rev039-cloth-domain-correction.md`
+16. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
 15. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
 15. `research/external/sotc-tooling-relevance-survey.md`
 16. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
@@ -350,9 +354,10 @@ The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-07
 12. ~~**Fix fn_1CE5F8 decompilation matching** — frame 0x40→0x30, delay slot nops via asm barriers.~~ **DONE (Rev.090): 72.37% structural match**
 13. ~~**Batch remaining 6 decompiled handlers** through the local scoring pipeline~~ **DONE (Rev.091): all 37 functions compile and score; 0 compile errors (was 28)**
 14. ~~Fix 28 compile errors across entity/cloth .c files~~ **DONE (Rev.091): C89 compat — u64 typedef, compound literals, declaration ordering, void→correct return types**
-15. Fix dispatch_point slot index capture for next runtime session
-16. Reposition world_state_load probe to capture room init_fn
-17. Deploy memory watchpoint on VBlank counter 0x274EC0
+15. ~~**Improve boy_hC scoring** via li expansion + ori→addiu normalizer + constant fixes~~ **DONE (Rev.091g): 62.62% → 76.64%**
+16. Fix dispatch_point slot index capture for next runtime session
+17. Reposition world_state_load probe to capture room init_fn
+18. Deploy memory watchpoint on VBlank counter 0x274EC0
 
 ---
 
