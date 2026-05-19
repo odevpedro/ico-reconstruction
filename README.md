@@ -508,6 +508,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.085 - Death validation: mask_set = 0 hits during death. Death = 100% slot12 (Group 2 only). Confirms mask_set = ShockRequestBox_RequestCancel (I/O system).
 [x] rev.086 - Final static analysis: +0x60 = behavior_fn (not vtable). Env effect table = 395-entry type-to-type matrix. cb_routine4 = no-op stubs. VBlank counter = IOP-driven. GIRL=DEVIL_GI confirmed.
 [x] rev.092 - Path B milestone: all 26 LOW functions converted to byte-exact .s assembly via tools/asm_source_score.py. All 38 functions at 100% byte-exact match. C-based scoring pipeline archived.
+[x] rev.093 - Three static investigations resolved: mask_set=ShockRequestBox_RequestCancel (I/O shock driver, loading-only, bit 0 only), dispatch table 0x282690 confirmed as compile-time .data (zero runtime writers), halfword spatial hash writers condition unknown (zero hits in 67.3M events across 4 areas).
 ```
 
 ## How To Contribute

@@ -319,23 +319,52 @@ Também descobre que:
 - VU0 "kick" `0x117768` é uma fila linked-list, não instruções VU0
 - A tabela de halfwords `0x006AB080` = hash espacial 32×32
 
-### Fase 10 — Onde estamos agora
+### Fase 10 — Onde estamos agora (atualizado Rev.093)
 
-Análise estática completa. Tudo que podia ser descoberto sem runtime foi
-descoberto. Faltam apenas validações pontuais em runtime (probes em slots
-específicos, captura de estado de sala, verificação de VBlank counter).
+Análise estática completa. Três investigações recentes fecharam dois
+mistérios antigos e confirmaram a direção de um terceiro.
+
+**mask_set** (`0x13ED40`) era uma peça que não se encaixava — por que
+só disparava durante loading? A resposta chegou do ICO-decomp:
+`ShockRequestBox_RequestCancel`, do subsistema de I/O do controle. Uma
+função de cancelamento de requisição do driver de controle, que serve
+como trava global de callbacks durante carregamento de cena. Só o bit 0
+é usado; bits 1-7 nunca foram tocados. Seis chamadores, todos no scene
+loader, zero em gameplay.
+
+**A tabela de dispatch** (`0x282690`, 17 slots, 14 callbacks) parecia
+pedir um "inicializador runtime" — alguém que populasse os slots com
+callbacks. A varredura de 5.3 MB de `.text` não encontrou uma única
+instrução de escrita no intervalo. A tabela está no `.data`. Fixada em
+tempo de compilação. O que varia em runtime é a lista de ponteiros de
+entidade que o dispatcher itera, não os slots em si. A pergunta certa
+não era "quem popula os slots", mas "o que torna cada slot ativo" — a
+resposta tem três camadas: existência de wrapper (tempo de compilação),
+filtro de máscara por entidade (por frame), e trava de máscara global
+(por transição de cena).
+
+**O writer de halfwords** (`0x166D1C`/`0x166D78`) continua um mistério.
+Zero disparos em 67.3 milhões de eventos, 4 áreas de jogo, 4 sessões
+independentes. A condição que ativa o rebuild do hash espacial 32×32
+simplesmente não foi encontrada nas áreas testadas (entrance, windmill,
+terceira área, death zone). Suspeito que seja ativado por uma sala
+específica do final do jogo, ou que rode apenas durante o carregamento
+de cena. A sonda precisa ser movida do ponto de escrita para a entrada
+da função `0x166BB0` — se a função tem um early-exit que a gente não
+detectou, a sonda no `SH` nunca vai ver nada.
 
 O projeto também entrou em uma frente de decompilação verificável: há um
-toolchain local `ee-gcc 2.9-991111-01`, scoring instrução-a-instrução contra o
-ELF original, 37 funções mapeadas no batch scorer e 7 funções `EXACT` sob a
-normalização local (Rev.091d). Esse progresso deve ser narrado com cautela:
-ele valida o método e fecha pequenas ilhas de código, mas ainda não representa
-uma porcentagem alta do jogo decompilado.
+toolchain local `ee-gcc 2.9-991111-01`, scoring instrução-a-inst
+rução contra o ELF original, 38 funções mapeadas com 100% de matching
+byte-a-byte (12 via C, 26 via `.s` assembly). Esse progresso deve ser
+narrado com cautela: ele valida o método e fecha pequenas ilhas de
+código, mas ainda não representa uma porcentagem alta do jogo decompilado.
 
-O ponto de transição atual é pragmático: continuar fechando funções pequenas e
-médias com evidência reproduzível, consolidar structs apenas quando o score
-exigir, e deixar mineração runtime pesada ou áreas deliberadamente excluídas
-(DATA.DF, overlays, assets) para momentos específicos.
+O ponto de transição atual é pragmático: continuar fechando funções
+pequenas e médias com evidência reproduzível, consolidar structs apenas
+quando o score exigir, e deixar mineração runtime pesada ou áreas
+deliberadamente excluídas (DATA.DF, overlays, assets) para momentos
+específicos.
 
 ---
 
@@ -346,6 +375,7 @@ Considere cuidadosamente o conteúdo de:
 ```txt
 AGENTS.md
 key-concepts.md
+research/elf/ghidra-rev093-three-investigations.md
 research/elf/ghidra-rev077-final-static-analysis.md
 research/elf/ghidra-rev076-post-runtime-consolidation.md
 research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md

@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 134 |
+| Completed | 135 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -23,21 +23,22 @@ _(none)_
 
 ## Pending
 
-### [ ] [SQUAD-RUNTIME | rev.080 | Pending]
-**Remaining runtime validation after Rev.079**
+### [ ] [SQUAD-RUNTIME | rev.093b | Pending]
+**Runtime probe at halfword writer entry (0x166BB0) in late-game area**
 
-- mask_set (0x13ED40) confirmed zero gameplay hits — need death/loading transition to see it toggle on/off
-- Halfword table writers (0x166D1C/0x166D78) confirmed 0 hits in windmill section — need different game area or trigger condition
-- Slot 0 callback (0x168DA8) confirmed dead in 2nd session — still unknown what activates it
-- gp-0x49B4 (0x00633F3C, most-referenced GP, 434 refs) — still unpicked
-- gp-0x6F60 (0x00631990 = world_state_main) — still unmapped at runtime (precisa de emulador)
-- Ver mais em `research/elf/ghidra-rev079-runtime-validation-windmill-session.md`
+- Rev.093 confirmed: mask_set = ShockRequestBox_RequestCancel, dispatch table = compile-time (both RESOLVED)
+- Halfword table writers remain UNRESOLVED — zero hits in 67.3M events across 4 game areas
+- New probe required at function entry `0x166BB0` (NOT at SH instructions `0x166D1C`/`0x166D78`)
+- Test in late-game area (e.g., castle interior, water channel, or symmetry room)
+- See `research/elf/ghidra-rev093-three-investigations.md`
 
-### [ ] [SQUAD-RUNTIME | rev.081 | Pending]
-**Static gap resolved: slot 0 = empty slot — nunca referenciado**
-
-- Slot 0 callback (0x168DA8) NAO tem filter mask, mas NUNCA dispara porque **zero dispatch sites** chamam slot 0 em todo .text. Busca por `addiu a1, zero, 0 + JALR` retornou 0 matches. Slots 1-16 tem 1.170+ dispatch sites combinados (slot 1: 821, slot 2: 74, etc.).
-- Próximo passo: investigar quem cria a dispatch table — função que popula os 17 slots com callbacks e decide quais indices sao ativos.
+### [ ] [SQUAD-RUNTIME | rev.080 | Superseded by Rev.093]
+**Resolved: mask_set, dispatch table — superseded**
+- mask_set (0x13ED40) = ShockRequestBox_RequestCancel (I/O shock driver). Loading-only, bit 0 only. CONFIRMED.
+- Dispatch table (0x282690) = compile-time `.data`. No runtime populator. CONFIRMED.
+- Slot 0 root cause: zero wrapper stubs for slot 0 (addiu a1, zero, 0 + JALR).
+- gp-0x49B4, gp-0x6F60, halfword writers — still open, moved to rev.093b.
+- Ver `research/elf/ghidra-rev093-three-investigations.md`
 
 ### [ ] [SQUAD-EXTERNAL | rev.060 | Pending]
 **Correção: verificar ee-gcc 2.9-991111-01 no decomp.me via presets de jogo**
@@ -84,6 +85,14 @@ _(none)_
 ---
 
 ## Concluídas / Completed
+
+### [x] [SQUAD-ARCH | rev.093 | 2026-05-19]
+**Three static investigations: mask_set, dispatch table, halfword writer**
+
+- **mask_set (0x13ED40) RESOLVED**: Identified as `ShockRequestBox_RequestCancel` in `fumi/ios/shockdriver.c`. I/O shock driver for controller vibration/request cancellation. Only bit 0 used. All 6 callers in scene loader/boot code. Zero hits in 66.9M gameplay events.
+- **Dispatch table (0x282690) RESOLVED**: Static `.data` structure — no runtime code populates the 17 slots. Slot activation determined by: (1) compile-time wrapper existence (14 stubs for slots 1-16, slot 0 has none), (2) per-entity mask filtering of `field_48`/`field_60`, (3) callback mask gating bit 0 during scene transitions.
+- **Halfword table writers (0x166D1C/0x166D78) UNRESOLVED**: Zero hits across 4 runtime sessions (67.3M events). All 14 callbacks read from BSS-zeroed counter (0) — they simply skip the loop. Condition unknown. Next step: deploy probe at function entry `0x166BB0` in a late-game room.
+- Documented in `research/elf/ghidra-rev093-three-investigations.md`
 
 ### [x] [SQUAD-TOOLING | rev.092 | 2026-05-18]
 **Path B milestone: all 26 LOW functions converted to byte-exact .s assembly — 38/38 at 100%**
@@ -680,6 +689,7 @@ Call graph analysis
 
 | Revision | Date | Squad | Summary |
 |----------|------|-------|---------|
+| rev.093 | 2026-05-19 | SQUAD-ARCH | Three investigations resolved: mask_set=ShockRequestBox_RequestCancel, dispatch table=compile-time .data, halfword writers condition unknown — probe entry point needed |
 | rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
 | rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
 | rev.074 | 2026-05-17 | SQUAD-RUNTIME | Runtime session (9.1M events): slot 0 dead, slot 12 most active, alt_impl unused, VU0 kick gameplay-only, 58% match rate, 615 contexts/20 live entities, GP=0x6388F0 verified |

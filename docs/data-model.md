@@ -1,7 +1,11 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-18 (Rev.088 — WOODBOX0 entity handler decompilado para near-structural C; indice de descritor corrigido de 3 para 17; hA/hB/hC mapeados; work struct 0x190B documentado; 7o handler decompilado. Ver research/elf/ghidra-rev088-woodbox0-decompilation.md)
+> **Ultima atualizacao:** 2026-05-19 (Rev.093 — slot table em 0x282690 confirmada como `.data` estatico, sem populacao runtime; mask_set confirmado como ShockRequestBox_RequestCancel.)
+
+### Correcao Rev.093 — Slot Table e Compile-Time `.data`
+
+A tabela de 17 slots em `0x282690` (.data) e COMPLETAMENTE estatica — nenhuma instrucao SW/SD/SH/SB em todo .text escreve no intervalo `0x282680-0x2827A0`. As unicas referencias sao leituras: ADDIU em `0x166E24` e `0x167098`. Os callbacks, flags w0/w1/w2 sao fixados em tempo de compilacao. "Quem popula a dispatch table" nao tem resposta runtime — a tabela e compilada.
 
 ---
 

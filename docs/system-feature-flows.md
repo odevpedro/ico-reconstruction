@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-18 (Rev.088 — WOODBOX0 entity handler decompilado para near-structural C; indice de descritor corrigido de 3 para 17; hA/hB/hC mapeados com work struct 0x190B, template ROM 0x4B5560, behavior Group B 0x23D660. 7o handler decompilado (src/entity/woodbox0.c). Ver secao WOODBOX0 Entity Handler Flow abaixo.)
+> **Ultima atualizacao:** 2026-05-19 (Rev.093 — mask_set=ShockRequestBox_RequestCancel confirmado; dispatch table 0x282690 = `.data` estatico, nao populado em runtime; halfword writers condicao desconhecida em 67.3M eventos. Ver research/elf/ghidra-rev093-three-investigations.md)
 
 ---
 
@@ -304,8 +304,7 @@ Todos os 14 callbacks iteram esta tabela runtime-populada. Ela contem uint16 ent
 - ~~Validacao runtime: capturar quais slots disparam durante gameplay vs cutscene vs menu~~ **FEITO (Rev.074 + Rev.079): slot distribution confirmada em 2 areas (entrance + windmill). Slot 1 dominante em windmill (45.7%), slot 12 na entrance (38.5%).**
 - ~~Capturar se a implementacao alternativa (0x00169F80/0x0016A058) e atingida~~ **FEITO (2 sessoes independentes): alt_selection nunca chamada em gameplay normal. Cold paths sao as unicas entradas.**
 - ~~Slot 0 (0x168DA8) esta morto?~~ **FEITO: confirmado morto em 2 sessoes. Provavelmente fallback/empty. Diferenca: slot 1 tem filtro `0xF0000000==0 AND 0x000F0000!=0x00010000`, slot 0 nao tem filtro — se nenhuma entidade tem field_48==0, slot 0 nunca matcha.**
-- ~~mask_set toggle durante gameplay?~~ **FEITO: zero hits em gameplay. So dispara em loading/tela preta. Confirmado em 3 sessoes (66.9M eventos).**
-- ~~Halfword table writers disparam?~~ **FEITO: zero hits em 3 sessoes distintas (entrance, windmill, 3+ areas). Condicao desconhecida.**
+- ~~mask_set toggle durante gameplay?~~ **FEITO (Rev.093): ShockRequestBox_RequestCancel (I/O shock driver). Loading-only, bit 0 only. Confirmado em 66.9M eventos.**
 - ~~Entender o significado semantico de cada slot~~ **Parcial: slot distribution varia por area do jogo (zone fingerprinting confirmado).**
 - ~~Investigar por que slot distribution muda entre areas~~ **FEITO: confirmado que slot ratio e area-dependent. Zone fingerprints sao distintos por sala/zona.**
 - ~~Slot 0 por que nunca dispara?~~ **FEITO: root cause estatica — zero `addiu a1, $zero, 0` + JALR em todo .text. Nenhum codigo dispatches slot 0.**
