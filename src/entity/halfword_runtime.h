@@ -94,5 +94,8 @@ int  halfword_writer_session_is_main_callsite(const struct halfword_writer_sessi
 int  halfword_writer_session_is_second_callsite(const struct halfword_writer_session *session);
 int  halfword_writer_session_world_state_is_observed(const struct halfword_writer_session *session);
 enum halfword_writer_bucket halfword_writer_session_bucket(const struct halfword_writer_session *session);
+const char *halfword_writer_bucket_name(enum halfword_writer_bucket bucket);
+const char *halfword_writer_session_callsite_name(const struct halfword_writer_session *session);
+const char *halfword_writer_session_world_state_name(const struct halfword_writer_session *session);
 
 #endif /* ICO_HALFWORD_RUNTIME_H */
