@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 137 |
+| Completed | 138 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -86,6 +86,16 @@ _(none)_
 ---
 
 ## Concluídas / Completed
+
+### [x] [SQUAD-RUNTIME | rev.096 | 2026-05-19]
+**Halfword runtime session analysis: offline review of Rev.095 capture**
+
+- Analyzed `.local/runtime-captures/ico-probe-rev095/events.jsonl` offline with `tools/analyze_halfword_log.py`.
+- `halfword_entry`: 61,504,387 hits. `halfword_write_A`: 12,501,059 hits. `halfword_write_B`: 2,155,561 hits.
+- The main caller at `0x0016700C` remains dominant (`ra=0x00167014`, 76,155,123 aggregated return-address hits).
+- The second caller at `0x0016828C` did not appear in this capture, and `0x00166DFC` remained unprobed.
+- `world_state_raw` stayed concentrated in `0x13/0x14/0x15/0x0A`, with a small tail of other values.
+- Documented in `research/elf/ghidra-rev096-halfword-runtime-session-analysis.md`.
 
 ### [x] [SQUAD-RUNTIME | rev.094 | 2026-05-19]
 **Halfword runtime session: second caller observed**
@@ -711,6 +721,7 @@ Call graph analysis
 
 | Revision | Date | Squad | Summary |
 |----------|------|-------|---------|
+| rev.096 | 2026-05-19 | SQUAD-RUNTIME | Offline analysis of Rev.095 capture: main caller still dominates, second caller absent in this session, fast path remains inferred |
 | rev.094 | 2026-05-19 | SQUAD-RUNTIME | Halfword runtime session: second caller at 0x0016828C observed, traces up to 26 cells, fast path 0x00166DFC still needs direct probe |
 | rev.093b | 2026-05-19 | SQUAD-RUNTIME | Halfword entry probe validated 0x00166BB0 as active hot-path rasterizer before callback dispatch |
 | rev.093 | 2026-05-19 | SQUAD-ARCH | Three investigations resolved: mask_set=ShockRequestBox_RequestCancel, dispatch table=compile-time .data, halfword writer still unresolved at this revision; later superseded by Rev.093b/Rev.094 |

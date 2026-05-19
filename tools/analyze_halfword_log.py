@@ -59,6 +59,12 @@ def probable_callsite_from_ra(ra: int | None) -> int | None:
     return (ra - 8) & 0xFFFFFFFF
 
 
+def fmt_addr(value: int | None) -> str:
+    if value is None:
+        return "<missing>"
+    return f"0x{value:08x}"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("log", type=Path)

@@ -356,6 +356,13 @@ retornando para `0x00168294`. O rebuild do hash espacial 32×32 faz parte do
 caminho quente de dispatch, e o fast path de célula única em `0x166DFC`
 ficou ainda mais provável, embora ainda precise de probe direto.
 
+Depois veio uma análise offline da captura Rev.095. Ela não mudou a
+pergunta central, mas afinou o mapa: 61,5 milhões de entradas confirmaram o
+hot path principal de novo, enquanto `0x0016828C` não reapareceu nesse
+trecho e `0x00166DFC` continuou como inferência indireta. O personagem
+entende, ali, que paciência não substitui recorte. Captura longa ajuda, mas
+sem o estado certo ela só reforça o que já era forte.
+
 O projeto também entrou em uma frente de decompilação verificável: há um
 toolchain local `ee-gcc 2.9-991111-01`, scoring instrução-a-instrução
 contra o ELF original, 38 funções mapeadas com 100% de matching
