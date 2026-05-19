@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 135 |
+| Completed | 137 |
 | In Progress | 0 |
 | Pending | 4 |
 
@@ -23,21 +23,22 @@ _(none)_
 
 ## Pending
 
-### [ ] [SQUAD-RUNTIME | rev.093b | Pending]
-**Runtime probe at halfword writer entry (0x166BB0) in late-game area**
+### [ ] [SQUAD-RUNTIME | rev.095 | Pending]
+**Directly probe halfword fast path and second caller state**
 
-- Rev.093 confirmed: mask_set = ShockRequestBox_RequestCancel, dispatch table = compile-time (both RESOLVED)
-- Halfword table writers remain UNRESOLVED — zero hits in 67.3M events across 4 game areas
-- New probe required at function entry `0x166BB0` (NOT at SH instructions `0x166D1C`/`0x166D78`)
-- Test in late-game area (e.g., castle interior, water channel, or symmetry room)
-- See `research/elf/ghidra-rev093-three-investigations.md`
+- Rev.093b confirmed `0x00166BB0` is active in the hot dispatch path before callback dispatch.
+- Rev.094 confirmed the second direct caller at `0x0016828C` is runtime-reachable (`ra=0x00168294`, 14,257 hits).
+- Add direct probe at `0x00166DFC` to count the inferred high-volume single-cell fast path.
+- Add caller-side probes at `0x0016828C` and `0x00168294`, plus main return probe at `0x00167014`.
+- Log `world_state_raw` with second-caller events so activation can be tied to state transitions.
+- See `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md` and `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`.
 
 ### [ ] [SQUAD-RUNTIME | rev.080 | Superseded by Rev.093]
 **Resolved: mask_set, dispatch table — superseded**
 - mask_set (0x13ED40) = ShockRequestBox_RequestCancel (I/O shock driver). Loading-only, bit 0 only. CONFIRMED.
 - Dispatch table (0x282690) = compile-time `.data`. No runtime populator. CONFIRMED.
 - Slot 0 root cause: zero wrapper stubs for slot 0 (addiu a1, zero, 0 + JALR).
-- gp-0x49B4, gp-0x6F60, halfword writers — still open, moved to rev.093b.
+- gp-0x49B4, gp-0x6F60, halfword writer entry — resolved by Rev.089/Rev.093b/Rev.094; fast path remains moved to rev.095.
 - Ver `research/elf/ghidra-rev093-three-investigations.md`
 
 ### [ ] [SQUAD-EXTERNAL | rev.060 | Pending]
@@ -86,12 +87,33 @@ _(none)_
 
 ## Concluídas / Completed
 
+### [x] [SQUAD-RUNTIME | rev.094 | 2026-05-19]
+**Halfword runtime session: second caller observed**
+
+- Runtime capture `.local/runtime-captures/ico-probe-rev094/events.jsonl.gz` was analyzed with `tools/analyze_halfword_log.py`.
+- `halfword_entry`: 59,285,635 hits. `halfword_write_A`: 12,009,348 hits. `halfword_write_B`: 2,154,870 hits.
+- The main caller at `0x0016700C` remains dominant (`ra=0x00167014`).
+- The second direct caller at `0x0016828C` is runtime-confirmed (`ra=0x00168294`, 14,257 hits).
+- Rare long traces reached 22-26 cells, expanding beyond the short 0-5-cell Rev.093b pattern.
+- The single-cell fast path at `0x00166DFC` remains strongly inferred, not directly counted. Next minimum test: direct fast-path probe plus second-caller state capture.
+- Documented in `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`.
+
+### [x] [SQUAD-RUNTIME | rev.093b | 2026-05-19]
+**Halfword writer entry runtime validation**
+
+- Moved runtime probing from only the store paths to function entry `0x00166BB0`.
+- Confirmed `0x00166BB0` is active in the hot dispatch path before callback dispatch.
+- Observed 20,153,859 entry hits, 3,921,188 write-A hits, and 677,707 write-B hits.
+- Confirmed previous zero-writer results were probe/session coverage issues, not evidence that the writer was dead.
+- Inferred a high-volume single-cell fast path at `0x00166DFC`, pending direct probe.
+- Documented in `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md`.
+
 ### [x] [SQUAD-ARCH | rev.093 | 2026-05-19]
 **Three static investigations: mask_set, dispatch table, halfword writer**
 
 - **mask_set (0x13ED40) RESOLVED**: Identified as `ShockRequestBox_RequestCancel` in `fumi/ios/shockdriver.c`. I/O shock driver for controller vibration/request cancellation. Only bit 0 used. All 6 callers in scene loader/boot code. Zero hits in 66.9M gameplay events.
 - **Dispatch table (0x282690) RESOLVED**: Static `.data` structure — no runtime code populates the 17 slots. Slot activation determined by: (1) compile-time wrapper existence (14 stubs for slots 1-16, slot 0 has none), (2) per-entity mask filtering of `field_48`/`field_60`, (3) callback mask gating bit 0 during scene transitions.
-- **Halfword table writers (0x166D1C/0x166D78) UNRESOLVED**: Zero hits across 4 runtime sessions (67.3M events). All 14 callbacks read from BSS-zeroed counter (0) — they simply skip the loop. Condition unknown. Next step: deploy probe at function entry `0x166BB0` in a late-game room.
+- **Halfword table writers (0x166D1C/0x166D78) were unresolved at Rev.093 time**: Zero hits across 4 runtime sessions (67.3M events). Rev.093b/Rev.094 later superseded this with entry/write-path runtime validation.
 - Documented in `research/elf/ghidra-rev093-three-investigations.md`
 
 ### [x] [SQUAD-TOOLING | rev.092 | 2026-05-18]
@@ -689,7 +711,9 @@ Call graph analysis
 
 | Revision | Date | Squad | Summary |
 |----------|------|-------|---------|
-| rev.093 | 2026-05-19 | SQUAD-ARCH | Three investigations resolved: mask_set=ShockRequestBox_RequestCancel, dispatch table=compile-time .data, halfword writers condition unknown — probe entry point needed |
+| rev.094 | 2026-05-19 | SQUAD-RUNTIME | Halfword runtime session: second caller at 0x0016828C observed, traces up to 26 cells, fast path 0x00166DFC still needs direct probe |
+| rev.093b | 2026-05-19 | SQUAD-RUNTIME | Halfword entry probe validated 0x00166BB0 as active hot-path rasterizer before callback dispatch |
+| rev.093 | 2026-05-19 | SQUAD-ARCH | Three investigations resolved: mask_set=ShockRequestBox_RequestCancel, dispatch table=compile-time .data, halfword writer still unresolved at this revision; later superseded by Rev.093b/Rev.094 |
 | rev.069 | 2026-05-17 | SQUAD-RUNTIME | VU0 ring-buffer packet builder, kick stub, halfword table writers, alternate constants |
 | rev.070 | 2026-05-17 | SQUAD-RUNTIME | Callers of 0x166028 (main loop, scene init, entry iter), 404-byte entity table, debug rodata table |
 | rev.074 | 2026-05-17 | SQUAD-RUNTIME | Runtime session (9.1M events): slot 0 dead, slot 12 most active, alt_impl unused, VU0 kick gameplay-only, 58% match rate, 615 contexts/20 live entities, GP=0x6388F0 verified |

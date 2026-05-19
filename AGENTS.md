@@ -78,7 +78,9 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
-research/elf/ghidra-rev093-three-investigations.md  (mask_set=ShockRequestBox_RequestCancel, dispatch table=compile-time .data, halfword writer condition unknown)
+research/elf/ghidra-rev094-halfword-runtime-second-caller.md  (second halfword caller runtime-confirmed, fast path still needs direct probe)
+research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md  (halfword writer active in hot dispatch path)
+research/elf/ghidra-rev093-three-investigations.md  (mask_set=ShockRequestBox_RequestCancel, dispatch table=compile-time .data)
 research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md  (boy_hC 76.64%). li expansion, ori→addiu normalizer, model address fix)
 research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md  (boy_hB 97.06% via li.s + GP-relative normalizer)
 research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md  (world_state transitions, gp_m49B4=current entity work area, 6 room values mapped)
@@ -105,24 +107,26 @@ Before doing new analysis, read these files in this order if they exist:
 2. `.local/key-concepts.md`
 3. `.local/ai-context.md`
 4. `key-concepts.md`
-5. `research/elf/ghidra-rev093-three-investigations.md`
-6. `research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md`
-7. `research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md`
-8. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
-9. `research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md`
-10. `research/elf/ghidra-rev087-enemy1-boy-decompilation.md`
-11. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
-12. `research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`
-13. `research/elf/ghidra-rev084-runtime-validation-extended-session.md`
-14. `research/elf/ghidra-rev077-final-static-analysis.md`
-15. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
-16. `research/elf/ghidra-rev039-cloth-domain-correction.md`
-17. `research/ico-decomp-cross-reference-2026-05-14.md`
-18. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
-19. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
-20. `research/external/sotc-tooling-relevance-survey.md`
-21. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
-22. `research/external/ico-splat-promoted-ranges-experiment.md`
+5. `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`
+6. `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md`
+7. `research/elf/ghidra-rev093-three-investigations.md`
+8. `research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md`
+9. `research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md`
+10. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
+11. `research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md`
+12. `research/elf/ghidra-rev087-enemy1-boy-decompilation.md`
+13. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
+14. `research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`
+15. `research/elf/ghidra-rev084-runtime-validation-extended-session.md`
+16. `research/elf/ghidra-rev077-final-static-analysis.md`
+17. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
+18. `research/elf/ghidra-rev039-cloth-domain-correction.md`
+19. `research/ico-decomp-cross-reference-2026-05-14.md`
+20. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
+21. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
+22. `research/external/sotc-tooling-relevance-survey.md`
+23. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
+24. `research/external/ico-splat-promoted-ranges-experiment.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -361,7 +365,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 - **17-slot dispatch table** at 0x282690 fully mapped with 14 callback targets in 3 tiers. **Confirmed compile-time .data** — no runtime populator (Rev.093).
 - **Mask system uses only bit 0**: mask_set(0x13ED40) = ShockRequestBox_RequestCancel. Loading-only, 6 callers in scene loader. Bit 1-7 permanently zero (Rev.093).
 - **404-byte table** at 0x005F2F98 = room/stage config.
-- **Halfword table** at 0x006AB080 = 32×32 spatial hash grid rebuilt per dispatch cycle. Writers never triggered in any tested area (67.3M events, 4 sessions) — condition unknown (Rev.093).
+- **Halfword table** at 0x006AB080 = 32×32 spatial hash grid rebuilt in the hot dispatch path. Rev.093b confirmed `0x00166BB0` is active before callback dispatch; Rev.094 confirmed the second direct caller at `0x0016828C` is runtime-reachable. The single-cell fast path at `0x00166DFC` is still inferred and needs a direct probe.
 - **VU0 "kick"** at 0x117C40 = COP2 macro-mode vector clamp utility. Queue at 0x117768 = linked-list deferred processing (NOT a VU0 kick).
 - **Debug table** at 0x613E00: 47 debug visualization entries. 0x168650 = CollisionOldProc callback.
 
@@ -382,7 +386,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 
 1. ~~Runtime: probe mask bit 0 during cutscene transitions~~ **DONE (Rev.085)**
 2. ~~Runtime: probe gp+0x6F60 (world_state)~~ **DONE (Rev.089)**
-3. ~~Runtime: probe halfword table writers~~ **DONE — condition unknown (Rev.093)**
+3. ~~Runtime: probe halfword table writers~~ **DONE (Rev.093b/Rev.094): active hot-path rasterizer; fast path still needs direct probe**
 4. ~~Runtime: probe gp-0x49B4~~ **DONE (Rev.089): current entity work area ptr**
 5. ~~Investigate slot 0 callback 0x168DA8~~ **DONE (Rev.084)**
 6. ~~Investigate env effect table~~ **DONE (Rev.086)**
@@ -399,10 +403,12 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 17. ~~**Update docs backlog, AGENTS.md for Path B milestone**~~ **DONE (2026-05-18)**
 18. ~~**Investigate mask_set (0x13ED40)**~~ **DONE (Rev.093): ShockRequestBox_RequestCancel, loading-only, bit 0 only**
 19. ~~**Investigate dispatch table population (0x282690)**~~ **DONE (Rev.093): compile-time .data, no runtime populator**
-20. **Probe halfword writer at function entry (0x166BB0)** — move probe from SH to entry point, test in late-game room
-21. Fix dispatch_point slot index capture for next runtime session
-22. Reposition world_state_load probe to capture room init_fn
-23. Deploy memory watchpoint on VBlank counter 0x274EC0
+20. ~~**Probe halfword writer at function entry (0x166BB0)** — move probe from SH to entry point~~ **DONE (Rev.093b/Rev.094): active hot-path rasterizer; second caller observed**
+21. **Directly probe halfword fast path (0x166DFC)** — verify the inferred high-volume single-cell writer
+22. **Instrument second halfword caller (0x0016828C/0x00168294)** — capture caller-side state, final counter, and `world_state_raw`
+23. Fix dispatch_point slot index capture for next runtime session
+24. Reposition world_state_load probe to capture room init_fn
+25. Deploy memory watchpoint on VBlank counter 0x274EC0
 
 ---
 

@@ -349,17 +349,16 @@ filtro de máscara por entidade (por frame), e trava de máscara global
 stores nunca tinham disparado nas sessões anteriores; a Rev.093b moveu a
 sonda para a entrada da função e capturou uma sessão grande com 20,15
 milhões de entradas, 3,92 milhões de hits no caminho A e 677 mil no
-caminho B. A função é chamada em `0x16700C`, imediatamente antes do
-`jalr` do callback em `0x167020`, então o rebuild do hash espacial 32×32
-faz parte do caminho quente de dispatch. Uma análise offline por invocação
-também inferiu 2,63 milhões de casos do fast path de célula única em
-`0x166DFC`, ainda pendente de probe direto. O que continua desconhecido é
-o sentido semântico exato do referencial de coordenadas e por que as
-sessões anteriores não atingiram os writers.
+caminho B. A Rev.094 foi mais longe: 59,28 milhões de entradas, 12,0
+milhões de hits no caminho A, 2,15 milhões no caminho B, traces raros de
+até 26 células, e 14.257 hits do segundo caller estático `0x0016828C`
+retornando para `0x00168294`. O rebuild do hash espacial 32×32 faz parte do
+caminho quente de dispatch, e o fast path de célula única em `0x166DFC`
+ficou ainda mais provável, embora ainda precise de probe direto.
 
 O projeto também entrou em uma frente de decompilação verificável: há um
-toolchain local `ee-gcc 2.9-991111-01`, scoring instrução-a-inst
-rução contra o ELF original, 38 funções mapeadas com 100% de matching
+toolchain local `ee-gcc 2.9-991111-01`, scoring instrução-a-instrução
+contra o ELF original, 38 funções mapeadas com 100% de matching
 byte-a-byte (12 via C, 26 via `.s` assembly). Esse progresso deve ser
 narrado com cautela: ele valida o método e fecha pequenas ilhas de
 código, mas ainda não representa uma porcentagem alta do jogo decompilado.
