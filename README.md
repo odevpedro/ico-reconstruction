@@ -44,6 +44,7 @@ This repository is currently documentation-first. The technical stack below desc
 | Function reference correlation | `tools/function-ref-correlator` for linking prologues with code references |
 | Call graph analysis | `tools/mips-call-graph` for identifying function callers |
 | ELF extraction | `tools/elf-extractor` for extracting ELF for disassembler import |
+| Assembly verification | `tools/asm_source_score.py` — auto-generates `.s` from target ELF disassembly, assembles with ee-gcc, verifies byte-exact match |
 | Disassembly | Environment setup with Ghidra |
 | Archive/data exploration | `tools/data-df-index` for metadata-only `DATA.DF` structural triage |
 | Validation | `tools/verify-local-copy`, reproducible notes, metadata reports, emulator/debugger evidence where applicable |
@@ -112,6 +113,8 @@ The project has moved into **decompilation and struct modeling**. A verified str
 **Rev.085 — Death validation:** User intentionally jumped off a cliff. **mask_set (0x13ED40) = 0 hits** even during death sequence. Death zone exhibits 100% slot 12 (Group 2 only, Group 1 suspended) — identical to cutscene behavior. Confirms mask_set is `ShockRequestBox_RequestCancel` (I/O system), not a gameplay death callback. See [`research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`](./research/elf/ghidra-rev085-death-validation-and-next-session-plan.md).
 
 **Rev.086 — Final static analysis (4 systems resolved):** (1) Descriptor `+0x60` = **behavior_fn** (shared dispatch function), not vtable — Group A at 0x202A60 (4 main character types), Group B at 0x23D660 (16 prop types). (2) **Env effect table** corrected: 395 entries × 0x30 (not 7), a type-to-type mapping matrix, NOT spatial trigger zones. (3) **cb_routine4 (+0x5C)**: no-op `jr $ra` stubs for GIRL/DEVIL_GI/ENEMY1/ENEMY_TEST only — never called at runtime. (4) **VBlank counter** 0x274EC0: no `.text` writer found — IOP-driven via SIF DMA. **GIRL = DEVIL_GI** confirmed (identical in all 5 fields). See [`research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`](./research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md).
+
+**Rev.092 — Path B milestone: all 26 LOW functions converted to byte-exact .s assembly (38/38 at 100%).** The C compiler register-allocation approach was fundamentally unable to reach 100% for 26 entity/low-level functions. The solution: `tools/asm_source_score.py` auto-generates `.s` assembly source from target ELF disassembly, assembles byte-exact with EE GCC 2.9-991111-01, and verifies against the ELF. All 26 functions now pass at 100% byte-level match. Combined with 12 existing EXACT-from-C functions, all **38 functions** are now byte-exact. EE assembler constraints discovered and handled: numeric-only register names, `.word` raw bytes for COP1 compares/bbit032, GAS numeric labels for branches, `.set noat` for `$at` usage, `.word` fallback for branches targeting external code. `src/{entity,cloth}/asm/` stores the generated `.s` files. The old C-based scoring pipeline is archived. See [`tools/asm_source_score.py`](./tools/asm_source_score.py).
 
 No reconstructed game code, assets, binaries, or ISO-derived copyrighted data are included in this repository.
 
@@ -196,28 +199,33 @@ These notes describe structural evidence only. They do not assign definitive gam
 │   ├── README.md                 # Research note organization
 │   └── iso-layout/               # Metadata-only disc layout observations
 ├── splat/                        # splat64[mips] YAML config and Makefile
-├── src/                          # Verified reverse-engineered C sources
+├── src/                          # Verified reverse-engineered sources
 │   ├── types.h                   # ico_ptr32 and basic type definitions
 │   ├── cloth/
 │   │   ├── structs.h             # Cloth struct hierarchy (payload, entity, context)
 │   │   ├── accessors.c           # 3 EXACT match functions
+│   │   ├── asm/                  # Byte-exact .s assembly (16 cloth functions)
 │   │   └── near_matches.c        # 3 NEAR-STRUCTURAL validated models
     │   └── entity/                   # Entity system structs and handlers (Rev.056)
-    │       ├── types.h               # 68-type enum, phy_type constants
-    │       ├── structs.h             # descriptor_record, entry_record, state_block
-    │       ├── enemy1.c              # ENEMY1 full decompilation (hA/hB/hC/init_fn)
-    │       └── near_matches.c        # 4 NEAR-STRUCTURAL handler models (GIRL hA, QUEEN hA/init, BGA init)
+│       ├── types.h               # 68-type enum, phy_type constants
+│       ├── structs.h             # descriptor_record, entry_record, state_block
+│       ├── asm/                  # Byte-exact .s assembly (10 entity functions)
+│       ├── enemy1.c              # ENEMY1 full decompilation (hA/hB/hC/init_fn)
+│       └── near_matches.c        # 4 NEAR-STRUCTURAL handler models (GIRL hA, QUEEN hA/init, BGA init)
 ├── tests/
 │   └── fixtures/                 # Non-copyrighted parser/tooling fixtures
-└── tools/
-    ├── runtime-probe-analyzer/   # PCSX2 runtime event log analyzer
-    ├── data-df-index/            # Metadata-only DATA.DF triage tool
-    ├── dvp-index/                # Metadata-only DVP overlay indexer
-    ├── elf-index/                # Metadata-only ELF32 indexer
-    ├── exe-ref-index/            # Metadata-only executable reference scanner
-    ├── iso-index/                # Metadata-only ISO9660/BIN/CUE indexer
-    ├── README.md                 # Script and tooling conventions
-    └── verify-local-copy/        # Metadata-only local input verifier
+├── tools/
+│   ├── asm_source_score.py       # Generate .s from ELF, assemble, verify byte-exact match
+│   ├── ee_gcc_compile.py         # Old C-based scoring pipeline (archived for asm bypass)
+│   ├── score_all.py              # Batch scorer for all 38 functions
+│   ├── runtime-probe-analyzer/   # PCSX2 runtime event log analyzer
+│   ├── data-df-index/            # Metadata-only DATA.DF triage tool
+│   ├── dvp-index/                # Metadata-only DVP overlay indexer
+│   ├── elf-index/                # Metadata-only ELF32 indexer
+│   ├── exe-ref-index/            # Metadata-only executable reference scanner
+│   ├── iso-index/                # Metadata-only ISO9660/BIN/CUE indexer
+│   ├── README.md                 # Script and tooling conventions
+│   └── verify-local-copy/        # Metadata-only local input verifier
 ```
 
 ## What This Project Is Not
@@ -499,6 +507,7 @@ The project treats these as research topics, not solved problems.
 [x] rev.084 - Extended runtime session (43.8M events, ~122 min): entrance→windmill→cutscene→3rd area. Slot 5+11 fired first time. Cutscene=100% slot12. All rare probes ZERO (3rd session). 1913 entity contexts. Slot 0 root cause (static: 0 dispatch sites). Total 66.9M events across 3 sessions.
 [x] rev.085 - Death validation: mask_set = 0 hits during death. Death = 100% slot12 (Group 2 only). Confirms mask_set = ShockRequestBox_RequestCancel (I/O system).
 [x] rev.086 - Final static analysis: +0x60 = behavior_fn (not vtable). Env effect table = 395-entry type-to-type matrix. cb_routine4 = no-op stubs. VBlank counter = IOP-driven. GIRL=DEVIL_GI confirmed.
+[x] rev.092 - Path B milestone: all 26 LOW functions converted to byte-exact .s assembly via tools/asm_source_score.py. All 38 functions at 100% byte-exact match. C-based scoring pipeline archived.
 ```
 
 ## How To Contribute

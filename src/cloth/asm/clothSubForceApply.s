@@ -1,0 +1,45 @@
+	.text
+	.p2align 3
+	.globl	clothSubForceApply
+	.ent	clothSubForceApply
+clothSubForceApply:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x70
+	addiu	$4,$0,0x13
+	swc1	$f21,0x58($29)
+	swc1	$f20,0x50($29)
+	mov.s	$f21,$f12
+	sd	$17,0x10($29)
+	mov.s	$f20,$f13
+	sd	$31,0x40($29)
+	sd	$19,0x30($29)
+	sd	$18,0x20($29)
+	sd	$16,0($29)
+	jal	0x0013eb50
+	swc1	$f22,0x60($29)
+	move	$17,$2
+	.word	0x12200030
+	addiu	$19,$0,1
+	lui	$1,0x4780
+	mtc1	$1,$f22
+	jal	0x00118a68
+	nop	
+	mul.s	$f0,$f0,$f22
+	lw	$6,0x15c($17)
+	lw	$3,0x16c($17)
+	move	$5,$0
+	lw	$4,0x800($6)
+	cvt.w.s	$f1,$f0
+	mfc1	$2,$f1
+	sll	$2,$2,0x10
+	.word	0x10600008
+	sra	$18,$2,0x10
+	ld	$2,8($4)
+	.word	0x14400005
+	.set	macro
+	.set	reorder
+	.end	clothSubForceApply

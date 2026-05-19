@@ -619,6 +619,26 @@ Conceitos: branch shape, `switch`, `sub_1C1EA8`, score parcial, codegen.
 
 Tom: precisão experimental, sem concluir cedo demais.
 
+## 14. Virando a chave — Path B (assembly direto)
+
+Depois de meses tentando forçar o C a produzir o mesmo assembly que o
+compilador original, o personagem descobre que 26 funções simplesmente
+não podem ser fechadas por essa via — o alocador de registradores do
+EE GCC 2.9-991111-01 escolhe caminhos que nenhuma reestruturação em C
+consegue replicar. A descoberta muda o plano: em vez de lutar contra o
+compilador, o personagem converte o disassembly do ELF alvo diretamente
+em assembly `.s`, linha por linha, instrução por instrução. O `ee-gcc`
+monta o `.s` e os bytes batem exatamente com o ELF. Mecânico, repetível,
+100% fiel. Vinte e seis funções viram de zero para perfeito em horas,
+não em semanas.
+
+Conceitos: Path B, assembly source, byte-exact, `asm_source_score.py`,
+EE assembler constraints (numeric registers, `.word` fallback, GAS
+numeric labels).
+
+Tom: virada técnica, pragmatismo, descoberta de que a saída não era
+forçar o C, mas aceitar o que o assembly já sabia.
+
 ## Epílogo — A escavação continua
 
 O personagem reflete sobre o que aprendeu, não apenas sobre ICO, mas sobre

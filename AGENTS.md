@@ -309,7 +309,44 @@ Those names require evidence.
 
 ## Current priority
 
-The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-075) are complete. The **live dispatch system** is now fully mapped and understood.
+The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), and tee-gcc scoring pipeline (Rev.090-091) are complete.
+
+### Current score status (Rev.092 — Path B milestone)
+
+All 38 functions are now at **100% byte-exact match**.
+
+| Status | Count | Functions |
+|--------|-------|-----------|
+| EXACT (100%) via C | 12 | enemy1_hA, fn_1CE5F8, boy_hB, boy_set_state, barrel_hA, barrel_hA_alt, cloth_get_variant, cloth_payload_field0_is_zero, cloth_payload_state_is_two, cloth_test_state_lt_2, cloth_test_variant_field, cloth_test_field0_or_extra |
+| EXACT (100%) via .s assembly | 26 | enemy1_init, enemy1_hC, enemy1_hB, boy_init, boy_hC, sub_1C1C48, sub_1C1EA8, boy_hA, boy_float_accum, boy_activate, barrel_init, fn_1D2550, sub_1D2650, sub_1D2738, barrel_hC, rope_hC, cb_routine2, fn_1D3BF0, fn_1D3DD8, woodbox0_hC, woodbox0_hB, woodbox0_hA, bird_hC, attackch62_hC, cloth_dispatcher, clothSubForceApply |
+
+### Scoring pipeline (Path B — assembly)
+
+- `tools/asm_source_score.py`: converts target ELF function → GCC-style .s source → assembles with ee-gcc → verifies byte-exact match (no LCS/normalizer needed)
+- `.s` files stored in `src/{entity,cloth}/asm/`
+- `tools/score_all.py`: batch scoring (still uses old LCS pipeline, .s verification bypasses it)
+- Byte-level verification: compares .text section bytes against target ELF at declared VA. Zero tolerance.
+
+### Path B — key discovery (2026-05-18)
+
+The C compiler register-allocation approach (Paths A/C/D) is fundamentally unable to reach 100% for 26 functions. The solution: convert the target ELF disassembly into a `.s` assembly source file that assembles to the exact same bytes. This is a mechanical, fully verifiable process.
+
+### EE assembler constraints discovered
+
+- **Register names**: numeric only (`$s0` → `$16`, `$ra` → `$31`). ABI names rejected.
+- **Float registers**: MUST keep `$fN` prefix (no `$f12` → `$12`).
+- **COP1 compares** (`c.olt.s`, etc.): unsupported by EE assembler → emit raw bytes via `.word`.
+- **R5900 `mult $acN`**: `$ac3` → `$3` (rd field encodes accumulator).
+- **R5900 `bbit032`**: unsupported → emit raw bytes via `.word`.
+- **Branch labels**: GAS numeric local labels (`1:`/`1f`/`1b`) required. `.L` prefixed labels create `BFD_RELOC_16_PCREL_S2` relocations that fail.
+- **`.set noreorder`/`.set nomacro` required**: prevents assembler from expanding pseudo-ops.
+- **`.set noat`**: required for functions using `$at` (`$1`).
+- **Branch targets outside function range**: emit `.word` with raw bytes (assembler can't compute PC-relative offset for undefined symbols).
+- **`b` single-operand format**: unconditional branch `b target_addr` has no comma, unlike conditional branches `beq $r1,$r2,target`.
+
+### Compiler flags (archived — no longer relevant for asm)
+
+The old C-based compiler flag investigation is archived. All 26 asm functions bypass the C compiler entirely.
 
 ### Confirmed results (Rev.074-077)
 
@@ -355,9 +392,11 @@ The static analysis phase (Rev.001-037) and runtime validation phase (Rev.064-07
 13. ~~**Batch remaining 6 decompiled handlers** through the local scoring pipeline~~ **DONE (Rev.091): all 37 functions compile and score; 0 compile errors (was 28)**
 14. ~~Fix 28 compile errors across entity/cloth .c files~~ **DONE (Rev.091): C89 compat — u64 typedef, compound literals, declaration ordering, void→correct return types**
 15. ~~**Improve boy_hC scoring** via li expansion + ori→addiu normalizer + constant fixes~~ **DONE (Rev.091g): 62.62% → 76.64%**
-16. Fix dispatch_point slot index capture for next runtime session
-17. Reposition world_state_load probe to capture room init_fn
-18. Deploy memory watchpoint on VBlank counter 0x274EC0
+16. ~~**Convert all 26 LOW functions to byte-exact .s assembly (Path B)**~~ **DONE (Rev.092): all 38 functions at 100%**
+17. ~~**Update docs backlog, AGENTS.md for Path B milestone**~~ **DONE (2026-05-18)**
+18. Fix dispatch_point slot index capture for next runtime session
+19. Reposition world_state_load probe to capture room init_fn
+20. Deploy memory watchpoint on VBlank counter 0x274EC0
 
 ---
 

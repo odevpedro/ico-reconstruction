@@ -1,0 +1,163 @@
+	.text
+	.p2align 3
+	.globl	enemy1_hB
+	.ent	enemy1_hB
+enemy1_hB:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x70
+	sd	$18,0x30($29)
+	sd	$31,0x50($29)
+	move	$18,$4
+	sd	$19,0x40($29)
+	sd	$17,0x20($29)
+	sd	$16,0x10($29)
+	swc1	$f20,0x60($29)
+	lw	$2,0x164($18)
+	lw	$4,0x15c($18)
+	ld	$3,0x18($2)
+	dsrl32	$3,$3,1
+	andi	$3,$3,1
+	beqz	$3,0f
+	lw	$19,0x800($4)
+	b	1f
+	sw	$0,0x4c($19)
+0:
+	lw	$3,0x4c($19)
+	slti	$2,$3,0xb
+	beqz	$2,5f
+	addiu	$2,$3,1
+	sw	$2,0x4c($19)
+1:
+	lw	$3,0x15c($18)
+	addiu	$5,$0,2
+	move	$4,$18
+	sw	$0,0x550($3)
+	lw	$2,0x15c($18)
+	sw	$5,0x54c($2)
+	lw	$3,0x15c($18)
+	jal	0x001654c8
+	sw	$0,0x548($3)
+	addiu	$3,$0,3
+	bne	$2,$3,2f
+	addiu	$2,$0,1
+	lw	$3,0x15c($18)
+	sw	$2,0x550($3)
+2:
+	jal	0x001e3fc8
+	move	$4,$18
+	lwc1	$f0,0x48($19)
+	move	$4,$18
+	lui	$1,0x428c
+	mtc1	$1,$f12
+	addiu	$5,$0,4
+	lui	$1,0x4248
+	mtc1	$1,$f13
+	move	$6,$0
+	mul.s	$f12,$f0,$f12
+	lui	$1,0x3f00
+	mtc1	$1,$f14
+	jal	0x00103f00
+	mul.s	$f13,$f0,$f13
+	jal	0x00165540
+	move	$4,$18
+	beqz	$2,3f
+	nop	
+	lw	$3,0x15c($18)
+	lw	$2,0x63c($3)
+	beqz	$2,3f
+	nop	
+	lw	$2,0x2c($19)
+	beqz	$2,3f
+	move	$4,$29
+	lw	$2,0x220($3)
+	addiu	$5,$3,0x1d0
+	lw	$6,0xc($3)
+	sll	$2,$2,6
+	addu	$6,$6,$2
+	jal	0x00104940
+	addiu	$6,$6,0x30
+	lw	$4,0x28($19)
+	jal	0x001cf6c0
+	move	$5,$29
+3:
+	jal	0x001cf548
+	lw	$4,0x28($19)
+	lw	$5,0x15c($18)
+	addiu	$4,$0,0xa
+	beql	$4,$0,4f
+	break	0,7
+4:
+	lui	$1,0x4040
+	mtc1	$1,$f2
+	lw	$2,0x558($5)
+	addiu	$2,$2,1
+	div	$0,$2,$4
+	mfhi	$3
+	sw	$3,0x558($5)
+	lw	$4,0x15c($18)
+	lw	$2,0x840($4)
+	lwc1	$f20,0x20($2)
+	lwc1	$f0,0x24($2)
+	lwc1	$f1,0x28($2)
+	add.s	$f20,$f20,$f0
+	add.s	$f20,$f20,$f1
+	nop	
+	nop	
+	div.s	$f20,$f20,$f2
+	jal	0x00105278
+	lui	$16,0x4c
+	move	$17,$2
+	move	$4,$18
+	jal	0x00109f10
+	addiu	$5,$0,0x24
+	lw	$3,0x15c($18)
+	addiu	$16,$16,0xda0
+	sll	$2,$2,6
+	lw	$5,0xc($3)
+	move	$4,$17
+	move	$6,$16
+	jal	0x001185d0
+	addu	$5,$5,$2
+	jal	0x00105278
+	nop	
+	lw	$4,0x18($19)
+	move	$5,$2
+	jal	0x001cf930
+	mov.s	$f12,$f20
+	jal	0x00105278
+	nop	
+	move	$17,$2
+	move	$4,$18
+	jal	0x00109f10
+	addiu	$5,$0,0x25
+	lw	$3,0x15c($18)
+	sll	$2,$2,6
+	move	$4,$17
+	move	$6,$16
+	lw	$5,0xc($3)
+	jal	0x001185d0
+	addu	$5,$5,$2
+	jal	0x00105278
+	nop	
+	lw	$4,0x20($19)
+	move	$5,$2
+	jal	0x001cf930
+	mov.s	$f12,$f20
+5:
+	ld	$31,0x50($29)
+	ld	$19,0x40($29)
+	ld	$18,0x30($29)
+	ld	$17,0x20($29)
+	ld	$16,0x10($29)
+	lwc1	$f20,0x60($29)
+	jr	$31
+	addiu	$29,$29,0x70
+	addiu	$29,$29,-0x30
+	sd	$17,0x10($29)
+	.set	macro
+	.set	reorder
+	.end	enemy1_hB

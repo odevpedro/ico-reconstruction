@@ -27,10 +27,7 @@ TOOLCHAIN = os.path.expanduser(
 ELF_PATH = os.path.expanduser(
     "/home/peter/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf"
 )
-CC_FLAGS = [
-    "-mips3", "-mgp64", "-mabi=eabi", "-msingle-float",
-    "-G0", "-O2",
-] + [f"-I{SRC_ROOT}", f"-I{SRC_ROOT}/entity", f"-I{SRC_ROOT}/cloth"]
+CC_FLAGS = ["-mips3", "-mgp64", "-mabi=eabi", "-msingle-float", "-G0", "-O2"]
 
 # === Helpers ===
 
@@ -74,7 +71,7 @@ def extract_elf_func(target_va: int, size: int = 0x200) -> bytes:
     raise ValueError(f"VA 0x{target_va:08X} not found in any LOAD segment")
 
 
-def compile_c_to_asm(c_code: str) -> str | None:
+def compile_c_to_asm(c_code: str, source_path: str | None = None) -> str | None:
     """Compile C code with ee-gcc 2.9 and return assembly text."""
     fd, infile = tempfile.mkstemp(suffix=".c")
     os.write(fd, c_code.encode())
@@ -82,9 +79,18 @@ def compile_c_to_asm(c_code: str) -> str | None:
 
     sfile = infile.rsplit(".", 1)[0] + ".s"
 
+    # Add include paths so #include "../types.h" resolves correctly
+    include_flags = []
+    if source_path:
+        src_dir = os.path.dirname(os.path.abspath(source_path))
+        repo_root = os.path.dirname(os.path.abspath(SRC_ROOT))
+        # The temp file has includes relative to original source location
+        include_flags = ["-I", src_dir, "-I", os.path.join(src_dir, ".."),
+                         "-I", repo_root, "-I", os.path.join(repo_root, "src")]
+
     try:
         result = subprocess.run(
-            [TOOLCHAIN] + CC_FLAGS + ["-S", infile, "-o", sfile],
+            [TOOLCHAIN] + CC_FLAGS + include_flags + ["-S", infile, "-o", sfile],
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode != 0:
@@ -871,14 +877,15 @@ def score_against_target(func_asm: str, target_va: int, func_size: int = 0x100,
     return pct
 
 
-def compile_and_score(c_code: str, func_name: str, target_va: int, func_size: int = 0x100):
+def compile_and_score(c_code: str, func_name: str, target_va: int, func_size: int = 0x100,
+                     source_path: str | None = None):
     """Full pipeline: compile → extract → score."""
     print("=== Compiling with ee-gcc 2.9-991111-01 ===")
     print(f"  Flags: {' '.join(CC_FLAGS)}")
     print(f"  Target: {func_name} @ 0x{target_va:08X} ({func_size}B)")
     print()
 
-    asm = compile_c_to_asm(c_code)
+    asm = compile_c_to_asm(c_code, source_path=source_path)
     if asm is None:
         print("FAILED: compilation error")
         return
@@ -986,9 +993,11 @@ def main():
         if extracted is None:
             print(f"FAILED: function '{args.fn}' not found in {args.c_file}")
             return
-        compile_and_score(extracted, args.fn, target_va, target_size)
+        compile_and_score(extracted, args.fn, target_va, target_size,
+                         source_path=args.c_file)
     else:
-        compile_and_score(c_code, args.fn, target_va, target_size)
+        compile_and_score(c_code, args.fn, target_va, target_size,
+                         source_path=args.c_file)
 
 
 if __name__ == "__main__":

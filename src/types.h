@@ -15,6 +15,7 @@ typedef unsigned int ico_u32;
 typedef signed int ico_s32;
 typedef unsigned long long ico_u64;
 
+typedef unsigned char ico_u8;
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;

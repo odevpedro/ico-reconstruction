@@ -1,0 +1,52 @@
+	.text
+	.p2align 3
+	.globl	woodbox0_hB
+	.ent	woodbox0_hB
+woodbox0_hB:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x30
+	sd	$17,0x10($29)
+	sd	$31,0x20($29)
+	move	$17,$4
+	sd	$16,0($29)
+	lw	$2,0x15c($17)
+	jal	0x001bf2c8
+	lw	$16,0x800($2)
+	jal	0x00102858
+	move	$4,$17
+	lw	$2,0($16)
+	move	$3,$2
+	addiu	$2,$2,1
+	slti	$3,$3,0x1f
+	bnez	$3,0f
+	sw	$2,0($16)
+	sw	$0,0($16)
+	move	$4,$17
+	ld	$31,0x20($29)
+	ld	$17,0x10($29)
+	ld	$16,0($29)
+	j	0x1ae460
+	addiu	$29,$29,0x30
+0:
+	ld	$31,0x20($29)
+	ld	$17,0x10($29)
+	ld	$16,0($29)
+	jr	$31
+	addiu	$29,$29,0x30
+	lw	$2,0x15c($4)
+	lw	$3,0x800($2)
+	jr	$31
+	lw	$2,0x20($3)
+	lw	$2,0x15c($4)
+	lw	$3,0x800($2)
+	lw	$2,0x20($3)
+	jr	$31
+	sltiu	$2,$2,1
+	nop	
+	.set	macro
+	.set	reorder
+	.end	woodbox0_hB

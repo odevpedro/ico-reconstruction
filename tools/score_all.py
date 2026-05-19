@@ -79,11 +79,7 @@ def main():
 
     results = []
     for filepath, fn_name, va, size in FUNCTIONS:
-        # Use --whole-file for files that need it (compilation errors in other funcs)
-        whole = ""
-        if filepath.startswith("src/entity/") and fn_name != "fn_1CE5F8":
-            whole = "--whole-file"
-        cmd = f"{TOOL} {whole} {filepath} --fn {fn_name} --va 0x{va:X} --size {size}"
+        cmd = f"{TOOL} --whole-file {filepath} --fn {fn_name} --va 0x{va:X} --size {size}"
         r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=120)
         output = r.stdout + r.stderr
         score = extract_score(output)
