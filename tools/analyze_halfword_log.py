@@ -53,6 +53,12 @@ def _text(match: re.Match[bytes] | None, default: str = "<missing>") -> str:
     return match.group(1).decode()
 
 
+def probable_callsite_from_ra(ra: int | None) -> int | None:
+    if ra is None:
+        return None
+    return (ra - 8) & 0xFFFFFFFF
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("log", type=Path)
