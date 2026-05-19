@@ -319,10 +319,11 @@ Também descobre que:
 - VU0 "kick" `0x117768` é uma fila linked-list, não instruções VU0
 - A tabela de halfwords `0x006AB080` = hash espacial 32×32
 
-### Fase 10 — Onde estamos agora (atualizado Rev.093)
+### Fase 10 — Onde estamos agora (atualizado Rev.093b)
 
 Análise estática completa. Três investigações recentes fecharam dois
-mistérios antigos e confirmaram a direção de um terceiro.
+mistérios antigos, e uma validação runtime posterior corrigiu a leitura do
+terceiro.
 
 **mask_set** (`0x13ED40`) era uma peça que não se encaixava — por que
 só disparava durante loading? A resposta chegou do ICO-decomp:
@@ -343,15 +344,18 @@ resposta tem três camadas: existência de wrapper (tempo de compilação),
 filtro de máscara por entidade (por frame), e trava de máscara global
 (por transição de cena).
 
-**O writer de halfwords** (`0x166D1C`/`0x166D78`) continua um mistério.
-Zero disparos em 67.3 milhões de eventos, 4 áreas de jogo, 4 sessões
-independentes. A condição que ativa o rebuild do hash espacial 32×32
-simplesmente não foi encontrada nas áreas testadas (entrance, windmill,
-terceira área, death zone). Suspeito que seja ativado por uma sala
-específica do final do jogo, ou que rode apenas durante o carregamento
-de cena. A sonda precisa ser movida do ponto de escrita para a entrada
-da função `0x166BB0` — se a função tem um early-exit que a gente não
-detectou, a sonda no `SH` nunca vai ver nada.
+**O writer de halfwords** (`0x166BB0`, com caminhos em `0x166D1C` e
+`0x166D78`) deixou de ser um mistério de ativação. A Rev.093 dizia que os
+stores nunca tinham disparado nas sessões anteriores; a Rev.093b moveu a
+sonda para a entrada da função e capturou uma sessão grande com 20,15
+milhões de entradas, 3,92 milhões de hits no caminho A e 677 mil no
+caminho B. A função é chamada em `0x16700C`, imediatamente antes do
+`jalr` do callback em `0x167020`, então o rebuild do hash espacial 32×32
+faz parte do caminho quente de dispatch. Uma análise offline por invocação
+também inferiu 2,63 milhões de casos do fast path de célula única em
+`0x166DFC`, ainda pendente de probe direto. O que continua desconhecido é
+o sentido semântico exato do referencial de coordenadas e por que as
+sessões anteriores não atingiram os writers.
 
 O projeto também entrou em uma frente de decompilação verificável: há um
 toolchain local `ee-gcc 2.9-991111-01`, scoring instrução-a-inst
