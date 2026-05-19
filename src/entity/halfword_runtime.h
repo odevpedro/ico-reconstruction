@@ -97,5 +97,6 @@ enum halfword_writer_bucket halfword_writer_session_bucket(const struct halfword
 const char *halfword_writer_bucket_name(enum halfword_writer_bucket bucket);
 const char *halfword_writer_session_callsite_name(const struct halfword_writer_session *session);
 const char *halfword_writer_session_world_state_name(const struct halfword_writer_session *session);
+u32  halfword_writer_session_format(char *dst, u32 dst_size, const struct halfword_writer_session *session);
 
 #endif /* ICO_HALFWORD_RUNTIME_H */
