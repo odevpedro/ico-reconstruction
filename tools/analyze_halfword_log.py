@@ -27,6 +27,12 @@ ROW_RE = re.compile(rb'"a2_row":"(0x[0-9a-fA-F]+)"')
 COL_RE = re.compile(rb'"t0_col":"(0x[0-9a-fA-F]+)"')
 WORLD_RE = re.compile(rb'"world_state_raw":"(0x[0-9a-fA-F]+)"')
 RA_RE = re.compile(rb'"ra":"(0x[0-9a-fA-F]+)"')
+CATALOG_RE = re.compile(
+    r'\{\s*"([^"]+)",\s*"([^"]+)",\s*"([^"]+)",\s*"([^"]+)",\s*'
+    r'\(ico_ptr32\)0x([0-9A-Fa-f]{8}),\s*([0-9]+)u,\s*\}',
+    re.M,
+)
+CATALOG_PATH = Path(__file__).resolve().parents[1] / "src" / "entity" / "halfword_runtime_catalog.c"
 
 
 def _open(path: Path) -> BinaryIO:
@@ -63,6 +69,42 @@ def fmt_addr(value: int | None) -> str:
     if value is None:
         return "<missing>"
     return f"0x{value:08x}"
+
+
+def _load_catalog_entries() -> list[dict[str, object]]:
+    try:
+        text = CATALOG_PATH.read_text(encoding="utf-8")
+    except OSError:
+        return []
+
+    entries: list[dict[str, object]] = []
+    for match in CATALOG_RE.finditer(text):
+        entries.append(
+            {
+                "label": match.group(1),
+                "status": match.group(2),
+                "detail": match.group(3),
+                "next_probe": match.group(4),
+                "address": int(match.group(5), 16),
+                "hits": int(match.group(6), 10),
+            }
+        )
+    return entries
+
+
+def _catalog_snapshot(entries: list[dict[str, object]]) -> str:
+    if not entries:
+        return "halfword_catalog_snapshot{count=0,next=continue_capture,latest=none,latest_status=none}"
+
+    latest = entries[-1]
+    return (
+        "halfword_catalog_snapshot{"
+        f"count={len(entries)},"
+        f"next={latest['next_probe']},"
+        f"latest={latest['label']},"
+        f"latest_status={latest['status']}"
+        "}"
+    )
 
 
 def main() -> int:
@@ -193,6 +235,17 @@ def main() -> int:
     for (callsite, world), value in entry_world_states.most_common(args.top):
         print(f"{value:>10}  {fmt_addr(callsite)} world_state_raw={world}")
     show("world_state_raw", worlds)
+
+    catalog_entries = _load_catalog_entries()
+    print("\nhalfword_catalog_snapshot")
+    print(_catalog_snapshot(catalog_entries))
+    print("halfword_catalog_entries")
+    for entry in catalog_entries:
+        print(
+            f"{entry['label']:>20}  status={entry['status']} "
+            f"address={fmt_addr(int(entry['address']))} hits={entry['hits']} "
+            f"next={entry['next_probe']}"
+        )
     return 0
 
 
