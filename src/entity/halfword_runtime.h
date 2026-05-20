@@ -117,5 +117,6 @@ const struct halfword_runtime_catalog_entry *halfword_runtime_catalog_latest(voi
 const char *halfword_runtime_catalog_default_next_probe(void);
 u32  halfword_runtime_catalog_format_entry(char *dst, u32 dst_size, const struct halfword_runtime_catalog_entry *entry);
 u32  halfword_runtime_catalog_format_all(char *dst, u32 dst_size);
+u32  halfword_runtime_catalog_snapshot(char *dst, u32 dst_size);
 
 #endif /* ICO_HALFWORD_RUNTIME_H */
