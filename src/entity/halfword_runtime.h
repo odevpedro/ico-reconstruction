@@ -23,6 +23,15 @@ struct halfword_writer_session {
     ico_ptr32 return_pc;
 };
 
+struct halfword_runtime_catalog_entry {
+    const char *label;
+    const char *status;
+    const char *detail;
+    const char *next_probe;
+    ico_ptr32   address;
+    u32         hits;
+};
+
 enum halfword_writer_bucket {
     HALFWORD_BUCKET_UNKNOWN = 0,
     HALFWORD_BUCKET_EMPTY = 1,
@@ -100,5 +109,13 @@ const char *halfword_writer_session_world_state_name(const struct halfword_write
 u32  halfword_writer_session_format(char *dst, u32 dst_size, const struct halfword_writer_session *session);
 const char *halfword_writer_session_recommendation(const struct halfword_writer_session *session);
 u32  halfword_writer_session_consume(char *dst, u32 dst_size, const struct halfword_writer_session *session);
+
+u32  halfword_runtime_catalog_count(void);
+const struct halfword_runtime_catalog_entry *halfword_runtime_catalog_at(u32 index);
+const struct halfword_runtime_catalog_entry *halfword_runtime_catalog_find(const char *label);
+const struct halfword_runtime_catalog_entry *halfword_runtime_catalog_latest(void);
+const char *halfword_runtime_catalog_default_next_probe(void);
+u32  halfword_runtime_catalog_format_entry(char *dst, u32 dst_size, const struct halfword_runtime_catalog_entry *entry);
+u32  halfword_runtime_catalog_format_all(char *dst, u32 dst_size);
 
 #endif /* ICO_HALFWORD_RUNTIME_H */
