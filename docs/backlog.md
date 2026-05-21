@@ -9,15 +9,20 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 138 |
-| In Progress | 0 |
+| Completed | 140 |
+| In Progress | 1 |
 | Pending | 4 |
 
 ---
 
 ## In Progress
 
-_(none)_
+### [ ] [SQUAD-RUNTIME | rev.095 | Pending]
+**Directly probe halfword fast path and second caller state**
+
+- Rev.093b confirmed `0x00166BB0` is active in the hot dispatch path before callback dispatch.
+- Rev.094 confirmed the second direct caller at `0x0016828C` is runtime-reachable (`ra=0x00168294`, 14,257 hits).
+- Add direct probe at `0x00166DFC` to count the inferred high-volume single-cell fast path.
 
 ---
 
@@ -41,16 +46,13 @@ _(none)_
 - gp-0x49B4, gp-0x6F60, halfword writer entry — resolved by Rev.089/Rev.093b/Rev.094; fast path remains moved to rev.095.
 - Ver `research/elf/ghidra-rev093-three-investigations.md`
 
-### [ ] [SQUAD-EXTERNAL | rev.060 | Pending]
-**Correção: verificar ee-gcc 2.9-991111-01 no decomp.me via presets de jogo**
+### [x] [SQUAD-EXTERNAL | rev.060 | Superseded by Path B]
+**Correção: verificar ee-gcc 2.9-991111-01 no decomp.me via presets de jogo** — SUPERSEDED
 
-- O ee-gcc 2.9-991111-01 está disponível no decomp.me como compiler package em presets específicos de jogos (Klonoa 2, PaRappa the Rapper 2)
-- Teste de matching pendente: submeter scratch de função já validada (EXACT status) para confirmar bit-identidade
-- Se confirmado: atualizar toolchain padrão do projeto para ee-gcc 2.9-991111-01 via decomp.me
-- Se não confirmado: investigar flags exatas usadas na build do jogo
-- Local ps2dev (GCC 15.2.0) mantido apenas para tooling local
-- Local GCC 2.95.2 PS2 Linux mantido como aproximação local
-- Ver mais em `research/external/decompme-ee-gcc-991111-test-plan.md`
+- Path B (Rev.092) converteu 26 funções LOW para `.s` assembly, **bypassando o compilador C completamente**
+- O montador local (GAS do ps2dev GCC 15.2.0) produz bytes exatos sem depender do ee-gcc
+- Compilador local ee-gcc 2.9-991111-01 obtido do PS2 Linux SDK, mesma fonte do decomp.me
+- Esta task não é mais relevante — manter apenas como referência histórica
 
 ### [SQUAD-ARCH | rev.012 | Pending]
 **Architectural Analysis E-G for ICO**
@@ -86,6 +88,15 @@ _(none)_
 ---
 
 ## Concluídas / Completed
+
+### [x] [SQUAD-EXTERNAL | symbol-reconcile | 2026-05-20]
+**Pipeline PAL→USA de reconciliação de símbolos — concluída**
+
+- Pipeline completa: `tools/symbol_reconcile/reconcile.py` — parseia `symbol_addrs.txt`, extrai fingerprints PAL/USA, cruza por hash e VA
+- 5 níveis de matching: raw_sha1 (exato), op_seq_hash (estrutural), norm_sha1 (normalizado), same_va (mesmo endereço), fuzzy (re-rankeado por op_seq_hash + tamanho)
+- **Resultado**: 3781 verified (+95 same_va), 1766 candidates, 134 unmatched — **140 símbolos a mais resolvidos** vs pipeline anterior
+- Correções implementadas: op_hash vs op_seq_hash (era duplicata), fallback same-VA para símbolos de kernel, re-ranking fuzzy com prioridade estrutural, suporte a .symtab (quando disponível)
+- Pendente: gerar splat YAML nomeado; alimentar Ghidra com símbolos validados
 
 ### [x] [SQUAD-RUNTIME | rev.096 | 2026-05-19]
 **Halfword runtime session analysis: offline review of Rev.095 capture**

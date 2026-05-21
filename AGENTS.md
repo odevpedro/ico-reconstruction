@@ -434,6 +434,14 @@ These are important, but they are not the current priority.
 
 The current priority is understanding the live dispatch system (0x00166E10 and its 17-slot table).
 
+A secondary but high-impact front is **External Symbol Reconciliation (PAL→USA)**:
+
+- `tools/symbol_reconcile/reconcile.py` — pipeline que converte `symbol_addrs.txt` PAL (5681 símbolos) em um mapa validado contra o ELF USA, usando fingerprint binário (não endereço)
+- Outputs em `docs/symbols/`: `raw_symbols_pal.csv`, `usa_fingerprints.json`, `pal_usa_symbol_candidates.csv`
+- 3991 funções USA com fingerprints (raw_sha1, norm_sha1, op_hash) extraídas
+- Matching PAL→USA byte-a-byto **aguarda o ELF PAL** (obter ISO PAL do usuário)
+- Quando completo: nomes de função, source_file, e agrupamento por módulo original disponíveis para toda a base de código
+
 ---
 
 ## Documentation discipline
