@@ -35,8 +35,8 @@ struct isys_process_node {
 // 0x281A70: tabela de dispatch de processes (32 slots x 4B = 128B)
 //           Indexada por slot_id em iosOmExeEachGObj e _iosOmMain
 //           Runtime BSS — populada durante init
-// 0x281AB0: tabela secundaria de configuracao de slots
-//           Referenciada por iosOmCreateDL
+// 0x281AB0/0x281AD0: tabela secundaria de DL (head/tail por slot)
+//           Inicializada por isysGObjDlInit e usada por isysGObjLinkObjDL
 // 0x616FD0: jump table de la_load_processing (21 entradas)
 
 // ============================================================================
@@ -48,6 +48,8 @@ struct isys_process_node {
 #define PROCESS_GP_MASK      (-0x6724)
 
 #define IOSOM_DISPATCH_TABLE   0x281A70
+#define IOSOM_DL_HEAD_TABLE    0x281AB0
+#define IOSOM_DL_TAIL_TABLE    0x281AD0
 #define IOSOM_DISPATCH_SLOTS   32
 #define IOSOM_MASK_SLOTS       8
 #define IOSOM_TYPE_MIN         0x13

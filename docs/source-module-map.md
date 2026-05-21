@@ -30,6 +30,7 @@
 | Nomes `isys*`, `ios*` | Kernel-like abstracoes (isys = io system) |
 
 Funcoes tipicas: `isysGObjInit`, `isysGObjAlloc`, `isysGObjRemove`, `isysGObjProcAdd_`, `iosOmInit`, `iosOmExeEachGObj`, vblank handler, IO, CDVD, heap management.
+Neste repositorio, os helpers byte-exact verificados de `isysGObj*` vivem em `src/core/asm/` e o layout local fica em `src/core/isys_process.h`.
 
 ### `src/sugipon/item.c` — Item/Physics handlers
 

@@ -49,6 +49,7 @@ toolchain/
 
 # Temp files from ee-gcc compilation
 *.s
+!src/**/asm/*.s
 tmp*.s
 *.o
 *.o.tmp

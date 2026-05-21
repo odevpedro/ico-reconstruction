@@ -114,7 +114,7 @@ The project has moved into **decompilation and struct modeling**. A verified str
 
 **Rev.086 — Final static analysis (4 systems resolved):** (1) Descriptor `+0x60` = **behavior_fn** (shared dispatch function), not vtable — Group A at 0x202A60 (4 main character types), Group B at 0x23D660 (16 prop types). (2) **Env effect table** corrected: 395 entries × 0x30 (not 7), a type-to-type mapping matrix, NOT spatial trigger zones. (3) **cb_routine4 (+0x5C)**: no-op `jr $ra` stubs for GIRL/DEVIL_GI/ENEMY1/ENEMY_TEST only — never called at runtime. (4) **VBlank counter** 0x274EC0: no `.text` writer found — IOP-driven via SIF DMA. **GIRL = DEVIL_GI** confirmed (identical in all 5 fields). See [`research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`](./research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md).
 
-**Rev.092 — Path B milestone: all 26 LOW functions converted to byte-exact .s assembly (38/38 at 100%).** The C compiler register-allocation approach was fundamentally unable to reach 100% for 26 entity/low-level functions. The solution: `tools/asm_source_score.py` auto-generates `.s` assembly source from target ELF disassembly, assembles byte-exact with EE GCC 2.9-991111-01, and verifies against the ELF. All 26 functions now pass at 100% byte-level match. Combined with 12 existing EXACT-from-C functions, all **38 functions** are now byte-exact. EE assembler constraints discovered and handled: numeric-only register names, `.word` raw bytes for COP1 compares/bbit032, GAS numeric labels for branches, `.set noat` for `$at` usage, `.word` fallback for branches targeting external code. `src/{entity,cloth}/asm/` stores the generated `.s` files. The old C-based scoring pipeline is archived. See [`tools/asm_source_score.py`](./tools/asm_source_score.py).
+**Rev.092 — Path B milestone: all 26 LOW functions converted to byte-exact .s assembly (38/38 at 100%).** The C compiler register-allocation approach was fundamentally unable to reach 100% for 26 entity/low-level functions. The solution: `tools/asm_source_score.py` auto-generates `.s` assembly source from target ELF disassembly, assembles byte-exact with EE GCC 2.9-991111-01, and verifies against the ELF. All 26 functions now pass at 100% byte-level match. Combined with 12 existing EXACT-from-C functions, all **38 functions** are now byte-exact. EE assembler constraints discovered and handled: numeric-only register names, `.word` raw bytes for COP1 compares/bbit032, GAS numeric labels for branches, `.set noat` for `$at` usage, `.word` fallback for branches targeting external code. `src/{core,entity,cloth}/asm/` stores the generated `.s` files, including the byte-exact core lifecycle helpers promoted for `isysGObj*`. The old C-based scoring pipeline is archived. See [`tools/asm_source_score.py`](./tools/asm_source_score.py).
 
 No reconstructed game code, assets, binaries, or ISO-derived copyrighted data are included in this repository.
 
@@ -201,6 +201,9 @@ These notes describe structural evidence only. They do not assign definitive gam
 ├── splat/                        # splat64[mips] YAML config and Makefile
 ├── src/                          # Verified reverse-engineered sources
 │   ├── types.h                   # ico_ptr32 and basic type definitions
+│   ├── core/
+│   │   ├── asm/                  # Byte-exact .s assembly (isysGObj* lifecycle helpers)
+│   │   └── isys_process.h        # Core DL/process layout notes
 │   ├── cloth/
 │   │   ├── structs.h             # Cloth struct hierarchy (payload, entity, context)
 │   │   ├── accessors.c           # 3 EXACT match functions
