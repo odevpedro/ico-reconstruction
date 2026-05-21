@@ -9,8 +9,8 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 141 |
-| In Progress | 1 |
+| Completed | 142 |
+| In Progress | 0 |
 | Pending | 4 |
 
 ---
@@ -853,6 +853,7 @@ Call graph analysis
 | rev.090 | 2026-05-18 | SQUAD-TOOLING | ee-gcc 2.9-991111-01 downloaded from decomp.me GitHub (github.com/decompme/compilers) and installed locally at toolchain/ee-gcc2.9-991111-01/bin/ee-gcc. Local compilation pipeline confirmed working with flags `-mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2`. Scoring tool created at tools/ee_gcc_compile.py. fn_1CE5F8 decompilation improved: frame 0x30 (was 0x40), delay slot nops inserted via asm barriers at 3 points (beq + 2 jals), 37 insn count matches target, all control-flow nops match. Ready for decomp.me v14 submission. |
 | rev.091 | 2026-05-18 | SQUAD-TOOLING | Fixed 28 compile errors across all entity/cloth .c files for ee-gcc 2.9 (C89 mode). Changes: added u64 typedef (types.h); replaced C99 compound literals in enemy1.c (5 occurrences); fixed void→correct return types for sub_1C8478, sub_109F10, sub_105278, sub_103D50, sub_10D180 (boy.c) and sub_1C05A8 (barrel.c); fixed C89 declaration ordering in cloth/near_matches.c (3 blocks) and entity/near_matches.c (3 functions); fixed sub_1F2148/sub_12A618 return types. Fixed --size arg to accept hex in ee_gcc_compile.py. Applied sub_105F20 3rd arg and sub_1D4B40 2-arg signature. Score_all.py now runs all 37 functions with zero compile errors (was 28 errors). decompme_submit.py: normalized register names (ABI→numeric), hex→decimal immediates, jr $31→j $31. |
 | rev.091i | 2026-05-18 | SQUAD-TOOLING | Include path fix (-I flags in compile_c_to_asm), ico_u8 typedef added to types.h, score_all.py simplified (always --whole-file), fn_1CE5F8 confirmed 100% with whole-file. Compiler flags exploration (7 flag sets, 38 functions): G0_O2 best for most; fn_1D3BF0 reaches 50.62% with -fno-schedule-insns; barrel_init 17.14% with -Os. Systematic offset analysis: 148 unique offsets across 25 handler functions; backbone confirmed (0x15C=entity_state, 0x800=work_area). 12 perfect, 26 partial/LOW, 0 compile errors. |
+| rev.097 | 2026-05-21 | SQUAD-ARCH | **Consolidacao arquitetural:** isysGObj* (30 funcoes, 0x13DDA0-0x141D18) identificado como sistema real de game objects; _Clip (0x166E10) reclassificado como funcao de clipping dentro de DispCollisionPC; tabela 0x282690 confirmada como config de clipping (apenas 4 callbacks _clipW* ativos); 42.2M eventos runtime pertencem ao isysGObj*, nao ao _Clip; GirlBrain descoberto (30+ funcoes nomeadas eBrain*/girlBrain*); scene loader confirmado em kanban.c (GP=0x27A7A8); main loop mapeado. 7 arquivos .s renomeados com simbolos reais. Nota de consolidacao: research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md. Mapa de modulos: docs/source-module-map.md. |
 
 ---
 
