@@ -1,3 +1,7 @@
+/* 0x0013F3F0: core process registration body.
+ * The branch at 0x0013F434 is emitted as raw bytes to preserve the
+ * original jump encoding.
+ */
 	.text
 	.p2align 3
 	.globl	isysGObjProcAdd_
@@ -25,7 +29,7 @@ isysGObjProcAdd_:
 	sd	$17,0x10($29)
 	bnez	$20,0f
 	sd	$16,0($29)
-	.word	0x10000074
+	.word	0x10000074  # j 0x0013F608
 	move	$2,$0
 0:
 	lw	$5,-0x4c44($28)

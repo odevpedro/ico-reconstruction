@@ -35,6 +35,7 @@ CC_FLAGS = [
 ASM_OUTPUT_DIRS = {
     "entity": os.path.join(SRC_ROOT, "entity", "asm"),
     "cloth": os.path.join(SRC_ROOT, "cloth", "asm"),
+    "core": os.path.join(SRC_ROOT, "core", "asm"),
 }
 
 # All functions that are not yet 100% (from score_all.py)
@@ -181,23 +182,13 @@ def _format_ops(ops: str, mnem: str = "") -> str:
     return ops
 
 
-def _resolve_label(target_va: int, branch_labels: dict,
-                   va_to_idx: dict, current_idx: int) -> str:
-    """Resolve a branch target VA to a GAS local label reference.
-    
-    Returns "NUMf" (forward) or "NUMb" (backward).
-    Falls back to hex address if not in branch_labels.
+def _resolve_label(target_va: int, branch_labels: dict) -> str:
+    """Resolve a branch target VA to a GAS label reference.
+
+    The generated sources now use unique symbolic labels per target address,
+    so a direct label name is sufficient for both forward and backward refs.
     """
-    if target_va not in branch_labels:
-        return None
-
-    label_num = branch_labels[target_va]
-    target_idx = va_to_idx.get(target_va, current_idx)
-
-    if target_idx > current_idx:
-        return f"{label_num}f"
-    else:
-        return f"{label_num}b"
+    return branch_labels.get(target_va)
 
 
 def insn_to_asm(insn: dict, branch_labels: dict,
@@ -225,7 +216,7 @@ def insn_to_asm(insn: dict, branch_labels: dict,
     if mnem == "jal":
         target = _parse_target(ops)
         if target is not None:
-            label_ref = _resolve_label(target, branch_labels, va_to_idx, current_idx)
+            label_ref = _resolve_label(target, branch_labels)
             if label_ref:
                 return f"\t{mnem}\t{label_ref}"
             else:
@@ -256,7 +247,7 @@ def insn_to_asm(insn: dict, branch_labels: dict,
             if raw:
                 return raw
             if target is not None:
-                label_ref = _resolve_label(target, branch_labels, va_to_idx, current_idx)
+                label_ref = _resolve_label(target, branch_labels)
                 if label_ref:
                     return f"\t{mnem}\t{left_ops},{label_ref}"
             return f"\t{mnem}\t{left_ops},{_convert_regs(parts[1])}"
@@ -266,7 +257,7 @@ def insn_to_asm(insn: dict, branch_labels: dict,
         if raw:
             return raw
         if target is not None:
-            label_ref = _resolve_label(target, branch_labels, va_to_idx, current_idx)
+            label_ref = _resolve_label(target, branch_labels)
             if label_ref:
                 return f"\t{mnem}\t{label_ref}"
         return f"\t{mnem}\t{_format_ops(ops, mnem)}"
@@ -278,7 +269,7 @@ def insn_to_asm(insn: dict, branch_labels: dict,
         if raw:
             return raw
         if target is not None:
-            label_ref = _resolve_label(target, branch_labels, va_to_idx, current_idx)
+            label_ref = _resolve_label(target, branch_labels)
             if label_ref:
                 return f"\t{mnem}\t{label_ref}"
         return f"\t{mnem}\t{_format_ops(ops, mnem)}"
@@ -287,7 +278,7 @@ def insn_to_asm(insn: dict, branch_labels: dict,
     if mnem == "j":
         target = _parse_target(ops)
         if target is not None:
-            label_ref = _resolve_label(target, branch_labels, va_to_idx, current_idx)
+            label_ref = _resolve_label(target, branch_labels)
             if label_ref:
                 return f"\t{mnem}\t{label_ref}"
         return f"\t{mnem}\t{_format_ops(ops, mnem)}"
@@ -385,13 +376,10 @@ def generate_asm_source(func_name: str, insns: list[dict], va: int) -> str:
             if t not in branch_targets and va_curr != t and t in va_to_idx:
                 branch_targets[t] = None
 
-    # Assign numeric labels to branch targets
-    # Use 0-9, reusing labels where possible (GAS allows reuse — each label
-    # shadows the previous one with the same number)
-    label_idx = 0
+    # Assign unique symbolic labels to branch targets.
+    # Numeric local labels collide once a function has more than a few loops.
     for t_va in sorted(branch_targets.keys()):
-        branch_targets[t_va] = label_idx % 10
-        label_idx += 1
+        branch_targets[t_va] = f"loc_{t_va:08x}"
 
     # Build the .s file
     lines = []
@@ -411,8 +399,7 @@ def generate_asm_source(func_name: str, insns: list[dict], va: int) -> str:
 
         # Emit label if this VA is a branch target
         if va_curr in branch_targets:
-            label_num = branch_targets[va_curr]
-            lines.append(f"{label_num}:")
+            lines.append(f"{branch_targets[va_curr]}:")
 
         asm_line = insn_to_asm(insn, branch_targets, va_to_idx, insn_idx)
         lines.append(asm_line)

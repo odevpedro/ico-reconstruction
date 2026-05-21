@@ -1,3 +1,6 @@
+/* 0x0013F700: process-pool allocation helper.
+ * Byte-exact reconstruction confirmed against SCUS_971.13.ELF.
+ */
 	.text
 	.p2align 3
 	.globl	isysGObjProcessAlloc
