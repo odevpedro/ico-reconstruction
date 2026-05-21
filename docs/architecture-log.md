@@ -781,3 +781,50 @@ Ghidra was not locally available, so the analysis used manual MIPS disassembly a
 - Parent function entry points (0x00199f80, 0x0017bb98) are better breakpoint targets than 0x0013eb50 itself
 - State IDs likely map to animation, scene, or entity state rather than UI state
 - The entity structure with offsets +0x15c, +0x800, +0x610 is a key structural anchor for future analysis
+
+# Feature: Evidence Index and Current-State Synchronization
+
+> Squad responsible: SQUAD-ARCH
+> Revision: rev.099
+> Session: 2026-05-21
+> Status: Stable
+
+## Summary
+The repository documentation was synchronized with the current validated state of
+the `isysGObj*` / `iosOm*` reconstruction work. A new evidence index was added
+to separate confirmed facts, tooling, sources, commits, and open gaps from the
+personal narrative files.
+
+## Main Flow
+
+### 1. Entry Point
+The existing documentation had already recorded the `isysGObj*` / `iosOm*`
+byte-exact work in the research notes, but the project still lacked a single
+control document that summarized the validated chain of evidence.
+
+### 2. Input Validation
+The current state was checked against the local `src/core/asm/` tree, the
+`rev.099` research note, and the live backlog/architecture log.
+
+### 3. Application Orchestration
+Created `docs/evidence-index.md` as a factual index and synchronized the
+rev.099 note with the 36-file byte-exact `isysGObj*` / `iosOm*` set.
+
+### 4. Business Rules
+The narrative files remain local-only and are excluded from git tracking.
+The index does not invent semantic claims beyond validated bytes, structure,
+commits, and known gaps.
+
+### 5. Persistence / Integrations
+Updated `docs/evidence-index.md`, `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`,
+`docs/backlog.md`, and the local narrative documents.
+
+### 6. Final Response
+The project now has a clearer separation between validated evidence, local
+narrative, and pending runtime work.
+
+## Key Technical Decisions
+- Keep the evidence index factual and conservative.
+- Treat the narrative docs as local-only artifacts.
+- Synchronize documentation around validated reconstruction milestones before
+  opening new runtime work.

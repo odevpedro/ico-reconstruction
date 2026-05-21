@@ -9,15 +9,15 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 143 |
-| In Progress | 0 |
-| Pending | 4 |
+| Completed | 144 |
+| In Progress | 1 |
+| Pending | 3 |
 
 ---
 
 ## In Progress
 
-### [ ] [SQUAD-RUNTIME | rev.095 | Pending]
+### [ ] [SQUAD-RUNTIME | rev.095 | In Progress]
 **Directly probe halfword fast path and second caller state**
 
 - Rev.093b confirmed `0x00166BB0` is active in the hot dispatch path before callback dispatch.
@@ -27,16 +27,6 @@
 ---
 
 ## Pending
-
-### [ ] [SQUAD-RUNTIME | rev.095 | Pending]
-**Directly probe halfword fast path and second caller state**
-
-- Rev.093b confirmed `0x00166BB0` is active in the hot dispatch path before callback dispatch.
-- Rev.094 confirmed the second direct caller at `0x0016828C` is runtime-reachable (`ra=0x00168294`, 14,257 hits).
-- Add direct probe at `0x00166DFC` to count the inferred high-volume single-cell fast path.
-- Add caller-side probes at `0x0016828C` and `0x00168294`, plus main return probe at `0x00167014`.
-- Log `world_state_raw` with second-caller events so activation can be tied to state transitions.
-- See `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md` and `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`.
 
 ### [ ] [SQUAD-RUNTIME | rev.080 | Superseded by Rev.093]
 **Resolved: mask_set, dispatch table — superseded**
@@ -61,6 +51,14 @@
 - Squad architecture definition
 - Final recommendation
 - Black box identification
+
+### [x] [SQUAD-ARCH | rev.099 | 2026-05-21]
+**Evidence index and current-state synchronization**
+
+- Added `docs/evidence-index.md` as a factual control document for validated work.
+- Synchronized the `rev.099` lifecycle note with the current `src/core/asm/` byte-exact set.
+- Kept `docs/historia.md` and `docs/prompt_persona_ico_reconstruction.md` local-only and out of git tracking.
+- Separated validated facts, local narrative, and open gaps in the documentation chain.
 
 ---
 
