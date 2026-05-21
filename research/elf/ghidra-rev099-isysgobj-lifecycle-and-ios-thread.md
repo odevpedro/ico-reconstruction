@@ -485,14 +485,20 @@ The dispatch table insertion uses `isysGObjDlInit` (0x13F2C8, 56B) which initial
 | isysGObjAdd | 0x13E8D8 | 260B | Find free slot, init, type-based insert |
 | isysGObjAddHead | 0x13E9E0 | 256B | Add to list head |
 | isysGObjLinkObjDL | 0x13F130 | 156B | Link GObj to display list |
+| isysGObjLinkCameraDL | 0x1FC1A0 | 4B | NOP stub (returns a0) |
+| isysGObjMoveCameraDL | 0x1FC168 | 4B | NOP stub (returns a0) |
+| isysGObjMoveCameraDLHead | 0x1FC2E0 | 4B | NOP stub (returns a0) |
 | isysGObjDlInit | 0x13F2C8 | 56B | Init per-slot DL entry |
 | isysGObjProcessAlloc | 0x13F3E8 | 512B | (adjacent to ProcAdd) |
 | isysGObjProcAdd_ | 0x13F3F0 | 512B | Add thread/process to GObj |
+| isysGObjProcAdd_Wrapper | 0x13F7A8 | 20B | Thin wrapper over `isysGObjProcAdd_` |
+| isysGObjProcAddSGOppArg | 0x141C10 | 28B | SG opp arg helper |
 | isysGObjProcRemove | 0x13F6B8 | 64B | Remove thread from GObj |
 | isysGObjProcPause | 0x13F808 | 4B | (effectively a NOP variant) |
 | isysGObjProcRemoveAll | 0x13F8C0 | 52B | Remove all threads from GObj |
 | isysGObjProcThreadSleep | 0x13F8F8 | 52B | Sleep thread |
 | _iosOmMain | 0x13F9D0 | 512B | Main dispatcher (17 slots) |
+| iosOmInit | 0x13F9A0 | 64B | Dispatcher init |
 | iosOmCreateDL | 0x13FC00 | 264B | Per-GObj DL dispatch |
 | iosOmExeEachGObj | 0x13FD10 | 96B | Linked-list walker |
 | iosOmExeEachGObjAll | 0x13FD78 | 152B | Walk all, no filter |
@@ -632,31 +638,52 @@ The isysGObj* lifecycle is now fully traceable from init → alloc → add → d
 
 ## Addendum — byte-exact reconstruction status
 
-After the analysis note was written, the core reconstruction work closed a few of the small helpers as byte-exact `.s` sources under `src/core/asm/`.
+After the analysis note was written, the core reconstruction work closed the
+`isysGObj*` / `iosOm*` helper block as byte-exact `.s` sources under
+`src/core/asm/`.
 
 ### Confirmed byte-exact files
 
+The current tree contains 36 byte-exact sources in `src/core/asm/`.
+
 | File | VA | Status |
 |------|----|--------|
-| `isysGObjDlInit.s` | `0x0013F2C8` | byte-exact |
-| `isysGObjLinkObjDL.s` | `0x0013F130` | byte-exact |
-| `isysGObjProcessAlloc.s` | `0x0013F700` | byte-exact |
-| `isysGObjProcAdd_.s` | `0x0013F3F0` | byte-exact |
-| `iosOmInit.s` | `0x0013F9A0` | byte-exact |
+| `_iosOmMain.s` | `0x0013F9D0` | byte-exact |
 | `iosOmCreateDL.s` | `0x0013FC00` | byte-exact |
 | `iosOmExeEachGObj.s` | `0x0013FD10` | byte-exact |
 | `iosOmExeEachGObjAll.s` | `0x0013FD78` | byte-exact |
-| `iosOmReturnExeEachGObj.s` | `0x0013FE18` | byte-exact |
-| `iosOmGetGObjStatus.s` | `0x0013FEB0` | byte-exact |
 | `iosOmExeMail.s` | `0x00140048` | byte-exact |
-| `isysGObjMoveCameraDL.s` | `0x001FC168` | byte-exact |
-| `isysGObjLinkCameraDL.s` | `0x001FC1A0` | byte-exact |
-| `isysGObjMoveCameraDLHead.s` | `0x001FC2E0` | byte-exact |
+| `iosOmGetGObjStatus.s` | `0x0013FEB0` | byte-exact |
+| `iosOmInit.s` | `0x0013F9A0` | byte-exact |
+| `iosOmReturnExeEachGObj.s` | `0x0013FE18` | byte-exact |
+| `isysGObjActiveDlLink.s` | `0x00141160` | byte-exact |
+| `isysGObjActiveLink.s` | `0x00141128` | byte-exact |
 | `isysGObjAdd.s` | `0x0013E8D8` | byte-exact |
 | `isysGObjAddAfterGObj.s` | `0x0013E220` | byte-exact |
 | `isysGObjAddBeforeGObj.s` | `0x0013E350` | byte-exact |
+| `isysGObjAddHead.s` | `0x0013E9E0` | byte-exact |
+| `isysGObjAlloc.s` | `0x0013E4D0` | byte-exact |
+| `isysGObjDlInit.s` | `0x0013F2C8` | byte-exact |
+| `isysGObjInit.s` | `0x0013DDA0` | byte-exact |
+| `isysGObjKindTableAdd.s` | `0x0013E648` | byte-exact |
+| `isysGObjKindTableRemove.s` | `0x0013E728` | byte-exact |
+| `isysGObjLinkCameraDL.s` | `0x001FC1A0` | byte-exact |
+| `isysGObjLinkObjDL.s` | `0x0013F130` | byte-exact |
+| `isysGObjMove.s` | `0x0013E190` | byte-exact |
+| `isysGObjMoveAfterGObj.s` | `0x0013E7F8` | byte-exact |
+| `isysGObjMoveBeforeGObj.s` | `0x0013E868` | byte-exact |
+| `isysGObjMoveCameraDL.s` | `0x001FC168` | byte-exact |
+| `isysGObjMoveCameraDLHead.s` | `0x001FC2E0` | byte-exact |
+| `isysGObjProcAddSGOppArg.s` | `0x00141C10` | byte-exact |
+| `isysGObjProcAdd_.s` | `0x0013F3F0` | byte-exact |
+| `isysGObjProcAdd_Wrapper.s` | `0x0013F7A8` | byte-exact |
+| `isysGObjProcessAlloc.s` | `0x0013F3E8` | byte-exact |
+| `isysGObjProcPause.s` | `0x0013F808` | byte-exact |
+| `isysGObjProcRemove.s` | `0x0013F6B8` | byte-exact |
+| `isysGObjProcRemoveAll.s` | `0x0013F8C0` | byte-exact |
+| `isysGObjProcThreadSleep.s` | `0x0013F8F8` | byte-exact |
+| `isysGObjRemove.s` | `0x0013E548` | byte-exact |
 | `isysGObjRemoveAll.s` | `0x0013DEA0` | byte-exact |
-| `_iosOmMain.s` | `0x0013F9D0` | byte-exact |
 
 ### Conservative read of the milestone
 

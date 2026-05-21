@@ -185,8 +185,9 @@ history.
 
 - The narrative history is not a complete ledger of every tool run or failed
   hypothesis.
-- The rev099 note contains a partial addendum; it is useful, but it is not a
-  machine-generated inventory of every promoted file in the tree.
+- The rev099 note now mirrors the current `src/core/asm/` byte-exact set in
+  its size map and addendum, but it is still a research note rather than a
+  machine-generated inventory of every promoted file ever considered.
 - The current index is intentionally conservative and avoids turning semantic
   guesses into final claims.
 
@@ -216,4 +217,3 @@ Current validated state:
   and open gaps;
 - the evidence chain is reproducible with local tools and the user-owned ELF
   copy.
-
