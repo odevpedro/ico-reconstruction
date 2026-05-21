@@ -1,0 +1,42 @@
+	.text
+	.p2align 3
+	.globl	isysGObjMoveBeforeGObj
+	.ent	isysGObjMoveBeforeGObj
+isysGObjMoveBeforeGObj:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x30
+	sd	$17,0x10($29)
+	move	$17,$4
+	sd	$16,0($29)
+	sd	$31,0x20($29)
+	jal	0x0013ddf8
+	move	$16,$5
+	lbu	$2,0x18($16)
+	sb	$2,0x18($17)
+	lw	$3,0x14($16)
+	sw	$16,0x10($17)
+	sw	$3,0x14($17)
+	sw	$17,0x14($16)
+	lw	$2,0x1c($16)
+	lw	$3,0x14($17)
+	bnez	$3,loc_0013e8c4
+	sw	$2,0x1c($17)
+	lbu	$3,0x18($17)
+	lui	$2,0x28
+	addiu	$2,$2,0x1a70
+	sll	$3,$3,2
+	addu	$3,$3,$2
+	sw	$17,0($3)
+loc_0013e8c4:
+	ld	$31,0x20($29)
+	ld	$17,0x10($29)
+	ld	$16,0($29)
+	jr	$31
+	addiu	$29,$29,0x30
+	.set	macro
+	.set	reorder
+	.end	isysGObjMoveBeforeGObj
