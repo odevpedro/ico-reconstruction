@@ -6,7 +6,10 @@ The script streams a JSONL or JSONL.GZ probe log and groups events by
 second caller, which makes the next runtime capture easier to analyze without
 re-running ad hoc scripts. It does not require valid JSON parsing; regex
 extraction is intentional because very large PCSX2 logs may end with a partial
-line.
+line. Optional tail analysis can summarize the recent log window by lines or
+approximate megabytes without changing the default full-log report. The recent
+window report includes labels, PCs, return addresses, `a0`, cell writes, and
+`world_state_raw` when present.
 """
 
 from __future__ import annotations
@@ -20,7 +23,9 @@ from typing import BinaryIO
 
 
 LABEL_RE = re.compile(rb'"label":"([^"]+)"')
+PC_RE = re.compile(rb'"pc":"(0x[0-9a-fA-F]+)"')
 CYCLE_RE = re.compile(rb'"cycle":([0-9]+)')
+REGS_A0_RE = re.compile(rb'"regs":\{[^\n]*?"a0":"(0x[0-9a-fA-F]+)"')
 INFO_A0_RE = re.compile(rb'"info":\{[^\n]*?"a0":"(0x[0-9a-fA-F]+)"')
 COUNTER_RE = re.compile(rb'"counter":"(0x[0-9a-fA-F]+)"')
 ROW_RE = re.compile(rb'"a2_row":"(0x[0-9a-fA-F]+)"')
@@ -57,6 +62,16 @@ def _text(match: re.Match[bytes] | None, default: str = "<missing>") -> str:
     if not match:
         return default
     return match.group(1).decode()
+
+
+def _recent_a0(line: bytes) -> str | None:
+    value = _text(REGS_A0_RE.search(line), "")
+    if value:
+        return value
+    value = _text(INFO_A0_RE.search(line), "")
+    if value:
+        return value
+    return None
 
 
 def probable_callsite_from_ra(ra: int | None) -> int | None:
@@ -107,10 +122,27 @@ def _catalog_snapshot(entries: list[dict[str, object]]) -> str:
     )
 
 
+def _format_top(title: str, counter: collections.Counter, limit: int) -> None:
+    print(f"\n{title}")
+    for key, value in counter.most_common(limit):
+        print(f"{value:>10}  {key}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("log", type=Path)
     parser.add_argument("--top", type=int, default=20)
+    recent_group = parser.add_mutually_exclusive_group()
+    recent_group.add_argument(
+        "--recent-lines",
+        type=int,
+        help="summarize only the last N log lines after the full report",
+    )
+    recent_group.add_argument(
+        "--recent-mb",
+        type=float,
+        help="summarize only the recent tail covering approximately N MiB of raw log lines",
+    )
     args = parser.parse_args()
 
     labels = collections.Counter()
@@ -128,6 +160,22 @@ def main() -> int:
     a0_with_writes = collections.Counter()
     a0_write_events = collections.Counter()
     worlds = collections.Counter()
+    recent_mode = None
+    recent_buffer: collections.deque[bytes] | None = None
+    recent_bytes_budget = 0
+    recent_total_bytes = 0
+
+    if args.recent_lines is not None:
+        if args.recent_lines <= 0:
+            parser.error("--recent-lines must be greater than zero")
+        recent_mode = "lines"
+        recent_buffer = collections.deque(maxlen=args.recent_lines)
+    elif args.recent_mb is not None:
+        if args.recent_mb <= 0:
+            parser.error("--recent-mb must be greater than zero")
+        recent_mode = "bytes"
+        recent_bytes_budget = max(1, int(args.recent_mb * 1024 * 1024))
+        recent_buffer = collections.deque()
 
     current: dict | None = None
     invocations = 0
@@ -161,6 +209,14 @@ def main() -> int:
 
     with _open(args.log) as f:
         for line in f:
+            if recent_buffer is not None:
+                recent_buffer.append(line)
+                if recent_mode == "bytes":
+                    recent_total_bytes += len(line)
+                    while recent_total_bytes > recent_bytes_budget and len(recent_buffer) > 1:
+                        removed = recent_buffer.popleft()
+                        recent_total_bytes -= len(removed)
+
             label_match = LABEL_RE.search(line)
             if not label_match:
                 continue
@@ -246,6 +302,69 @@ def main() -> int:
             f"address={fmt_addr(int(entry['address']))} hits={entry['hits']} "
             f"next={entry['next_probe']}"
         )
+
+    if recent_buffer is not None:
+        recent_labels = collections.Counter()
+        recent_pcs = collections.Counter()
+        recent_ras = collections.Counter()
+        recent_a0 = collections.Counter()
+        recent_write_labels = collections.Counter()
+        recent_cells = collections.Counter()
+        recent_worlds = collections.Counter()
+        recent_total_lines = 0
+
+        for line in recent_buffer:
+            recent_total_lines += 1
+            label_match = LABEL_RE.search(line)
+            if not label_match:
+                continue
+            label = label_match.group(1).decode()
+            recent_labels[label] += 1
+
+            pc = _text(PC_RE.search(line), "")
+            if pc:
+                recent_pcs[pc] += 1
+
+            ra = _text(RA_RE.search(line), "")
+            if ra:
+                recent_ras[ra] += 1
+
+            a0 = _recent_a0(line)
+            if a0:
+                recent_a0[a0] += 1
+
+            if label in ("halfword_write_A", "halfword_write_B"):
+                recent_write_labels[label] += 1
+                row = _hex(ROW_RE.search(line))
+                col = _hex(COL_RE.search(line))
+                if row is not None and col is not None:
+                    recent_cells[(row, col)] += 1
+
+            world = _text(WORLD_RE.search(line), "")
+            if world:
+                recent_worlds[world] += 1
+
+        print("\nrecent_tail")
+        if recent_mode == "lines":
+            print(
+                f"window: last {args.recent_lines} lines "
+                f"(retained={recent_total_lines})"
+            )
+        else:
+            print(
+                "window: recent approx "
+                f"{args.recent_mb:g} MiB "
+                f"(retained_lines={recent_total_lines}, retained_bytes={recent_total_bytes})"
+            )
+        print("a0_source: regs.a0 -> info.a0 fallback")
+        _format_top("recent_labels", recent_labels, args.top)
+        _format_top("recent_pcs", recent_pcs, args.top)
+        _format_top("recent_return_addresses", recent_ras, args.top)
+        _format_top("recent_a0", recent_a0, args.top)
+        _format_top("recent_write_labels", recent_write_labels, args.top)
+        _format_top("recent_cells", recent_cells, args.top)
+        _format_top("recent_world_state_raw", recent_worlds, args.top)
+
     return 0
 
 

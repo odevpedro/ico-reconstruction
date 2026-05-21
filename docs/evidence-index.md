@@ -68,6 +68,7 @@ attempt, or private note ever produced during the project.
 
 - `tools/asm_source_score.py`
 - `tools/score_all.py`
+- `tools/analyze_halfword_log.py` with optional recent-tail summaries via `--recent-lines` / `--recent-mb`
 - Ghidra headless analysis scripts
 - Rabbitizer / spimdisasm cross-checks
 - PCSX2 runtime breakpoint sessions
