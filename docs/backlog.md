@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 140 |
+| Completed | 141 |
 | In Progress | 1 |
 | Pending | 4 |
 
@@ -96,7 +96,17 @@
 - 5 níveis de matching: raw_sha1 (exato), op_seq_hash (estrutural), norm_sha1 (normalizado), same_va (mesmo endereço), fuzzy (re-rankeado por op_seq_hash + tamanho)
 - **Resultado**: 3781 verified (+95 same_va), 1766 candidates, 134 unmatched — **140 símbolos a mais resolvidos** vs pipeline anterior
 - Correções implementadas: op_hash vs op_seq_hash (era duplicata), fallback same-VA para símbolos de kernel, re-ranking fuzzy com prioridade estrutural, suporte a .symtab (quando disponível)
-- Pendente: gerar splat YAML nomeado; alimentar Ghidra com símbolos validados
+- Splat YAML gerado: `splat/SCUS_971.13.verified-symbols.yaml` (2886 símbolos)
+
+### [x] [SQUAD-EXTERNAL | ghidra-symbol-import | 2026-05-21]
+**Importação de 2886 símbolos validados no Ghidra via headless**
+
+- Script Java `ApplySymbols.java` aplicou todos os labels do `docs/symbols/ghidra_labels.txt`
+- Executado via `analyzeHeadless` com Ghidra 12.0.4_PUBLIC + JDK 17
+- **Resultado**: 2886 símbolos aplicados, 0 erros
+- Projeto em `/tmp/ghidra_ico/ICO_Analysis`
+- Agora funções como `FUN_001d37c8` → `cloth_dispatcher` têm nomes reais
+- Próximo passo: exploração headless do live dispatch e sistemas nomeados
 
 ### [x] [SQUAD-RUNTIME | rev.096 | 2026-05-19]
 **Halfword runtime session analysis: offline review of Rev.095 capture**

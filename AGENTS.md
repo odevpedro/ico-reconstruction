@@ -78,6 +78,7 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
+research/ghidra-exploration-2026-05-21.md  (2886 symbol import reveals real names: _Clip, execBombGeo, ItemGeo, _clipW*)
 research/elf/ghidra-rev096-halfword-runtime-session-analysis.md  (offline Rev.095 review: main caller still dominates, second caller absent in this capture, fast path still inferred)
 research/elf/ghidra-rev094-halfword-runtime-second-caller.md  (second halfword caller runtime-confirmed, fast path still needs direct probe)
 research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md  (halfword writer active in hot dispatch path)
@@ -108,27 +109,28 @@ Before doing new analysis, read these files in this order if they exist:
 2. `.local/key-concepts.md`
 3. `.local/ai-context.md`
 4. `key-concepts.md`
-5. `research/elf/ghidra-rev096-halfword-runtime-session-analysis.md`
-6. `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`
-7. `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md`
-8. `research/elf/ghidra-rev093-three-investigations.md`
-9. `research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md`
-10. `research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md`
-11. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
-12. `research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md`
-13. `research/elf/ghidra-rev087-enemy1-boy-decompilation.md`
-14. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
-15. `research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`
-16. `research/elf/ghidra-rev084-runtime-validation-extended-session.md`
-17. `research/elf/ghidra-rev077-final-static-analysis.md`
-18. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
-19. `research/elf/ghidra-rev039-cloth-domain-correction.md`
-20. `research/ico-decomp-cross-reference-2026-05-14.md`
-21. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
-22. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
-23. `research/external/sotc-tooling-relevance-survey.md`
-24. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
-25. `research/external/ico-splat-promoted-ranges-experiment.md`
+5. `research/ghidra-exploration-2026-05-21.md`
+6. `research/elf/ghidra-rev096-halfword-runtime-session-analysis.md`
+7. `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`
+8. `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md`
+9. `research/elf/ghidra-rev093-three-investigations.md`
+10. `research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md`
+11. `research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md`
+12. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
+13. `research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md`
+14. `research/elf/ghidra-rev087-enemy1-boy-decompilation.md`
+15. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
+16. `research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`
+17. `research/elf/ghidra-rev084-runtime-validation-extended-session.md`
+18. `research/elf/ghidra-rev077-final-static-analysis.md`
+19. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
+20. `research/elf/ghidra-rev039-cloth-domain-correction.md`
+21. `research/ico-decomp-cross-reference-2026-05-14.md`
+22. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
+23. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
+24. `research/external/sotc-tooling-relevance-survey.md`
+25. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
+26. `research/external/ico-splat-promoted-ranges-experiment.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -139,9 +141,9 @@ analysis unless a later validated note supersedes it.
 
 ## Current strategic status
 
-### Confirmed dispatcher model (Rev.022-024)
+### Verified `execBombGeo` state model (Rev.022-024)
 
-The dispatcher at `0x001d37c8` is confirmed with jump table at `0x00618fb0` (5 entries):
+The function `execBombGeo` at `0x001d37c8` has a jump table at `0x00618fb0` (5 entries):
 
 ```txt
 entity/context
@@ -157,11 +159,11 @@ entity/context
 
 ### Runtime confirmation (Rev.025)
 
-The only static caller of the dispatcher, `0x001d3a30`, was confirmed at runtime via PCSX2 breakpoint (Rev.024 session). It reaches the dispatcher during gameplay/load.
+The only static caller of `execBombGeo`, `ItemGeo` at `0x001d3a30`, was confirmed at runtime via PCSX2 breakpoint (Rev.024 session). Both are geometry functions.
 
-### ROPE callback registration gap (Rev.033-037)
+### ItemGeo gap (Rev.033-037)
 
-Static analysis of all 5 callsites of `0x0013f7a8` (callback registration) is complete. Three paths are definitively excluded for ROPE callback `0x001d3a30`. Two paths remain candidates but require runtime validation. **Static options are exhausted.**
+Static analysis of all 5 callsites of `0x0013f7a8` is complete. Three paths are definitively excluded for `ItemGeo` at `0x001d3a30`. Two paths remain candidates but require runtime validation. **Static options are exhausted.**
 
 ### External tooling results (Rev.038)
 
@@ -278,6 +280,42 @@ Rabbitizer may render jump targets with a high `func_80...` prefix depending on
 formatting; convert those back to the local project VA convention before
 recording conclusions.
 
+### 2026-05-21 correction — Ghidra symbol import reveals real function names
+
+The 2886 PAL→USA reconciled symbols were loaded into Ghidra headless and
+revealed the actual function names for key addresses. Several speculative
+project names are incorrect:
+
+| Address | Speculative name | Real symbol name |
+|---------|-----------------|------------------|
+| `0x00166E10` | "main_dispatcher" | `_Clip` |
+| `0x00166BB0` | "halfword writer entry" | (inline in `_Clip`) |
+| `0x00166DFC` | "halfword fast path" | (inline in `_Clip`) |
+| `0x00167020` | "dispatch_point" | (inline in `FUN_00166FD0`) |
+| `0x001D37C8` | "cloth_dispatcher" | `execBombGeo` |
+| `0x001D3A30` | "cb_routine2" | `ItemGeo` |
+| `0x0013F7A8` | "callback_register" | `FUN_0013f7a8` |
+| `0x0013ED40` | "mask_set" | `FUN_0013ed40` |
+| `0x00168DA8` | "slot 0 callback" | `_clipWDebug` |
+| `0x00168ED0` | "slot 3 callback" | `_clipW` |
+| `0x001692F0` | "slot 7 callback" | `_clipWR` |
+| `0x00169440` | "slot 15 callback" | `_clipWField` |
+
+**What this means:**
+- The "main_dispatcher" / "live dispatch" system at `0x00166E10` is actually
+  `_Clip` — a collision/clipping function, not a general entity dispatcher.
+- The 17-slot dispatch table at `0x282690` contains `_clipW*` functions
+  (clipping variants: debug, wall, wall-ref, wall-field). The table has a
+  repeating 16-byte structure with valid callback addresses at offsets
+  +0x0C, +0x1C, +0x2C, +0x3C; slots 0,4,8,12,16 contain flag values
+  (`0x00000001`), slots 1-2,5-6,9-10,13-14 are `0x00000000`.
+- `execBombGeo` at `0x001D37C8` is a geometry function with a 5-state jump
+  table — likely cloth physics for bomb/explosion geometry, consistent with
+  the earlier cloth-domain identification.
+- `ItemGeo` at `0x001D3A30` is a geometry function for items.
+- Halfword probe targets (`0x166BB0`, `0x166DFC`, `0x167020`) are inline blocks
+  within larger functions, not separate function entries.
+
 ---
 
 ## Current confirmed dispatcher model
@@ -327,7 +365,7 @@ All 38 functions are now at **100% byte-exact match**.
 | Status | Count | Functions |
 |--------|-------|-----------|
 | EXACT (100%) via C | 12 | enemy1_hA, fn_1CE5F8, boy_hB, boy_set_state, barrel_hA, barrel_hA_alt, cloth_get_variant, cloth_payload_field0_is_zero, cloth_payload_state_is_two, cloth_test_state_lt_2, cloth_test_variant_field, cloth_test_field0_or_extra |
-| EXACT (100%) via .s assembly | 26 | enemy1_init, enemy1_hC, enemy1_hB, boy_init, boy_hC, sub_1C1C48, sub_1C1EA8, boy_hA, boy_float_accum, boy_activate, barrel_init, fn_1D2550, sub_1D2650, sub_1D2738, barrel_hC, rope_hC, cb_routine2, fn_1D3BF0, fn_1D3DD8, woodbox0_hC, woodbox0_hB, woodbox0_hA, bird_hC, attackch62_hC, cloth_dispatcher, clothSubForceApply |
+| EXACT (100%) via .s assembly | 26 | enemy1_init, enemy1_hC, enemy1_hB, boy_init, boy_hC, sub_1C1C48, sub_1C1EA8, boy_hA, boy_float_accum, boy_activate, barrel_init, fn_1D2550, sub_1D2650, sub_1D2738, barrel_hC, rope_hC, ItemGeo, fn_1D3BF0, fn_1D3DD8, woodbox0_hC, woodbox0_hB, woodbox0_hA, bird_hC, attackch62_hC, execBombGeo, clothSubForceApply |
 
 ### Scoring pipeline (Path B — assembly)
 
@@ -360,11 +398,11 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 ### Confirmed results (Rev.074-077)
 
 - **Descriptor table** at 0x2A31B8: 68 entity types fully mapped (BOY, GIRL, ENEMY1, BARREL, ROPE, QUEEN, BIRD, etc.). Three vtable groups: main characters (0x202A60), physics props (0x23D660), entity-specific. Only 12/68 have init_fn.
-- **ROPE gap RESOLVED**: 0x1D3A30 is BARREL's cb_routine2 (physics constraint solver), registered via descriptor table +0x50, not callback_register.
+- **ROPE gap RESOLVED**: 0x1D3A30 is `ItemGeo`, registered via descriptor table +0x50, not callback_register.
 - **8-step scene loader** in `kanban.c` with GP=0x27A7A8 (separate compilation unit).
 - **Two independent entity systems**: callback_register (52 scene objects via 28 init_fn) and live dispatch (8 core entities, 20 ctx/frame).
 - **28 init_fn classified** into 6 groups: Generic (60%), HUD/status lights (15%), UI/menu (9%), cloth/physics aux (5%), env effect sub-dispatcher (3%), special one-shots (0.4%)
-- **17-slot dispatch table** at 0x282690 fully mapped with 14 callback targets in 3 tiers. **Confirmed compile-time .data** — no runtime populator (Rev.093).
+- **17-slot dispatch table** at 0x282690 fully mapped with 14 _clip callback targets in 16-byte entries. Repeating structure: [flag 4B] [mode 4B] [tier 4B] [callback_ptr 4B]. 12 wall clip (_clipW*) variants active, 5 floor clip (_clipF*) variants inactive (flag=0). Callbacks include: `_clipWDebug`, `_clipW`, `_clipWR`, `_clipWField`, `_clipWE`, `_clipWEField`, `_clipWWaveForce`, `_clipWDitchHangWalkStop`, `_clipWBoxStop`, `_clipF`, `_clipFE`, `_clipFR`, `_clipFIH`. No direct code xrefs — accessed via GP-relative. **Confirmed compile-time .data** — no runtime populator (Rev.093).
 - **Mask system uses only bit 0**: mask_set(0x13ED40) = ShockRequestBox_RequestCancel. Loading-only, 6 callers in scene loader. Bit 1-7 permanently zero (Rev.093).
 - **404-byte table** at 0x005F2F98 = room/stage config.
 - **Halfword table** at 0x006AB080 = 32×32 spatial hash grid rebuilt in the hot dispatch path. Rev.093b confirmed `0x00166BB0` is active before callback dispatch; Rev.094 confirmed the second direct caller at `0x0016828C` is runtime-reachable. The single-cell fast path at `0x00166DFC` is still inferred and needs a direct probe.
@@ -411,6 +449,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 23. Fix dispatch_point slot index capture for next runtime session
 24. Reposition world_state_load probe to capture room init_fn
 25. Deploy memory watchpoint on VBlank counter 0x274EC0
+26. ~~**Load 2886 verified symbols into Ghidra** — splat YAML + headless script applied all labels~~ **DONE (2026-05-21)**
 
 ---
 
@@ -432,7 +471,7 @@ Unless explicitly asked, do not investigate:
 
 These are important, but they are not the current priority.
 
-The current priority is understanding the live dispatch system (0x00166E10 and its 17-slot table).
+The current priority is understanding the `_Clip` clipping/collision system and its 17-slot dispatch table at 0x282690.
 
 A secondary but high-impact front is **External Symbol Reconciliation (PAL→USA)**:
 
@@ -574,7 +613,7 @@ Do not assume zero static callers means high importance.
 The project has completed static analysis of all remaining systems (Rev.086). Next runtime targets (prepared as Rev.086 probes):
 
 ```txt
-breakpoint at 0x00166E10  (main_dispatcher       — slot_index, a0 context)
+breakpoint at 0x00166E10  (_Clip                  — slot_index, a0 context)
 breakpoint at 0x00167020  (dispatch_point         — v1 callback, a0-a2)
 breakpoint at 0x00167230  (cold_path_A            — a0 context, gp slots)
 breakpoint at 0x00167258  (cold_path_B            — a0 context, gp slots)
