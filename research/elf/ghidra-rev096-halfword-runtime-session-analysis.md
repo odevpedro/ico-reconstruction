@@ -398,3 +398,16 @@ than semantic gameplay labels.
 This means the new hot-path buckets are not isolated discoveries. Most of them
 fit into the already documented dispatcher-context family from Rev.079, and the
 freshest tail only adds one still-unnamed member of the same family.
+
+### Latest gameplay stretch
+
+The newest tail slice after the later gameplay progress was even narrower:
+the last `20,000` events were all `halfword_entry`, and all of them stayed on
+`0x00166BB0`. In that fresh window there were no visible hits for
+`halfword_write_A`, `halfword_write_B`, `0x0016828C`, `0x00168294`, or
+`world_state_load`.
+
+That is a useful negative result, not a new semantic claim. The probe is still
+anchored to the same hot entry point even while the player opens new areas of
+the game. The live session is advancing, but this specific capture point has
+not yet moved into the rarer caller paths.
