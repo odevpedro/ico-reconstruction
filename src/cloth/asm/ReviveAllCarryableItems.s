@@ -1,8 +1,8 @@
 	.text
 	.p2align 3
-	.globl	fn_1D3DD8
-	.ent	fn_1D3DD8
-fn_1D3DD8:
+	.globl	ReviveAllCarryableItems
+	.ent	ReviveAllCarryableItems
+ReviveAllCarryableItems:
 	.frame	$sp,0,$31
 	.mask	0x00000000,0
 	.fmask	0x00000000,0
@@ -76,4 +76,4 @@ fn_1D3DD8:
 	.word	0xda620000
 	.set	macro
 	.set	reorder
-	.end	fn_1D3DD8
+	.end	ReviveAllCarryableItems

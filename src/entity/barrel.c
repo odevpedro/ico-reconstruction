@@ -3,7 +3,7 @@
 // (hC differs: BARREL=0x1D27A8, ROPE=0x1D3B28)
 //
 // This is historically significant:
-//   0x1D3A30 = BARREL cb_routine2, originally misidentified as "ROPE callback"
+//   0x1D3A30 = BARREL ItemGeo, originally misidentified as "ROPE callback"
 //   during Rev.001-036. Corrected in Rev.039 via ICO-decomp cross-reference
 //   (clothAnimation.c range). It is a physics constraint solver for
 //   cloth/rope/barrel interactions (src/item.c based on debug string).
@@ -92,7 +92,7 @@ void sub_1683C8(ico_ptr32 ptr);
 // Copied from 0x4C46B0 (0x80 bytes) + 0x4C4730 (0x10 bytes) = 0x90 total
 //
 // Layout (0x90 bytes, mostly zero-initialized):
-//   [0x00] = variant        (dispatcher state index, set by cb_routine2)
+//   [0x00] = variant        (dispatcher state index, set by ItemGeo)
 //   [0x04] = rope_segments  (from entry param_30, default 1)
 //   [0x08] = active_flag    (0=inactive, 1=active)
 //   [0x0C] = hA_active      (set to 1 in hA body)
@@ -174,7 +174,7 @@ void barrel_hA_alt(struct entity_context *entity)
 }
 
 // ============================================================================
-// fn_1D2550 (0x1D2550) — hA body / state block updater
+// HoldItem (0x1D2550) — hA body / state block updater
 //
 // Called with (entity, arg). If entity is NULL, performs debug init.
 // Otherwise:
@@ -187,7 +187,7 @@ void barrel_hA_alt(struct entity_context *entity)
 //   7. Copies transforms to stack and updates state_block + 0x20
 //      (position/rotation data)
 // ============================================================================
-void fn_1D2550(struct entity_context *entity, u32 arg)
+void HoldItem(struct entity_context *entity, u32 arg)
 {
     ico_ptr32 entity_state;
     u32 *state_block;
@@ -227,13 +227,13 @@ void fn_1D2550(struct entity_context *entity, u32 arg)
 }
 
 // ============================================================================
-// sub_1D2650 (0x1D2650) — child update / initializer
+// avoidInsideOfWall (0x1D2650) — child update / initializer
 //
 // If arg is non-zero: updates two sub-transforms and calls sub_1683C8.
 // If the resulting model ID at +0x88 is non-zero, tail-calls sub_104360
 // to finalize the child transform.
 // ============================================================================
-void sub_1D2650(struct entity_context *child, u32 arg)
+void avoidInsideOfWall(struct entity_context *child, u32 arg)
 {
     ico_ptr32 ptr;
 
@@ -259,7 +259,7 @@ void sub_1D2650(struct entity_context *child, u32 arg)
 // sub_1D2738 (0x1D2738) — attach callback helper
 //
 // Marks state_block as attached (sets +0x10 = 1, +0x08 = 1)
-// and calls sub_1D2650 to update child transforms.
+// and calls avoidInsideOfWall to update child transforms.
 // ============================================================================
 void sub_1D2738(struct entity_context *entity, ico_ptr32 child_state)
 {
@@ -269,7 +269,7 @@ void sub_1D2738(struct entity_context *entity, ico_ptr32 child_state)
     entity_state = *(ico_ptr32 *)((u8 *)entity + ENTITY_STATE_OFFSET);
     state_block = (u32 *)(*(ico_ptr32 *)((u8 *)entity_state + STATE_BLOCK_OFFSET));
 
-    sub_1D2650(entity, state_block[5]);   // state_block[0x14]
+    avoidInsideOfWall(entity, state_block[5]);   // state_block[0x14]
 
     state_block[3] = 0;                   // +0x0C: clear active
     state_block[4] = 1;                   // +0x10: attached flag
@@ -438,7 +438,7 @@ update_transform:
 }
 
 // ============================================================================
-// cb_routine2 (0x1D3A30) — BARREL physics constraint solver
+// ItemGeo (0x1D3A30) — BARREL physics constraint solver
 // (Previously misidentified as "ROPE callback")
 //
 // This is the central update function for BARREL's dispatcher.
@@ -453,7 +453,7 @@ update_transform:
 //
 // Called from descriptor +0x50 (hB slot) and from sub_1D2738 path.
 // ============================================================================
-void cb_routine2(struct entity_context *entity)
+void ItemGeo(struct entity_context *entity)
 {
     ico_ptr32 entity_state;
     u32 *state_block;
@@ -706,7 +706,7 @@ u32 fn_1D3DB0(struct entity_context *entity)
 }
 
 // ============================================================================
-// fn_1D3DD8 (0x1D3DD8) — entity iterator / barrier cleanup
+// ReviveAllCarryableItems (0x1D3DD8) — entity iterator / barrier cleanup
 //
 // Iterates all entities of type 0x13 (19 = BARREL). For each entity that
 // has the active flag set (entity+0x16C != 0), is not marked active
@@ -716,7 +716,7 @@ u32 fn_1D3DB0(struct entity_context *entity)
 //   - Sets state_block+0x08 = 1 (mark as processed)
 // Returns 1.
 // ============================================================================
-u32 fn_1D3DD8(void)
+u32 ReviveAllCarryableItems(void)
 {
     struct entity_context *entity;
     ico_ptr32 entity_state;

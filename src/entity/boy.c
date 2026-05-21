@@ -5,9 +5,9 @@
 // BOY is the main playable character (Ico). Rev.077 confirmed addresses:
 //   init_fn   (0x153478) -- full entity init; 59 insns, 352B stack, 7 JALs
 //   hC        (0x1C1A98) -- per-instance constructor via descriptor [+0x58]; 106 insns
-//   sub_1C1C48 (0x1C1C48) -- distance trigger / proximity check (called from hB); 99 insns
+//   synchronizeMotionOutputOriginForGirl (0x1C1C48) -- distance trigger / proximity check (called from hB); 99 insns
 //   hB        (0x1C1DD8) -- per-frame update via descriptor [+0x50]; 50 insns, cloth/walk/phys
-//   sub_1C1EA8 (0x1C1EA8) -- model transform pipeline (called from hA); 43 insns
+//   boy_dispCrown (0x1C1EA8) -- model transform pipeline (called from hA); 43 insns
 //   hA        (0x1C1F58) -- primary update via descriptor [+0x48]; 79 insns, active/idle paths
 //   sub_1C2098 (0x1C2098) -- state setter; 3 insns
 //   sub_1C20A8 (0x1C20A8) -- 100-entry float accumulator with random reset; 51 insns
@@ -75,8 +75,8 @@ u32 sub_103D50(struct entity_context *, u32, float, float, float);
 void sub_13FF88(struct entity_context *, u32, struct entity_context *);
 u32 sub_14A0D8(void);
 void sub_1E4938(struct entity_context *);
-void sub_1C1C48(struct entity_context *);
-void sub_1C1EA8(struct entity_context *);
+void synchronizeMotionOutputOriginForGirl(struct entity_context *);
+void boy_dispCrown(struct entity_context *);
 
 // Distance trigger helpers
 void sub_1184B8(ico_ptr32, ico_ptr32, ico_ptr32);
@@ -279,7 +279,7 @@ ico_ptr32 boy_hC(struct entity_context *entity, ico_ptr32 initializer)
 }
 
 // ============================================================================
-// sub_1C1C48 (0x1C1C48) -- distance trigger / proximity interaction
+// synchronizeMotionOutputOriginForGirl (0x1C1C48) -- distance trigger / proximity interaction
 //
 // Called from hB. Checks proximity to another entity (Ico player reference).
 // Uses XOR mask matching against a 6-entry table at 0x4D4150.
@@ -291,7 +291,7 @@ ico_ptr32 boy_hC(struct entity_context *entity, ico_ptr32 initializer)
 // 5. On proximity: sound (0x1118B8), config (0x111FA8),
 //    matrix setup (0x118678/0x1052A8), render setup (0x11E220 x2), finalize
 // ============================================================================
-void sub_1C1C48(struct entity_context *entity)
+void synchronizeMotionOutputOriginForGirl(struct entity_context *entity)
 {
     ico_ptr32 target;
     ico_ptr32 t_scene, e_scene;
@@ -373,7 +373,7 @@ void sub_1C1C48(struct entity_context *entity)
 // ============================================================================
 // hB (0x1C1DD8) -- per-frame update (physics + cloth + animation state)
 //
-// Called via descriptor[+0x50] (cb_routine2).
+// Called via descriptor[+0x50] (ItemGeo).
 //
 // Structure:
 //   1. cloth physics hook (0x1D23E0)
@@ -399,7 +399,7 @@ void boy_hB(struct entity_context *entity)
     damping = *(float *)(GP_BASE - 0x771C);
     sub_1E3FC8(entity);
 
-    sub_1C1C48(entity);
+    synchronizeMotionOutputOriginForGirl(entity);
     sub_1C12F0(entity);
     sub_1E4868(entity);
 
@@ -421,7 +421,7 @@ void boy_hB(struct entity_context *entity)
 }
 
 // ============================================================================
-// sub_1C1EA8 (0x1C1EA8) -- model transform pipeline
+// boy_dispCrown (0x1C1EA8) -- model transform pipeline
 //
 // Called from hA idle path.
 //
@@ -434,7 +434,7 @@ void boy_hB(struct entity_context *entity)
 // 4. Matrix B: alloc temp buffer, apply child model transform
 // 5. Tail-call world-matrix finalizer at 0x121D90(bone_hierarchy, scene_obj)
 // ============================================================================
-void sub_1C1EA8(struct entity_context *entity)
+void boy_dispCrown(struct entity_context *entity)
 {
     ico_ptr32 scene_obj;
     struct boy_work *wk;
@@ -486,7 +486,7 @@ void sub_1C1EA8(struct entity_context *entity)
 // Path B — idle (wk->active == 0):
 //   1. sub_10ECD8 (NOP stub)
 //   2. sub_10ECB8 (idle stub)
-//   3. Model transform pipeline (sub_1C1EA8)
+    //   3. Model transform pipeline (boy_dispCrown)
 //   4. Physics step (sub_1C1250)
 //
 // Both paths converge:
@@ -531,7 +531,7 @@ void boy_hA(struct entity_context *entity)
         // Path B: idle — transform-only
         sub_10ECD8();
         sub_10ECB8(entity);
-        sub_1C1EA8(entity);
+        boy_dispCrown(entity);
         sub_1C1250(entity);
     }
 

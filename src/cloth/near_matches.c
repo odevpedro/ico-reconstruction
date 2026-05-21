@@ -67,7 +67,7 @@ int cloth_test_field0_or_extra(struct cloth_context *ctx) {
 }
 
 /* =================================================================
- * 0x001D37C8 — cloth_dispatcher (NEAR-STRUCTURAL)
+ * 0x001D37C8 — execBombGeo (NEAR-STRUCTURAL)
  *
  * 5-state cloth simulation FSM. State ID at [payload+0x48].
  * Jump table at 0x00618FB0 selects internal handler.
@@ -101,7 +101,7 @@ void sub_10D830(ico_ptr32, ico_ptr32);
 u32 sub_12A7F8(ico_ptr32);
 u32 sub_118A68(void);
 
-void cloth_dispatcher(struct entity_context *ctx)
+void execBombGeo(struct entity_context *ctx)
 {
     ico_ptr32 entity_state = *(ico_ptr32 *)((u8 *)ctx + 0x15C);
     ico_ptr32 payload = *(ico_ptr32 *)((u8 *)entity_state + 0x800);

@@ -1,8 +1,8 @@
 	.text
 	.p2align 3
-	.globl	sub_1D2650
-	.ent	sub_1D2650
-sub_1D2650:
+	.globl	avoidInsideOfWall
+	.ent	avoidInsideOfWall
+avoidInsideOfWall:
 	.frame	$sp,0,$31
 	.mask	0x00000000,0
 	.fmask	0x00000000,0
@@ -70,4 +70,4 @@ sub_1D2650:
 	addiu	$29,$29,0x30
 	.set	macro
 	.set	reorder
-	.end	sub_1D2650
+	.end	avoidInsideOfWall

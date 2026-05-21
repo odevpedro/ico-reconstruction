@@ -1,8 +1,8 @@
 	.text
 	.p2align 3
-	.globl	sub_1C1C48
-	.ent	sub_1C1C48
-sub_1C1C48:
+	.globl	synchronizeMotionOutputOriginForGirl
+	.ent	synchronizeMotionOutputOriginForGirl
+synchronizeMotionOutputOriginForGirl:
 	.frame	$sp,0,$31
 	.mask	0x00000000,0
 	.fmask	0x00000000,0
@@ -113,4 +113,4 @@ sub_1C1C48:
 	addiu	$29,$29,0x60
 	.set	macro
 	.set	reorder
-	.end	sub_1C1C48
+	.end	synchronizeMotionOutputOriginForGirl

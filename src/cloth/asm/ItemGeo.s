@@ -1,8 +1,8 @@
 	.text
 	.p2align 3
-	.globl	cb_routine2
-	.ent	cb_routine2
-cb_routine2:
+	.globl	ItemGeo
+	.ent	ItemGeo
+ItemGeo:
 	.frame	$sp,0,$31
 	.mask	0x00000000,0
 	.fmask	0x00000000,0
@@ -69,4 +69,4 @@ cb_routine2:
 	ld	$31,0x40($29)
 	.set	macro
 	.set	reorder
-	.end	cb_routine2
+	.end	ItemGeo

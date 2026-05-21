@@ -1,8 +1,8 @@
 	.text
 	.p2align 3
-	.globl	fn_1D2550
-	.ent	fn_1D2550
-fn_1D2550:
+	.globl	HoldItem
+	.ent	HoldItem
+HoldItem:
 	.frame	$sp,0,$31
 	.mask	0x00000000,0
 	.fmask	0x00000000,0
@@ -70,4 +70,4 @@ fn_1D2550:
 	ld	$31,0x60($29)
 	.set	macro
 	.set	reorder
-	.end	fn_1D2550
+	.end	HoldItem

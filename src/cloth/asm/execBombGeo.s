@@ -1,8 +1,8 @@
 	.text
 	.p2align 3
-	.globl	cloth_dispatcher
-	.ent	cloth_dispatcher
-cloth_dispatcher:
+	.globl	execBombGeo
+	.ent	execBombGeo
+execBombGeo:
 	.frame	$sp,0,$31
 	.mask	0x00000000,0
 	.fmask	0x00000000,0
@@ -35,4 +35,4 @@ cloth_dispatcher:
 	addiu	$16,$0,1
 	.set	macro
 	.set	reorder
-	.end	cloth_dispatcher
+	.end	execBombGeo

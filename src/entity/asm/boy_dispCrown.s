@@ -1,8 +1,8 @@
 	.text
 	.p2align 3
-	.globl	sub_1C1EA8
-	.ent	sub_1C1EA8
-sub_1C1EA8:
+	.globl	boy_dispCrown
+	.ent	boy_dispCrown
+boy_dispCrown:
 	.frame	$sp,0,$31
 	.mask	0x00000000,0
 	.fmask	0x00000000,0
@@ -56,4 +56,4 @@ sub_1C1EA8:
 	nop	
 	.set	macro
 	.set	reorder
-	.end	sub_1C1EA8
+	.end	boy_dispCrown

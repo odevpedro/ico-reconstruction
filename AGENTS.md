@@ -280,7 +280,78 @@ Rabbitizer may render jump targets with a high `func_80...` prefix depending on
 formatting; convert those back to the local project VA convention before
 recording conclusions.
 
-### 2026-05-21 correction — Ghidra symbol import reveals real function names
+### 2026-05-21 correction — Ghidra deep exploration: isysGObj*, _Clip collision system, main loop
+
+The Ghidra headless exploration (5 Java scripts) revealed the true architecture of several previously misunderstood systems.
+
+**Correction: `_Clip` is NOT the main entity dispatcher**
+
+The `_Clip` function at `0x00166E10` is a collision/clipping function. It has only 2 static callers, both from `DispCollisionPC` at `0x00166A10`. The 17-slot dispatch table at `0x282690` is the clipping configuration table, not a general entity dispatcher. The runtime slot distribution (15 active slots in PCSX2 capture) does NOT correspond to `_Clip`'s active callbacks (only 4 active: slots 0/4/8/12 with real callbacks).
+
+**The actual entity dispatcher: `isysGObj*` system (30 functions)**
+
+The `isysGObj*` / `iosOm*` family at `0x0013DDA0-0x00141D18` is the true game object processing system:
+
+| Function | Address | Role |
+|----------|---------|------|
+| `isysGObjProcAdd_` | `0x0013F3F0` | Callback registration (488 bytes) |
+| `iosOmExeEachGObj` | `0x0013FD10` | Object traversal dispatcher |
+| `isysGObjInit` | `0x0013DDA0` | Init system |
+| `isysGObjAlloc` | `0x0013E4D0` | Object allocation |
+| `isysGObjRemove` | `0x0013E548` | Object removal |
+| `iosOmCreateDL` | `0x0013FC00` | DL/slot creation |
+
+The earlier "main_dispatcher" / "callback_register" / "mask_set" nomenclature should be understood as parts of this `isysGObj*` system, not standalone entity dispatch.
+
+**Correction: execBombGeo 5-state jump table targets confirmed**
+
+The jump table at `0x00618FB0` contains these 5 targets:
+- `0x001D3818` (state_0)
+- `0x001D3844` (state_1)
+- `0x001D391C` (state_2)
+- `0x001D39E0` (state_3)
+- `0x001D3A10` (state_4)
+
+**GirlBrain state machine discovered**
+
+30+ named Girl AI functions at `0x00191B70-0x0019C040`, including: `eBrainSystemInit`, `eBrainGetStatus`, `eBrainSetFlag`, `eBrainMovePos`, `eBrainMotionSe`, `eBrainPursuit`, `eBrainAvoid`, `eBrainReturnInit`, `eBrainTargetGenerator` variants, `eBrainEntryStart`, `eBrainEntryFront` etc.
+
+**Main loop call graph confirmed**
+
+The main loop chain: `vblankHandler` (0x1BDE48) → `ACTGame` (0x1A63E0) → `backStageProcessMain` (0x1A05D0) / `stage_ApplyData` (0x1A2A1D8) / `scene loader` (0x1B76F8-0x1B81A8) / `kanbanExec` (0x1B05A8)
+
+Scene loader confirmed in `kanban.c` with GP=0x27A7A8 containing functions: `kanbanReqAdd`, `kanbanInit`, `kanbanReqAllDel`, `kanbanExec`, `la_load_processing`, `la_switching_stage`, `initSceneGObj`, `HotInitSceneObjects`, `MoveNextStage_Clear`.
+
+**Runtime slot distribution does NOT match _Clip dispatch**
+
+The PCSX2-measured 15-slot distribution (42.2M events) cannot correspond to the `_Clip` dispatch table which has only 4 active callback entries (slots 0, 4, 8, 12 with `_clipW*` functions; slots 1-3, 5-7, 9-11, 13-15 have no callback). The runtime slot data likely belongs to the `isysGObj*` processing system (via `iosOmCreateDL` / `iosOmExeEachGObj`), not the collision pipeline.
+
+**C source file origin from Ghidra symbols**
+
+Ghidra strings reveal real source file paths:
+- `src/sugipon/item.c` — BARREL/ROPE physics (hC assertions at line 434)
+- `src/sugipon/fieldCollision.c` — init_fn assertions (line 533)
+- `src/sugipon/kanban.c` — scene loader (GP=0x27A7A8)
+- `src/omori/boy.c` — BOY handler
+- `src/omori/enemy1.c` — ENEMY1 handler
+- `src/fumi/` — core engine (vblank, IO, CDVD)
+- `src/seki/` — rendering pipeline
+
+**.s assembly files renamed to match real symbols**
+
+- `cb_routine2.s` → `ItemGeo.s`
+- `cloth_dispatcher.s` → `execBombGeo.s`
+- `fn_1D3DD8.s` → `ReviveAllCarryableItems.s`
+- `fn_1D2550.s` → `HoldItem.s`
+- `sub_1D2650.s` → `avoidInsideOfWall.s`
+- `sub_1C1C48.s` → `synchronizeMotionOutputOriginForGirl.s`
+- `sub_1C1EA8.s` → `boy_dispCrown.s`
+
+C source declarations and comments updated to match. Research notes for the 5 Ghidra exploration passes written (ghidra-exploration, deep-exploration, dispatch-table, final-exploration, full-system).
+
+---
+
+### 2026-05-21 correction — Ghidra symbol import reveals real function names (original)
 
 The 2886 PAL→USA reconciled symbols were loaded into Ghidra headless and
 revealed the actual function names for key addresses. Several speculative
@@ -471,7 +542,16 @@ Unless explicitly asked, do not investigate:
 
 These are important, but they are not the current priority.
 
-The current priority is understanding the `_Clip` clipping/collision system and its 17-slot dispatch table at 0x282690.
+The confirmed architecture is now understood:
+
+1. **`_Clip` (0x166E10)**: clipping/collision function within `DispCollisionPC`. Its 17-slot dispatch table (0x282690) is compile-time `.data` with only 4 active `_clipW*` callbacks.
+2. **`isysGObj*` (0x13DDA0-0x141D18)**: the true game object processing system (30 functions). Callback registration, object traversal, allocation, and removal are all managed here.
+3. **`execBombGeo` (0x1D37C8)**: geometry function with 5-state cloth physics jump table at 0x618FB0.
+4. **GirlBrain** (0x191B70-0x19C040): 30+ named Girl AI functions for navigation, pursuit, and scene management.
+5. **Main loop**: `vblankHandler` → `ACTGame` → `backStageProcessMain` / `stage_ApplyData` / `kanbanExec`.
+6. **Scene loader** in `kanban.c` (GP=0x27A7A8): 8 confirmed functions including `initSceneGObj`, `HotInitSceneObjects`, `la_load_processing`.
+
+The runtime slot distribution from PCSX2 (15 active slots, 42.2M events) likely belongs to the `isysGObj*` processing system, not the `_Clip` collision pipeline.
 
 A secondary but high-impact front is **External Symbol Reconciliation (PAL→USA)**:
 
