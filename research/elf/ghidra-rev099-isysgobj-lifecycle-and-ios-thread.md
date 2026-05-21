@@ -652,6 +652,11 @@ After the analysis note was written, the core reconstruction work closed a few o
 | `isysGObjMoveCameraDL.s` | `0x001FC168` | byte-exact |
 | `isysGObjLinkCameraDL.s` | `0x001FC1A0` | byte-exact |
 | `isysGObjMoveCameraDLHead.s` | `0x001FC2E0` | byte-exact |
+| `isysGObjAdd.s` | `0x0013E8D8` | byte-exact |
+| `isysGObjAddAfterGObj.s` | `0x0013E220` | byte-exact |
+| `isysGObjAddBeforeGObj.s` | `0x0013E350` | byte-exact |
+| `isysGObjRemoveAll.s` | `0x0013DEA0` | byte-exact |
+| `_iosOmMain.s` | `0x0013F9D0` | byte-exact |
 
 ### Conservative read of the milestone
 

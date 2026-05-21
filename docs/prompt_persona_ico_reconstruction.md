@@ -376,8 +376,12 @@ fechar como evidência byte-exact, com helpers pequenos como
 `isysGObjDlInit`, `isysGObjLinkObjDL`, `isysGObjProcessAlloc`,
 `isysGObjProcAdd_`, `iosOmInit`, `iosOmCreateDL`, `iosOmExeEachGObj`,
 `iosOmExeEachGObjAll`, `iosOmReturnExeEachGObj`, `iosOmGetGObjStatus`,
-`iosOmExeMail`, `isysGObjMoveCameraDL`, `isysGObjLinkCameraDL` e
-`isysGObjMoveCameraDLHead` reconstruídos de modo verificável. A leitura
+`iosOmExeMail`, `isysGObjMoveAfterGObj`, `isysGObjMoveBeforeGObj`,
+`isysGObjAlloc`, `isysGObjMove`, `isysGObjKindTableAdd`,
+`isysGObjKindTableRemove`, `isysGObjAdd`, `isysGObjAddAfterGObj`,
+`isysGObjAddBeforeGObj`, `isysGObjRemoveAll`, `_iosOmMain`,
+`isysGObjMoveCameraDL`, `isysGObjLinkCameraDL` e `isysGObjMoveCameraDLHead`
+reconstruídos de modo verificável. A leitura
 mais segura continua sendo a mesma: isso confirma blocos mecânicos do
 modelo de objetos e do fluxo de init/dispatch, mas não autoriza inventar
 semântica para cada campo ou cada slot sem xref ou runtime adicional.
