@@ -370,6 +370,18 @@ byte-a-byte (12 via C, 26 via `.s` assembly). Esse progresso deve ser
 narrado com cautela: ele valida o método e fecha pequenas ilhas de
 código, mas ainda não representa uma porcentagem alta do jogo decompilado.
 
+Mais tarde, o personagem percebe que essa frente não parou no mesmo
+patamar: o núcleo `isysGObj*`/`iosOm*` em `src/core/asm/` também começou a
+fechar como evidência byte-exact, com helpers pequenos como
+`isysGObjDlInit`, `isysGObjLinkObjDL`, `isysGObjProcessAlloc`,
+`isysGObjProcAdd_`, `iosOmInit`, `iosOmCreateDL`, `iosOmExeEachGObj`,
+`iosOmExeEachGObjAll`, `iosOmReturnExeEachGObj`, `iosOmGetGObjStatus`,
+`iosOmExeMail`, `isysGObjMoveCameraDL`, `isysGObjLinkCameraDL` e
+`isysGObjMoveCameraDLHead` reconstruídos de modo verificável. A leitura
+mais segura continua sendo a mesma: isso confirma blocos mecânicos do
+modelo de objetos e do fluxo de init/dispatch, mas não autoriza inventar
+semântica para cada campo ou cada slot sem xref ou runtime adicional.
+
 O ponto de transição atual é pragmático: continuar fechando funções
 pequenas e médias com evidência reproduzível, consolidar structs apenas
 quando o score exigir, e deixar mineração runtime pesada ou áreas
