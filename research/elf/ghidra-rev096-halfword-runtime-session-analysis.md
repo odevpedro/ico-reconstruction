@@ -350,3 +350,27 @@ What this summary does not do:
 - it does not resolve `0x00166DFC`;
 - it does not explain why `0x0016828C` / `0x00168294` stay absent in this
   capture.
+
+### Cross-reference with older notes
+
+Some of the recurring `a0` values in this hot-path capture already have a
+structural history in the older runtime notes, especially Rev.079. Those notes
+describe the same style of values as heap-allocated dispatcher contexts rather
+than semantic gameplay labels.
+
+| `a0` bucket | Older note status | Structural reading |
+|-------------|-------------------|-------------------|
+| `0x0063aed0` | Not named directly in Rev.079, but same `0x0063....` context family | Heap dispatcher context family |
+| `0x0063ae30` | Listed in Rev.079 cold-path context table | Heap dispatcher context |
+| `0x0063aa90` | Listed in Rev.079 cold-path context table | Heap dispatcher context |
+| `0x0063ab30` | Not singled out in the excerpt, but same family as Rev.079 contexts | Heap dispatcher context family |
+| `0x0063aa40` | Not singled out in the excerpt, but same family as Rev.079 contexts | Heap dispatcher context family |
+| `0x0063af00` | Not singled out in the excerpt, but same family as Rev.079 contexts | Heap dispatcher context family |
+| `0x0063a9a0` | Not singled out in the excerpt, but same family as Rev.079 contexts | Heap dispatcher context family |
+| `0x0063c650` | Listed in Rev.079 as the most active context | Heap dispatcher context |
+| `0x0063c5d0` | Not named directly in the excerpt, but same family as Rev.079 contexts | Heap dispatcher context family |
+| `0x0063c3e0` | New in the freshest tail check | Unnamed heap dispatcher context, same family in structure but not yet cross-mapped |
+
+This means the new hot-path buckets are not isolated discoveries. Most of them
+fit into the already documented dispatcher-context family from Rev.079, and the
+freshest tail only adds one still-unnamed member of the same family.
