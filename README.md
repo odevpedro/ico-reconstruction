@@ -202,7 +202,7 @@ These notes describe structural evidence only. They do not assign definitive gam
 ├── src/                          # Verified reverse-engineered sources
 │   ├── types.h                   # ico_ptr32 and basic type definitions
 │   ├── core/
-│   │   ├── asm/                  # Byte-exact .s assembly (isysGObj* lifecycle helpers)
+│   │   ├── asm/                  # Byte-exact .s assembly (isysGObj*/iosOm*/camera helpers)
 │   │   └── isys_process.h        # Core DL/process layout notes
 │   ├── cloth/
 │   │   ├── structs.h             # Cloth struct hierarchy (payload, entity, context)

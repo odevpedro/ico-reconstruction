@@ -1,0 +1,39 @@
+	.text
+	.p2align 3
+	.globl	iosOmExeMail
+	.ent	iosOmExeMail
+iosOmExeMail:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x60
+	sd	$17,0x10($29)
+	lw	$17,-0x6714($28)
+	sd	$20,0x40($29)
+	sd	$18,0x20($29)
+	move	$20,$4
+	sd	$16,0($29)
+	sd	$31,0x50($29)
+	addiu	$16,$17,0x54
+	sd	$19,0x30($29)
+	lw	$6,4($16)
+	.word	0x18c00025
+	move	$18,$0
+	addiu	$19,$17,0x5c
+	sll	$5,$18,3
+	nop	
+	addu	$2,$19,$5
+	lw	$4,0($2)
+	sltiu	$3,$4,5
+	.word	0x10600013
+	lui	$2,0x55
+	sll	$3,$4,2
+	addiu	$2,$2,0x7b60
+	addu	$3,$3,$2
+	lw	$4,0($3)
+	jr	$4
+	.set	macro
+	.set	reorder
+	.end	iosOmExeMail
