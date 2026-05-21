@@ -351,6 +351,30 @@ What this summary does not do:
 - it does not explain why `0x0016828C` / `0x00168294` stay absent in this
   capture.
 
+### Static cross-reference for the logged PCs
+
+The log is not only about `0x00166DFC`. The other PCs that appeared in the
+capture already have static identities or static roles in the Ghidra notes.
+
+| Logged PC | Static reading | What Ghidra can say now |
+|-----------|----------------|-------------------------|
+| `0x00166BB0` | writer entry inside the hot path | confirmed byte-level entry for the rasterizer-like writer; no standalone function entry in Ghidra |
+| `0x00166D1C` | write path A | one of exactly two `sh` writers into `0x006AB080` |
+| `0x00166D78` | write path B | second `sh` writer into `0x006AB080`, same enclosing function as A |
+| `0x0016700C` | dominant caller into the writer | `jal 0x00166BB0` in the hot dispatch path |
+| `0x00167014` | dominant return site | return site after the main caller, seen at scale in runtime |
+| `0x0016828C` | rare second caller into the writer | static caller exists; runtime-reachable in Rev.094, absent in this capture |
+| `0x00168294` | rare second return site | return site paired with the second caller |
+| `0x00166E10` | `_Clip` | broader live-dispatch/collision body that contains the writer callsite family in the static model |
+| `0x00167230` | `FUN_00167230` | cold path fragment that tail-calls `0x00166E10` |
+| `0x00167258` | `FUN_00167258` | second cold path fragment that tail-calls `0x00166E10` |
+| `0x001AF948` | world-state table reader | reads the 404-byte room/world-state table before a callback dispatch path |
+
+This is the part the log *can* grow into without asking the emulator to prove
+everything at once: the writer, its entry/return pairing, the two write paths,
+the second caller pair, and the world-state table reader all already have a
+static place in the model.
+
 ### Cross-reference with older notes
 
 Some of the recurring `a0` values in this hot-path capture already have a
