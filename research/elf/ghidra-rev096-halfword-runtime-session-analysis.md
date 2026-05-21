@@ -314,3 +314,39 @@ This does not change the branch conclusions. It does confirm that the newest
 tail of the capture is locked even more tightly onto the dominant entry/return
 pair, with no write labels or world-state labels visible in that freshest
 window.
+
+### Structural summary of the hot path
+
+The current live capture is still dominated by a small set of `a0` work-area
+clusters. The most useful way to read the hot path is by bucket, not by a
+single global interpretation.
+
+| Bucket | Observed `a0` values | Observed behavior |
+|--------|----------------------|------------------|
+| Entry-only tail | `0x0063c3e0` | `halfword_entry` only; no writes in the freshest tail slice |
+| Write A heavy | `0x00000000`, `0x00000001`, `0x00000061`, `0x00000062`, `0x00000063`, `0x00000064`, `0x000000E4`, `0x00000163` | Frequent `halfword_write_A` activity in the recent `50 MB` slice |
+| Write B heavy | `0x00000020`, `0x00000040`, `0x000000E5`, `0x00000104` | Recurring `halfword_write_B` activity in the recent `50 MB` slice |
+
+The write buckets are consistent with the same dominant writer entry/return
+pair:
+
+- `0x00166BB0` is the entry site;
+- `0x00167014` is the return site;
+- `0x00166D1C` is the A write path;
+- `0x00166D78` is the B write path.
+
+What this summary does:
+
+- confirms that the hot path is not a single flat loop, but a small set of
+  recurring `a0` contexts;
+- preserves the conservative split between entry-only tails and write-bearing
+  invocations;
+- avoids assigning gameplay semantics to the buckets without a direct probe.
+
+What this summary does not do:
+
+- it does not identify the exact object or room semantics behind any `a0`
+  value;
+- it does not resolve `0x00166DFC`;
+- it does not explain why `0x0016828C` / `0x00168294` stay absent in this
+  capture.
