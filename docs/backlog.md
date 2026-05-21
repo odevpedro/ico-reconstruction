@@ -9,9 +9,9 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 144 |
+| Completed | 145 |
 | In Progress | 1 |
-| Pending | 3 |
+| Pending | 2 |
 
 ---
 
@@ -44,14 +44,6 @@
 - Compilador local ee-gcc 2.9-991111-01 obtido do PS2 Linux SDK, mesma fonte do decomp.me
 - Esta task não é mais relevante — manter apenas como referência histórica
 
-### [SQUAD-ARCH | rev.012 | Pending]
-**Architectural Analysis E-G for ICO**
-
-- Decision matrix for technical approach
-- Squad architecture definition
-- Final recommendation
-- Black box identification
-
 ### [x] [SQUAD-ARCH | rev.099 | 2026-05-21]
 **Evidence index and current-state synchronization**
 
@@ -59,6 +51,14 @@
 - Synchronized the `rev.099` lifecycle note with the current `src/core/asm/` byte-exact set.
 - Kept `docs/historia.md` and `docs/prompt_persona_ico_reconstruction.md` local-only and out of git tracking.
 - Separated validated facts, local narrative, and open gaps in the documentation chain.
+
+### [x] [SQUAD-ARCH | rev.100 | 2026-05-21]
+**Architectural Analysis E-G for ICO**
+
+- Added `docs/architectural-analysis-e-g.md` as the static follow-up to `Architectural Analysis A-D`.
+- Formalized the current evidence layers: local narrative, byte-exact assembly, and runtime gaps.
+- Defined a conservative decision matrix for the next phase.
+- Kept the static phase separate from emulator-dependent validation.
 
 ---
 

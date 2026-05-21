@@ -828,3 +828,50 @@ narrative, and pending runtime work.
 - Treat the narrative docs as local-only artifacts.
 - Synchronize documentation around validated reconstruction milestones before
   opening new runtime work.
+
+# Feature: Architectural Analysis E-G Follow-Up
+
+> Squad responsible: SQUAD-ARCH
+> Revision: rev.100
+> Session: 2026-05-21
+> Status: Stable
+
+## Summary
+The project gained a new static architecture note, `docs/architectural-analysis-e-g.md`,
+which formalizes the current post-Path-B structure without requiring emulator
+validation.
+
+## Main Flow
+
+### 1. Entry Point
+The repository already had a completed A-D feasibility analysis and a live
+evidence chain, but the follow-up architecture layer was still implicit.
+
+### 2. Input Validation
+The current validated state was checked against the evidence index, the
+`isysGObj*` / `iosOm*` byte-exact set, and the updated backlog.
+
+### 3. Application Orchestration
+Created a compact static analysis note that separates:
+
+- validated facts;
+- open runtime gaps;
+- local narrative files;
+- the next recommended work split.
+
+### 4. Business Rules
+The new note avoids runtime claims, avoids speculative semantic renaming, and
+keeps emulator-dependent work out of the static architecture layer.
+
+### 5. Persistence / Integrations
+Updated `docs/architectural-analysis-e-g.md`, `docs/evidence-index.md`, and
+`docs/backlog.md`.
+
+### 6. Final Response
+The architecture layer now has a clean static follow-up to A-D and a factual
+index that remains separate from the narrative files.
+
+## Key Technical Decisions
+- Use the evidence index as the canonical control document.
+- Keep the static architecture follow-up narrow and conservative.
+- Preserve the split between validated byte-level work and runtime gaps.

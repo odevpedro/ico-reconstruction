@@ -217,3 +217,18 @@ Current validated state:
   and open gaps;
 - the evidence chain is reproducible with local tools and the user-owned ELF
   copy.
+
+## Chronological Appendix
+
+Short validation path, in order:
+
+| Date | Milestone | Result |
+|------|-----------|--------|
+| 2026-05-18 | Path B byte-exact assembly phase | 38/38 functions validated, with 26 promoted via `.s` and 12 exact via C |
+| 2026-05-21 | `isysGObj*` / `iosOm*` block promotion | 36 byte-exact `.s` files in `src/core/asm/` |
+| 2026-05-21 | Evidence index created | Sources, tools, commits, artifacts, and gaps consolidated in one factual document |
+| 2026-05-21 | Documentation sync | `rev.099`, backlog, and architecture log aligned to the current validated state |
+| 2026-05-21 | Static architecture follow-up | `docs/architectural-analysis-e-g.md` formalized the post-Path-B decision matrix |
+
+This appendix is intentionally short. It records the major validated steps
+without trying to enumerate every intermediate hypothesis or tool run.
