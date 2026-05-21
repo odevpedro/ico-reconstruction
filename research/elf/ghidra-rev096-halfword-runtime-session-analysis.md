@@ -232,3 +232,62 @@ The offline Rev.095 capture strengthens the hot-path picture but does not
 resolve the remaining branch questions. The main caller is confirmed at very
 high volume, the second caller remains absent in this session, and the
 single-cell fast path is still an inference that needs a direct runtime probe.
+
+---
+
+## Addendum - 2026-05-21 Live Recapture
+
+The current live capture at:
+
+- `.local/runtime-captures/ico-probe-rev095-next/events.jsonl`
+
+adds another large hot-path sample without changing the branch conclusions.
+
+### Recent recapture slice
+
+The latest `50 MB` slice of the log contains:
+
+| Label | Hits |
+|-------|-----:|
+| `halfword_entry` | `120,820` |
+| `halfword_write_A` | `24,506` |
+| `halfword_write_B` | `5,286` |
+| `world_state_load` | `0` |
+
+Top PCs in that slice:
+
+| PC | Hits | Role |
+|----|-----:|------|
+| `0x00166BB0` | `120,820` | Dominant writer entry |
+| `0x00166D1C` | `24,506` | Write path A |
+| `0x00166D78` | `5,286` | Write path B |
+
+Top return address:
+
+| RA | Hits | Role |
+|----|-----:|------|
+| `0x00167014` | `150,612` | Dominant return site |
+
+### What this addendum confirms
+
+1. The hot path remains stable and high-volume.
+2. The writer continues to operate through the same dominant entry and return
+   sites observed in Rev.093b/Rev.096.
+3. The recapture still does not show direct evidence for `0x00166DFC`.
+4. The recapture still does not show the second caller at `0x0016828C` or
+   `0x00168294`.
+5. `world_state_load` did not appear in the sampled recent slice, so this
+   recapture does not refine the room-transition hypothesis.
+
+### What remains open
+
+- direct fast-path confirmation at `0x00166DFC`;
+- state correlation for `0x0016828C` / `0x00168294`;
+- any room-transition relationship that would explain when the rare caller
+  becomes visible.
+
+### Conservative reading
+
+This recapture is useful as reinforcement, not as a revision. It increases
+confidence in the dominant writer path, but it does not change the status of
+the rare branches.

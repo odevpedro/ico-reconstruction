@@ -132,3 +132,27 @@ If none of these happen, keep the conclusion conservative:
 - the fast path remains inferred;
 - the second caller remains state-dependent;
 - the route should be revised before changing any semantic labels.
+
+## Capture Checklist
+
+Before starting the session:
+
+- open the instrumented PCSX2 build;
+- load the user-owned ICO USA BIN/CUE;
+- confirm the debugger/logpoint build is writing to the intended JSONL path;
+- keep the current route focused on the halfword probe targets only;
+- avoid adding unrelated breakpoints until the first live hits arrive.
+
+During the session:
+
+- watch for `0x00166DFC`;
+- watch for `0x0016828C` and `0x00168294`;
+- watch for `0x00167014`;
+- record `world_state_raw` whenever the route changes;
+- keep the session notes short and factual.
+
+After the session:
+
+- run `tools/analyze_halfword_log.py` on the new capture;
+- compare the result against Rev.094 and Rev.096;
+- update the next-step note only if the data changes the mechanical conclusion.
