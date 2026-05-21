@@ -291,3 +291,26 @@ Top return address:
 This recapture is useful as reinforcement, not as a revision. It increases
 confidence in the dominant writer path, but it does not change the status of
 the rare branches.
+
+### Freshest tail check
+
+A later freshness check on the live log showed an even narrower tail:
+
+| Metric | Value |
+|--------|-----:|
+| `halfword_entry` | `151,531` |
+| `halfword_write_A` | `0` |
+| `halfword_write_B` | `0` |
+| `world_state_load` | `0` |
+
+Top observed context in that tail:
+
+| Field | Value | Hits |
+|-------|-------|-----:|
+| `a0` | `0x0063c3e0` | `151,531` |
+| `ra` | `0x00167014` | `151,531` |
+
+This does not change the branch conclusions. It does confirm that the newest
+tail of the capture is locked even more tightly onto the dominant entry/return
+pair, with no write labels or world-state labels visible in that freshest
+window.
