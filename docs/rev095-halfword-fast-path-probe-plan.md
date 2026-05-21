@@ -8,6 +8,18 @@ Directly validate the remaining Rev.094 halfword questions:
 - what caller-side state activates the second direct caller at `0x0016828C`;
 - what final counter values are visible immediately after the main and second callers return from `0x00166BB0`.
 
+## Updated Context
+
+Offline review of the Rev.095 capture strengthened the split between the
+dominant caller path and the rare second caller:
+
+- the main caller at `0x0016700C` remains dominant;
+- the second caller at `0x0016828C` did not appear in Rev.095;
+- the `counter=1` / zero-write bucket still remains the best indirect signal
+  for `0x00166DFC`;
+- the observed `world_state_raw` cluster is narrow and should be used to pick
+  the next live route deliberately rather than randomly.
+
 ## Problem
 
 Rev.093b resolved the original activation problem: `0x00166BB0` is active in the hot dispatch path. Rev.094 extended that result and confirmed the second direct caller at `0x0016828C` is runtime-reachable.
@@ -90,8 +102,33 @@ After the capture, run `tools/analyze_halfword_log.py` and inspect:
 
 ## Test Areas
 
-Use the same or broader route as Rev.094 so the second caller is likely to recur. If time is limited, prioritize the segment that produced `world_state_raw` values `0x09`, `0x0A`, `0x11`, `0x12`, and `0x32`.
+Use the same or broader route as Rev.094 so the second caller is likely to recur.
+If time is limited, prioritize the segment that produced `world_state_raw`
+values `0x09`, `0x0A`, `0x11`, `0x12`, `0x13`, `0x14`, `0x15`, and `0x32`.
+
+Preferred runtime capture order:
+
+1. `0x00166DFC` fast-path probe.
+2. `0x0016828C` entry and `0x00168294` return probes.
+3. `0x00167014` main return probe.
+4. `world_state_load` labels whenever the state changes.
 
 ## Conservative Verdict
 
 Do not rename the gameplay semantics of the halfword grid from this probe alone. The next proof target is only mechanical: direct fast-path hit count and second-caller activation context.
+
+## Session Criteria
+
+Treat the next session as successful if any one of these happens:
+
+- `0x00166DFC` appears directly and the captured count explains the
+  `counter=1` / zero-write bucket;
+- `0x0016828C` reappears together with a stable `world_state_raw` cluster;
+- the main and second callers can be compared on the same session with
+  separate return-address counts.
+
+If none of these happen, keep the conclusion conservative:
+
+- the fast path remains inferred;
+- the second caller remains state-dependent;
+- the route should be revised before changing any semantic labels.
