@@ -411,3 +411,26 @@ That is a useful negative result, not a new semantic claim. The probe is still
 anchored to the same hot entry point even while the player opens new areas of
 the game. The live session is advancing, but this specific capture point has
 not yet moved into the rarer caller paths.
+
+## Checkpoint técnico
+
+Estado consolidado, sem extrapolar o que a captura não mostrou:
+
+| Item | Status | Leitura conservadora |
+|------|--------|----------------------|
+| `0x00166BB0` | confirmado em escala | entry hot path dominante do writer |
+| `0x00166D1C` / `0x00166D78` | confirmado static + runtime | os dois writes reais da tabela `0x006AB080` |
+| `0x0016700C` / `0x00167014` | confirmado em escala | caller/return dominante do hot path |
+| `0x0016828C` / `0x00168294` | aberto | second caller pair ainda ausente na cauda mais recente |
+| `0x00166DFC` | aberto | fast path de célula única ainda não provado diretamente |
+| `0x001AF948` | confirmado static | leitura de world-state / room table antes do dispatch |
+| `0x0063c3e0` | novo na cauda fresca | context heap entry-only, sem write labels na janela mais recente |
+
+Conclusão curta:
+
+- a captura nova reforça o mesmo hot path;
+- os buckets `0x0063....` continuam sendo melhor lidos como contexto
+  estrutural reaproveitado;
+- o trecho mais fresco não trouxe prova nova para os ramos raros;
+- sem emulador, o melhor ganho agora é organização e cruzamento estático,
+  não semântica nova.
