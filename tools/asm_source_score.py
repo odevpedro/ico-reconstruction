@@ -67,6 +67,14 @@ TARGET_FUNCTIONS = [
     ("attackch62_hC", 0x1BBE50, 0x100, "entity"),
     ("cloth_dispatcher", 0x1D37C8, 0x60, "cloth"),
     ("clothSubForceApply", 0x1D3F78, 0x80, "cloth"),
+    # GirlBrain AI functions (src/omori/)
+    ("eBrainSystemInit",   0x191B70, 0x1B0, "entity"),
+    ("eBrainGetStatus",    0x191D20, 0x50, "entity"),
+    ("eBrainSetFlag",      0x191D6C, 0x84, "entity"),
+    ("eBrainMovePos",      0x191DF0, 0x100, "entity"),
+    ("eBrainMotionSe",     0x191EF0, 0x78, "entity"),
+    ("eBrainReturnInit",   0x1922D8, 0xA8, "entity"),
+    ("GirlBrainClearTarget",0x16AC10, 0x10, "entity"),
 ]
 
 

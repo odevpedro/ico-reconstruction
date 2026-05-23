@@ -26,8 +26,42 @@ segments:
     vram: 0x00100000
     subalign: null
     subsegments:
-      # Pre-entity monolithic (0x001000 to 0x197078)
-      - [0x001000, asm, main_text_early_001000_197078]
+      # Pre-entity monolithic (0x001000 to 0x07BC10)
+      - [0x001000, asm, main_text_early_001000_07bc10]
+
+      # --- GirlBrain functions (src/omori/) ---
+      # GirlBrainClearTarget (0x16AC10): tail-call to 0x182890, clears target ID
+      - [0x07BC10, asm, GirlBrainClearTarget]
+
+      # Post-GirlBrainClearTarget monolithic (0x07BC20 to 0x092D20)
+      - [0x07BC20, asm, main_text_mid_07bc20_092d20]
+
+      # eBrainGetStatus (0x191D20): entity ID tracking, 20 insns
+      - [0x092D20, asm, eBrainGetStatus]
+
+      # Post-eBrainGetStatus monolithic (0x092D70 to 0x191B70)
+      - [0x092D70, asm, main_text_mid_092d70_191b70]
+
+      # eBrainSystemInit (0x191B70): GirlBrain system init, 108 insns, 432B
+      - [0x191B70, asm, eBrainSystemInit]
+
+      # eBrainSetFlag (0x191D6C): set flag by entity ID, 33 insns
+      - [0x191D6C, asm, eBrainSetFlag]
+
+      # eBrainMovePos (0x191DF0): move to position, 64 insns, 256B
+      - [0x191DF0, asm, eBrainMovePos]
+
+      # eBrainMotionSe (0x191EF0): motion/sound effect by entity ID, 30 insns
+      - [0x191EF0, asm, eBrainMotionSe]
+
+      # Post-MotionSe monolithic (0x191F68 to 0x1922D8)
+      - [0x191F68, asm, main_text_mid_191f68_1922d8]
+
+      # eBrainReturnInit (0x1922D8): return to initial state, 42 insns, 168B
+      - [0x1922D8, asm, eBrainReturnInit]
+
+      # Post-ReturnInit monolithic (0x192380 to first BIRD handler at 0x197078)
+      - [0x192380, asm, main_text_mid_192380_197078]
 
       # --- BIRD handlers (desc idx 32, init_fn=0x1971C0) ---
       # hB (0x197078): 2 insns tail to 0x1E3FC8
@@ -87,32 +121,6 @@ segments:
       - [0x1CE690, asm, enemy1_hA_1CE690]
 
       # Remaining .text
-      - [0x1CE6F0, asm, main_text_remaining_1CE6F0_1705D4]
-  - [0x1705D4, databin, text_to_vutext_pad]
-  - [0x1705E0, databin, vutext]
-  - [0x1756C0, databin, vutext_to_data_pad]
-  - [0x175700, databin, data]
-  - [0x4546B8, databin, data_to_rodata_pad]
-  - [0x454700, databin, rodata]
-  - [0x531900, databin, lit4]
-  - [0x5328D0, databin, lit4_to_sdata_pad]
-  - [0x532900, databin, sdata]
-  - [0x534BC6, databin, sdata_to_reginfo_pad]
-  - [0x534C0C, databin, reginfo]
-  - [0x534C24, databin, dvp_ovlytab]
-  - [0x534CB4, databin, dvp_ovlystrtab]
-  - [0x534E42, databin, dvp_overlay_00]
-  - [0x535642, databin, dvp_overlay_01]
-  - [0x535BDA, databin, dvp_overlay_02]
-  - [0x5363DA, databin, dvp_overlay_03]
-  - [0x53659A, databin, dvp_overlay_04]
-  - [0x536D9A, databin, dvp_overlay_05]
-  - [0x53759A, databin, dvp_overlay_06]
-  - [0x537C4A, databin, dvp_overlay_07]
-  - [0x53844A, databin, dvp_overlay_08]
-  - [0x538C4A, databin, dvp_overlay_09]
-  - [0x53944A, databin, dvp_overlay_10]
-  - [0x5398B2, databin, dvp_overlay_11]
-  - [0x539E42, databin, shstrtab]
-  - [0x53A050, databin, section_headers]
-  - [0x53A488]
+      - [0x1CE6F0, asm, main_text_remaining_1ce6f0_end]
+
+  - [0x53A488, databin, entity_tail_pad]

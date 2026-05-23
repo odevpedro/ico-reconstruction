@@ -1,0 +1,129 @@
+	.text
+	.p2align 3
+	.globl	eBrainSystemInit
+	.ent	eBrainSystemInit
+eBrainSystemInit:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x40
+	sd	$16,0($29)
+	sd	$18,0x20($29)
+	move	$16,$5
+	sd	$17,0x10($29)
+	addiu	$18,$0,-1
+	sd	$31,0x30($29)
+	jal	0x00192b98
+	addiu	$17,$0,-1
+	bne	$2,$18,loc_00191c68
+	ld	$31,0x30($29)
+	move	$7,$16
+	addiu	$2,$0,0x194
+	mult	$2,$7,$2
+	lui	$9,0x5f
+	addiu	$3,$9,0x2fb8
+	addu	$4,$3,$2
+	move	$3,$4
+	lw	$2,0x12c($4)
+	lw	$6,0x128($3)
+	slt	$2,$6,$2
+	beqz	$2,loc_00191c30
+	addiu	$3,$0,0x4c
+	lui	$8,0x2a
+loc_00191bd0:
+	addiu	$4,$8,0x4c48
+	mult	$3,$6,$3
+	addiu	$5,$0,0x21
+	addu	$3,$3,$4
+	lbu	$2,0x46($3)
+	bnel	$2,$5,loc_00191c10
+	addiu	$3,$0,0x194
+	lw	$2,0x48($3)
+	srl	$3,$2,0x11
+	andi	$3,$3,1
+	slt	$2,$17,$3
+	beql	$2,$0,loc_00191c10
+	addiu	$3,$0,0x194
+	move	$17,$3
+	move	$18,$6
+	addiu	$3,$0,0x194
+loc_00191c10:
+	addiu	$4,$9,0x2fb8
+	mult	$3,$7,$3
+	addiu	$6,$6,1
+	addu	$4,$4,$3
+	lw	$2,0x12c($4)
+	slt	$2,$6,$2
+	bnez	$2,loc_00191bd0
+	addiu	$3,$0,0x4c
+loc_00191c30:
+	bgtz	$18,loc_00191c64
+	move	$2,$18
+	lui	$16,0x56
+	addiu	$5,$0,0x1fa
+	addiu	$16,$16,-0x51f8
+	jal	0x001ad768
+	move	$4,$16
+	lui	$6,0x56
+	move	$4,$16
+	addiu	$6,$6,-0x51d8
+	jal	0x00263ff0
+	addiu	$5,$0,0x1fa
+	move	$2,$18
+loc_00191c64:
+	ld	$31,0x30($29)
+loc_00191c68:
+	ld	$18,0x20($29)
+	ld	$17,0x10($29)
+	ld	$16,0($29)
+	jr	$31
+	addiu	$29,$29,0x40
+	nop	
+	addiu	$29,$29,-0x20
+	lw	$2,-0x4b3c($28)
+	sd	$31,0x10($29)
+	blez	$2,loc_00191cdc
+	sd	$16,0($29)
+	lui	$16,0x6d
+	jal	0x00118a68
+	addiu	$16,$16,0xb90
+	lui	$1,0x4120
+	mtc1	$1,$f1
+	lw	$4,-0x4b3c($28)
+	mul.s	$f0,$f0,$f1
+	beql	$4,$0,loc_00191cb8
+	break	0,7
+loc_00191cb8:
+	cvt.w.s	$f1,$f0
+	mfc1	$3,$f1
+	div	$0,$3,$4
+	mfhi	$2
+	sll	$2,$2,2
+	addu	$2,$2,$16
+	lw	$3,0($2)
+	b	loc_00191ce4
+	sw	$3,-0x4b38($28)
+loc_00191cdc:
+	addiu	$2,$0,-1
+	sw	$2,-0x4b38($28)
+loc_00191ce4:
+	lw	$2,-0x4b34($28)
+	ld	$31,0x10($29)
+	addiu	$2,$2,1
+	ld	$16,0($29)
+	sw	$0,-0x4b3c($28)
+	sw	$2,-0x4b34($28)
+	jr	$31
+	addiu	$29,$29,0x20
+	nop	
+	addiu	$2,$0,-1
+	sw	$0,-0x4b3c($28)
+	sw	$2,-0x4b38($28)
+	move	$2,$0
+	jr	$31
+	sw	$0,-0x4b34($28)
+	.set	macro
+	.set	reorder
+	.end	eBrainSystemInit
