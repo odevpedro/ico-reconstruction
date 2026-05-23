@@ -46,29 +46,49 @@ TARGET_FUNCTIONS = [
     ("enemy1_hB",     0x1CE3C0, 0x240, "entity"),
     ("boy_init",       0x153478, 0xEC, "entity"),
     ("boy_hC",         0x1C1A98, 0x1B0, "entity"),
-    ("sub_1C1C48",     0x1C1C48, 0x190, "entity"),
-    ("sub_1C1EA8",     0x1C1EA8, 0xB0, "entity"),
+    ("synchronizeMotionOutputOriginForGirl", 0x1C1C48, 0x190, "entity"),
+    ("boy_dispCrown",  0x1C1EA8, 0xB0, "entity"),
     ("boy_hA",         0x1C1F58, 0x140, "entity"),
     ("boy_float_accum",0x1C20A8, 0xC8, "entity"),
     ("boy_activate",   0x1C2170, 0x28, "entity"),
     ("barrel_init",   0x166028, 0x8C, "entity"),
-    ("fn_1D2550",     0x1D2550, 0xE8, "entity"),
-    ("sub_1D2650",    0x1D2650, 0xE8, "entity"),
+    ("HoldItem",      0x1D2550, 0xE8, "entity"),
+    ("avoidInsideOfWall", 0x1D2650, 0xE8, "entity"),
     ("sub_1D2738",    0x1D2738, 0x68, "entity"),
     ("barrel_hC",     0x1D27A8, 0x18C, "entity"),
     ("rope_hC",       0x1D3B28, 0x108, "cloth"),
-    ("cb_routine2",   0x1D3A30, 0xE0, "cloth"),
+    ("ItemGeo",       0x1D3A30, 0xE0, "cloth"),
     ("fn_1D3BF0",     0x1D3BF0, 0x140, "cloth"),
-    ("fn_1D3DD8",     0x1D3DD8, 0xF8, "cloth"),
+    ("ReviveAllCarryableItems", 0x1D3DD8, 0xF8, "cloth"),
     ("woodbox0_hC",   0x1C00C0, 0x478, "entity"),
     ("woodbox0_hB",   0x1C0538, 0x98, "entity"),
     ("woodbox0_hA",   0x1C05D0, 0x60, "entity"),
     ("bird_hC",       0x197240, 0x200, "entity"),
     ("attackch62_hC", 0x1BBE50, 0x100, "entity"),
-    ("cloth_dispatcher", 0x1D37C8, 0x60, "cloth"),
+    ("execBombGeo",   0x1D37C8, 0x60, "cloth"),
     ("clothSubForceApply", 0x1D3F78, 0x80, "cloth"),
-    # GirlBrain AI functions (src/omori/)
-    ("eBrainSystemInit",   0x191B70, 0x1B0, "entity"),
+    # GirlBrain AI functions (from verified Ghidra symbols at 0x0016xxxx)
+    ("GirlBrainClearTarget",0x16AC10, 0x10, "entity"),
+    ("girlBrainMain_PositionUpdate",0x16BCA0, 0x68, "entity"),
+    ("subGirlBrain_PulledUp",0x16CED0, 0x460, "entity"),
+    # NOTE: _girlBrainHide_MakeHidePoint (0x16E910), girlBrainRunawaySearchPoint (0x16F410),
+    # eBrainProcess (0x190B30), eBrainGetTargetGeneratorFromLabel (0x190D70)
+    # are .word-only .s files (Capstone can't disassemble R5900 COP1 insns).
+    # They are BYTE-EXACT but NOT in this pipeline.
+    ("girlBrainHide_GoalTurn",0x16EB68, 0x110, "entity"),
+    ("girlBrainRunawayMoveByWay",0x16F9A8, 0x2AC, "entity"),
+    ("subGirlBrain_Idle",0x175CB0, 0x30, "entity"),
+    ("subGirlBrain_Hesitate",0x175CE0, 0xB0, "entity"),
+    ("subGirlBrain_Busy",0x175DC0, 0x10C, "entity"),
+    # eBrain entry AI functions (src/omori/, verified Ghidra symbols at 0x0019xxxx)
+    # eBrainProcess (0x190B30) and eBrainGetTargetGeneratorFromLabel (0x190D70)
+    # are .word-only .s files.
+    ("eBrainGetTarget",0x190F30, 0x9C0, "entity"),
+    ("eBrainInit",0x1918A8, 0x50, "entity"),
+    ("eBrainStatusSet",0x1918F0, 0xB0, "entity"),
+    ("eBrainSendMes",0x1919A0, 0xD0, "entity"),
+    ("eBrainGetTargetGeneratorFromLabelStage",0x191B70, 0x1B0, "entity"),
+    # Speculative-named eBrain* helpers (no verified Ghidra symbol, but byte-exact):
     ("eBrainGetStatus",    0x191D20, 0x50, "entity"),
     ("eBrainSetFlag",      0x191D6C, 0x84, "entity"),
     ("eBrainMovePos",      0x191DF0, 0x100, "entity"),
@@ -77,8 +97,6 @@ TARGET_FUNCTIONS = [
     ("eBrainAvoid",        0x192150, 0x188, "entity"),
     ("eBrainReturnInit",   0x1922D8, 0xA8, "entity"),
     ("eBrainTargetGenerator",0x192380, 0x1F8, "entity"),
-    ("subGirlBrain_PulledUp",0x1944F8, 0x128, "entity"),
-    ("GirlBrainClearTarget",0x16AC10, 0x10, "entity"),
 ]
 
 
