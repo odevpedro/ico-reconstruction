@@ -461,7 +461,7 @@ Those names require evidence.
 
 The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration (Rev.096-097), and isysGObj* lifecycle analysis (Rev.098-099) are complete.
 
-### Current score status (Rev.099 — all 74 functions byte-exact)
+### Current score status (Rev.101 — all 74 functions byte-exact)
 
 All 74 functions are now at **100% byte-exact match**.
 
@@ -540,8 +540,10 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 27. ~~**Rev.097: Ghidra exploration — isysGObj* correction, _Clip=não é dispatcher, GirlBrain discovery**~~ **DONE (2026-05-21)**
 28. ~~**Rev.098: isysGObjProcAdd_ = 488B central registration; _iosOmMain = 17 slots matching runtime; initSceneGObj = 2088B bridge**~~ **DONE (2026-05-21)**
 29. ~~**Rev.099: full isysGObj* lifecycle (init→alloc→add→dispatch→remove); ios/thread.c = thread system; 36 .s byte-exact for core**~~ **DONE (2026-05-22)**
-30. **Update AGENTS.md for Rev.097-099 architectural correction** — incorporating isysGObj* system, _Clip correction, ios/thread.c
-31. **Update backlog.md, docs/system-feature-flows.md, docs/data-model.md** for the corrected architecture
+30. ~~**Update AGENTS.md for Rev.097-099 architectural correction** — incorporating isysGObj* system, _Clip correction, ios/thread.c~~ **DONE (2026-05-22)**
+31. ~~**Update backlog.md, docs/system-feature-flows.md, docs/data-model.md** for the corrected architecture~~ **DONE (2026-05-22)**
+32. ~~**Rev.100: GObj struct header, dispatch doc, 4 GirlBrain .s, BSS discovery**~~ **DONE (2026-05-22)**
+33. ~~**Rev.101: +4 GirlBrain .s (11 total), label cleanup, entity-state-blocks.md, initSceneGObj analysis**~~ **DONE (2026-05-22)**
 
 ---
 

@@ -1,7 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
-> Última atualização: 2026-05-22 (session end — offline tools + GObj struct + 2 GirlBrain .s)
+> Última atualização: 2026-05-22 (session end — Rev.100: 11 GirlBrain .s, entity state blocks, label cleanup, initSceneGObj analysis)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -10,7 +10,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 158 |
+| Completed | 162 |
 | In Progress | 1 |
 | Pending | 1 |
 
@@ -807,6 +807,21 @@ Call graph analysis
 - Descoberta: type handler table (0x6A93D0) e thread table (0x6A6F30) são BSS —
   inicializados em runtime, não dumpáveis do ELF estático
 
+### [x] [SQUAD-ARCH | rev.101 | 2026-05-22]
+**+4 GirlBrain .s (11 total), label cleanup, entity state blocks doc, initSceneGObj analysis**
+
+- 4 GirlBrain byte-exact .s: eBrainPursuit (0x191F68, 122 insns), eBrainAvoid (0x192150, 98 insns),
+  eBrainTargetGenerator (0x192380, 126 insns), subGirlBrain_PulledUp (0x1944F8, 74 insns)
+  — agora 11/30+ GirlBrain functions convertidas
+- All 38 .s files: numeric local labels (0f/1f/2f) convertidos para loc_XXXXXX nominais
+- docs/entity-state-blocks.md: catalog de offsets por tipo de entidade — base para
+  futura struct entity_state_block (BOY/GIRL/BARREL/WOODBOX0/BIRD/ENEMY1/ATTACKCH)
+- research/elf/ghidra-rev100-isysgobj-init-scene-gobj-procadd-analysis.md:
+  initSceneGObj (2088B, bridge entry→descriptor→GObj) e
+  isysGObjProcAdd_ (512B, TCB allocator/registrator) analisados
+- scoring pipeline: 74/74 functions byte-exact
+- splat YAML: 35 subsegments (4 GirlBrain promovidos de monolithic)
+
 ---
 
 ## Revision Signatures
@@ -926,7 +941,8 @@ Call graph analysis
 | rev.091i | 2026-05-18 | SQUAD-TOOLING | Include path fix (-I flags in compile_c_to_asm), ico_u8 typedef added to types.h, score_all.py simplified (always --whole-file), fn_1CE5F8 confirmed 100% with whole-file. Compiler flags exploration (7 flag sets, 38 functions): G0_O2 best for most; fn_1D3BF0 reaches 50.62% with -fno-schedule-insns; barrel_init 17.14% with -Os. Systematic offset analysis: 148 unique offsets across 25 handler functions; backbone confirmed (0x15C=entity_state, 0x800=work_area). 12 perfect, 26 partial/LOW, 0 compile errors. |
 | rev.097 | 2026-05-21 | SQUAD-ARCH | **Consolidacao arquitetural:** isysGObj* (30 funcoes, 0x13DDA0-0x141D18) identificado como sistema real de game objects; _Clip (0x166E10) reclassificado como funcao de clipping dentro de DispCollisionPC; tabela 0x282690 confirmada como config de clipping (apenas 4 callbacks _clipW* ativos); 42.2M eventos runtime pertencem ao isysGObj*, nao ao _Clip; GirlBrain descoberto (30+ funcoes nomeadas eBrain*/girlBrain*); scene loader confirmado em kanban.c (GP=0x27A7A8); main loop mapeado. 7 arquivos .s renomeados com simbolos reais. Nota de consolidacao: research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md. Mapa de modulos: docs/source-module-map.md. |
 | rev.098 | 2026-05-21 | SQUAD-ARCH | **Process registration e dispatch internos:** isysGObjProcAdd_ (0x13F3F0) detalhado — 7 params, stride 0x94, lista ligada ordenada. FUN_0013f7a8 identificado como wrapper thin de isysGObjProcAdd_. iosOmExeEachGObj (0x13FD10) confirmado como iterador de lista ligada — fonte dos eventos runtime. _iosOmMain (0x13F9D0) tem 17 slots (8 mascara + 9 tipo) = coincide com runtime. Tabela 0x281A70 = runtime BSS (zero no ELF). initSceneGObj (0x1B76F8, 2088B) conecta entry table/descriptor table ao isysGObj*. la_load_processing tem 21 estagios de carregamento. eBrainGetStatus (0x191D20) = tracker simples de 44B. Capstone LE mode implementado. C near-structural + .s byte-exact gerados para iosOmExeEachGObj, FUN_0013f7a8 wrapper, eBrainGetStatus. Structs em src/core/isys_process.h. Nota: research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md. |
-| rev.100 | 2026-05-22 | SQUAD-ARCH | GObj struct header (isys_process.h: 21+ campos, stride 0x174), dispatch architecture doc (Pass1/2, iosOmCreateDL), 2 GirlBrain .s byte-exact (eBrainSetFlag + eBrainMotionSe), entity-handlers YAML + scoring pipeline extendido, 42/42 entity/cloth/GirlBrain passam, BSS discovery (type handler + thread table). |
+| rev.100 | 2026-05-22 | SQUAD-ARCH | GObj struct header (isys_process.h: 21+ campos, stride 0x174), dispatch architecture doc (Pass1/2, iosOmCreateDL), 4 GirlBrain .s byte-exact (eBrainSetFlag + eBrainMotionSe + eBrainMovePos + eBrainSystemInit), entity-handlers YAML + scoring pipeline extendido, 46/46 entity/cloth/GirlBrain passam, BSS discovery (type handler + thread table). |
+| rev.101 | 2026-05-22 | SQUAD-ARCH | +4 GirlBrain .s (now 11 total: eBrainPursuit/Avoid/TargetGenerator/subGirlBrain_PulledUp), label cleanup (0f/1f→loc_XXXXXX in all .s), entity-state-blocks.md (offset catalog per type), initSceneGObj + isysGObjProcAdd_ structural analysis, 74/74 functions byte-exact, 35 subsegments in YAML. |
 
 ---
 
