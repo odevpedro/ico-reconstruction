@@ -16,7 +16,7 @@ synchronizeMotionOutputOriginForGirl:
 	move	$17,$4
 	sd	$16,0x20($29)
 	move	$10,$0
-	beqz	$8,1f
+	beqz	$8,loc_001c1dc0
 	swc1	$f20,0x50($29)
 	lw	$6,0x15c($17)
 	lui	$2,0x4d
@@ -26,7 +26,7 @@ synchronizeMotionOutputOriginForGirl:
 	addiu	$7,$0,1
 	lw	$11,0x4a0($3)
 	addiu	$5,$0,6
-0:
+loc_001c1c90:
 	lw	$3,0($4)
 	addiu	$5,$5,-1
 	lw	$2,4($4)
@@ -34,11 +34,11 @@ synchronizeMotionOutputOriginForGirl:
 	addiu	$4,$4,8
 	xor	$2,$12,$2
 	movz	$9,$7,$3
-	bgez	$5,0b
+	bgez	$5,loc_001c1c90
 	movz	$10,$7,$2
-	beqz	$9,2f
+	beqz	$9,loc_001c1dc4
 	ld	$31,0x40($29)
-	beqz	$10,2f
+	beqz	$10,loc_001c1dc4
 	addiu	$16,$29,0x10
 	lw	$5,0x15c($8)
 	lwc1	$f12,-0x7720($28)
@@ -64,7 +64,7 @@ synchronizeMotionOutputOriginForGirl:
 	jal	0x00104360
 	move	$5,$16
 	lw	$2,-0x5c1c($28)
-	beqz	$2,2f
+	beqz	$2,loc_001c1dc4
 	ld	$31,0x40($29)
 	lui	$1,0x4120
 	mtc1	$1,$f20
@@ -103,9 +103,9 @@ synchronizeMotionOutputOriginForGirl:
 	addiu	$6,$0,8
 	jal	0x0010f630
 	nop	
-1:
+loc_001c1dc0:
 	ld	$31,0x40($29)
-2:
+loc_001c1dc4:
 	ld	$17,0x30($29)
 	ld	$16,0x20($29)
 	lwc1	$f20,0x50($29)

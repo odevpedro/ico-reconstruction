@@ -16,37 +16,37 @@ ReviveAllCarryableItems:
 	jal	0x0013eb50
 	sd	$16,0($29)
 	move	$17,$2
-	beqz	$17,3f
+	beqz	$17,loc_001d3e64
 	addiu	$18,$0,1
 	lw	$5,0x15c($17)
 	nop	
-0:
+loc_001d3e08:
 	move	$4,$0
 	lw	$2,0x16c($17)
-	beqz	$2,1f
+	beqz	$2,loc_001d3e34
 	lw	$3,0x800($5)
 	ld	$2,8($3)
-	bnez	$2,1f
+	bnez	$2,loc_001d3e34
 	nop	
 	lw	$2,0x48($3)
 	move	$4,$18
 	slt	$2,$18,$2
 	movn	$4,$0,$2
-1:
-	beqz	$4,2f
+loc_001d3e34:
+	beqz	$4,loc_001d3e50
 	nop	
 	lw	$16,0x800($5)
 	jal	0x0019f530
 	move	$4,$17
 	sw	$0,0x74($16)
 	sw	$18,8($16)
-2:
+loc_001d3e50:
 	jal	0x0013ebe0
 	move	$4,$17
 	move	$17,$2
-	bnel	$17,$0,0b
+	bnel	$17,$0,loc_001d3e08
 	lw	$5,0x15c($17)
-3:
+loc_001d3e64:
 	ld	$31,0x30($29)
 	addiu	$2,$0,1
 	ld	$18,0x20($29)

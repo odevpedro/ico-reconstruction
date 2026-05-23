@@ -21,15 +21,15 @@ boy_dispCrown:
 	move	$18,$2
 	lw	$3,0($16)
 	addiu	$2,$0,1
-	beq	$3,$2,0f
+	beq	$3,$2,loc_001c1ef4
 	addiu	$2,$0,2
-	beql	$3,$2,1f
+	beql	$3,$2,loc_001c1ef8
 	lw	$16,0xc($16)
-	b	1f
+	b	loc_001c1ef8
 	lw	$16,4($16)
-0:
+loc_001c1ef4:
 	lw	$16,8($16)
-1:
+loc_001c1ef8:
 	jal	0x00105278
 	nop	
 	lw	$3,0x15c($17)

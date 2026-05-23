@@ -20,7 +20,7 @@ execBombGeo:
 	addiu	$17,$19,0x40
 	lw	$3,8($17)
 	sltiu	$2,$3,5
-	beqz	$2,0f
+	beqz	$2,loc_001d3818
 	lui	$2,0x62
 	sll	$3,$3,2
 	addiu	$2,$2,-0x7050
@@ -28,7 +28,7 @@ execBombGeo:
 	lw	$4,0($3)
 	jr	$4
 	nop	
-0:
+loc_001d3818:
 	jal	0x001f2148
 	lw	$4,0($17)
 	.word	0x1040007b

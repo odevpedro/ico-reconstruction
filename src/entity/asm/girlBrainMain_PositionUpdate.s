@@ -1,0 +1,39 @@
+	.text
+	.p2align 3
+	.globl	girlBrainMain_PositionUpdate
+	.ent	girlBrainMain_PositionUpdate
+girlBrainMain_PositionUpdate:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x20
+	lw	$5,-0x6e08($28)
+	sd	$16,0($29)
+	lui	$16,0x29
+	sd	$31,0x10($29)
+	addiu	$16,$16,-0x7d30
+	jal	0x00104508
+	move	$4,$16
+	lw	$5,-0x6e0c($28)
+	jal	0x00104508
+	addiu	$4,$16,0x20
+	lw	$5,-0x6e08($28)
+	jal	0x0010a498
+	addiu	$4,$16,0x10
+	addiu	$4,$16,0x30
+	lw	$5,-0x6e0c($28)
+	ld	$31,0x10($29)
+	ld	$16,0($29)
+	j	0x10a498
+	addiu	$29,$29,0x20
+	lui	$4,0x28
+	move	$5,$0
+	addiu	$4,$4,0x2ac0
+	j	0x2641d8
+	addiu	$6,$0,0x5910
+	nop	
+	.set	macro
+	.set	reorder
+	.end	girlBrainMain_PositionUpdate

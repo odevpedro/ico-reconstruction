@@ -1,4 +1,4 @@
-name: ICO USA SCUS_971.13 — entity handler promotion (Rev.057)
+name: ICO USA SCUS_971.13 — entity handler promotion (corrected Rev.101)
 sha1: a4d8fc1948fb2da2395f3863a94a3b93de55de14
 options:
   basename: SCUS_971.13
@@ -26,113 +26,136 @@ segments:
     vram: 0x00100000
     subalign: null
     subsegments:
-      # Pre-entity monolithic (0x001000 to 0x07BC10)
-      - [0x001000, asm, main_text_early_001000_07bc10]
-
-      # --- GirlBrain functions (src/omori/) ---
-      # GirlBrainClearTarget (0x16AC10): tail-call to 0x182890, clears target ID
-      - [0x07BC10, asm, GirlBrainClearTarget]
-
-      # Post-GirlBrainClearTarget monolithic (0x07BC20 to 0x092D20)
-      - [0x07BC20, asm, main_text_mid_07bc20_092d20]
-
-      # eBrainGetStatus (0x191D20): entity ID tracking, 20 insns
+      - [0x001000, asm, main_text_early_001000_03eda0]
+      - [0x03EDA0, asm, isysGObjInit]
+      - [0x03EEA0, asm, isysGObjRemoveAll]
+      - [0x03F190, asm, isysGObjMove]
+      - [0x03F220, asm, isysGObjAddAfterGObj]
+      - [0x03F350, asm, isysGObjAddBeforeGObj]
+      - [0x03F4D0, asm, isysGObjAlloc]
+      - [0x03F548, asm, isysGObjRemove]
+      - [0x03F648, asm, isysGObjKindTableAdd]
+      - [0x03F728, asm, isysGObjKindTableRemove]
+      - [0x03F7F8, asm, isysGObjMoveAfterGObj]
+      - [0x03F868, asm, isysGObjMoveBeforeGObj]
+      - [0x03F8D8, asm, isysGObjAdd]
+      - [0x03F9E0, asm, isysGObjAddHead]
+      - [0x040130, asm, isysGObjLinkObjDL]
+      - [0x0401CC, asm, main_text_mid_0401cc_0402c8]
+      - [0x0402C8, asm, isysGObjDlInit]
+      - [0x040300, asm, main_text_mid_040300_0403e8]
+      - [0x0403E8, asm, isysGObjProcessAlloc]
+      - [0x0403F0, asm, isysGObjProcAdd_]
+      - [0x040638, asm, main_text_mid_040638_0406b8]
+      - [0x0406B8, asm, isysGObjProcRemove]
+      - [0x0406F8, asm, main_text_mid_0406f8_0407a8]
+      - [0x0407A8, asm, isysGObjProcAdd_Wrapper]
+      - [0x040808, asm, isysGObjProcPause]
+      - [0x04080C, asm, main_text_mid_04080c_0408c0]
+      - [0x0408C0, asm, isysGObjProcRemoveAll]
+      - [0x0408F8, asm, isysGObjProcThreadSleep]
+      - [0x04092C, asm, main_text_mid_04092c_0409a0]
+      - [0x0409A0, asm, iosOmInit]
+      - [0x0409D0, asm, _iosOmMain]
+      - [0x040C00, asm, iosOmCreateDL]
+      - [0x040D10, asm, iosOmExeEachGObj]
+      - [0x040D78, asm, iosOmExeEachGObjAll]
+      - [0x040E18, asm, iosOmReturnExeEachGObj]
+      - [0x040EB0, asm, iosOmGetGObjStatus]
+      - [0x040EDC, asm, main_text_mid_040edc_041048]
+      - [0x041048, asm, iosOmExeMail]
+      - [0x0410A8, asm, main_text_mid_0410a8_042128]
+      - [0x042128, asm, isysGObjActiveLink]
+      - [0x04212C, asm, main_text_mid_04212c_042160]
+      - [0x042160, asm, isysGObjActiveDlLink]
+      - [0x042164, asm, main_text_mid_042164_042c10]
+      - [0x042C10, asm, isysGObjProcAddSGOppArg]
+      - [0x042CF0, asm, main_text_mid_042cf0_054478]
+      - [0x054478, asm, boy_init]
+      - [0x054564, asm, main_text_mid_054564_065440]
+      - [0x065440, asm, enemy1_init]
+      - [0x06589C, asm, main_text_mid_06589c_067028]
+      - [0x067028, asm, barrel_init]
+      - [0x0670B0, asm, main_text_mid_0670b0_06bc10]
+      - [0x06BC10, asm, GirlBrainClearTarget]
+      - [0x06BC20, asm, main_text_mid_06bc20_06cca0]
+      - [0x06CCA0, asm, girlBrainMain_PositionUpdate]
+      - [0x06CD08, asm, main_text_mid_06cd08_06ded0]
+      - [0x06DED0, asm, subGirlBrain_PulledUp]
+      - [0x06E318, asm, main_text_mid_06e318_06f910]
+      - [0x06F910, asm, _girlBrainHide_MakeHidePoint]
+      - [0x06F974, asm, main_text_mid_06f974_06fb68]
+      - [0x06FB68, asm, girlBrainHide_GoalTurn]
+      - [0x06FC78, asm, main_text_mid_06fc78_070410]
+      - [0x070410, asm, girlBrainRunawaySearchPoint]
+      - [0x070644, asm, main_text_mid_070644_0709a8]
+      - [0x0709A8, asm, girlBrainRunawayMoveByWay]
+      - [0x070C44, asm, main_text_mid_070c44_076cb0]
+      - [0x076CB0, asm, subGirlBrain_Idle]
+      - [0x076CE0, asm, subGirlBrain_Hesitate]
+      - [0x076D90, asm, main_text_mid_076d90_076dc0]
+      - [0x076DC0, asm, subGirlBrain_Busy]
+      - [0x076ECC, asm, main_text_mid_076ecc_091b30]
+      - [0x091B30, asm, eBrainProcess]
+      - [0x091D70, asm, eBrainGetTargetGeneratorFromLabel]
+      - [0x091DE0, asm, main_text_mid_091de0_091f30]
+      - [0x091F30, asm, eBrainGetTarget]
+      - [0x0928A8, asm, eBrainInit]
+      - [0x0928F0, asm, eBrainStatusSet]
+      - [0x0929A0, asm, eBrainSendMes]
+      - [0x092A64, asm, main_text_mid_092a64_092b70]
+      - [0x092B70, asm, eBrainGetTargetGeneratorFromLabelStage]
       - [0x092D20, asm, eBrainGetStatus]
-
-      # Post-eBrainGetStatus monolithic (0x092D70 to 0x191B70)
-      - [0x092D70, asm, main_text_mid_092d70_191b70]
-
-      # eBrainSystemInit (0x191B70): GirlBrain system init, 108 insns, 432B
-      - [0x191B70, asm, eBrainSystemInit]
-
-      # eBrainSetFlag (0x191D6C): set flag by entity ID, 33 insns
-      - [0x191D6C, asm, eBrainSetFlag]
-
-      # eBrainMovePos (0x191DF0): move to position, 64 insns, 256B
-      - [0x191DF0, asm, eBrainMovePos]
-
-      # eBrainMotionSe (0x191EF0): motion/sound effect by entity ID, 30 insns
-      - [0x191EF0, asm, eBrainMotionSe]
-
-      # eBrainPursuit (0x191F68): pursuit/movement AI, 122 insns, 488B
-      - [0x191F68, asm, eBrainPursuit]
-
-      # eBrainAvoid (0x192150): obstacle avoidance AI, 98 insns, 392B
-      - [0x192150, asm, eBrainAvoid]
-
-      # eBrainReturnInit (0x1922D8): return to initial state, 42 insns, 168B
-      - [0x1922D8, asm, eBrainReturnInit]
-
-      # eBrainTargetGenerator (0x192380): waypoint target generator, 126 insns, 504B
-      - [0x192380, asm, eBrainTargetGenerator]
-
-      # Post-TargetGenerator monolithic (0x192578 to subGirlBrain_PulledUp)
-      - [0x192578, asm, main_text_mid_192578_1944f8]
-
-      # subGirlBrain_PulledUp (0x1944F8): pulled-up state handler, 74 insns, 296B
-      - [0x1944F8, asm, subGirlBrain_PulledUp]
-
-      # Post-GirlBrain monolithic (0x194620 to first BIRD handler at 0x197078)
-      - [0x194620, asm, main_text_mid_194620_197078]
-
-      # --- BIRD handlers (desc idx 32, init_fn=0x1971C0) ---
-      # hB (0x197078): 2 insns tail to 0x1E3FC8
-      - [0x197078, asm, bird_hB_197078]
-      # hA (0x197080): 32B stack, reset handler
-      - [0x197080, asm, bird_hA_197080]
-      # hC (0x197240): 64B stack, constructor w/ random timer
-      - [0x197240, asm, bird_hC_197240]
-
-      # --- BOSS_CTR handlers (desc idx 64, init_fn=0x198140) ---
-      # hB (0x197FC8): conditional tail (4 insns)
-      - [0x197FC8, asm, bossctr_hB_197FC8]
-      # hA (0x198000): 32B stack, slot cleanup loop (53-slot manager)
-      - [0x198000, asm, bossctr_hA_198000]
-      # hC (0x198218): no alloc, 53-slot loop
-      - [0x198218, asm, bossctr_hC_198218]
-
-      # Post-BOSS_CTR monolithic
-      - [0x198330, asm, main_text_mid_198330_1BBB20]
-
-      # --- ATTACKCH idx 63 handlers (desc idx 63, init_fn=0x1BBF78) ---
-      # hC (0x1BBB20): 320B stack, rotation matrix, dynamic child array
-      - [0x1BBB20, asm, attackch63_hC_1BBB20]
-      # hB (0x1BBDD8): linked-list detach (28 insns)
-      - [0x1BBDD8, asm, attackch63_hB_1BBDD8]
-      # hA (0x1BBE48): NO-OP (2 insns)
-      - [0x1BBE48, asm, attackch63_hA_1BBE48]
-
-      # --- ATTACKCH idx 62 handlers (desc idx 62, init_fn=0x1BBF78) ---
-      # hC (0x1BBE50): 20 insns, 12B alloc w/ parent tracking
-      - [0x1BBE50, asm, attackch62_hC_1BBE50]
-      # hB (0x1BBEA0): small guard (12 insns)
-      - [0x1BBEA0, asm, attackch62_hB_1BBEA0]
-      # hA (0x1BBEC8): projectile spawner (44 insns)
-      - [0x1BBEC8, asm, attackch62_hA_1BBEC8]
-
-      # Post-ATTACKCH monolithic
-      - [0x1BBF10, asm, main_text_mid_1BBF10_1C00C0]
-
-      # --- WOODBOX0 handlers (desc idx 17, init_fn=0x17D1D0) ---
-      # hC (0x1C00C0): 286 insns, 400B alloc, data copy from 0x4DF560
-      - [0x1C00C0, asm, woodbox0_hC_1C00C0]
-      # hB (0x1C0538): 27 insns, 31-frame counter, destroy logic
-      - [0x1C0538, asm, woodbox0_hB_1C0538]
-      # hA (0x1C05D0): 28+ insns, post-init/reset
-      - [0x1C05D0, asm, woodbox0_hA_1C05D0]
-
-      # Post-WOODBOX0 monolithic
-      - [0x1C08C0, asm, main_text_mid_1C08C0_1CE220]
-
-      # --- ENEMY1 handlers (desc idx 4, init_fn=0x164440) ---
-      # hC (0x1CE220): 103 insns, 80B alloc, 2x child arrays
-      - [0x1CE220, asm, enemy1_hC_1CE220]
-      # hB (0x1CE3C0): ~135 insns, AI+attack+draw
-      - [0x1CE3C0, asm, enemy1_hB_1CE3C0]
-      # hA (0x1CE690): 23+ insns, reset/cleanup
-      - [0x1CE690, asm, enemy1_hA_1CE690]
-
-      # Remaining .text
-      - [0x1CE6F0, asm, main_text_remaining_1ce6f0_end]
+      - [0x092D6C, asm, eBrainSetFlag]
+      - [0x092DF0, asm, eBrainMovePos]
+      - [0x092EF0, asm, eBrainMotionSe]
+      - [0x092F68, asm, eBrainPursuit]
+      - [0x093150, asm, eBrainAvoid]
+      - [0x09329C, asm, main_text_mid_09329c_0932d8]
+      - [0x0932D8, asm, eBrainReturnInit]
+      - [0x093380, asm, eBrainTargetGenerator]
+      - [0x093550, asm, main_text_mid_093550_098240]
+      - [0x098240, asm, bird_hC]
+      - [0x09843C, asm, main_text_mid_09843c_0bce50]
+      - [0x0BCE50, asm, attackch62_hC]
+      - [0x0BCF48, asm, main_text_mid_0bcf48_0c10c0]
+      - [0x0C10C0, asm, woodbox0_hC]
+      - [0x0C1538, asm, woodbox0_hB]
+      - [0x0C15D0, asm, woodbox0_hA]
+      - [0x0C162C, asm, main_text_mid_0c162c_0c2a98]
+      - [0x0C2A98, asm, boy_hC]
+      - [0x0C2C48, asm, synchronizeMotionOutputOriginForGirl]
+      - [0x0C2DD8, asm, main_text_mid_0c2dd8_0c2ea8]
+      - [0x0C2EA8, asm, boy_dispCrown]
+      - [0x0C2F58, asm, boy_hA]
+      - [0x0C3094, asm, main_text_mid_0c3094_0c30a8]
+      - [0x0C30A8, asm, boy_float_accum]
+      - [0x0C3170, asm, boy_activate]
+      - [0x0C3198, asm, main_text_mid_0c3198_0cf220]
+      - [0x0CF220, asm, enemy1_hC]
+      - [0x0CF3C0, asm, enemy1_hB]
+      - [0x0CF600, asm, main_text_mid_0cf600_0d3550]
+      - [0x0D3550, asm, HoldItem]
+      - [0x0D3638, asm, main_text_mid_0d3638_0d3650]
+      - [0x0D3650, asm, avoidInsideOfWall]
+      - [0x0D3738, asm, sub_1D2738]
+      - [0x0D37A8, asm, barrel_hC]
+      - [0x0D3930, asm, main_text_mid_0d3930_0d47c8]
+      - [0x0D47C8, asm, execBombGeo]
+      - [0x0D4824, asm, main_text_mid_0d4824_0d4a30]
+      - [0x0D4A30, asm, ItemGeo]
+      - [0x0D4B08, asm, main_text_mid_0d4b08_0d4b28]
+      - [0x0D4B28, asm, rope_hC]
+      - [0x0D4BF0, asm, fn_1D3BF0]
+      - [0x0D4D30, asm, main_text_mid_0d4d30_0d4dd8]
+      - [0x0D4DD8, asm, ReviveAllCarryableItems]
+      - [0x0D4EC4, asm, main_text_mid_0d4ec4_0d4f78]
+      - [0x0D4F78, asm, clothSubForceApply]
+      - [0x0D4FEC, asm, main_text_mid_0d4fec_0fd168]
+      - [0x0FD168, asm, isysGObjMoveCameraDL]
+      - [0x0FD1A0, asm, isysGObjLinkCameraDL]
+      - [0x0FD270, asm, main_text_mid_0fd270_0fd2e0]
+      - [0x0FD2E0, asm, isysGObjMoveCameraDLHead]
+      - [0x0FD3AC, asm, main_text_final_0fd3ac_end]
 
   - [0x53A488, databin, entity_tail_pad]

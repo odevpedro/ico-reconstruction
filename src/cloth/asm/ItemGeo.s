@@ -22,40 +22,40 @@ ItemGeo:
 	.word	0x1053002c
 	ld	$31,0x40($29)
 	lw	$2,0xc($18)
-	beql	$2,$0,0f
+	beql	$2,$0,loc_001d3a80
 	lw	$2,8($18)
 	jal	0x001d29b8
 	nop	
-	b	2f
+	b	loc_001d3ae4
 	nop	
-0:
-	beqz	$2,1f
+loc_001d3a80:
+	beqz	$2,loc_001d3aa8
 	move	$4,$17
 	lw	$16,0x74($3)
 	jal	0x001d2bf0
 	sw	$0,0x74($3)
-	beqz	$16,2f
+	beqz	$16,loc_001d3ae4
 	nop	
 	lw	$2,0x15c($17)
-	b	2f
+	b	loc_001d3ae4
 	sw	$19,0x74($2)
-1:
+loc_001d3aa8:
 	lw	$16,0($3)
-	beqz	$16,2f
+	beqz	$16,loc_001d3ae4
 	addiu	$2,$0,0x11
 	lw	$3,0xc($16)
-	bne	$3,$2,2f
+	bne	$3,$2,loc_001d3ae4
 	nop	
 	jal	0x001c05a8
 	move	$4,$16
 	addiu	$3,$0,2
-	bne	$2,$3,2f
+	bne	$2,$3,loc_001d3ae4
 	move	$4,$17
 	sw	$0,0x14($18)
 	lw	$5,0x15c($16)
 	jal	0x001d2738
 	addiu	$5,$5,0x130
-2:
+loc_001d3ae4:
 	jal	0x00102858
 	move	$4,$17
 	lw	$2,0x15c($17)

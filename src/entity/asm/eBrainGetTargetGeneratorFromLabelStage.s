@@ -1,8 +1,8 @@
 	.text
 	.p2align 3
-	.globl	eBrainSystemInit
-	.ent	eBrainSystemInit
-eBrainSystemInit:
+	.globl	eBrainGetTargetGeneratorFromLabelStage
+	.ent	eBrainGetTargetGeneratorFromLabelStage
+eBrainGetTargetGeneratorFromLabelStage:
 	.frame	$sp,0,$31
 	.mask	0x00000000,0
 	.fmask	0x00000000,0
@@ -126,4 +126,4 @@ loc_00191ce4:
 	sw	$0,-0x4b34($28)
 	.set	macro
 	.set	reorder
-	.end	eBrainSystemInit
+	.end	eBrainGetTargetGeneratorFromLabelStage

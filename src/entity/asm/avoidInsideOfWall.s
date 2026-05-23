@@ -12,7 +12,7 @@ avoidInsideOfWall:
 	sd	$17,0x10($29)
 	sd	$31,0x20($29)
 	move	$17,$4
-	beqz	$5,0f
+	beqz	$5,loc_001d26b0
 	sd	$16,0($29)
 	lui	$2,0x4c
 	addiu	$16,$2,0x4760
@@ -24,7 +24,7 @@ avoidInsideOfWall:
 	jal	0x001683c8
 	move	$4,$16
 	lw	$2,0x88($16)
-	beqz	$2,1f
+	beqz	$2,loc_001d26b4
 	ld	$31,0x20($29)
 	move	$4,$17
 	addiu	$5,$16,0x20
@@ -32,9 +32,9 @@ avoidInsideOfWall:
 	ld	$16,0($29)
 	j	0x104360
 	addiu	$29,$29,0x30
-0:
+loc_001d26b0:
 	ld	$31,0x20($29)
-1:
+loc_001d26b4:
 	ld	$17,0x10($29)
 	ld	$16,0($29)
 	jr	$31

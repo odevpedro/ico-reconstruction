@@ -15,7 +15,7 @@ HoldItem:
 	sd	$31,0x60($29)
 	move	$17,$4
 	sd	$18,0x40($29)
-	bnez	$17,0f
+	bnez	$17,loc_001d25a8
 	sd	$16,0x20($29)
 	lui	$4,0x62
 	jal	0x001a6e28
@@ -30,7 +30,7 @@ HoldItem:
 	addiu	$6,$6,0x3420
 	jal	0x00263ff0
 	addiu	$5,$0,0x158
-0:
+loc_001d25a8:
 	lw	$2,0x15c($17)
 	addiu	$3,$0,1
 	lw	$18,0x800($2)
@@ -46,14 +46,14 @@ HoldItem:
 	lw	$4,0x800($3)
 	lw	$2,4($4)
 	xori	$2,$2,1
-	bnel	$2,$0,1f
+	bnel	$2,$0,loc_001d2600
 	move	$5,$17
 	lui	$5,0x27
 	move	$4,$17
 	jal	0x00102870
 	addiu	$5,$5,0x6140
 	move	$5,$17
-1:
+loc_001d2600:
 	jal	0x00102850
 	move	$4,$29
 	addiu	$16,$29,0x10
