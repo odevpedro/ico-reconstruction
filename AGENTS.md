@@ -78,25 +78,19 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
+research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md       (full isysGObj* lifecycle: init→alloc→add→dispatch→remove; ios/thread.c=thread creation; 36 byte-exact .s sources)
+research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md  (isysGObjProcAdd_=488B central registration; _iosOmMain=17 slots matching runtime data; initSceneGObj=2088B connects descriptor table to isysGObj*)
+research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md  (ARCHITECTURAL CORRECTION: _Clip is collision not dispatcher; isysGObj* is real game object system; GirlBrain 30+ functions)
 research/ghidra-exploration-2026-05-21.md  (2886 symbol import reveals real names: _Clip, execBombGeo, ItemGeo, _clipW*)
 research/elf/ghidra-rev096-halfword-runtime-session-analysis.md  (offline Rev.095 review: main caller still dominates, second caller absent in this capture, fast path still inferred)
 research/elf/ghidra-rev094-halfword-runtime-second-caller.md  (second halfword caller runtime-confirmed, fast path still needs direct probe)
 research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md  (halfword writer active in hot dispatch path)
 research/elf/ghidra-rev093-three-investigations.md  (mask_set=ShockRequestBox_RequestCancel, dispatch table=compile-time .data)
-research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md  (boy_hC 76.64%). li expansion, ori→addiu normalizer, model address fix)
-research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md  (boy_hB 97.06% via li.s + GP-relative normalizer)
 research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md  (world_state transitions, gp_m49B4=current entity work area, 6 room values mapped)
-research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md         (BARREL/ROPE/WOODBOX0 near-structural C decompilation)
-research/elf/ghidra-rev087-enemy1-boy-decompilation.md                   (ENEMY1+BOY near-structural C decompilation)
 research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md  (final static analysis — behavior_fn, env_effect type matrix, cb_routine4, VBlank)
-research/elf/ghidra-rev085-death-validation-and-next-session-plan.md     (mask_set=I/O only, death zone=100% slot12)
-research/elf/ghidra-rev084-runtime-validation-extended-session.md        (43.8M events, slot 5/11 first fire, cutscene=100% slot12, 1913 entity contexts)
-research/elf/ghidra-rev079-runtime-validation-windmill-session.md        (14M events, slot distribution inverted per area)
 research/elf/ghidra-rev077-final-static-analysis.md                      (descriptor table, entry table, scene loader, VU0 queue, debug table, GP map)
 research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md  (entity types, init_fn groups, callback masks)
-research/elf/ghidra-rev074-runtime-session-main-loop-dispatch-confirmed.md  (9.1M events, slot distribution, callbacks)
 research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md  (12-step main loop, 17-slot dispatch)
-research/elf/ghidra-rev039-cloth-domain-correction.md                    (cloth domain for 0x001d37c8/0x001d3a30)
 ```
 
 ---
@@ -109,28 +103,29 @@ Before doing new analysis, read these files in this order if they exist:
 2. `.local/key-concepts.md`
 3. `.local/ai-context.md`
 4. `key-concepts.md`
-5. `research/ghidra-exploration-2026-05-21.md`
-6. `research/elf/ghidra-rev096-halfword-runtime-session-analysis.md`
-7. `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`
-8. `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md`
-9. `research/elf/ghidra-rev093-three-investigations.md`
-10. `research/elf/ghidra-rev091g-boy-hc-77pct-via-li-expansion-and-constant-fix.md`
-11. `research/elf/ghidra-rev091f-boy-hb-near-exact-via-normalization.md`
-12. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
-13. `research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md`
-14. `research/elf/ghidra-rev087-enemy1-boy-decompilation.md`
-15. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
-16. `research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`
-17. `research/elf/ghidra-rev084-runtime-validation-extended-session.md`
-18. `research/elf/ghidra-rev077-final-static-analysis.md`
-19. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
-20. `research/elf/ghidra-rev039-cloth-domain-correction.md`
-21. `research/ico-decomp-cross-reference-2026-05-14.md`
-22. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
-23. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
-24. `research/external/sotc-tooling-relevance-survey.md`
-25. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
-26. `research/external/ico-splat-promoted-ranges-experiment.md`
+5. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+6. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+7. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+8. `research/ghidra-exploration-2026-05-21.md`
+9. `research/elf/ghidra-rev096-halfword-runtime-session-analysis.md`
+10. `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`
+11. `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md`
+12. `research/elf/ghidra-rev093-three-investigations.md`
+13. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
+14. `research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md`
+15. `research/elf/ghidra-rev087-enemy1-boy-decompilation.md`
+16. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
+17. `research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`
+18. `research/elf/ghidra-rev084-runtime-validation-extended-session.md`
+19. `research/elf/ghidra-rev077-final-static-analysis.md`
+20. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
+21. `research/elf/ghidra-rev039-cloth-domain-correction.md`
+22. `research/ico-decomp-cross-reference-2026-05-14.md`
+23. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
+24. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
+25. `research/external/sotc-tooling-relevance-survey.md`
+26. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
+27. `research/external/ico-splat-promoted-ranges-experiment.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -141,77 +136,109 @@ analysis unless a later validated note supersedes it.
 
 ## Current strategic status
 
-### Verified `execBombGeo` state model (Rev.022-024)
+### Architectural correction (Rev.097): `isysGObj*` is the real game object system
 
-The function `execBombGeo` at `0x001d37c8` has a jump table at `0x00618fb0` (5 entries):
+The Ghidra exploration (Rev.096 + 5 headless scripts) revealed that the project's
+central architectural assumption since Rev.062 was incorrect:
 
-```txt
-entity/context
--> [entity + 0x800]
--> candidate_state_block_ptr
--> [candidate_state_block_ptr + 0x48]
--> candidate_state_id
--> bounds check candidate_state_id < 5
--> candidate_state_id * 4
--> jump table at 0x00618fb0
--> internal basic block handler
+- **`_Clip` (0x166E10)** is NOT the main entity dispatcher — it is a collision/clipping
+  function within `DispCollisionPC`, with only 2 static callers and 4 active `_clipW*`
+  callbacks in its 17-slot configuration table (0x282690).
+- **`isysGObj*` (0x13DDA0-0x141D18, 30 functions)** is the true game object processing
+  system, managing callback registration, object allocation, traversal, and dispatch.
+- The runtime PCSX2 slot distribution (15 active slots, 42.2M events) belongs to
+  `_iosOmMain` (0x13F9D0), which has exactly 17 slots = 8 mask slots + 9 type slots.
+
+### `isysGObj*` system architecture (Rev.098-099)
+
+The game object lifecycle is now fully traced:
+
+```
+initSceneGObj (0x1B76F8, 2088B) — connects descriptor table (0x2A31B8, 68 entries)
+                                     to isysGObj* via entry table (0x2A4C48, 512 entries)
+  ↓
+isysGObjInit (0x13DDA0) — zeros head/tail tables (0x281A70/0x281A90, 8 DLs)
+  ↓
+isysGObjAlloc (0x13E4D0) — allocates GObj array (stride 0x174, count at gp-0x4C4C)
+  ↓
+isysGObjAdd (0x13E8D8) — adds GObj to type-based display list
+  ↓
+isysGObjProcAdd_ (0x13F3F0, 488B) — central process/callback registration
+  |                                  stride 0x94, priority-sorted linked list
+  |                                  alloc class: ios/thread.c (thread control block)
+  ↓
+_iosOmMain (0x13F9D0, 534B) — 17-slot dispatcher
+  ├── Pass 1: mask slots 0-7 (gp-0x6724 bitmask)
+  └── Pass 2: type slots 0x13-0x1B (9 types)
+  ↓
+iosOmCreateDL (0x13FC00, 264B) — per-GObj display list dispatcher
+  |                              32-slot table at 0x281AB0
+  ↓
+iosOmExeEachGObj (0x13FD10) — linked-list walker, fires N events per slot
 ```
 
-### Runtime confirmation (Rev.025)
+Key structures:
+- **GObj**: stride 0x174, fields at +0x28 (user data), +0x34 (next), +0x48 (callback),
+  +0x4C (slot mask), +0x50 (type bits)
+- **Process node (TCB)**: stride 0x94, fields at +0x1C (callback), +0x14 (priority),
+  +0x10 (type mask), +0x18 (active flag)
+- **Dispatch table 0x281AB0**: 32 slot entries, each a linked list of callback nodes
+- **Thread table 0x6A6F30**: indexed by thread_id, stores process ptrs
 
-The only static caller of `execBombGeo`, `ItemGeo` at `0x001d3a30`, was confirmed at runtime via PCSX2 breakpoint (Rev.024 session). Both are geometry functions.
+### GirlBrain state machine (Rev.097)
 
-### ItemGeo gap (Rev.033-037)
+30+ named Girl AI functions at `0x00191B70-0x0019C040`:
+`eBrainSystemInit`, `eBrainGetStatus`, `eBrainSetFlag`, `eBrainMovePos`,
+`eBrainPursuit`, `eBrainAvoid`, `eBrainReturnInit`, `eBrainTargetGenerator`
+(8 variants), `eBrainEntryStart`, `eBrainEntryFront`, `girlBrainMain_PositionUpdate`,
+`GirlBrainClearTarget`, `subGirlBrain_PulledUp`, `_girlBrainHide_MakeHidePoint`, etc.
 
-Static analysis of all 5 callsites of `0x0013f7a8` is complete. Three paths are definitively excluded for `ItemGeo` at `0x001d3a30`. Two paths remain candidates but require runtime validation. **Static options are exhausted.**
+### Byte-exact reconstruction status (Rev.092 + Rev.099)
 
-### External tooling results (Rev.038)
+All 74 functions are now at 100% byte-exact match:
 
-- **CCC (Chaos Compiler Collection)**: No `.mdebug`/STABS/debug symbols found in ELF.
-- **decomp.me scratches**: 6 function packages generated (dispatcher, ROPE callback, registration chain) for crowd-sourced decompilation matching.
-- **ICO-decomp cross-reference** (`RossyDoubleUnderscore/ICO-decomp`): Dispatcher `0x001d37c8` and ROPE callback `0x001d3a30` reside in **`clothAnimation.c`** (cloth physics), not entity/AI state. Nearby symbols: `GetCloth4D`, `getCloth4D_PlaneClip`. The 5 internal state blocks are likely cloth vertex/simulation state transitions.
-- **Compiler confirmed**: EE GCC 2.9-991111-01 with flags `-march=r5900 -mips3 -mgp64 -mabi=eabi -msingle-float -G0 -O2`.
-- **Source tree**: ICO-decomp splat YAML reveals folder structure: `sugipon/` (cloth, physics, motion, gameplay), `omori/` (camera, AI), `fumi/` (core engine, IOS), `ito/` (bosses), `seki/` (rendering).
+| Group | Count | Method |
+|-------|-------|--------|
+| Entity/cloth handlers (.c) | 12 | C source (byte-exact via compiler flags) |
+| Entity/cloth handlers (.s) | 26 | Manual .s assembly (Path B) |
+| Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
+| **Total** | **74** | |
 
-### External tooling front (2026-05-15)
+### Verified facts (Rev.038-099)
 
-A separate tooling investigation was opened to evaluate whether the public
-`Fantaskink/SOTC` decompilation project can help this project from a process
-standpoint.
+- **Descriptor table** at 0x2A31B8: 68 entity types, stride 0x64. Only 12/68 have init_fn.
+- **Entry table** at 0x2A4C48: 512 entries, stride 0x4C. Maps scene objects to descriptors.
+- **initSceneGObj** (0x1B76F8, 2088B): connects entry table to isysGObj* system.
+- **Two independent entity systems**: callback_register (52 scene objects via 28 init_fn)
+  and live dispatch (8 core entities, 20 ctx/frame).
+- **17-slot dispatch table** at 0x282690 = compile-time `.data` for `_Clip` collision config.
+  Only 4 active `_clipW*` callbacks (slots 0,4,8,12). NOT the runtime slot source.
+- **`_iosOmMain` has 17 slots** (8 mask + 9 type) matching runtime slot distribution.
+- **Mask system** (FUN_0x13ed40) = ShockRequestBox_RequestCancel, loading-only, bit 0 only.
+- **Halfword table** at 0x006AB080 = 32×32 spatial hash grid for collision clipping.
+  Active at 0x166BB0 (hot path). Second caller at 0x0016828C runtime-reachable.
+  Single-cell fast path at 0x166DFC still inferred.
+- **Scene loader** in `kanban.c` (GP=0x27A7A8): 21-stage jump table at 0x616FD0,
+  only 7 unique handlers. Functions: `kanbanReqAdd`, `kanbanExec`, `initSceneGObj`,
+  `la_load_processing`, `la_switching_stage`, `HotInitSceneObjects`, `MoveNextStage_Clear`.
+- **Main loop**: `vblankHandler` (0x1BDE48) → `ACTGame` (0x1A63E0) →
+  `backStageProcessMain` (0x1A05D0) / `stage_ApplyData` (0x1A2A1D8) / `kanbanExec`.
+- **Thread system** from `ios/thread.c`: TCB stride 0x94, priority-sorted ready queue,
+  thread table at 0x6A6F30, counter at gp-0x6740.
 
-Current findings:
+### Confirmed module structure (from Ghidra symbols)
 
-- `research/external/sotc-tooling-relevance-survey.md` confirms SOTC is useful
-  mainly as a **tooling/process reference**, not as semantic evidence for ICO.
-- SOTC tooling patterns worth testing for ICO: `splat64[mips]`,
-  Rabbitizer/spimdisasm decoding, Ninja build graph generation, map/first-diff
-  workflow, SDK/library segmentation, and decomp.me compiler packaging.
-- SOTC uses `ee-gcc2.96`; do **not** treat that as ICO's compiler. ICO remains
-  provisionally tied to EE GCC `2.9-991111-01` and the flags above.
-- `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md` independently
-  revalidated the dispatcher/callback anchors with Rabbitizer:
-  `0x001d3800 == sll $v1,$v1,2`, `0x001d3b04 -> 0x001d37c8`, and jump table
-  `0x00618fb0` contains the five expected `.text` targets.
-- `research/external/ico-splat-minimal-experiment.md` confirms `splat64[mips]`
-  can split ICO USA `.text`, generate anchors such as `func_001D37C8` and
-  `func_0013F7A8`, create `jtbl_00618FB0_main_text`, and carry the full ELF
-  layout as defined segments when non-text/DVP regions are treated as `databin`.
-- `research/external/ico-splat-promoted-ranges-experiment.md` confirms selected
-  verified ranges can be promoted into separate asm files:
-  `0x0013f3f0`, `0x0013f7a8`, `0x001d37c8`, `0x001d3a30`. It also corrected two
-  naive range ends: `0x0013f3f0` must include the return path through
-  `0x0013f630` plus padding to `0x0013f638`, and `0x0013f7a8` must include
-  `jr $ra` / delay slot through `0x0013f7d4` (end marker `0x0013f7d8`).
-- `research/external/ico-splat-adjacent-promoted-ranges-experiment.md` confirms
-  the next adjacent verified ranges can also be promoted cleanly:
-  `0x0013fc00`, `0x001d27a8`, `0x001d3b28`. It preserves the known static gap:
-  `0x0013fc00` can dispatch slot `+0x48` callbacks, but visibly prepares only
-  `a0`; `0x001d27a8` consumes a meaningful `a1`, so runtime capture remains
-  required to identify the real `a1` source.
-- The next tooling tests should stay small and auditable: promote only verified
-  functions/ranges out of monolithic asm, run SDK/library recognition, check
-  compiler package availability, and prioritize runtime capture for
-  `0x001d27a8`'s `a1` source.
+| Module | Path | GP | Evidence |
+|--------|------|----|----------|
+| Core engine | `src/fumi/` | — | vblank, IO, CDVD, heap strings |
+| Item/Physics | `src/sugipon/item.c` | — | Assertion "src/item.c":434 |
+| Field collision | `src/sugipon/fieldCollision.c` | — | Assertion line 533 |
+| Scene loading | `src/sugipon/kanban.c` | 0x27A7A8 | GP + kanban* names |
+| Cloth physics | `src/sugipon/clothAnimation.c` | — | execBombGeo, ItemGeo, GetCloth4D |
+| BOY handler | `src/omori/boy.c` | — | String "boy.c" |
+| ENEMY1 handler | `src/omori/enemy1.c` | — | String "enemy1.c" |
+| GirlBrain AI | `src/omori/` | — | eBrain*, GirlBrain* names |
+| Camera/Render | `src/omori/` + `src/seki/` | — | isysGObjMoveCameraDL |
 
 ---
 
@@ -391,6 +418,11 @@ project names are incorrect:
 
 ## Current confirmed dispatcher model
 
+> **Note:** This section describes the `execBombGeo` (0x001D37C8) cloth geometry
+> dispatcher with 5 internal states. This is a **geometry/physics subsystem**,
+> not the main entity dispatcher. The main game object system is `isysGObj*`
+> (see [Current strategic status](#current-strategic-status)).
+
 Use this provisional terminology:
 
 ```txt
@@ -427,27 +459,25 @@ Those names require evidence.
 
 ## Current priority
 
-The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), and tee-gcc scoring pipeline (Rev.090-091) are complete.
+The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration (Rev.096-097), and isysGObj* lifecycle analysis (Rev.098-099) are complete.
 
-### Current score status (Rev.092 — Path B milestone)
+### Current score status (Rev.099 — all 74 functions byte-exact)
 
-All 38 functions are now at **100% byte-exact match**.
+All 74 functions are now at **100% byte-exact match**.
 
-| Status | Count | Functions |
-|--------|-------|-----------|
-| EXACT (100%) via C | 12 | enemy1_hA, fn_1CE5F8, boy_hB, boy_set_state, barrel_hA, barrel_hA_alt, cloth_get_variant, cloth_payload_field0_is_zero, cloth_payload_state_is_two, cloth_test_state_lt_2, cloth_test_variant_field, cloth_test_field0_or_extra |
-| EXACT (100%) via .s assembly | 26 | enemy1_init, enemy1_hC, enemy1_hB, boy_init, boy_hC, sub_1C1C48, sub_1C1EA8, boy_hA, boy_float_accum, boy_activate, barrel_init, fn_1D2550, sub_1D2650, sub_1D2738, barrel_hC, rope_hC, ItemGeo, fn_1D3BF0, fn_1D3DD8, woodbox0_hC, woodbox0_hB, woodbox0_hA, bird_hC, attackch62_hC, execBombGeo, clothSubForceApply |
+| Group | Count | Method |
+|-------|-------|--------|
+| Entity/cloth handlers (.c) | 12 | C source |
+| Entity/cloth handlers (.s) | 26 | Manual .s assembly (Path B) |
+| Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly |
+| **Total** | **74** | |
+
+Files in `src/{entity,cloth}/asm/` (38) and `src/core/asm/` (36).
 
 ### Scoring pipeline (Path B — assembly)
 
 - `tools/asm_source_score.py`: converts target ELF function → GCC-style .s source → assembles with ee-gcc → verifies byte-exact match (no LCS/normalizer needed)
-- `.s` files stored in `src/{entity,cloth}/asm/`
-- `tools/score_all.py`: batch scoring (still uses old LCS pipeline, .s verification bypasses it)
 - Byte-level verification: compares .text section bytes against target ELF at declared VA. Zero tolerance.
-
-### Path B — key discovery (2026-05-18)
-
-The C compiler register-allocation approach (Paths A/C/D) is fundamentally unable to reach 100% for 26 functions. The solution: convert the target ELF disassembly into a `.s` assembly source file that assembles to the exact same bytes. This is a mechanical, fully verifiable process.
 
 ### EE assembler constraints discovered
 
@@ -465,20 +495,6 @@ The C compiler register-allocation approach (Paths A/C/D) is fundamentally unabl
 ### Compiler flags (archived — no longer relevant for asm)
 
 The old C-based compiler flag investigation is archived. All 26 asm functions bypass the C compiler entirely.
-
-### Confirmed results (Rev.074-077)
-
-- **Descriptor table** at 0x2A31B8: 68 entity types fully mapped (BOY, GIRL, ENEMY1, BARREL, ROPE, QUEEN, BIRD, etc.). Three vtable groups: main characters (0x202A60), physics props (0x23D660), entity-specific. Only 12/68 have init_fn.
-- **ROPE gap RESOLVED**: 0x1D3A30 is `ItemGeo`, registered via descriptor table +0x50, not callback_register.
-- **8-step scene loader** in `kanban.c` with GP=0x27A7A8 (separate compilation unit).
-- **Two independent entity systems**: callback_register (52 scene objects via 28 init_fn) and live dispatch (8 core entities, 20 ctx/frame).
-- **28 init_fn classified** into 6 groups: Generic (60%), HUD/status lights (15%), UI/menu (9%), cloth/physics aux (5%), env effect sub-dispatcher (3%), special one-shots (0.4%)
-- **17-slot dispatch table** at 0x282690 fully mapped with 14 _clip callback targets in 16-byte entries. Repeating structure: [flag 4B] [mode 4B] [tier 4B] [callback_ptr 4B]. 12 wall clip (_clipW*) variants active, 5 floor clip (_clipF*) variants inactive (flag=0). Callbacks include: `_clipWDebug`, `_clipW`, `_clipWR`, `_clipWField`, `_clipWE`, `_clipWEField`, `_clipWWaveForce`, `_clipWDitchHangWalkStop`, `_clipWBoxStop`, `_clipF`, `_clipFE`, `_clipFR`, `_clipFIH`. No direct code xrefs — accessed via GP-relative. **Confirmed compile-time .data** — no runtime populator (Rev.093).
-- **Mask system uses only bit 0**: mask_set(0x13ED40) = ShockRequestBox_RequestCancel. Loading-only, 6 callers in scene loader. Bit 1-7 permanently zero (Rev.093).
-- **404-byte table** at 0x005F2F98 = room/stage config.
-- **Halfword table** at 0x006AB080 = 32×32 spatial hash grid rebuilt in the hot dispatch path. Rev.093b confirmed `0x00166BB0` is active before callback dispatch; Rev.094 confirmed the second direct caller at `0x0016828C` is runtime-reachable. The single-cell fast path at `0x00166DFC` is still inferred and needs a direct probe.
-- **VU0 "kick"** at 0x117C40 = COP2 macro-mode vector clamp utility. Queue at 0x117768 = linked-list deferred processing (NOT a VU0 kick).
-- **Debug table** at 0x613E00: 47 debug visualization entries. 0x168650 = CollisionOldProc callback.
 
 ### Runtime-verified slot distribution
 
@@ -521,6 +537,11 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 24. Reposition world_state_load probe to capture room init_fn
 25. Deploy memory watchpoint on VBlank counter 0x274EC0
 26. ~~**Load 2886 verified symbols into Ghidra** — splat YAML + headless script applied all labels~~ **DONE (2026-05-21)**
+27. ~~**Rev.097: Ghidra exploration — isysGObj* correction, _Clip=não é dispatcher, GirlBrain discovery**~~ **DONE (2026-05-21)**
+28. ~~**Rev.098: isysGObjProcAdd_ = 488B central registration; _iosOmMain = 17 slots matching runtime; initSceneGObj = 2088B bridge**~~ **DONE (2026-05-21)**
+29. ~~**Rev.099: full isysGObj* lifecycle (init→alloc→add→dispatch→remove); ios/thread.c = thread system; 36 .s byte-exact for core**~~ **DONE (2026-05-22)**
+30. **Update AGENTS.md for Rev.097-099 architectural correction** — incorporating isysGObj* system, _Clip correction, ios/thread.c
+31. **Update backlog.md, docs/system-feature-flows.md, docs/data-model.md** for the corrected architecture
 
 ---
 
@@ -701,6 +722,16 @@ breakpoint at 0x001AF948  (world_state_load       — room transitions)
 breakpoint at 0x00166600  (gp_m49B4_read          — most-referenced GP var)
 ```
 
+Additional isysGObj* validation targets (after the corrected architecture):
+
+```txt
+breakpoint at 0x0013F9D0  (_iosOmMain            — validate 17-slot distribution matches runtime capture)
+breakpoint at 0x0013FC00  (iosOmCreateDL          — observe 32-slot dispatch, mask bits)
+breakpoint at 0x0013FD10  (iosOmExeEachGObj       — slot iteration, event counts per slot)
+breakpoint at 0x0013F3F0  (isysGObjProcAdd_       — registration activity during scene load)
+breakpoint at 0x001B76F8  (initSceneGObj          — observe GObj creation for scene objects)
+```
+
 Useful questions:
 
 - Which room transitions occur and what world_state values appear?
@@ -708,6 +739,9 @@ Useful questions:
 - Does the VBlank counter at 0x274EC0 show frame beats consistent with IOP timing?
 - What entity contexts accompany room transitions?
 - Does slot distribution correlate with specific world_state values?
+- Does `_iosOmMain` slot distribution (8 mask + 9 type) match the earlier PCSX2 15-slot capture?
+- What mask bits are active in `gp-0x6724` during gameplay vs cutscenes?
+- How many GObjs are created by `initSceneGObj` per scene load?
 
 ---
 

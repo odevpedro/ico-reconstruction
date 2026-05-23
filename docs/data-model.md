@@ -1,7 +1,11 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-19 (Rev.093 — slot table em 0x282690 confirmada como `.data` estatico, sem populacao runtime; mask_set confirmado como ShockRequestBox_RequestCancel.)
+> **Ultima atualizacao:** 2026-05-22 (Rev.097-099 — isysGObj* system, ios/thread.c added)
+
+### Correcao Rev.097-099 — isysGObj* é o sistema real de game objects
+
+O modelo arquitetural do projeto foi corrigido. O sistema `isysGObj*` (0x13DDA0-0x141D18, 30 funções) é o verdadeiro sistema de objetos do jogo. `_Clip` (0x166E10) é uma função de clipping/colisão, não o dispatcher geral. A tabela de 17 slots em 0x282690 é configuração de clipping (compile-time .data), não um dispatcher de entidades. Os dados runtime (15 slots ativos, 42.2M eventos) pertencem ao `_iosOmMain` (17 slots: 8 mask + 9 type). O sistema de threads `ios/thread.c` fornece a infraestrutura de processamento.
 
 ### Correcao Rev.093 — Slot Table e Compile-Time `.data`
 
@@ -842,6 +846,155 @@ Node de lista ligada usado pelo sistema de registro de callbacks. Gerenciado por
 |-------|---------------------------|
 | 0 | Entrance, Y=-175 (area A) |
 | 1 | Lower level, Y=-1245 (area B) |
+
+---
+
+### GObj (stride 0x174)
+
+Game Object — unidade central do sistema isysGObj*. Gerenciado por 30 funções em 0x13DDA0-0x141D18.
+
+**Alocação:** isysGObjAlloc (0x13E4D0) — array contíguo, count em gp-0x4C4C, ptr em gp-0x4C50
+**Display lists:** 8 tipos, heads em 0x281A70, tails em 0x281A90
+
+| Campo | Offset | Tamanho | Tipo | Inicializado por |
+|-------|--------|---------|------|------------------|
+| `self` | +0x00 | 4 | ico_ptr32 | isysGObjAdd: `sw s0, (s0)` |
+| `prev` | +0x04 | 4 | ico_s32 | isysGObjAlloc: -1 |
+| `next` | +0x08 | 4 | ico_s32 | isysGObjAlloc: -1 |
+| `type_flags` | +0x0C | 4 | ico_u32 | isysGObjAdd: 0 |
+| `list_link_0` | +0x10 | 4 | ico_ptr32 | isysGObjAddAfterGObj family |
+| `list_link_1` | +0x14 | 4 | ico_ptr32 | isysGObjAddAfterGObj family |
+| `type_byte` | +0x18 | 1 | u8 | isysGObjAdd: `andi s1, a1, 0xff` |
+| `user_data` | +0x28 | 4 | ico_ptr32 | isysGObjAdd: `sw s2, 0x28(s0)` |
+| `child_process` | +0x2C | 4 | ico_ptr32 | isysGObjAdd: 0 (head da lista de processos) |
+| `field_30` | +0x30 | 4 | ico_u32 | isysGObjAdd: 0 |
+| `next_gobj` | +0x34 | 4 | ico_ptr32 | (iterado por iosOmCreateDL) |
+| `type_list_next` | +0x3C | 4 | ico_ptr32 | (usado por isysGObjRemove) |
+| `direct_callback` | +0x48 | 4 | ico_ptr32 | Callback direto (iosOmCreateDL) |
+| `slot_mask` | +0x4C | 4 | ico_u32 | Máscara de participação em slots |
+| `type_bits` | +0x50 | 4 | ico_u32 | Bits de tipo/grupo (checked vs node) |
+| `field_58` | +0x58 | 4 | ico_u32 | isysGObjAdd: 0 |
+| `field_15C` | +0x15C | 4 | ico_u32 | isysGObjAlloc: 0 |
+| `field_164` | +0x164 | 4 | ico_u32 | isysGObjAdd: 0 |
+| `field_170` | +0x170 | 4 | ico_u32 | isysGObjAdd: 0 |
+
+---
+
+### Thread Control Block / Process Node (stride 0x94)
+
+Estrutura de thread do kernel IOS. Gerenciada por process_node_init (0x13D1B0) em ios/thread.c.
+
+**Alocação:** `heap_alloc(heap, size-0x10, "ios/thread.c", line)` em process_node_init
+**Tabela de threads:** 0x6A6F30 (indexada por thread_id)
+**Contador:** gp-0x6740
+
+| Campo | Offset | Tamanho | Tipo | Descrição |
+|-------|--------|---------|------|-----------|
+| `self_ptr` | +0x00 | 4 | ico_ptr32 | Ponteiro para si mesmo |
+| `parent_gobj` | +0x04 | 4 | ico_ptr32 | GObj pai |
+| `prev` | +0x08 | 4 | ico_ptr32 | Anterior na lista de processos |
+| `next` | +0x0C | 4 | ico_ptr32 | Próximo na lista de processos |
+| `type_mask` | +0x10 | 4 | ico_u32 | Máscara de tipo (do registration) |
+| `priority` | +0x14 | 4 | ico_u32 | Prioridade (usada para ordenação) |
+| `active_flag` | +0x18 | 4 | ico_u32 | 1 = ativo |
+| `callback_fn` | +0x1C | 4 | ico_ptr32 | Função callback |
+| `init_area` | +0x24 | 0x70 | u8[112] | Área de inicialização/stack |
+| `thread_id` | +0x30 | 4 | ico_u32 | ID da thread (obtido de 0x100320) |
+| `stack_ptr` | +0x08 | 4 | ico_ptr32 | Ponteiro para stack alocada |
+| `stack_guard` | +0x10 | 4 | ico_u32 | Padrão 0x63A8F0 |
+
+---
+
+### IOS Thread Table (0x6A6F30)
+
+Tabela global de threads, indexada por thread_id.
+
+**Endereço:** 0x6A6F30 (.bss)
+**Índice:** thread_id (obtido de 0x100320, kernel call)
+**Valor:** ponteiro para TCB (stride 0x94)
+**Contador:** gp-0x6740 (incrementado em process_node_init)
+**Limites:** thread_id < 0x100 (overflow check), thread_id > 0 (zero check)
+
+---
+
+### Dispatch Table (0x281AB0, 32 slots)
+
+Tabela de slots de dispatch, populada por isysGObjDlInit (0x13F2C8) e isysGObjProcAdd_ (0x13F3F0).
+
+**Endereço:** 0x281AB0 (BSS — zero no ELF, populada em runtime)
+**Número de slots:** 32 (iterados em iosOmCreateDL)
+**Mask register:** gp-0x6724 (bits 0-31, controla quais slots estão ativos)
+**Cabeça da lista:** 0x281A70 (8 entries, heads das display lists por tipo)
+**Cauda da lista:** 0x281A90 (8 entries, tails)
+
+Cada slot em 0x281AB0 aponta para uma lista ligada de nós de dispatch:
+
+| Campo | Offset | Tamanho | Descrição |
+|-------|--------|---------|-----------|
+| `next` | +0x34 | 4 | Próximo nó na lista |
+| `callback` | +0x48 | 4 | Função callback a chamar |
+| `type_bits` | +0x50 | 4 | Máscara (AND com GObj+0x50) |
+| `active` | +0x16C | 4 | != 0 = nó ativo |
+
+---
+
+### GObj Type Handler Array (0x6A93D0)
+
+Array de 67 entries (0x43), stride 4. Indexado por GObj type byte (+0x18).
+
+**Endereço:** 0x6A93D0 (BSS)
+**Uso:** type-specific removal handling em isysGObjRemove
+
+---
+
+### Scene Loader Jump Table (0x616FD0, 21 entries)
+
+Tabela de jump para o scene loader FSM em la_load_processing (0x1B2A30).
+
+**Endereço:** 0x616FD0 (.data, compile-time)
+**Entradas:** 21 (0x00-0x14)
+**Stage counter:** gp-0x5828
+
+| Entry | Address | Role |
+|-------|---------|------|
+| 0 | 0x1B2A90 | init_scene_stage — copia world params, chama 0x138218 |
+| 1 | 0x1B2ADC | load_asset_stage — chama 0x137EF0 com base 0x4BCF40 |
+| 2 | 0x1B2AF8 | skip_stage — incrementa load_stage |
+| 3 | 0x1B2ADC | (mesmo que entry 1 — duplicata) |
+| 4 | 0x1B2B8C | check_world_state — lê flags, avança ou desvia |
+| 5 | 0x1B2BD4 | (handler compartilhado) |
+| 6 | 0x1B2B04 | load_and_check_stage — debug + mcard check |
+| 7 | 0x1B2C00 | unique_handler_1 |
+| 8 | 0x1B2BD4 | (mesmo que entry 5) |
+| 9 | 0x1B2B04 | (mesmo que entry 6) |
+| 10 | 0x1B2C40 | unique_handler_2 |
+| 11-19 | 0x1B2E00 | end_reached — 9 entries, fallthrough |
+| 20 | 0x1B2DEC | end_handler |
+
+**7 unique handlers** de 21 entradas.
+
+---
+
+### gp-relative variables (isysGObj* system)
+
+| GP offset | Variable | Set by | Description |
+|-----------|----------|--------|-------------|
+| gp-0x4C4C | GObj count | isysGObjAlloc | Número de GObjs alocados |
+| gp-0x4C50 | GObj array ptr | isysGObjAlloc | Base do array de GObjs |
+| gp-0x4C44 | Process count | (isysGObj system) | Número máximo de processos |
+| gp-0x4C48 | Process array ptr | (isysGObj system) | Base do array de processos |
+| gp-0x6724 | Mask bitfield | isysGObjInit (zeroed) | Bits de slots ativos para dispatch |
+| gp-0x6720 | field | isysGObjInit (zeroed) | Desconhecido |
+| gp-0x671C | GObj list head | (runtime) | Cabeça da lista de GObjs (iosOmCreateDL) |
+| gp-0x6714 | Current GObj | _iosOmMain | GObj sendo processado (passo 2) |
+| gp-0x6710 | Current child | _iosOmMain | Child process sendo processado |
+| gp-0x68E8 | Heap pointer | (memory system) | Ponteiro do heap para alocações |
+| gp-0x6740 | Thread counter | process_node_init | Número total de threads criadas |
+| gp-0x5828 | Load stage | la_load_processing | Estágio atual do scene loader (0-20) |
+| gp-0x58B0 | Load param A | scene loader | Parâmetro A de carregamento |
+| gp-0x58B8 | Load param B | scene loader | Parâmetro B de carregamento |
+| gp-0x58AC | Load param C | scene loader | Parâmetro C de carregamento |
+| gp-0x58A4 | Load result | scene loader | Flag de resultado de carregamento |
 
 ---
 

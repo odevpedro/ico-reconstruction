@@ -1,6 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
+> Última atualização: 2026-05-22 (session end — offline tools + GObj struct + 2 GirlBrain .s)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -9,9 +10,9 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 145 |
+| Completed | 158 |
 | In Progress | 1 |
-| Pending | 2 |
+| Pending | 1 |
 
 ---
 
@@ -23,6 +24,7 @@
 - Rev.093b confirmed `0x00166BB0` is active in the hot dispatch path before callback dispatch.
 - Rev.094 confirmed the second direct caller at `0x0016828C` is runtime-reachable (`ra=0x00168294`, 14,257 hits).
 - Add direct probe at `0x00166DFC` to count the inferred high-volume single-cell fast path.
+- **Note (2026-05-22)**: The architectural understanding has shifted with Rev.097-099. The halfword dispatch and `_Clip` system are now understood as the **collision/clipping pipeline** (within `DispCollisionPC`), NOT the main entity system. The main game object system is `isysGObj*` (0x13DDA0-0x141D18, 30 functions, 36 byte-exact .s sources in `src/core/asm/`). The runtime slot distribution (42.2M events) belongs to `_iosOmMain` (17-slot dispatcher), not to `_Clip`. This rev.095 probe remains valid for the collision subsystem, but its scope is now local — it does not involve entity/gameplay dispatch. See Rev.097-099 research notes for the corrected architecture.
 
 ---
 
@@ -86,6 +88,45 @@
 ---
 
 ## Concluídas / Completed
+
+### [x] [SQUAD-ARCH | rev.099 | 2026-05-22]
+**Full isysGObj\* lifecycle analysis: init→alloc→add→dispatch→remove + ios/thread.c**
+
+- `isysGObjInit` (0x13DDA0): zeros 8 head/tail tables at 0x281A70/0x281A90
+- `isysGObjAlloc` (0x13E4D0): allocates GObj array (stride 0x174, count at gp-0x4C4C)
+- `isysGObjAdd` (0x13E8D8): adds GObj to type-based display list
+- `isysGObjProcAdd_` (0x13F3F0, 488B): central process/callback registration, stride 0x94
+- `_iosOmMain` (0x13F9D0, 534B): 17-slot dispatcher (8 mask + 9 type) = MATCHES runtime data
+- `iosOmCreateDL` (0x13FC00, 264B): per-GObj display list dispatcher, 32-slot table at 0x281AB0
+- `process_node_init` (0x13D1B0) identified as thread creation from `ios/thread.c`
+- 36 byte-exact .s sources created in src/core/asm/ for the entire isysGObj\*/iosOm\* core
+- Total project functions at 100% byte-exact match: 74 (12 C + 26 entity/cloth .s + 36 core .s)
+- Key structures: GObj stride 0x174, TCB stride 0x94, dispatch table 0x281AB0 (32 slots)
+- Documented in research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md
+
+### [x] [SQUAD-ARCH | rev.098 | 2026-05-21]
+**isysGObjProcAdd\_ central registration, \_iosOmMain 17-slot dispatcher, initSceneGObj bridge**
+
+- `isysGObjProcAdd_` (0x13F3F0, 488B): central process callback registration, 7 params, stride 0x94, priority-sorted linked list
+- `FUN_0013f7a8`: confirmed as thin wrapper over isysGObjProcAdd_ — NOT a separate registration system
+- `_iosOmMain` (0x13F9D0, 534B): dual-pass dispatcher — 8 mask slots (bits 0-7 of gp-0x6724) + 9 type slots (0x13-0x1B) = 17 slots matching runtime capture
+- `initSceneGObj` (0x1B76F8, 2088B): connects descriptor table (0x2A31B8, stride 0x64, 68 entries) to isysGObj\* via entry table (0x2A4C48, stride 0x4C, 512 entries)
+- `eBrainGetStatus` (0x191D20): ~44B entity ID tracking function — first GirlBrain anchor
+- Table 0x281A70 confirmed as runtime BSS (zero in ELF), populated during init
+- Scene loader jump table at 0x616FD0: 21 entries, 7 unique handlers
+- Documented in research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md
+
+### [x] [SQUAD-ARCH | rev.097 | 2026-05-21]
+**Architectural correction: isysGObj\* is real game object system, \_Clip is collision only**
+
+- **_Clip (0x166E10) CORRECTION**: NOT the main entity dispatcher — it's a collision/clipping function within DispCollisionPC. Only 2 static callers, 4 active _clipW\* callbacks in 17-slot config table (0x282690).
+- **isysGObj\* (0x13DDA0-0x141D18, 30 functions)**: the TRUE game object processing system managing callback registration, allocation, traversal, and dispatch
+- **Runtime slot distribution REASSIGNED**: 42.2M events (15 active slots) belong to _iosOmMain, NOT _Clip
+- **GirlBrain discovered**: 30+ named Girl AI functions at 0x191B70-0x19C040 (eBrainSystemInit, eBrainPursuit, eBrainAvoid, eBrainTargetGenerator variants, etc.)
+- **Main loop confirmed**: vblankHandler → ACTGame → backStageProcessMain / stage_ApplyData / kanbanExec / initSceneGObj
+- **Module structure confirmed**: src/sugipon/kanban.c (GP=0x27A7A8), src/omori/boy.c, src/omori/enemy1.c, src/fumi/ (core), src/seki/ (render)
+- Files renamed: cb_routine2.s→ItemGeo.s, cloth_dispatcher.s→execBombGeo.s, etc.
+- Documented in research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md
 
 ### [x] [SQUAD-EXTERNAL | symbol-reconcile | 2026-05-20]
 **Pipeline PAL→USA de reconciliação de símbolos — concluída**
@@ -734,6 +775,38 @@ Call graph analysis
 - Found 15 calls from 13 unique caller functions
 - Recorded confirmed metadata in `research/elf/ico-usa-scus-97113-call-graph-analysis.md`
 
+### [x] [SQUAD-ARCH | 2026-05-22]
+**Offline documentation sync: AGENTS.md + docs for Rev.097-099, GirlBrain .s, ELF table dumper**
+
+- AGENTS.md reescrito com correção arquitetural Rev.097-099: isysGObj* como sistema real,
+  _Clip como clipping/colisão, GirlBrain 30+ funções, ios/thread.c, 74 funções byte-exact
+- docs/system-feature-flows.md: seção isysGObj* adicionada (GObj stride 0x174,
+  TCB stride 0x94, dispatch 32 slots, thread system, ADR-GOBJ-001)
+- docs/data-model.md: 6 novas entidades (GObj, TCB, IOS thread table, dispatch table,
+  GObj type handler array, scene loader jump table), 16 gp-relative vars mapeadas
+- 2 novos .s byte-exact (src/entity/asm/eBrainGetStatus.s: 0x191D20, 20 insns, 0x4C bytes;
+  src/entity/asm/GirlBrainClearTarget.s: 0x16AC10, 4 insns, 0x10 bytes)
+- tools/elf_table_dump.py criado: extrai tabelas do ELF (descriptors, entry, dispatch_32,
+  clip_config, scene_loader_jt, gp_vars)
+- Verificação: 38 .s entidade existentes + 11 C perfeitos — sem regressões
+- Ferramenta splat disponível para ranges promovidos (pendente)
+
+### [x] [SQUAD-ARCH | 2026-05-22]
+**GObj struct header, dispatch doc, 2 GirlBrain .s, type handler/thread table BSS**
+
+- isys_process.h: struct isys_gobj (stride 0x174, 21+ campos), struct isys_thread (TCB, stride 0x94),
+  dispatch node layout, 20 GP-relative vars mapeados, constantes para tabelas BSS
+- isys_process.c: documentação do dispatch architecture (_iosOmMain Pass 1/2, iosOmCreateDL),
+  2 tabelas de dispatch (0x281A70 type DL heads, 0x281AB0 process dispatch nodes)
+- 2 novos .s byte-exact: eBrainSetFlag (0x191D6C, 33 insns, 132B) e eBrainMotionSe (0x191EF0,
+  30 insns, 120B) — 42 funções entity/cloth/GirlBrain passam no scoring pipeline (era 40)
+- entity-handlers YAML atualizado com eBrainSetFlag/eBrainMotionSe (total 31 subsegments)
+- asm_source_score.py: TARGET_FUNCTIONS extendido com as 2 novas GirlBrain
+- elf_table_dump.py: type_handlers e thread_table removidos (BSS — não estão no ELF)
+- Verificação: splat entity-handlers 100% (31 asm, 2 databin), scoring 60/60 ✅
+- Descoberta: type handler table (0x6A93D0) e thread table (0x6A6F30) são BSS —
+  inicializados em runtime, não dumpáveis do ELF estático
+
 ---
 
 ## Revision Signatures
@@ -853,6 +926,7 @@ Call graph analysis
 | rev.091i | 2026-05-18 | SQUAD-TOOLING | Include path fix (-I flags in compile_c_to_asm), ico_u8 typedef added to types.h, score_all.py simplified (always --whole-file), fn_1CE5F8 confirmed 100% with whole-file. Compiler flags exploration (7 flag sets, 38 functions): G0_O2 best for most; fn_1D3BF0 reaches 50.62% with -fno-schedule-insns; barrel_init 17.14% with -Os. Systematic offset analysis: 148 unique offsets across 25 handler functions; backbone confirmed (0x15C=entity_state, 0x800=work_area). 12 perfect, 26 partial/LOW, 0 compile errors. |
 | rev.097 | 2026-05-21 | SQUAD-ARCH | **Consolidacao arquitetural:** isysGObj* (30 funcoes, 0x13DDA0-0x141D18) identificado como sistema real de game objects; _Clip (0x166E10) reclassificado como funcao de clipping dentro de DispCollisionPC; tabela 0x282690 confirmada como config de clipping (apenas 4 callbacks _clipW* ativos); 42.2M eventos runtime pertencem ao isysGObj*, nao ao _Clip; GirlBrain descoberto (30+ funcoes nomeadas eBrain*/girlBrain*); scene loader confirmado em kanban.c (GP=0x27A7A8); main loop mapeado. 7 arquivos .s renomeados com simbolos reais. Nota de consolidacao: research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md. Mapa de modulos: docs/source-module-map.md. |
 | rev.098 | 2026-05-21 | SQUAD-ARCH | **Process registration e dispatch internos:** isysGObjProcAdd_ (0x13F3F0) detalhado — 7 params, stride 0x94, lista ligada ordenada. FUN_0013f7a8 identificado como wrapper thin de isysGObjProcAdd_. iosOmExeEachGObj (0x13FD10) confirmado como iterador de lista ligada — fonte dos eventos runtime. _iosOmMain (0x13F9D0) tem 17 slots (8 mascara + 9 tipo) = coincide com runtime. Tabela 0x281A70 = runtime BSS (zero no ELF). initSceneGObj (0x1B76F8, 2088B) conecta entry table/descriptor table ao isysGObj*. la_load_processing tem 21 estagios de carregamento. eBrainGetStatus (0x191D20) = tracker simples de 44B. Capstone LE mode implementado. C near-structural + .s byte-exact gerados para iosOmExeEachGObj, FUN_0013f7a8 wrapper, eBrainGetStatus. Structs em src/core/isys_process.h. Nota: research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md. |
+| rev.100 | 2026-05-22 | SQUAD-ARCH | GObj struct header (isys_process.h: 21+ campos, stride 0x174), dispatch architecture doc (Pass1/2, iosOmCreateDL), 2 GirlBrain .s byte-exact (eBrainSetFlag + eBrainMotionSe), entity-handlers YAML + scoring pipeline extendido, 42/42 entity/cloth/GirlBrain passam, BSS discovery (type handler + thread table). |
 
 ---
 

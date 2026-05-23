@@ -1,0 +1,79 @@
+name: ICO USA SCUS_971.13 — core isysGObj* system (Rev.099)
+sha1: a4d8fc1948fb2da2395f3863a94a3b93de55de14
+options:
+  basename: SCUS_971.13
+  target_path: /home/peter/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf
+  base_path: /tmp/ico-core-isysgobj
+  asm_path: asm
+  asset_path: assets
+  src_path: src
+  build_path: build
+  compiler: EEGCC
+  platform: ps2
+  ld_bss_contains_common: True
+  ld_bss_is_noload: true
+  use_gp_rel_macro_nonmatching: False
+  string_encoding: EUC-JP
+  disasm_unknown: True
+  named_regs_for_c_funcs: True
+  find_file_boundaries: False
+  section_order: [".text", ".vutext", ".data", ".rodata", ".lit4", ".sdata", ".sbss", ".bss"]
+segments:
+  - [0x000000, databin, elf_header]
+  - name: main_text
+    type: code
+    start: 0x001000
+    vram: 0x00100000
+    subalign: null
+    subsegments:
+      # Pre-isysGObj monolithic
+      - [0x001000, asm, main_text_early_001000_03eda0]
+
+      # === isysGObj* lifecycle (0x13DDA0-0x13E9E0) ===
+      - [0x03eda0, asm, isysGObjInit]
+      - [0x03eea0, asm, isysGObjRemoveAll]
+      - [0x03f190, asm, isysGObjMove]
+      - [0x03f220, asm, isysGObjAddAfterGObj]
+      - [0x03f350, asm, isysGObjAddBeforeGObj]
+      - [0x03f4d0, asm, isysGObjAlloc]
+      - [0x03f548, asm, isysGObjRemove]
+      - [0x03f648, asm, isysGObjKindTableAdd]
+      - [0x03f728, asm, isysGObjKindTableRemove]
+      - [0x03f7f8, asm, isysGObjMoveAfterGObj]
+      - [0x03f868, asm, isysGObjMoveBeforeGObj]
+      - [0x03f8d8, asm, isysGObjAdd]
+      - [0x03f9e0, asm, isysGObjAddHead]
+      - [0x040130, asm, isysGObjLinkObjDL]
+      - [0x0402c8, asm, isysGObjDlInit]
+
+      # Process registration (0x13F3E8-0x13F8F8)
+      - [0x0403e8, asm, isysGObjProcessAlloc]
+      - [0x0403f0, asm, isysGObjProcAdd_]
+      - [0x0406b8, asm, isysGObjProcRemove]
+      - [0x0407a8, asm, isysGObjProcAdd_Wrapper]
+      - [0x040808, asm, isysGObjProcPause]
+      - [0x0408c0, asm, isysGObjProcRemoveAll]
+      - [0x0408f8, asm, isysGObjProcThreadSleep]
+
+      # IOS dispatcher (0x13F9A0-0x13FC00)
+      - [0x0409a0, asm, iosOmInit]
+      - [0x0409d0, asm, _iosOmMain]
+      - [0x040c00, asm, iosOmCreateDL]
+
+      # Object traversal (0x13FD10-0x13FEB0)
+      - [0x040d10, asm, iosOmExeEachGObj]
+      - [0x040d78, asm, iosOmExeEachGObjAll]
+      - [0x040e18, asm, iosOmReturnExeEachGObj]
+      - [0x040eb0, asm, iosOmGetGObjStatus]
+      - [0x041048, asm, iosOmExeMail]
+
+      # Active link + SG opp arg
+      - [0x042128, asm, isysGObjActiveLink]
+      - [0x042160, asm, isysGObjActiveDlLink]
+      - [0x042c10, asm, isysGObjProcAddSGOppArg]
+
+      # Post-isysGObj monolithic (rest of text)
+      - [0x042c2c, asm, main_text_late_042c2c_end]
+
+  # Rest of file as databin
+  - [0x534bc6, databin, core_tail_data]

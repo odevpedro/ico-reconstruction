@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-19 (Rev.093 — mask_set=ShockRequestBox_RequestCancel confirmado; dispatch table 0x282690 = `.data` estatico, nao populado em runtime; halfword writers condicao desconhecida em 67.3M eventos. Ver research/elf/ghidra-rev093-three-investigations.md)
+> **Ultima atualizacao:** 2026-05-22 (Rev.097-099 — isysGObj* system documented)
 
 ---
 
@@ -1440,3 +1440,166 @@ hA (0x1C05D0, ~40 insns)
 - `src/entity/structs.h` — definicoes de struct base
 - `research/elf/ghidra-rev039-cloth-domain-correction.md` — correcao do dominio cloth
 - `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md` — confirmacao runtime do caller
+
+---
+
+# Feature: isysGObj* Game Object System
+
+> **Versão:** 1.0.0
+> **Implementada em:** 2026-05-21
+> **Status:** Concluída (Rev.097-099)
+
+---
+
+## Resumo
+
+O sistema `isysGObj*` (0x13DDA0-0x141D18, 30 funções) é o verdadeiro sistema de game objects do ICO. Gerencia o ciclo de vida completo: inicialização, alocação, adição a listas de display, registro de processos/callbacks, despacho em slot, travessia e remoção.
+
+**Motivação:** Rev.097 revelou que o antigo "main dispatcher" (0x166E10) era na verdade `_Clip` — uma função de clipping/colisão, não um dispatcher geral de entidades.
+
+**Mudança arquitetural:** O fluxo principal de objetos do jogo passa pelo `isysGObj*`:
+
+```
+initSceneGObj (0x1B76F8, 2088B) — ponte entre tabelas estáticas e sistema dinâmico
+  ↓
+isysGObjInit (0x13DDA0) — inicializa display lists (8 heads/tails)
+  ↓
+isysGObjAlloc (0x13E4D0) — aloca array de GObjs (stride 0x174)
+  ↓
+isysGObjAdd (0x13E8D8) — adiciona GObj à lista por tipo
+  ↓
+isysGObjProcAdd_ (0x13F3F0, 488B) — registra processo/callback
+  |                                  stride 0x94, lista por prioridade
+  |                                  alloc class: ios/thread.c
+  ↓
+_iosOmMain (0x13F9D0, 534B) — dispatcher principal (17 slots)
+  ├── Passo 1: 8 slots de máscara (gp-0x6724 bits 0-7)
+  └── Passo 2: 9 slots de tipo (type_id 0x13-0x1B)
+  ↓
+iosOmCreateDL (0x13FC00, 264B) — dispatcher por GObj
+  |                              32 slots em tabela 0x281AB0
+  ↓
+iosOmExeEachGObj (0x13FD10) — iterador de lista ligada
+```
+
+---
+
+## Estruturas de Dados
+
+### GObj (stride 0x174 = 372 bytes)
+
+| Offset | Tamanho | Campo | Inicializado por |
+|--------|---------|-------|------------------|
+| +0x00 | 4 | self pointer | isysGObjAdd: 0 != livre |
+| +0x04 | 4 | prev (-1 = none) | isysGObjAlloc |
+| +0x08 | 4 | next (-1 = none) | isysGObjAlloc |
+| +0x0C | 4 | type/flags | isysGObjAdd |
+| +0x18 | 1 | type byte | isysGObjAdd |
+| +0x28 | 4 | user data ptr | isysGObjAdd |
+| +0x2C | 4 | child process list | isysGObjAdd |
+| +0x34 | 4 | next GObj in chain | (iosOmCreateDL iterates) |
+| +0x48 | 4 | direct callback | (iosOmCreateDL dispatches) |
+| +0x4C | 4 | slot mask | (participação em slots) |
+| +0x50 | 4 | type/group bits | (checked vs dispatch node) |
+
+### Thread Control Block / Process Node (stride 0x94 = 148 bytes)
+
+| Offset | Tamanho | Campo | Descrição |
+|--------|---------|-------|-----------|
+| +0x00 | 4 | self_ptr | Ponteiro para si mesmo |
+| +0x04 | 4 | parent_gobj | GObj pai |
+| +0x08 | 4 | prev | Anterior na lista |
+| +0x0C | 4 | next | Próximo na lista |
+| +0x10 | 4 | type_mask | Máscara de tipo (registrado como type_id) |
+| +0x14 | 4 | priority | Prioridade (ordenação) |
+| +0x18 | 4 | active_flag | 1 = ativo |
+| +0x1C | 4 | callback_fn | Função callback |
+| +0x24+ | 4+ | init_area | Área de inicialização (alloc class: ios/thread.c) |
+
+### Dispatch Node (tabela 0x281AB0, 32 slots)
+
+| Offset | Tamanho | Campo | Descrição |
+|--------|---------|-------|-----------|
+| +0x34 | 4 | next node | Próximo nó na lista do slot |
+| +0x48 | 4 | callback | Função a chamar para este slot |
+| +0x50 | 4 | type/bits | Máscara vs GObj+0x50 |
+| +0x16C | 4 | availability | != 0 = ativo |
+
+---
+
+## Fluxo de Registro de Processo
+
+```
+isysGObjProcAdd_(gobj, callback_fn, type, type_id, priority, t1, t2)
+  |
+  +-> Se callback_fn NULL: retorna NULL
+  +-> Busca slot livre em gp-0x4c44/gp-0x4c48
+  |     Se sem slot: printa debug ("n_thread %d")
+  +-> Se slot livre:
+  |     Marca slot ocupado (self_ptr)
+  |     Chama process_node_init (0x13D1B0) = thread_create (ios/thread.c)
+  |       alloc stack, obtém thread_id, armazena em tabela 0x6A6F30
+  |     Insere na lista ligada do GObj (ordenado por prioridade)
+  |     Preenche node: type_id, active=1, parent_gobj, priority
+  +-> Retorna node ptr
+```
+
+---
+
+## Fluxo de Despacho (_iosOmMain, 17 slots)
+
+```
+_iosOmMain:
+  Passo 1 — Slots de Máscara (a1 = 0..7):
+    para cada bit da mask gp-0x6724:
+      se bit ativo:
+        slot_head = table_281A70[a1]
+        itera lista ligada:
+          se node tem callback e estado ok → chama callback(node)
+
+  Passo 2 — Slots de Tipo (type_id = 0x13..0x1B):
+    para cada type_id:
+      slot_head = table_281A70[type_id]
+      itera lista ligada:
+        itera child processes (node->child_list +0x2C):
+          se child->type_mask == type_id e child->active:
+            se child->type_mask == 0: 
+              chama 0x13D8A0 (poll) → step (0x13D928) ou remove
+            senão:
+              chama child->callback_fn(gobj)
+```
+
+---
+
+## Thread System (ios/thread.c)
+
+O sistema de threads do IOS kernel:
+
+- **process_node_init** (0x13D1B0): aloca stack, obtém thread_id de 0x100320, armazena em tabela 0x6A6F30
+- **Thread table** em 0x6A6F30: indexed por thread_id, stride 4
+- **Counter** em gp-0x6740
+- **TCB stride**: 0x94 bytes
+- **Ready queue**: priority-sorted linked list
+- Strings: "ios/thread.c", "thr:can't create stack", "thr:thread table over flow", "thr:can't create thread", "n_thread %d"
+
+---
+
+## Relação com os Dados Runtime
+
+Os 15 slots ativos (42.2M eventos) capturados nas sessões PCSX2 Rev.074-084 pertencem ao `_iosOmMain` (17 slots: 8 mask + 9 type), NÃO ao `_Clip`. A coincidência numérica (17 slots) não é acidental — `_iosOmMain` tem exatamente 17 slots de iteração.
+
+**Próximo passo:** Nova captura runtime com breakpoints em `_iosOmMain` (0x13F9D0), `isysGObjProcAdd_` (0x13F3F0) e `initSceneGObj` (0x1B76F8) para confirmar a atribuição.
+
+---
+
+## Decisões Técnicas
+
+### ADR-GOBJ-001 — Process Node = Thread Control Block
+
+| Campo | Detalhe |
+|-------|---------|
+| **Status** | Aceita |
+| **Data** | 2026-05-22 |
+| **Contexto** | O stride-0x94 struct alocado por process_node_init (0x13D1B0) usa alloc class "ios/thread.c" e contém thread_id, stack pointer e mensagens de erro de thread |
+| **Decisão** | O "process node" é um TCB (Thread Control Block) do kernel IOS lightweight |
+| **Consequências** | O sistema isysGObj* usa threads do kernel IOS como unidades de processamento. Cada callback registrado é uma thread do sistema operacional, não apenas um node de lista. |
