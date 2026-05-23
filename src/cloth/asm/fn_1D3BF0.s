@@ -19,12 +19,12 @@ fn_1D3BF0:
 	lw	$16,0x800($3)
 	lw	$2,4($16)
 	xori	$2,$2,1
-	bnez	$2,0f
+	bnez	$2,loc_001d3c30
 	move	$4,$29
 	addiu	$2,$0,2
-	b	3f
+	b	loc_001d3d20
 	sw	$2,0x48($16)
-0:
+loc_001d3c30:
 	jal	0x00104508
 	move	$5,$17
 	lw	$3,4($16)
@@ -37,7 +37,7 @@ fn_1D3BF0:
 	addiu	$5,$0,0x32f
 	addu	$2,$2,$3
 	lw	$16,8($2)
-	beq	$16,$5,1f
+	beq	$16,$5,loc_001d3cc8
 	addiu	$19,$4,0x5850
 	move	$4,$18
 	move	$5,$0
@@ -63,7 +63,7 @@ fn_1D3BF0:
 	move	$6,$18
 	jal	0x001ebc10
 	move	$5,$29
-1:
+loc_001d3cc8:
 	move	$4,$17
 	jal	0x001d12a8
 	addiu	$5,$0,0x2a
@@ -71,7 +71,7 @@ fn_1D3BF0:
 	addiu	$2,$0,6
 	lw	$3,0x800($5)
 	lw	$4,4($3)
-	bne	$4,$2,2f
+	bne	$4,$2,loc_001d3d14
 	addiu	$2,$0,1
 	lui	$1,0x42c8
 	mtc1	$1,$f12
@@ -83,11 +83,11 @@ fn_1D3BF0:
 	lw	$5,0x15c($17)
 	lw	$3,0x800($5)
 	addiu	$2,$0,1
-2:
+loc_001d3d14:
 	sw	$0,0x74($5)
 	sw	$2,0($3)
 	sw	$0,0x16c($17)
-3:
+loc_001d3d20:
 	ld	$31,0x70($29)
 	move	$2,$0
 	ld	$19,0x60($29)

@@ -22,7 +22,7 @@ boy_float_accum:
 	lwc1	$f21,-0x7718($28)
 	lwc1	$f20,-0x7714($28)
 	lw	$3,0($4)
-0:
+loc_001c20e0:
 	sll	$16,$17,2
 	lw	$2,4($4)
 	addiu	$17,$17,1
@@ -33,7 +33,7 @@ boy_float_accum:
 	add.s	$f1,$f1,$f0
 	.word	0x4601b034
 	nop	
-	bc1f	1f
+	bc1f	loc_001c2140
 	swc1	$f1,0($3)
 	jal	0x00118a68
 	nop	
@@ -47,9 +47,9 @@ boy_float_accum:
 	swc1	$f0,0($2)
 	addu	$3,$16,$3
 	sw	$0,0($3)
-1:
+loc_001c2140:
 	slti	$2,$17,0x64
-	bnel	$2,$0,0b
+	bnel	$2,$0,loc_001c20e0
 	lw	$3,0($4)
 	ld	$31,0x20($29)
 	ld	$17,0x10($29)

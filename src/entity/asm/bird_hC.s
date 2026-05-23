@@ -80,21 +80,21 @@ bird_hC:
 	jal	0x0013eb50
 	addiu	$4,$0,0x20
 	move	$16,$2
-	beqz	$16,1f
+	beqz	$16,loc_00197394
 	ld	$31,0x30($29)
 	move	$4,$16
 	nop	
-0:
+loc_00197370:
 	move	$5,$18
 	jal	0x001970e0
 	move	$6,$17
 	jal	0x0013ebe0
 	move	$4,$16
 	move	$16,$2
-	bnel	$16,$0,0b
+	bnel	$16,$0,loc_00197370
 	move	$4,$16
 	ld	$31,0x30($29)
-1:
+loc_00197394:
 	ld	$18,0x20($29)
 	ld	$17,0x10($29)
 	ld	$16,0($29)
@@ -103,7 +103,7 @@ bird_hC:
 	addiu	$29,$29,-0x20
 	sd	$16,0($29)
 	sd	$31,0x10($29)
-	bltz	$4,2f
+	bltz	$4,loc_001973dc
 	move	$16,$5
 	jal	0x001e8d30
 	nop	
@@ -113,7 +113,7 @@ bird_hC:
 	addiu	$4,$2,0x40
 	j	0x243b60
 	addiu	$29,$29,0x20
-2:
+loc_001973dc:
 	ld	$31,0x10($29)
 	ld	$16,0($29)
 	jr	$31

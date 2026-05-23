@@ -73,7 +73,11 @@ TARGET_FUNCTIONS = [
     ("eBrainSetFlag",      0x191D6C, 0x84, "entity"),
     ("eBrainMovePos",      0x191DF0, 0x100, "entity"),
     ("eBrainMotionSe",     0x191EF0, 0x78, "entity"),
+    ("eBrainPursuit",      0x191F68, 0x1E8, "entity"),
+    ("eBrainAvoid",        0x192150, 0x188, "entity"),
     ("eBrainReturnInit",   0x1922D8, 0xA8, "entity"),
+    ("eBrainTargetGenerator",0x192380, 0x1F8, "entity"),
+    ("subGirlBrain_PulledUp",0x1944F8, 0x128, "entity"),
     ("GirlBrainClearTarget",0x16AC10, 0x10, "entity"),
 ]
 

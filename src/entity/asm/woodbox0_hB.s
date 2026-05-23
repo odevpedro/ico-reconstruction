@@ -22,7 +22,7 @@ woodbox0_hB:
 	move	$3,$2
 	addiu	$2,$2,1
 	slti	$3,$3,0x1f
-	bnez	$3,0f
+	bnez	$3,loc_001c0594
 	sw	$2,0($16)
 	sw	$0,0($16)
 	move	$4,$17
@@ -31,7 +31,7 @@ woodbox0_hB:
 	ld	$16,0($29)
 	j	0x1ae460
 	addiu	$29,$29,0x30
-0:
+loc_001c0594:
 	ld	$31,0x20($29)
 	ld	$17,0x10($29)
 	ld	$16,0($29)

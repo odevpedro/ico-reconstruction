@@ -1,0 +1,142 @@
+	.text
+	.p2align 3
+	.globl	eBrainPursuit
+	.ent	eBrainPursuit
+eBrainPursuit:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	slti	$2,$3,2
+	beqz	$2,loc_00191f84
+	addiu	$2,$0,2
+	beqz	$3,loc_00191f94
+	lui	$16,0x56
+	b	loc_00192004
+	addiu	$5,$0,0xff
+loc_00191f84:
+	beq	$3,$2,loc_00191fe0
+	lui	$16,0x56
+	b	loc_00192004
+	addiu	$5,$0,0xff
+loc_00191f94:
+	ld	$31,0x10($29)
+	ld	$16,0($29)
+	j	0x191d70
+	addiu	$29,$29,0x20
+	lui	$16,0x6d
+	addiu	$16,$16,0xd28
+	jal	0x00141d18
+	move	$4,$16
+	move	$3,$2
+	lui	$2,0xffff
+	ori	$2,$2,0xffff
+	beq	$3,$2,loc_00192030
+	sw	$3,-8($16)
+	beql	$3,$0,loc_00192030
+	sw	$0,-0x616c($28)
+	jal	0x00140710
+	lw	$4,0x2c($3)
+	b	loc_00192030
+	sw	$0,-0x616c($28)
+loc_00191fe0:
+	lui	$16,0x6d
+	lw	$4,0xd20($16)
+	beql	$4,$0,loc_00191ffc
+	sw	$0,0xd20($16)
+	jal	0x00141e00
+	nop	
+	sw	$0,0xd20($16)
+loc_00191ffc:
+	b	loc_00192030
+	sw	$0,-0x616c($28)
+loc_00192004:
+	addiu	$16,$16,-0x5178
+	jal	0x001ad768
+	move	$4,$16
+	move	$4,$16
+	lui	$6,0x63
+	ld	$31,0x10($29)
+	addiu	$6,$6,0x2790
+	ld	$16,0($29)
+	addiu	$5,$0,0xff
+	j	0x263ff0
+	addiu	$29,$29,0x20
+loc_00192030:
+	ld	$31,0x10($29)
+	ld	$16,0($29)
+	jr	$31
+	addiu	$29,$29,0x20
+	addiu	$2,$0,1
+	jr	$31
+	sw	$2,-0x6170($28)
+	nop	
+	addiu	$29,$29,-0x20
+	sd	$16,0($29)
+	lui	$16,0x6d
+	sd	$31,0x10($29)
+	lw	$4,0xd20($16)
+	beqz	$4,loc_0019207c
+	ld	$31,0x10($29)
+	jal	0x00141e00
+	nop	
+	sw	$0,0xd20($16)
+	ld	$31,0x10($29)
+loc_0019207c:
+	ld	$16,0($29)
+	jr	$31
+	addiu	$29,$29,0x20
+	jr	$31
+	sw	$0,-0x6170($28)
+	jr	$31
+	lw	$2,-0x6170($28)
+	lui	$3,0x6d
+	jr	$31
+	lw	$2,0xd20($3)
+	nop	
+	addiu	$29,$29,-0x90
+	sd	$16,0x30($29)
+	move	$16,$4
+	sd	$17,0x40($29)
+	sd	$18,0x50($29)
+	move	$17,$5
+	swc1	$f20,0x70($29)
+	addiu	$4,$0,0x21
+	sd	$31,0x60($29)
+	swc1	$f23,0x88($29)
+	swc1	$f22,0x80($29)
+	jal	0x0013eb50
+	swc1	$f21,0x78($29)
+	lui	$1,0x42c8
+	mtc1	$1,$f20
+	move	$18,$2
+	move	$5,$16
+	jal	0x00104508
+	move	$4,$29
+	addiu	$16,$29,0x10
+	mov.s	$f12,$f20
+	move	$5,$17
+	jal	0x00243b18
+	move	$4,$16
+	move	$6,$16
+	move	$4,$29
+	jal	0x00243ad0
+	move	$5,$29
+	.word	0x1240002c
+	addiu	$17,$0,1
+	lwc1	$f23,-0x794c($28)
+	lui	$1,0x4248
+	mtc1	$1,$f22
+	addiu	$16,$29,0x20
+	mtc1	$0,$f21
+	lw	$2,0x15c($18)
+	lw	$3,0x16c($18)
+	.word	0x1060001e
+	lw	$2,0x800($2)
+	lw	$2,0x50($2)
+	.word	0x1451001b
+	move	$4,$16
+	.set	macro
+	.set	reorder
+	.end	eBrainPursuit

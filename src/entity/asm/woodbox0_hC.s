@@ -34,7 +34,7 @@ woodbox0_hC:
 	addiu	$2,$2,-0xaa0
 	sw	$18,0x800($3)
 	addiu	$3,$2,0x180
-0:
+loc_001c0128:
 	ld	$5,0($2)
 	ld	$6,8($2)
 	ld	$7,0x10($2)
@@ -46,7 +46,7 @@ woodbox0_hC:
 	addiu	$2,$2,0x20
 	addiu	$4,$4,0x20
 	nop	
-	bne	$2,$3,0b
+	bne	$2,$3,loc_001c0128
 	nop	
 	ld	$3,0($2)
 	ld	$5,8($2)
@@ -59,9 +59,9 @@ woodbox0_hC:
 	lui	$5,0x4c
 	sw	$2,0($18)
 	addiu	$5,$5,-0x26c0
-	beql	$6,$0,1f
+	beql	$6,$0,loc_001c0190
 	break	0,7
-1:
+loc_001c0190:
 	addiu	$4,$0,0x3a
 	lbu	$2,-0x5664($28)
 	addiu	$2,$2,1
@@ -103,7 +103,7 @@ woodbox0_hC:
 	sw	$4,0x74($3)
 	sw	$0,0x16c($2)
 	lw	$3,0x58($18)
-	beqz	$3,6f
+	beqz	$3,loc_001c04b8
 	lui	$2,0x4c
 	sll	$3,$3,2
 	addiu	$2,$2,-0xba0
@@ -114,11 +114,11 @@ woodbox0_hC:
 	lwc1	$f0,0x1c($3)
 	.word	0x46010034
 	nop	
-	bc1f	3f
+	bc1f	loc_001c02a0
 	addiu	$5,$0,1
 	lui	$16,0x63
 	nop	
-2:
+loc_001c0270:
 	addiu	$5,$5,1
 	lui	$1,0x4120
 	mtc1	$1,$f0
@@ -127,13 +127,13 @@ woodbox0_hC:
 	lwc1	$f1,0xc($2)
 	.word	0x46000834
 	nop	
-	bc1t	2b
+	bc1t	loc_001c0270
 	nop	
-	b	4f
+	b	loc_001c02a4
 	nop	
-3:
+loc_001c02a0:
 	lui	$16,0x63
-4:
+loc_001c02a4:
 	lwc1	$f0,-0x774c($28)
 	move	$4,$21
 	sw	$5,0x5c($18)
@@ -153,7 +153,7 @@ woodbox0_hC:
 	lw	$2,0x30($17)
 	lui	$3,0xffff
 	and	$2,$2,$3
-	beqz	$2,5f
+	beqz	$2,loc_001c04a8
 	lui	$2,0x29
 	ld	$6,0x18($17)
 	addiu	$19,$2,-0x3578
@@ -263,12 +263,12 @@ woodbox0_hC:
 	lw	$3,0x800($4)
 	swc1	$f0,0x134($18)
 	sw	$2,0x1c($3)
-5:
+loc_001c04a8:
 	jal	0x00102858
 	move	$4,$21
-	b	7f
+	b	loc_001c0508
 	move	$2,$18
-6:
+loc_001c04b8:
 	jal	0x00118a68
 	nop	
 	lui	$1,0x4248
@@ -289,7 +289,7 @@ woodbox0_hC:
 	jal	0x001bffe8
 	swc1	$f0,0xf4($18)
 	move	$2,$18
-7:
+loc_001c0508:
 	ld	$31,0xd0($29)
 	ld	$21,0xc0($29)
 	ld	$20,0xb0($29)

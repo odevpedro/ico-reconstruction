@@ -33,7 +33,7 @@ barrel_hC:
 	addiu	$2,$2,0x46b0
 	sw	$22,0x800($3)
 	addiu	$3,$2,0x80
-0:
+loc_001d280c:
 	ld	$5,0($2)
 	ld	$6,8($2)
 	ld	$7,0x10($2)
@@ -45,7 +45,7 @@ barrel_hC:
 	addiu	$2,$2,0x20
 	addiu	$4,$4,0x20
 	nop	
-	bne	$2,$3,0b
+	bne	$2,$3,loc_001d280c
 	nop	
 	ld	$3,0($2)
 	ld	$5,8($2)

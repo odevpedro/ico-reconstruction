@@ -54,14 +54,26 @@ segments:
       # eBrainMotionSe (0x191EF0): motion/sound effect by entity ID, 30 insns
       - [0x191EF0, asm, eBrainMotionSe]
 
-      # Post-MotionSe monolithic (0x191F68 to 0x1922D8)
-      - [0x191F68, asm, main_text_mid_191f68_1922d8]
+      # eBrainPursuit (0x191F68): pursuit/movement AI, 122 insns, 488B
+      - [0x191F68, asm, eBrainPursuit]
+
+      # eBrainAvoid (0x192150): obstacle avoidance AI, 98 insns, 392B
+      - [0x192150, asm, eBrainAvoid]
 
       # eBrainReturnInit (0x1922D8): return to initial state, 42 insns, 168B
       - [0x1922D8, asm, eBrainReturnInit]
 
-      # Post-ReturnInit monolithic (0x192380 to first BIRD handler at 0x197078)
-      - [0x192380, asm, main_text_mid_192380_197078]
+      # eBrainTargetGenerator (0x192380): waypoint target generator, 126 insns, 504B
+      - [0x192380, asm, eBrainTargetGenerator]
+
+      # Post-TargetGenerator monolithic (0x192578 to subGirlBrain_PulledUp)
+      - [0x192578, asm, main_text_mid_192578_1944f8]
+
+      # subGirlBrain_PulledUp (0x1944F8): pulled-up state handler, 74 insns, 296B
+      - [0x1944F8, asm, subGirlBrain_PulledUp]
+
+      # Post-GirlBrain monolithic (0x194620 to first BIRD handler at 0x197078)
+      - [0x194620, asm, main_text_mid_194620_197078]
 
       # --- BIRD handlers (desc idx 32, init_fn=0x1971C0) ---
       # hB (0x197078): 2 insns tail to 0x1E3FC8

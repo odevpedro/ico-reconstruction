@@ -19,12 +19,12 @@ woodbox0_hA:
 	jal	0x0010ecb8
 	move	$4,$17
 	lw	$2,0x58($16)
-	beqz	$2,0f
+	beqz	$2,loc_001c0610
 	lui	$2,0x27
 	jal	0x001bd668
 	move	$4,$17
 	lui	$2,0x27
-0:
+loc_001c0610:
 	lw	$3,0x4ed4($2)
 	.word	0x10600006
 	move	$4,$17

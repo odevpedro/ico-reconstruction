@@ -35,13 +35,13 @@ enemy1_init:
 	move	$4,$21
 	lw	$3,8($21)
 	addiu	$2,$0,0xd7d
-	bne	$3,$2,0f
+	bne	$3,$2,loc_001644c4
 	move	$4,$21
 	ld	$2,0x20($22)
 	lui	$3,2
 	or	$2,$2,$3
 	sd	$2,0x20($22)
-0:
+loc_001644c4:
 	jal	0x0014b580
 	addiu	$17,$0,0x12
 	lwc1	$f20,-0x7bac($28)
@@ -116,7 +116,7 @@ enemy1_init:
 	sw	$0,0xec($29)
 	lw	$6,0x164($21)
 	lw	$4,0x15c($21)
-1:
+loc_001645ec:
 	ld	$7,0($2)
 	ld	$8,8($2)
 	ld	$9,0x10($2)
@@ -128,7 +128,7 @@ enemy1_init:
 	addiu	$2,$2,0x20
 	addiu	$5,$5,0x20
 	nop	
-	bne	$2,$3,1b
+	bne	$2,$3,loc_001645ec
 	nop	
 	lw	$5,0x670($6)
 	addiu	$16,$0,1
@@ -182,7 +182,7 @@ enemy1_init:
 	lw	$4,0x164($21)
 	lw	$2,0x670($4)
 	lw	$3,0x1dc($2)
-	bnel	$3,$6,2f
+	bnel	$3,$6,loc_00164720
 	lw	$3,0x670($4)
 	lw	$3,0x15c($21)
 	lwc1	$f0,-0x7ba8($28)
@@ -194,7 +194,7 @@ enemy1_init:
 	lw	$2,0x15c($21)
 	swc1	$f0,0x468($2)
 	lw	$3,0x670($4)
-2:
+loc_00164720:
 	lw	$2,-0x5b84($28)
 	move	$4,$21
 	jal	0x0015f6f0
@@ -208,7 +208,7 @@ enemy1_init:
 	srl	$2,$2,0x12
 	andi	$2,$2,1
 	movz	$16,$0,$2
-	beqz	$16,3f
+	beqz	$16,loc_00164798
 	addiu	$4,$0,1
 	ld	$2,0x18($22)
 	addiu	$3,$0,-2
@@ -225,17 +225,17 @@ enemy1_init:
 	and	$2,$2,$4
 	sd	$2,0x18($22)
 	addiu	$4,$0,1
-3:
+loc_00164798:
 	jal	0x00203aa0
 	addiu	$17,$18,-0x2ba8
 	lw	$2,-0x5bf0($28)
-	beqz	$2,4f
+	beqz	$2,loc_001647bc
 	sw	$17,0xc0($22)
 	lui	$4,0x16
 	addiu	$5,$0,0x14
 	jal	0x00203b78
 	addiu	$4,$4,0x1f10
-4:
+loc_001647bc:
 	addiu	$4,$19,-0x2a8
 	jal	0x00203b78
 	addiu	$5,$0,0x15
@@ -256,16 +256,16 @@ enemy1_init:
 	swc1	$f0,0x1d4($22)
 	.word	0x46010034
 	nop	
-	bc1f	5f
+	bc1f	loc_0016481c
 	swc1	$f0,0x1d0($22)
 	swc1	$f1,0x1d0($22)
 	swc1	$f1,0x1d4($22)
-5:
+loc_0016481c:
 	sw	$0,0x340($22)
 	move	$4,$21
 	jal	0x0015bcc8
 	addiu	$5,$0,0xb7
-	beqz	$16,6f
+	beqz	$16,loc_00164864
 	lui	$2,0x56
 	move	$4,$21
 	addiu	$3,$2,-0x7060
@@ -279,7 +279,7 @@ enemy1_init:
 	move	$4,$21
 	jal	0x001651c8
 	move	$4,$21
-6:
+loc_00164864:
 	jal	0x00203aa0
 	move	$4,$0
 	ld	$31,0x180($29)

@@ -20,29 +20,29 @@ barrel_init:
 	addiu	$17,$0,1
 	addiu	$16,$2,-0x5380
 	lw	$3,0x15c($4)
-	beqz	$3,0f
+	beqz	$3,loc_001660b0
 	nop	
 	lw	$2,0x70($3)
-	beqz	$2,0f
+	beqz	$2,loc_001660b0
 	nop	
 	lw	$2,0x16c($4)
-	beqz	$2,0f
+	beqz	$2,loc_001660b0
 	nop	
 	lw	$2,4($4)
-	bne	$2,$17,0f
+	bne	$2,$17,loc_001660b0
 	nop	
 	lw	$2,8($4)
-	bltz	$2,0f
+	bltz	$2,loc_001660b0
 	nop	
 	lw	$2,0x74($3)
-	beqz	$2,0f
+	beqz	$2,loc_001660b0
 	lw	$2,-0x6528($28)
 	sll	$3,$2,2
 	addiu	$2,$2,1
 	addu	$3,$3,$16
 	sw	$2,-0x6528($28)
 	sw	$4,0($3)
-0:
+loc_001660b0:
 	jal	0x0013ecf8
 	.set	macro
 	.set	reorder

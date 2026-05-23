@@ -21,17 +21,17 @@ enemy1_hB:
 	ld	$3,0x18($2)
 	dsrl32	$3,$3,1
 	andi	$3,$3,1
-	beqz	$3,0f
+	beqz	$3,loc_001ce404
 	lw	$19,0x800($4)
-	b	1f
+	b	loc_001ce418
 	sw	$0,0x4c($19)
-0:
+loc_001ce404:
 	lw	$3,0x4c($19)
 	slti	$2,$3,0xb
-	beqz	$2,5f
+	beqz	$2,loc_001ce5d8
 	addiu	$2,$3,1
 	sw	$2,0x4c($19)
-1:
+loc_001ce418:
 	lw	$3,0x15c($18)
 	addiu	$5,$0,2
 	move	$4,$18
@@ -42,11 +42,11 @@ enemy1_hB:
 	jal	0x001654c8
 	sw	$0,0x548($3)
 	addiu	$3,$0,3
-	bne	$2,$3,2f
+	bne	$2,$3,loc_001ce450
 	addiu	$2,$0,1
 	lw	$3,0x15c($18)
 	sw	$2,0x550($3)
-2:
+loc_001ce450:
 	jal	0x001e3fc8
 	move	$4,$18
 	lwc1	$f0,0x48($19)
@@ -64,14 +64,14 @@ enemy1_hB:
 	mul.s	$f13,$f0,$f13
 	jal	0x00165540
 	move	$4,$18
-	beqz	$2,3f
+	beqz	$2,loc_001ce4e0
 	nop	
 	lw	$3,0x15c($18)
 	lw	$2,0x63c($3)
-	beqz	$2,3f
+	beqz	$2,loc_001ce4e0
 	nop	
 	lw	$2,0x2c($19)
-	beqz	$2,3f
+	beqz	$2,loc_001ce4e0
 	move	$4,$29
 	lw	$2,0x220($3)
 	addiu	$5,$3,0x1d0
@@ -83,14 +83,14 @@ enemy1_hB:
 	lw	$4,0x28($19)
 	jal	0x001cf6c0
 	move	$5,$29
-3:
+loc_001ce4e0:
 	jal	0x001cf548
 	lw	$4,0x28($19)
 	lw	$5,0x15c($18)
 	addiu	$4,$0,0xa
-	beql	$4,$0,4f
+	beql	$4,$0,loc_001ce4f8
 	break	0,7
-4:
+loc_001ce4f8:
 	lui	$1,0x4040
 	mtc1	$1,$f2
 	lw	$2,0x558($5)
@@ -147,7 +147,7 @@ enemy1_hB:
 	move	$5,$2
 	jal	0x001cf930
 	mov.s	$f12,$f20
-5:
+loc_001ce5d8:
 	ld	$31,0x50($29)
 	ld	$19,0x40($29)
 	ld	$18,0x30($29)

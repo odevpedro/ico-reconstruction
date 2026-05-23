@@ -30,12 +30,12 @@ attackch62_hC:
 	addiu	$29,$29,0x20
 	lw	$2,0x15c($4)
 	lw	$2,0($2)
-	beqz	$2,0f
+	beqz	$2,loc_001bbebc
 	nop	
 	lw	$2,0x16c($2)
-	beql	$2,$0,0f
+	beql	$2,$0,loc_001bbebc
 	sw	$0,0x16c($4)
-0:
+loc_001bbebc:
 	jr	$31
 	nop	
 	nop	

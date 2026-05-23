@@ -61,23 +61,23 @@ enemy1_hC:
 	sll	$5,$16,2
 	move	$5,$2
 	move	$4,$0
-	blez	$16,1f
+	blez	$16,loc_001ce324
 	sw	$5,0x14($17)
 	addiu	$6,$17,4
-0:
+loc_001ce300:
 	sll	$2,$4,2
 	addu	$2,$2,$5
 	addiu	$4,$4,1
 	sw	$0,0($2)
 	slt	$3,$4,$16
-	bnez	$3,0b
+	bnez	$3,loc_001ce300
 	nop	
-	b	2f
+	b	loc_001ce32c
 	sw	$20,0($17)
-1:
+loc_001ce324:
 	addiu	$6,$17,4
 	sw	$20,0($17)
-2:
+loc_001ce32c:
 	move	$5,$20
 	sw	$0,4($17)
 	jal	0x001cd9b0
@@ -98,9 +98,9 @@ enemy1_hC:
 	addiu	$5,$0,2
 	div	$0,$2,$3
 	sw	$7,0x558($8)
-	beql	$3,$0,3f
+	beql	$3,$0,loc_001ce384
 	break	0,7
-3:
+loc_001ce384:
 	lw	$2,0x15c($19)
 	mfhi	$6
 	sw	$6,-0x551c($28)

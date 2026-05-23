@@ -18,7 +18,7 @@ boy_hA:
 	jal	0x001e4938
 	lw	$18,0x800($2)
 	lw	$3,0x10($18)
-	beqz	$3,0f
+	beqz	$3,loc_001c1ff0
 	move	$4,$29
 	jal	0x00104508
 	move	$5,$17
@@ -39,14 +39,14 @@ boy_hA:
 	mfc1	$4,$f1
 	lui	$2,0x27
 	lw	$3,0x4ed4($2)
-	bnez	$3,2f
+	bnez	$3,loc_001c2014
 	lw	$3,-0x6f60($28)
 	addiu	$2,$0,-1
-	bnel	$4,$2,1f
+	bnel	$4,$2,loc_001c2010
 	sw	$4,0x14($18)
-	b	3f
+	b	loc_001c2018
 	addiu	$2,$0,0x27
-0:
+loc_001c1ff0:
 	jal	0x0010ecd8
 	nop	
 	jal	0x0010ecb8
@@ -55,12 +55,12 @@ boy_hA:
 	move	$4,$17
 	jal	0x001c1250
 	move	$4,$17
-1:
+loc_001c2010:
 	lw	$3,-0x6f60($28)
-2:
+loc_001c2014:
 	addiu	$2,$0,0x27
-3:
-	bne	$3,$2,4f
+loc_001c2018:
+	bne	$3,$2,loc_001c2084
 	ld	$31,0x50($29)
 	lw	$4,0x15c($17)
 	lui	$1,0x41a0
@@ -68,14 +68,14 @@ boy_hA:
 	lwc1	$f0,0x644($4)
 	.word	0x46000834
 	nop	
-	bc1f	5f
+	bc1f	loc_001c2088
 	ld	$18,0x40($29)
 	lw	$4,0x648($4)
-	beql	$4,$0,6f
+	beql	$4,$0,loc_001c208c
 	ld	$17,0x30($29)
 	jal	0x0010d180
 	nop	
-	bnez	$2,4f
+	bnez	$2,loc_001c2084
 	ld	$31,0x50($29)
 	lw	$2,0x15c($17)
 	move	$6,$17
@@ -87,11 +87,11 @@ boy_hA:
 	jal	0x0010cf88
 	move	$4,$16
 	ld	$31,0x50($29)
-4:
+loc_001c2084:
 	ld	$18,0x40($29)
-5:
+loc_001c2088:
 	ld	$17,0x30($29)
-6:
+loc_001c208c:
 	ld	$16,0x20($29)
 	jr	$31
 	addiu	$29,$29,0x60
