@@ -1,0 +1,35 @@
+	.text
+	.p2align 3
+	.globl	DirectCallEnemy
+	.ent	DirectCallEnemy
+DirectCallEnemy:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0xb0
+	addiu	$2,$0,0x4c
+	sd	$30,0x90($29)
+	lui	$3,0x2a
+	sd	$23,0x80($29)
+	move	$30,$4
+	sd	$22,0x70($29)
+	addiu	$3,$3,0x4c48
+	sd	$21,0x60($29)
+	lui	$10,0x20
+	sd	$31,0xa0($29)
+	lui	$9,0xfffb
+	sd	$20,0x50($29)
+	ori	$9,$9,0xffff
+	sd	$19,0x40($29)
+	move	$21,$5
+	sd	$18,0x30($29)
+	move	$23,$6
+	sd	$17,0x20($29)
+	sd	$16,0x10($29)
+	lw	$4,8($30)
+	sw	$7,0($29)
+	.set	macro
+	.set	reorder
+	.end	DirectCallEnemy
