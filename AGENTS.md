@@ -80,7 +80,7 @@ At the current stage, the most important validated research notes are:
 ```txt
 research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md       (full isysGObj* lifecycle: init→alloc→add→dispatch→remove; ios/thread.c=thread creation; 36 byte-exact .s sources)
 research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md  (isysGObjProcAdd_=488B central registration; _iosOmMain=17 slots matching runtime data; initSceneGObj=2088B connects descriptor table to isysGObj*)
-research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md  (ARCHITECTURAL CORRECTION: _Clip is collision not dispatcher; isysGObj* is real game object system; GirlBrain 30+ functions)
+research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md  (ARCHITECTURAL CORRECTION: _Clip is collision not dispatcher; isysGObj* is real game object system)
 research/ghidra-exploration-2026-05-21.md  (2886 symbol import reveals real names: _Clip, execBombGeo, ItemGeo, _clipW*)
 research/elf/ghidra-rev096-halfword-runtime-session-analysis.md  (offline Rev.095 review: main caller still dominates, second caller absent in this capture, fast path still inferred)
 research/elf/ghidra-rev094-halfword-runtime-second-caller.md  (second halfword caller runtime-confirmed, fast path still needs direct probe)
@@ -91,6 +91,7 @@ research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.m
 research/elf/ghidra-rev077-final-static-analysis.md                      (descriptor table, entry table, scene loader, VU0 queue, debug table, GP map)
 research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md  (entity types, init_fn groups, callback masks)
 research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md  (12-step main loop, 17-slot dispatch)
+research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md  (CORRECTION: GirlBrain real range = 0x0016xxxx, not 0x0019xxxx; eBrain/Generator in 0x0019xxxx; 15 new byte-exact .s files; 88 total)
 ```
 
 ---
@@ -126,6 +127,7 @@ Before doing new analysis, read these files in this order if they exist:
 25. `research/external/sotc-tooling-relevance-survey.md`
 26. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
 27. `research/external/ico-splat-promoted-ranges-experiment.md`
+28. `research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -185,24 +187,40 @@ Key structures:
 - **Dispatch table 0x281AB0**: 32 slot entries, each a linked list of callback nodes
 - **Thread table 0x6A6F30**: indexed by thread_id, stores process ptrs
 
-### GirlBrain state machine (Rev.097)
+### GirlBrain / eBrain correction (Rev.102)
 
-30+ named Girl AI functions at `0x00191B70-0x0019C040`:
-`eBrainSystemInit`, `eBrainGetStatus`, `eBrainSetFlag`, `eBrainMovePos`,
-`eBrainPursuit`, `eBrainAvoid`, `eBrainReturnInit`, `eBrainTargetGenerator`
-(8 variants), `eBrainEntryStart`, `eBrainEntryFront`, `girlBrainMain_PositionUpdate`,
-`GirlBrainClearTarget`, `subGirlBrain_PulledUp`, `_girlBrainHide_MakeHidePoint`, etc.
+**CORRECTION: Rev.097 misidentified `0x00191B70-0x0019C040` as "GirlBrain AI".**
+Ghidra symbols verified via PAL→USA reconciliation show:
 
-### Byte-exact reconstruction status (Rev.092 + Rev.099)
+| Range | Actual identity | Verified functions |
+|-------|----------------|-------------------|
+| `0x0016xxxx` | **GirlBrain** (real) | `girlBrainMain_PositionUpdate`, `subGirlBrain_PulledUp`, `_girlBrainHide_MakeHidePoint`, `girlBrainHide_GoalTurn`, `girlBrainRunawaySearchPoint`, `girlBrainRunawayMoveByWay`, `subGirlBrain_Idle/Hesitate/Busy` |
+| `0x00190xxx` | **eBrain** (entry AI) | `eBrainProcess`, `eBrainGetTargetGeneratorFromLabel`, `eBrainGetTarget`, `eBrainInit`, `eBrainStatusSet`, `eBrainSendMes`, `eBrainGetTargetGeneratorFromLabelStage` |
+| `0x00191xxx-0x00193xxx` | **Generator/Enemy** | `CallEnemy`, `GeneratorDL`, `_MoveGV`, etc. (not yet reconstructed) |
+| `0x00194xxx` | **Geometry utils** | Misc geometry helpers |
 
-All 74 functions are now at 100% byte-exact match:
+8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
+are kept as byte-exact `.s` even without Ghidra symbol verification.
+
+### Byte-exact reconstruction status (Rev.102 — all 87 functions byte-exact)
+
+All 87 functions are now at **100% byte-exact match** (47 pipeline + 4 .word-only + 36 core):
 
 | Group | Count | Method |
 |-------|-------|--------|
-| Entity/cloth handlers (.c) | 12 | C source (byte-exact via compiler flags) |
-| Entity/cloth handlers (.s) | 26 | Manual .s assembly (Path B) |
+| Entity/cloth pipeline (.s) | 47 | Score pipeline (`asm_source_score.py`) |
+| .word-only fallbacks (.s) | 4 | Manual .s (COP1 unsupported by Capstone) |
 | Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
-| **Total** | **74** | |
+| **Total .s files** | **87** | 51 entity/cloth + 36 core |
+
+Plus 12 entity/cloth functions as byte-exact C source (`.c` files).
+
+4 `.word`-only fallbacks for R5900 COP1 instructions unsupported by Capstone:
+`_girlBrainHide_MakeHidePoint`, `girlBrainRunawaySearchPoint`,
+`eBrainProcess`, `eBrainGetTargetGeneratorFromLabel`. These are byte-exact but
+outside the automated scoring pipeline.
+
+Files in `src/entity/asm/` (45), `src/cloth/asm/` (6), `src/core/asm/` (36).
 
 ### Verified facts (Rev.038-099)
 
@@ -339,9 +357,11 @@ The jump table at `0x00618FB0` contains these 5 targets:
 - `0x001D39E0` (state_3)
 - `0x001D3A10` (state_4)
 
-**GirlBrain state machine discovered**
+**GirlBrain state machine discovered (corrected by Rev.102)**
 
-30+ named Girl AI functions at `0x00191B70-0x0019C040`, including: `eBrainSystemInit`, `eBrainGetStatus`, `eBrainSetFlag`, `eBrainMovePos`, `eBrainMotionSe`, `eBrainPursuit`, `eBrainAvoid`, `eBrainReturnInit`, `eBrainTargetGenerator` variants, `eBrainEntryStart`, `eBrainEntryFront` etc.
+**NOTE: Rev.102 corrected the range.** The 30+ symbols at `0x00191B70-0x0019C040` are NOT GirlBrain — they are eBrain (entry AI) at `0x00190xxx`, Generator/Enemy at `0x00191xxx-0x00193xxx`, and Geometry utils at `0x00194xxx`. The real GirlBrain functions are at `0x0016xxxx`.
+
+Rev.097 functions included: `eBrainSystemInit` (now `eBrainGetTargetGeneratorFromLabelStage`), `eBrainGetStatus`, `eBrainSetFlag`, `eBrainMovePos`, `eBrainMotionSe`, `eBrainPursuit`, `eBrainAvoid`, `eBrainReturnInit`, `eBrainTargetGenerator` variants.
 
 **Main loop call graph confirmed**
 
@@ -461,18 +481,23 @@ Those names require evidence.
 
 The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration (Rev.096-097), and isysGObj* lifecycle analysis (Rev.098-099) are complete.
 
-### Current score status (Rev.101 — all 74 functions byte-exact)
+### Current score status (Rev.102 — all 87 functions byte-exact)
 
-All 74 functions are now at **100% byte-exact match**.
+All 87 functions are now at **100% byte-exact match**.
 
 | Group | Count | Method |
 |-------|-------|--------|
-| Entity/cloth handlers (.c) | 12 | C source |
-| Entity/cloth handlers (.s) | 26 | Manual .s assembly (Path B) |
-| Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly |
-| **Total** | **74** | |
+| Entity/cloth pipeline (.s) | 47 | Score pipeline (`asm_source_score.py`) |
+| .word-only fallbacks (.s) | 4 | Manual .s (COP1 unsupported by Capstone) |
+| Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
+| **Total .s files** | **87** | 51 entity/cloth + 36 core |
 
-Files in `src/{entity,cloth}/asm/` (38) and `src/core/asm/` (36).
+Plus 12 entity/cloth functions as byte-exact C source (`.c` files).
+
+4 `.word`-only fallbacks for R5900 COP1 instructions unsupported
+by Capstone. These are byte-exact but outside the automated scoring pipeline.
+
+Files in `src/entity/asm/` (45), `src/cloth/asm/` (6), `src/core/asm/` (36).
 
 ### Scoring pipeline (Path B — assembly)
 
@@ -544,6 +569,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 31. ~~**Update backlog.md, docs/system-feature-flows.md, docs/data-model.md** for the corrected architecture~~ **DONE (2026-05-22)**
 32. ~~**Rev.100: GObj struct header, dispatch doc, 4 GirlBrain .s, BSS discovery**~~ **DONE (2026-05-22)**
 33. ~~**Rev.101: +4 GirlBrain .s (11 total), label cleanup, entity-state-blocks.md, initSceneGObj analysis**~~ **DONE (2026-05-22)**
+34. ~~**Rev.102: GirlBrain/eBrain range correction (0x0016xxxx=GirlBrain, 0x0019xxxx=eBrain/Generator); 15 new .s (10 GirlBrain + 7 eBrain); 8 speculative eBrain preserved; 6 stale .s files removed; YAML rewritten with correct USA file offsets**~~ **DONE (2026-05-22)**
 
 ---
 
@@ -570,7 +596,7 @@ The confirmed architecture is now understood:
 1. **`_Clip` (0x166E10)**: clipping/collision function within `DispCollisionPC`. Its 17-slot dispatch table (0x282690) is compile-time `.data` with only 4 active `_clipW*` callbacks.
 2. **`isysGObj*` (0x13DDA0-0x141D18)**: the true game object processing system (30 functions). Callback registration, object traversal, allocation, and removal are all managed here.
 3. **`execBombGeo` (0x1D37C8)**: geometry function with 5-state cloth physics jump table at 0x618FB0.
-4. **GirlBrain** (0x191B70-0x19C040): 30+ named Girl AI functions for navigation, pursuit, and scene management.
+4. **GirlBrain** (0x16xxxx): 10 verified Girl AI functions for navigation, pursuit, and hide behavior. **Not** in 0x19xxxx range (that is eBrain/Generator).
 5. **Main loop**: `vblankHandler` → `ACTGame` → `backStageProcessMain` / `stage_ApplyData` / `kanbanExec`.
 6. **Scene loader** in `kanban.c` (GP=0x27A7A8): 8 confirmed functions including `initSceneGObj`, `HotInitSceneObjects`, `la_load_processing`.
 

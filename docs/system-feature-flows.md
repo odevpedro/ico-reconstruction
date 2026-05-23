@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-22 (Rev.097-099 — isysGObj* system documented)
+> **Ultima atualizacao:** 2026-05-22 (Rev.102 — GirlBrain/eBrain correction, YAML fix, stale cleanup)
 
 ---
 
@@ -1603,3 +1603,47 @@ Os 15 slots ativos (42.2M eventos) capturados nas sessões PCSX2 Rev.074-084 per
 | **Contexto** | O stride-0x94 struct alocado por process_node_init (0x13D1B0) usa alloc class "ios/thread.c" e contém thread_id, stack pointer e mensagens de erro de thread |
 | **Decisão** | O "process node" é um TCB (Thread Control Block) do kernel IOS lightweight |
 | **Consequências** | O sistema isysGObj* usa threads do kernel IOS como unidades de processamento. Cada callback registrado é uma thread do sistema operacional, não apenas um node de lista. |
+
+---
+
+## GirlBrain AI Navigation System
+
+> **Versão:** 1.0.0
+> **Implementada em:** 2026-05-22 (Rev.102)
+> **Status:** Static analysis complete — runtime validation pending
+
+### Resumo
+
+O GirlBrain e o sistema de IA de navegacao da personagem feminina (Yorda). 10 funcoes verificadas em `0x0016xxxx` controlam posicao, reacao, esconderijo, fuga e estados emocionais (idle/hesitate/busy). O range `0x0019xxxx` contem o sistema eBrain (entry AI) para geracao de alvos e gerencia de inimigos — NAO e GirlBrain (correcao Rev.102).
+
+### Funcoes mapeadas
+
+| Grupo | Funcoes | Proposito |
+|-------|---------|-----------|
+| Posicao | GirlBrainClearTarget, girlBrainMain_PositionUpdate | Atualizacao de alvo e posicao |
+| Reacao | subGirlBrain_PulledUp | Personagem puxada para cima (plataforma) |
+| Esconderijo | _girlBrainHide_MakeHidePoint, girlBrainHide_GoalTurn | Geracao e navegacao para ponto de fuga |
+| Fuga | girlBrainRunawaySearchPoint, girlBrainRunawayMoveByWay | Busca de rota de fuga e movimento |
+| Estados | subGirlBrain_Idle, subGirlBrain_Hesitate, subGirlBrain_Busy | Maquina de estados emocionais |
+
+### eBrain System (0x00190xxx)
+
+Sistema de entrada de IA para geracao de alvos, comunicacao entre entidades e controle de geradores de inimigos:
+
+| Funcao | Proposito |
+|--------|-----------|
+| eBrainProcess | Processo principal de IA |
+| eBrainGetTarget | Obtencao de alvo (maior funcao, 624 insns) |
+| eBrainGetTargetGeneratorFromLabel[Stage] | Busca de geradores por label e stage |
+| eBrainInit / eBrainStatusSet / eBrainSendMes | Inicializacao, status, comunicacao |
+
+### Arquivos .s
+
+- `src/entity/asm/`: 10 GirlBrain + 7 eBrain verificado + 8 speculative eBrain = 25 arquivos
+- Todos byte-exact (4 com fallback .word para COP1)
+
+### Proximo passo
+
+- Analisar struct `omGir*` para documentar campos de estado do GirlBrain
+- Analisar struct `omGen*` para sistema Generator/Enemy (0x00191xxx-0x00193xxx)
+- Captura runtime: breakpoints nas funcoes GirlBrain para validar transicoes de estado

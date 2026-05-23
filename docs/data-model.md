@@ -1,7 +1,21 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-22 (Rev.097-099 — isysGObj* system, ios/thread.c added)
+> **Ultima atualizacao:** 2026-05-22 (Rev.102 — GirlBrain/eBrain range correction, 15 new .s)
+
+### Correcao Rev.102 — GirlBrain real = 0x0016xxxx, nao 0x0019xxxx
+
+Rev.097 identificou INCORRETAMENTE o range `0x00191B70-0x0019C040` como "GirlBrain AI".
+Simbolos Ghidra verificados via reconciliacao PAL→USA mostram:
+
+| Range | Identidade real | Funcoes verificadas |
+|-------|----------------|---------------------|
+| `0x0016xxxx` | **GirlBrain** | girlBrainMain_PositionUpdate, subGirlBrain_PulledUp, _girlBrainHide_MakeHidePoint, girlBrainHide_GoalTurn, girlBrainRunawaySearchPoint, girlBrainRunawayMoveByWay, subGirlBrain_Idle/Hesitate/Busy |
+| `0x00190xxx` | **eBrain** (entry AI) | eBrainProcess, eBrainGetTargetGeneratorFromLabel, eBrainGetTarget, eBrainInit, eBrainStatusSet, eBrainSendMes, eBrainGetTargetGeneratorFromLabelStage |
+| `0x00191xxx-0x00193xxx` | **Generator/Enemy** | CallEnemy, GeneratorDL, _MoveGV, etc. |
+| `0x00194xxx` | **Geometry utils** | Geometry helpers |
+
+8 funcoes em `0x191D20-0x192380` (eBrainGetStatus a eBrainTargetGenerator) mantidas como `.s` byte-exact com nomes especulativos (sem simbolos Ghidra verificados).
 
 ### Correcao Rev.097-099 — isysGObj* é o sistema real de game objects
 
@@ -1141,6 +1155,60 @@ Usada em fn_1D3BFO para selecionar modelos fisicos por state_id.
 > Fonte: `research/elf/ghidra-rev062-gp-relative-data-map.md`
 
 ---
+
+## GirlBrain / eBrain Entity Systems
+
+### GirlBrain Functions (0x0016xxxx)
+
+10 funcoes GirlBrain verificadas via simbolos Ghidra (PAL→USA reconciliation). AI de navegacao da personagem feminina (Yorda), incluindo posicionamento, reacao de puxar, esconderijo, transicao de objetivos e estados de espera.
+
+| Funcao | VA | Tamanho | Proposito |
+|--------|-----|---------|-----------|
+| GirlBrainClearTarget | 0x16AC10 | 16B | Tail-call, limpa target ID |
+| girlBrainMain_PositionUpdate | 0x16BCA0 | 104B | Atualizacao de posicao principal |
+| subGirlBrain_PulledUp | 0x16CED0 | 1120B | Handler de estado "puxada para cima" |
+| _girlBrainHide_MakeHidePoint | 0x16E910 | 600B | Gera ponto de esconderijo |
+| girlBrainHide_GoalTurn | 0x16EB68 | 272B | Giro/virar para objetivo de esconderijo |
+| girlBrainRunawaySearchPoint | 0x16F410 | 1432B | Busca ponto de fuga |
+| girlBrainRunawayMoveByWay | 0x16F9A8 | 684B | Movimento por waypoints durante fuga |
+| subGirlBrain_Idle | 0x175CB0 | 48B | Estado ocioso |
+| subGirlBrain_Hesitate | 0x175CE0 | 176B | Estado hesitante |
+| subGirlBrain_Busy | 0x175DC0 | 268B | Estado ocupado |
+
+**Estado:** 10/10 funcoes byte-exact via .s assembly. 4 funcoes com `.word` fallback para instrucoes COP1 (Capstone).
+
+### eBrain Functions (0x00190xxx)
+
+7 funcoes eBrain verificadas via simbolos Ghidra. Sistema de entrada de IA (entry AI) — gerencia alvos, geradores, inicializacao e comunicacao de mensagens para entidades controladas por IA.
+
+| Funcao | VA | Tamanho | Proposito |
+|--------|-----|---------|-----------|
+| eBrainProcess | 0x190B30 | 576B | Processo principal de IA |
+| eBrainGetTargetGeneratorFromLabel | 0x190D70 | 448B | Busca gerador de alvo por label |
+| eBrainGetTarget | 0x190F30 | 2496B | Obtencao de alvo (maior funcao eBrain) |
+| eBrainInit | 0x1918A8 | 80B | Inicializacao do sistema eBrain |
+| eBrainStatusSet | 0x1918F0 | 176B | Define status de entidade |
+| eBrainSendMes | 0x1919A0 | 208B | Envio de mensagem entre entidades |
+| eBrainGetTargetGeneratorFromLabelStage | 0x191B70 | 432B | Busca gerador com filtro de estagio |
+
+**Estado:** 7/7 funcoes byte-exact via .s assembly. 4 funcoes com `.word` fallback (COP1).
+
+### Speculative eBrain Functions (0x191D20-0x192380)
+
+8 funcoes byte-exact COM nomes especulativos (sem simbolos Ghidra verificados). Mantidas como .s assembly por produzirem match exato.
+
+| Funcao | VA | Tamanho | Proposito (especulativo) |
+|--------|-----|---------|-------------------------|
+| eBrainGetStatus | 0x191D20 | 80B | Leitura de status da entidade |
+| eBrainSetFlag | 0x191D6C | 132B | Definicao de flag por entity ID |
+| eBrainMovePos | 0x191DF0 | 256B | Movimentacao para posicao |
+| eBrainMotionSe | 0x191EF0 | 120B | Efeito de motion/sound |
+| eBrainPursuit | 0x191F68 | 488B | Perseguicao de alvo |
+| eBrainAvoid | 0x192150 | 392B | Desvio de obstaculo |
+| eBrainReturnInit | 0x1922D8 | 168B | Retorno ao estado inicial |
+| eBrainTargetGenerator | 0x192380 | 504B | Gerador de alvo waypoint |
+
+**Score total byte-exact:** 88 funcoes (48 pipeline + 4 .word-only + 36 core isysGObj\*).
 
 ### ADR-DM-003 — Entries da tabela de tipos tem stride fixo 0x64
 
