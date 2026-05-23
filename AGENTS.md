@@ -499,6 +499,15 @@ by Capstone. These are byte-exact but outside the automated scoring pipeline.
 
 Files in `src/entity/asm/` (45), `src/cloth/asm/` (6), `src/core/asm/` (36).
 
+### MAIN.MAP / recovery-pass update (2026-05-22)
+
+- `MAIN.MAP` now provides 4368 function records grouped into 208 objects.
+- Range reconciliation currently validates 415 functions across 65 objects with LOW/MEDIUM confidence.
+- 143 objects had no initial seed; the new whole-text `op_seq` recovery pass recovered 62 of them, adding 168 validated functions.
+- 81 objects remain unrecovered and need either a second anchor function or a source-file join from `SRCFILE.TXT`.
+- `SRCFILE.TXT` provenance is now joined into the symbol map for 199 rows, and `main_map_functions_source.csv` carries 61 source files.
+- The current final summary note is [`research/pal-usa/pal_usa_final_summary_2026-05-22.md`](/home/peter/Documentos/repos/ico-reconstruction/research/pal-usa/pal_usa_final_summary_2026-05-22.md).
+
 ### Scoring pipeline (Path B — assembly)
 
 - `tools/asm_source_score.py`: converts target ELF function → GCC-style .s source → assembles with ee-gcc → verifies byte-exact match (no LCS/normalizer needed)
