@@ -1,65 +1,117 @@
 #include "isys_process.h"
 
-/* ============================================================================
- * isysGObjProcAdd_ (0x13F3F0) — Registro de process
+/*
+ * ============================================================================
+ * DISPATCH ARCHITECTURE — isysGObj* system
  *
- * Parametros:
- *   a0 = gobj (game object alvo)
- *   a1 = callback_fn (funcao callback)
- *   a2 = callback_type (tipo de callback)
- *   a3 = type_id (identificador de tipo, andi 0xFF)
- *   t0 = priority (prioridade para ordenacao)
- *   t1 = extra_param (passado para node_init)
- *   t2 = extra_param (passado para node_init)
+ * Dois mecanismos de dispatch independentes operam em paralelo:
  *
- * Retorna: ponteiro para o process node criado, ou 0 se erro.
+ * 1. _iosOmMain (0x13F9D0, 512B) — dispatch principal, 3 passes:
  *
- * Aloca um node de stride 0x94, inicializa, insere na lista ligada
- * do GObj ordenada por prioridade, e retorna o node.
+ *    Passo 1 (mask slots 0-7):
+ *      - Para cada bit em gp-0x6724 (8 bits), carrega lista de GObjs de
+ *        0x281A70[slot] (GObj type display list heads)
+ *      - Para cada GObj na lista, verifica active_flag (+0x170) e
+ *        avail_flag (+0x16C), chama direct_callback (+0x28)
+ *      - Usado para dispatch de GObj direto por tipo/mask
+ *
+ *    Passo 2 (type slots 0x13-0x1B, 9 tipos):
+ *      - Para cada bit em gp-0x6724 (8 bits), carrega GObj de
+ *        0x281A70[slot], depois itera child_process list (+0x2C)
+ *      - Para cada processo filho, verifica tipo (+0x14), active (+0x18)
+ *      - Se type_mask (+0x10) == 0: init path (0x13D8A0 / 0x13D928)
+ *      - Se type_mask != 0: chama callback_fn (+0x1C)
+ *      - Usado para thread/process dispatch hierarquico
+ *
+ * 2. iosOmCreateDL (0x13FC00, 264B) — dispatch por display list:
+ *
+ *      - Itera cadeia global de GObjs (gp-0x671C, encadeada via +0x34)
+ *      - Para cada GObj, itera 32 slots (mask gp-0x6724)
+ *      - Para cada slot ativo, carrega dispatch node de 0x281AB0[slot]
+ *      - Dispatch node: type_bits (+0x50) AND com GObj type_bits (+0x50)
+ *      - Se match: chama callback (+0x48) com node como argumento
+ *      - Usado para dispatch de callback registrado por processo
+ *        (isysGObjProcAdd_)
+ *
+ * Tabelas de dispatch:
+ *   0x281A70 (8 x 4B): GObj type display list heads
+ *   0x281A90 (8 x 4B): GObj type display list tails
+ *   0x281AB0 (32 x 4B): Process dispatch node list heads
+ *
+ * Struct GObj (stride 0x174): isys_process.h struct isys_gobj
+ * Struct TCB  (stride 0x94):  isys_process.h struct isys_thread
+ * Dispatch node (desconhecido stride): contem fields +0x34(prev),
+ *   +0x48(callback), +0x50(type_bits), +0x16C(avail)
  * ============================================================================
  */
-ico_ptr32 isysGObjProcAdd_(ico_ptr32 gobj,
-                            ico_ptr32 callback_fn,
-                            u32 callback_type,
-                            u32 type_id,
-                            u32 priority,
-                            ico_ptr32 t1_param,
-                            ico_ptr32 t2_param)
-{
-    ico_ptr32 process_count;
-    ico_ptr32 process_array;
-    ico_ptr32 node;
-    ico_ptr32 existing;
-    u32 i;
 
-    if (callback_fn == 0) {
-        return 0;
-    }
+/*
+ * ============================================================================
+ * isysGObjDlInit (0x13F2C8, 56B, 14 insns) — Init das tabelas DL
+ *
+ * Zera 8 entradas de 0x281AB0 (DL head) e 0x281AD0 (DL tail).
+ * 8 slots = 8 GObj types (mask bits 0-7 do gp-0x6724).
+ *
+ * Nota: so 8 slots sao inicializados aqui. Os slots 8-31 da tabela
+ * 0x281AB0 sao populados por isysGObjProcAdd_ em runtime.
+ * ============================================================================
+ */
 
-    // Procura slot vazio no array de processes
-    process_count = *(ico_ptr32 *)(0 + PROCESS_GP_COUNT);
-    if (process_count != 0) {
-        process_array = *(ico_ptr32 *)(0 + PROCESS_GP_ARRAY);
-        for (i = 0; i < (u32)process_count; i++) {
-            if (*(ico_ptr32 *)(process_array + i * PROCESS_NODE_STRIDE) != 0) {
-                // Slot ocupado, continua
-                continue;
-            }
-            break;
-        }
-        // Se nao achou slot vazio, printa debug
-        if (i == (u32)process_count) {
-            // Debug print: "isysGObjProcAdd_: no free slot"
-            sub_1A6E28((ico_ptr32)0x557AE8, 0);
-            i = 0;
-        }
-    }
+/*
+ * ============================================================================
+ * isysGObjLinkObjDL (0x13F130, 156B, 39 insns) — Vincula callback ao GObj
+ *
+ * Parametros:
+ *   a0 (gobj):       GObj alvo
+ *   a1 (callback):   funcao callback (+0x48)
+ *   a2 (type_byte):  byte de tipo (AND 0xFF)
+ *   a3 (param4):
+ *   a4 (param5):     type_bits (+0x50)
+ *
+ * Fluxo:
+ *   1. gobj->direct_callback (+0x48) = callback
+ *   2. gobj->type_bits (+0x50) = param5
+ *   3. call isysGObjKindTableAdd(gobj, type_byte, param4)
+ * ============================================================================
+ */
 
-    // Aloca e inicializa node
-    // ...
+/*
+ * ============================================================================
+ * isysGObjKindTableAdd (0x13E648, 192B, 48 insns) — Gerencia tipo no GObj
+ *
+ * Gerencia a tabela de tipos 0x6A93D0 (67 entries, stride 4, BSS).
+ * Cada entrada e head de lista ligada de GObjs (link via +0x3C).
+ *
+ * Se gobj->type_flags (!= tipo_atual): remove do tipo antigo + reinsere.
+ * Se tipo < 0x44 (68): insere no fim da lista em 0x6A93D0[tipo].
+ *
+ * Funcoes relacionadas:
+ *   0x13EB50 = isysGObjKindTableGetHead(type) -> head GObj da lista
+ *   0x13EBE0 = isysGObjKindTableGetNext(gobj) -> prox GObj (+0x3C)
+ *   0x13E728 = isysGObjKindTableRemove(gobj)   -> remove da lista
+ * ============================================================================
+ */
 
-    return node;
-}
+/*
+ * ============================================================================
+ * isysGObjProcAdd_ (0x13F3F0, 512B) — Registro de processo/thread
+ *
+ * Aloca um TCB de stride 0x94 em gp-0x4C48, inicializa, insere na
+ * lista ligada do GObj ordenada por prioridade.
+ * ============================================================================
+ */
+
+/*
+ * ============================================================================
+ * GObj struct gap (0x5C-0x15B, 256B)
+ *
+ * Confirmado: nenhuma funcao isysGObj* acessa offsets 0x5C-0x15B
+ * como campo de struct (apenas como stack frame, com basereg=$29).
+ * Zona e zerada por isysGObjAdd e provavelmente acessada via
+ * ponteiro indireto (user_data em +0x28) para dados especificos
+ * de tipo (transform, bounding box, etc.).
+ * ============================================================================
+ */
 
 /* ============================================================================
  * iosOmExeEachGObj (0x13FD10) — Iterador de lista ligada de processes
