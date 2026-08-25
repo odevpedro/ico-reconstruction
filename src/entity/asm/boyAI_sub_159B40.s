@@ -1,0 +1,53 @@
+	.text
+	.p2align 3
+	.globl	boyAI_sub_159B40
+	.ent	boyAI_sub_159B40
+boyAI_sub_159B40:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	swc1	$f1,0x1c($29)
+	ld	$2,0x10($29)
+	ld	$3,0x18($29)
+	swc1	$f21,0x24($29)
+	swc1	$f0,0x20($29)
+	swc1	$f2,0x28($29)
+	swc1	$f1,0x2c($29)
+	sd	$2,0($29)
+	sd	$3,8($29)
+	ld	$2,0x20($29)
+	ld	$3,0x28($29)
+	sd	$2,0x10($29)
+	jal	0x00105278
+	sd	$3,0x18($29)
+	jal	0x00118678
+	move	$4,$2
+	jal	0x001118b8
+	addiu	$4,$0,0xb
+	lui	$16,0x28
+	addiu	$17,$29,0x10
+	addiu	$16,$16,0x23c0
+	move	$4,$17
+	move	$7,$16
+	move	$5,$16
+	move	$8,$0
+	jal	0x001d4a58
+	move	$6,$29
+	jal	0x00104f20
+	nop	
+	jal	0x001052a8
+	move	$4,$29
+	mov.s	$f12,$f22
+	move	$4,$16
+	addiu	$5,$0,4
+	jal	0x0011e220
+	addiu	$6,$0,4
+	jal	0x00105268
+	nop	
+	jal	0x00104f20
+	.set	macro
+	.set	reorder
+	.end	boyAI_sub_159B40

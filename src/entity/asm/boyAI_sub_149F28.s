@@ -1,0 +1,46 @@
+	.text
+	.p2align 3
+	.globl	boyAI_sub_149F28
+	.ent	boyAI_sub_149F28
+boyAI_sub_149F28:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	lw	$6,0x15c($5)
+	lui	$4,0x56
+	lw	$2,0x4a0($3)
+	addiu	$4,$4,0x5060
+	lw	$5,0x4a0($6)
+	mult	$2,$2,$7
+	mult	$3,$5,$7
+	addu	$2,$2,$4
+	addu	$5,$3,$4
+	lw	$3,0x188($2)
+	lw	$2,0x188($5)
+	srl	$3,$3,0xf
+	srl	$2,$2,0xf
+	andi	$3,$3,1
+	andi	$2,$2,1
+	jr	$31
+	and	$2,$3,$2
+	nop	
+	addiu	$29,$29,-0x70
+	sd	$19,0x50($29)
+	sd	$18,0x40($29)
+	move	$19,$5
+	sd	$17,0x30($29)
+	move	$18,$4
+	sd	$16,0x20($29)
+	addiu	$17,$29,0x10
+	move	$16,$6
+	move	$5,$29
+	move	$4,$16
+	sd	$31,0x60($29)
+	jal	0x00144938
+	move	$6,$17
+	.set	macro
+	.set	reorder
+	.end	boyAI_sub_149F28

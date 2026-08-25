@@ -1,0 +1,62 @@
+	.text
+	.p2align 3
+	.globl	boyAI_sub_15F064
+	.ent	boyAI_sub_15F064
+boyAI_sub_15F064:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	jal	0x001c2e28
+	move	$4,$16
+	bnez	$2,loc_0015f0a0
+	move	$2,$16
+	lui	$2,0x63
+	lwc1	$f0,0x2340($2)
+	swc1	$f0,-0x5490($17)
+	swc1	$f0,8($16)
+	b	loc_0015f09c
+	swc1	$f0,4($16)
+	move	$5,$4
+	addiu	$16,$16,-0x5490
+	jal	0x00104508
+	move	$4,$16
+loc_0015f09c:
+	move	$2,$16
+loc_0015f0a0:
+	ld	$31,0x30($29)
+	ld	$17,0x20($29)
+	ld	$16,0x10($29)
+	jr	$31
+	addiu	$29,$29,0x40
+	nop	
+	addiu	$29,$29,-0x60
+	sd	$17,0x10($29)
+	move	$17,$4
+	sd	$19,0x30($29)
+	sd	$18,0x20($29)
+	move	$19,$7
+	sd	$16,0($29)
+	move	$18,$6
+	swc1	$f20,0x50($29)
+	move	$16,$5
+	sd	$31,0x40($29)
+	jal	0x0015eff8
+	mov.s	$f20,$f12
+	lw	$3,0x164($17)
+	move	$4,$17
+	lwc1	$f0,0($2)
+	lw	$2,0x670($3)
+	jal	0x0015eff8
+	swc1	$f0,0x70($2)
+	lw	$3,0x164($17)
+	move	$4,$17
+	lwc1	$f0,4($2)
+	lw	$2,0x670($3)
+	jal	0x0015eff8
+	swc1	$f0,0x74($2)
+	.set	macro
+	.set	reorder
+	.end	boyAI_sub_15F064
