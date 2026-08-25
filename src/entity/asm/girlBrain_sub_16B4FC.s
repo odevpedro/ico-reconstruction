@@ -1,0 +1,74 @@
+	.text
+	.p2align 3
+	.globl	girlBrain_sub_16B4FC
+	.ent	girlBrain_sub_16B4FC
+girlBrain_sub_16B4FC:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	move	$6,$19
+	beqz	$2,loc_0016b584
+	move	$4,$19
+	lwc1	$f1,4($17)
+	lui	$1,0x4248
+	mtc1	$1,$f0
+	move	$6,$20
+	lwc1	$f3,4($19)
+	move	$7,$21
+	lui	$1,0x41f0
+	mtc1	$1,$f2
+	sub.s	$f1,$f1,$f0
+	lwc1	$f4,8($17)
+	addiu	$16,$0,1
+	lwc1	$f0,0($17)
+	sub.s	$f3,$f3,$f2
+	swc1	$f4,0x18($29)
+	addiu	$5,$29,0x10
+	swc1	$f0,0x10($29)
+	swc1	$f1,0x14($29)
+	lui	$1,0x4120
+	mtc1	$1,$f12
+	swc1	$f3,4($19)
+	jal	0x0014ab30
+	sw	$0,0x44($18)
+	bnel	$2,$0,loc_0016b57c
+	lw	$3,0x3c($18)
+	sw	$16,0x44($18)
+	jal	0x00178930
+	move	$4,$18
+	b	loc_0016b584
+	addiu	$16,$0,3
+loc_0016b57c:
+	addiu	$2,$0,2
+	movz	$16,$2,$3
+loc_0016b584:
+	addiu	$2,$0,3
+	.word	0x16020072
+	move	$2,$22
+	lui	$3,0x29
+	lw	$4,-0x6f60($28)
+	addiu	$2,$0,8
+	beq	$4,$2,loc_0016b5b0
+	addiu	$3,$3,-0x7d50
+	addiu	$2,$0,0x16
+	.word	0x14820011
+	move	$2,$0
+loc_0016b5b0:
+	addiu	$2,$3,-0x57f0
+	lui	$1,0x42c8
+	mtc1	$1,$f0
+	lwc1	$f1,0x5824($2)
+	lwc1	$f2,4($3)
+	add.s	$f1,$f1,$f0
+	.word	0x46020834
+	nop	
+	.word	0x45030007
+	addiu	$2,$0,1
+	lwc1	$f0,0x5844($2)
+	.word	0x46000834
+	.set	macro
+	.set	reorder
+	.end	girlBrain_sub_16B4FC

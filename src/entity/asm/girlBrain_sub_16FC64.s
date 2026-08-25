@@ -1,0 +1,39 @@
+	.text
+	.p2align 3
+	.globl	girlBrain_sub_16FC64
+	.ent	girlBrain_sub_16FC64
+girlBrain_sub_16FC64:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	sd	$18,0xf0($29)
+	sd	$16,0xd0($29)
+	addiu	$3,$0,0x3c
+	sd	$31,0x160($29)
+	move	$16,$0
+	sd	$30,0x150($29)
+	sd	$23,0x140($29)
+	subu	$3,$3,$5
+	sd	$22,0x130($29)
+	sd	$21,0x120($29)
+	sd	$19,0x100($29)
+	sd	$17,0xe0($29)
+	swc1	$f22,0x180($29)
+	swc1	$f21,0x178($29)
+	swc1	$f20,0x170($29)
+	lw	$6,4($2)
+	sw	$4,0($29)
+	div	$0,$3,$6
+	beql	$6,$0,loc_0016fcb4
+	break	0,7
+loc_0016fcb4:
+	addiu	$4,$0,1
+	lw	$2,0($29)
+	sw	$4,0xb0($29)
+	lw	$20,0x164($2)
+	.set	macro
+	.set	reorder
+	.end	girlBrain_sub_16FC64

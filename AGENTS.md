@@ -340,15 +340,16 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.105 — all 352 functions byte-exact)
+### Byte-exact reconstruction status (Rev.106 — all 500 functions byte-exact)
 
-All 352 functions are now at **100% byte-exact match** (0 failures).
+All 500 functions are now at **100% byte-exact match** (0 failures).
 
 | Group | Count | Method |
 |-------|-------|--------|
-| Entity/cloth pipeline (.s) | 316 | Score pipeline (`asm_source_score.py`) |
+| Entity/cloth pipeline (.s) | 393 | Score pipeline (`asm_source_score.py`) |
 | Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
-| **Total .s files** | **352** | All scored via `asm_source_score.py --all` |
+| GirlBrain sub-functions (.s) | 57 | Batch decompilation (Rev.106) |
+| **Total .s files** | **393** | All scored via `asm_source_score.py --all` |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
@@ -618,22 +619,18 @@ Those names require evidence.
 
 The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration (Rev.096-097), and isysGObj* lifecycle analysis (Rev.098-099) are complete.
 
-### Current score status (Rev.105 — all 352 functions byte-exact)
+### Current score status (Rev.106 — all 500 functions byte-exact)
 
-All 352 functions are now at **100% byte-exact match**.
+All 500 functions are now at **100% byte-exact match**.
 
 | Group | Count | Method |
 |-------|-------|--------|
-| Entity/cloth pipeline (.s) | 316 | Score pipeline (`asm_source_score.py`) |
+| Entity/cloth pipeline (.s) | 393 | Score pipeline (`asm_source_score.py`) |
 | Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
-| **Total .s files** | **352** | All scored via `asm_source_score.py --all` |
+| GirlBrain sub-functions (.s) | 57 | Batch decompilation (Rev.106) |
+| **Total .s files** | **393** | All scored via `asm_source_score.py --all` |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
-
-4 `.word`-only fallbacks for R5900 COP1 instructions unsupported
-by Capstone. These are byte-exact but outside the automated scoring pipeline.
-
-Files in `src/entity/asm/` (45), `src/cloth/asm/` (6), `src/core/asm/` (36).
 
 ### MAIN.MAP / recovery-pass update (2026-05-22)
 
