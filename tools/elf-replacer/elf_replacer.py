@@ -6,10 +6,12 @@ Replaces SCUS_971.13 in the ISO with a modified version
 
 import os
 import sys
+from pathlib import Path
 
-# Settings
-ISO_PATH = "/home/peter/Downloads/Ico (USA)/Ico (USA).bin"
-ELF_TO_REPLACE = "/home/peter/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf"
+# Settings — use project-relative paths
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+ISO_PATH = str(PROJECT_ROOT / ".local" / "iso" / "Ico (USA).bin")
+ELF_TO_REPLACE = str(PROJECT_ROOT / ".local" / "extracted" / "SCUS_971.13.elf")
 MODIFIED_ELF = "/tmp/SCUS_971.13_mod.elf"
 
 # LBA and sector info from earlier analysis

@@ -130,6 +130,7 @@ def disassemble_mips64(data: bytes, start_va: int) -> list[dict]:
     import capstone
     md = capstone.Cs(capstone.CS_ARCH_MIPS,
                      capstone.CS_MODE_MIPS64 + capstone.CS_MODE_LITTLE_ENDIAN)
+    md.skipdata = True
     result = []
     for insn in md.disasm(data, start_va):
         result.append({
@@ -333,6 +334,15 @@ def insn_to_asm(insn: dict, branch_labels: dict,
         rt_num = _convert_regs(parts[2])
         return f"\t{mnem}\t${ac_num},{rs_num},{rt_num}"
 
+    # R5900-specific: madd/msub with $acN prefix
+    # Capstone outputs "madd $ac2, $v0, $t2" → need "madd $2,$2,$10" (3 operands for correct encoding)
+    if mnem in ("madd", "msub") and ops.count(", ") == 2 and ops.startswith("$ac"):
+        parts = ops.split(", ")
+        ac_num = parts[0].replace("$ac", "")
+        rs_num = _convert_regs(parts[1])
+        rt_num = _convert_regs(parts[2])
+        return f"\t{mnem}\t${ac_num},{rs_num},{rt_num}"
+
     # R5900-specific: div with 3 operands
     # Capstone outputs "div $zero, $v0, $a2" → need "div $0,$2,$6"
     if mnem == "div" and ops.count(", ") == 2:
@@ -354,6 +364,11 @@ def insn_to_asm(insn: dict, branch_labels: dict,
 
     # R5900-specific: bbit032, bbit031, bbit030 and other bit test ops
     if mnem.startswith("bbit0"):
+        word = int.from_bytes(bytes.fromhex(insn["bytes"]), "little")
+        return f"\t.word\t0x{word:08x}"
+
+    # Capstone skipdata emits .byte for unrecognised instructions — emit as .word
+    if mnem == ".byte":
         word = int.from_bytes(bytes.fromhex(insn["bytes"]), "little")
         return f"\t.word\t0x{word:08x}"
 

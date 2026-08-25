@@ -11,6 +11,10 @@
 *.MDF
 *.cue
 *.CUE
+*.zip
+*.ZIP
+*.7z
+*.rar
 
 # Local extraction, dumps, and generated binary outputs
 .local/
