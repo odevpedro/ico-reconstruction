@@ -125,6 +125,65 @@ python3 -c "import elftools; print('pyelftools: OK')" 2>/dev/null || echo "pyelf
 
 ---
 
+## Gameplay monitor agent (runtime sessions)
+
+When the user says **"vamos jogar"**, **"vamos para mais uma sessão"**, **"abre o jogo"**,
+or any similar phrase indicating intent to play ICO while the agent monitors,
+the agent MUST follow this workflow:
+
+### Pre-flight
+
+1. Run `./tools/run-ico-pcsx2-logpoints.sh --check` to verify PCSX2 is available.
+2. Read the most recent research note to understand current probe configuration.
+
+### Launch
+
+3. Run `./tools/run-ico-pcsx2-logpoints.sh` — it creates a unique session ID,
+   a new JSONL file, and `.local/pcsx2-logs/current-session.env`.
+4. Wait 3-5 seconds for PCSX2 to start.
+5. Verify PCSX2 is running: `pgrep -f pcsx2-qt`.
+6. Run `python3 tools/runtime-probe-analyzer/verify_runtime_probe_log.py .local/pcsx2-logs/current-session.jsonl`
+   to confirm the log is valid (required sentinels: `elf_entry_sentinel`, `isys_gobj_init`, `ios_om_main`).
+7. **Only release gameplay after the validator reports `status=valid`.**
+
+### Monitoring (passive)
+
+8. While the user plays, the agent does NOT intervene unless asked.
+9. The JSONL log grows automatically — all probes fire into it.
+10. If the user asks for analysis mid-session, run the validator and report event counts.
+
+### Post-session analysis
+
+11. When the user says **"para"**, **"parei"**, **"analyse os logs"**, or stops playing:
+    - Run the validator one final time.
+    - Count total events and unique labels.
+    - Identify new world_state values not seen in previous sessions.
+    - Identify new dispatch slot addresses not yet mapped.
+    - Identify high-frequency functions not yet decompiled.
+    - Write findings to `research/elf/ghidra-revNNN-runtime-session-*.md`.
+    - Update `docs/backlog.md` with new completed items.
+    - Commit and push if the user requests.
+
+### Key addresses to watch
+
+| Address | Label | What to capture |
+|---------|-------|-----------------|
+| `0x1B76F8` | `initSceneGObj` | scene_id, entry_count, entity types |
+| `0x13F9D0` | `_iosOmMain` | slot_index, mask bits, event count |
+| `0x13F3F0` | `isysGObjProcAdd_` | a1 (GObj ptr), a3 (add/remove) |
+| `0x13FC00` | `iosOmCreateDL` | a1 (slot), mask bits |
+| `0x1AF948` | `world_state_load` | room_id, transition count |
+| `0x166E10` | `_Clip` | collision context |
+
+### What NOT to do
+
+- Do not open PCSX2 manually — always use `run-ico-pcsx2-logpoints.sh`.
+- Do not modify probe addresses without documenting in a research note.
+- Do not commit log files (they are in `.local/` which is gitignored).
+- Do not interrupt gameplay unless the user asks.
+
+---
+
 ## Project context / AI context file
 
 Before starting any substantial analysis, read the AI context file if it exists:
