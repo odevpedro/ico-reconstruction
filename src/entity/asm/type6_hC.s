@@ -1,0 +1,33 @@
+	.text
+	.p2align 3
+	.globl	type6_hC
+	.ent	type6_hC
+type6_hC:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	addiu	$29,$29,-0x20
+	addiu	$5,$0,0x71c
+	sd	$16,0($29)
+	addiu	$6,$0,0x839
+	move	$16,$4
+	sd	$31,0x10($29)
+	addiu	$7,$0,-1
+	addiu	$8,$0,-1
+	jal	0x001e4798
+	addiu	$9,$0,0x39a
+	move	$4,$16
+	jal	0x001d4b40
+	move	$5,$0
+	sw	$0,0x16c($16)
+	move	$2,$0
+	ld	$31,0x10($29)
+	ld	$16,0($29)
+	jr	$31
+	addiu	$29,$29,0x20
+	.set	macro
+	.set	reorder
+	.end	type6_hC

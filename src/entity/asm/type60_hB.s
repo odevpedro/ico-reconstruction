@@ -1,0 +1,50 @@
+	.text
+	.p2align 3
+	.globl	type60_hB
+	.ent	type60_hB
+type60_hB:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	lwc1	$f12,-0x7034($28)
+	j	0x182a40
+	nop	
+	nop	
+	addiu	$29,$29,-0x60
+	move	$5,$0
+	sd	$16,0x40($29)
+	move	$4,$29
+	sd	$31,0x50($29)
+	jal	0x002641d8
+	addiu	$6,$0,0x40
+	lui	$1,0x3f80
+	mtc1	$1,$f0
+	move	$7,$0
+	move	$8,$29
+	addiu	$9,$0,1
+	addiu	$10,$0,7
+	move	$11,$0
+	addiu	$4,$0,0x3c
+	addiu	$5,$0,0x45
+	swc1	$f0,0x28($29)
+	addiu	$6,$0,-1
+	swc1	$f0,0x20($29)
+	jal	0x001b7fe8
+	swc1	$f0,0x24($29)
+	move	$16,$2
+	lui	$4,0x29
+	move	$5,$16
+	addiu	$4,$4,-0x5770
+	jal	0x00182000
+	addiu	$6,$0,1
+	move	$2,$16
+	ld	$31,0x50($29)
+	ld	$16,0x40($29)
+	jr	$31
+	addiu	$29,$29,0x60
+	.set	macro
+	.set	reorder
+	.end	type60_hB
