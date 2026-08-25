@@ -1,0 +1,31 @@
+	.text
+	.p2align 3
+	.globl	isysGObjRemove
+	.ent	isysGObjRemove
+isysGObjRemove:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x60
+	sd	$17,0x10($29)
+	sd	$31,0x50($29)
+	move	$17,$4
+	sd	$20,0x40($29)
+	sd	$19,0x30($29)
+	sd	$18,0x20($29)
+	sd	$16,0($29)
+	lw	$3,0xc($17)
+	addiu	$2,$3,-1
+	sltiu	$2,$2,0x43
+	.word	0x10400022
+	lw	$18,0x2c($17)
+	lui	$2,0x6b
+	sll	$3,$3,2
+	addiu	$2,$2,-0x6c30
+	addu	$3,$3,$2
+	lw	$16,0($3)
+	.set	macro
+	.set	reorder
+	.end	isysGObjRemove

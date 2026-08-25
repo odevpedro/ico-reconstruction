@@ -1,0 +1,34 @@
+	.text
+	.p2align 3
+	.globl	atta_init
+	.ent	atta_init
+atta_init:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	addiu	$29,$29,-0x30
+	sd	$16,0($29)
+	sd	$17,0x10($29)
+	sd	$31,0x20($29)
+	jal	0x00202208
+	move	$16,$4
+	move	$17,$2
+	jal	0x00202148
+	move	$4,$16
+	jal	0x00203aa0
+	addiu	$4,$0,1
+	ld	$2,0x18($17)
+	ori	$3,$0,0x8000
+	dsll	$3,$3,0x11
+	ld	$31,0x20($29)
+	or	$2,$2,$3
+	ld	$16,0($29)
+	sd	$2,0x18($17)
+	ld	$17,0x10($29)
+	jr	$31
+	addiu	$29,$29,0x30
+	.set	macro
+	.set	reorder
+	.end	atta_init
