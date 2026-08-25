@@ -265,6 +265,7 @@ Before doing new analysis, read these files in this order if they exist:
 28. `research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md`
 29. `research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md`
 30. `research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md`
+31. `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -339,18 +340,17 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.102 — all 87 functions byte-exact)
+### Byte-exact reconstruction status (Rev.105 — all 352 functions byte-exact)
 
-All 87 functions are now at **100% byte-exact match** (47 pipeline + 4 .word-only + 36 core):
+All 352 functions are now at **100% byte-exact match** (0 failures).
 
 | Group | Count | Method |
 |-------|-------|--------|
-| Entity/cloth pipeline (.s) | 47 | Score pipeline (`asm_source_score.py`) |
-| .word-only fallbacks (.s) | 4 | Manual .s (COP1 unsupported by Capstone) |
+| Entity/cloth pipeline (.s) | 316 | Score pipeline (`asm_source_score.py`) |
 | Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
-| **Total .s files** | **87** | 51 entity/cloth + 36 core |
+| **Total .s files** | **352** | All scored via `asm_source_score.py --all` |
 
-Plus 12 entity/cloth functions as byte-exact C source (`.c` files).
+Plus entity/cloth functions as byte-exact C source (`.c` files).
 
 4 `.word`-only fallbacks for R5900 COP1 instructions unsupported by Capstone:
 `_girlBrainHide_MakeHidePoint`, `girlBrainRunawaySearchPoint`,
@@ -618,18 +618,17 @@ Those names require evidence.
 
 The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration (Rev.096-097), and isysGObj* lifecycle analysis (Rev.098-099) are complete.
 
-### Current score status (Rev.102 — all 87 functions byte-exact)
+### Current score status (Rev.105 — all 352 functions byte-exact)
 
-All 87 functions are now at **100% byte-exact match**.
+All 352 functions are now at **100% byte-exact match**.
 
 | Group | Count | Method |
 |-------|-------|--------|
-| Entity/cloth pipeline (.s) | 47 | Score pipeline (`asm_source_score.py`) |
-| .word-only fallbacks (.s) | 4 | Manual .s (COP1 unsupported by Capstone) |
+| Entity/cloth pipeline (.s) | 316 | Score pipeline (`asm_source_score.py`) |
 | Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
-| **Total .s files** | **87** | 51 entity/cloth + 36 core |
+| **Total .s files** | **352** | All scored via `asm_source_score.py --all` |
 
-Plus 12 entity/cloth functions as byte-exact C source (`.c` files).
+Plus entity/cloth functions as byte-exact C source (`.c` files).
 
 4 `.word`-only fallbacks for R5900 COP1 instructions unsupported
 by Capstone. These are byte-exact but outside the automated scoring pipeline.
@@ -667,28 +666,34 @@ Files in `src/entity/asm/` (45), `src/cloth/asm/` (6), `src/core/asm/` (36).
 
 The old C-based compiler flag investigation is archived. All 26 asm functions bypass the C compiler entirely.
 
-### Runtime-verified slot distribution (Rev.104 — 12 DL slots)
+### Runtime-verified slot distribution (Rev.105 — 20 DL slots)
 
 | Slot | Address | a2/t0 Index | Count | % | World State |
 |------|---------|-------------|-------|---|-------------|
-| B | 0x6782F8 | 0x1A | 361,536 | 66.6% | 0x09, 0x0E, 0x0F |
-| E | 0x679258 | 0x20 | 52,315 | 9.6% | — |
-| NEW-1 | 0x678818 | 0x1C | 28,267 | 5.2% | 0x0D only |
-| F | 0x6794E8 | 0x21 | 26,292 | 4.8% | — |
-| NEW-2 | 0x67EE98 | 0x44 | 25,872 | 4.7% | 0x0B only |
-| G | 0x679778 | 0x22 | 18,753 | 3.4% | — |
-| I | 0x67C308 | 0x33 | 12,940 | 2.4% | — |
-| C | 0x678D38 | 0x1E | 6,845 | 1.3% | — |
-| D | 0x678FC8 | 0x1F | 4,075 | 0.7% | — |
-| A | 0x677DD8 | 0x18 | 1,567 | 0.3% | — |
+| B | 0x6782F8 | 0x1A | 454,221 | 61.4% | 0x09, 0x0E, 0x0F |
+| NEW-4 | 0x678AA8 | 0x1D | 52,332 | 7.1% | 0x11 only |
+| E | 0x679258 | 0x20 | 52,315 | 7.1% | — |
+| D | 0x678FC8 | 0x1F | 35,679 | 4.8% | 0x10 |
+| NEW-1 | 0x678818 | 0x1C | 28,267 | 3.8% | 0x0D only |
+| F | 0x6794E8 | 0x21 | 26,926 | 3.6% | — |
+| NEW-2 | 0x67EE98 | 0x44 | 25,872 | 3.5% | 0x0B only |
+| G | 0x679778 | 0x22 | 18,753 | 2.5% | — |
+| I | 0x67C308 | 0x33 | 12,940 | 1.8% | — |
+| NEW-3 | 0x67C598 | 0x34 | 7,248 | 1.0% | 0x13 only |
+| C | 0x678D38 | 0x1E | 6,845 | 0.9% | — |
+| NEW-5 | 0x679F28 | 0x25 | 5,293 | 0.7% | 0x12 only |
+| NEW-6 | 0x67CAB8 | 0x36 | 3,798 | 0.5% | 0x14 only |
+| A | 0x677DD8 | 0x18 | 1,567 | 0.2% | — |
 | J | 0x67E458 | 0x40 | 461 | 0.1% | — |
-| H | 0x67A968 | 0x29 | 150 | 0.0% | — |
+| H | 0x67A968 | 0x29 | 150 | <0.1% | — |
 
-**Key findings (Rev.104):**
-- **a2/t0 register** at `_iosOmMain` entry = DL slot type index (not sequential)
-- **BSS slot clusters**: A-B-NEW-1-C (stride 1312), D-E-F-G (stride 656), H-I-J-NEW-2 scattered
-- **ws=0x0F** dominates: 304,336 ios_om_main events (57%), single slot B dispatch
-- **ws=0x0B** has unique slot NEW-2, **ws=0x0D** has unique slot NEW-1
+**Key findings (Rev.105):**
+- **25 unique world_states** mapped (up from 20 in Rev.104)
+- **20 DL slot addresses** in BSS (up from 16)
+- **Each new world_state (0x10-0x14) has a unique DL slot** — per-area dispatch pattern
+- **ws=0x0F** dominates: 429,907 ios_om_main events (58.1%), single slot B dispatch
+- **Anomalous a2 values** (0x31C383B0, 0x31CA06F0) — possible overlay slots
+- **352 .s functions** all at 100% byte-exact match
 
 ### Current objectives
 
@@ -726,6 +731,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 32. ~~**Rev.100: GObj struct header, dispatch doc, 4 GirlBrain .s, BSS discovery**~~ **DONE (2026-05-22)**
 33. ~~**Rev.101: +4 GirlBrain .s (11 total), label cleanup, entity-state-blocks.md, initSceneGObj analysis**~~ **DONE (2026-05-22)**
 34. ~~**Rev.102: GirlBrain/eBrain range correction (0x0016xxxx=GirlBrain, 0x0019xxxx=eBrain/Generator); 15 new .s (10 GirlBrain + 7 eBrain); 8 speculative eBrain preserved; 6 stale .s files removed; YAML rewritten with correct USA file offsets**~~ **DONE (2026-05-22)**
+35. ~~**Rev.105: Extended session — 25 world_states, 20 DL slots, 352 functions at 100%, physics table fully covered**~~ **DONE (2026-08-25)**
 
 ---
 

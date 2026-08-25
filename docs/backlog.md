@@ -1,7 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
-> Última atualização: 2026-08-25 (Rev.104: 7 new world_states, 2 new DL slots, a2/t0 register mapping, ws=0x0F dominant)
+> Última atualização: 2026-08-25 (Rev.105: 25 world_states, 20 DL slots, 352 functions at 100%, physics table fully covered)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -10,7 +10,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 80 |
+| Completed | 81 |
 | In Progress | 1 |
 | Pending | 1 |
 
@@ -61,6 +61,18 @@
 - Formalized the current evidence layers: local narrative, byte-exact assembly, and runtime gaps.
 - Defined a conservative decision matrix for the next phase.
 - Kept the static phase separate from emulator-dependent validation.
+
+### [x] [SQUAD-RUNTIME | rev.105 | 2026-08-25]
+**Extended Session: 25 World States, 20 DL Slots, Full Physics Table Coverage**
+
+- Analyzed full 1.04M-event session (`ico-runtime-20260825-152452.jsonl`, ~20h gameplay).
+- Discovered 5 new world_states (0x10-0x14), 4 new DL slots (0x678AA8, 0x679F28, 0x67C598, 0x67CAB8).
+- Total: 25 world_states, 20 DL slots, 82 transitions.
+- Each new world_state has a unique DL slot — per-area dispatch list pattern confirmed.
+- Full physics object type table (0x1A48A0, 31 entries, 74 handlers) cross-referenced — ALL at 100%.
+- 352 total .s functions pass byte-exact verification (0 failures).
+- Anomalous a2 pointer values (0x31C383B0, 0x31CA06F0) identified — possible overlay slots.
+- Research note: `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
 
 ---
 
