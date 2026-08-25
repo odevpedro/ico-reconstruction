@@ -8,6 +8,7 @@ eBrainPursuit:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	slti	$2,$3,2
 	beqz	$2,loc_00191f84
 	addiu	$2,$0,2

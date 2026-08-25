@@ -8,6 +8,7 @@ boy_dispCrown:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x40
 	addiu	$5,$0,0x23
 	sd	$18,0x20($29)

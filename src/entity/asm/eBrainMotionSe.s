@@ -8,6 +8,7 @@ eBrainMotionSe:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	lw	$2,4($4)
 	addu	$2,$2,$5
 	slti	$3,$2,0x1801

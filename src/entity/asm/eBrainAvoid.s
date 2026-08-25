@@ -8,6 +8,7 @@ eBrainAvoid:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	jal	0x00104508
 	move	$5,$18
 	move	$4,$16

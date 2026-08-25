@@ -8,6 +8,7 @@ eBrainInit:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	lui	$2,0x6d
 	sw	$0,-0x6178($28)
 	addiu	$2,$2,0x710

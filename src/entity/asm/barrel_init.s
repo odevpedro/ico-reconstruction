@@ -8,6 +8,7 @@ barrel_init:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x60
 	sw	$0,-0x6528($28)
 	sd	$31,0x50($29)

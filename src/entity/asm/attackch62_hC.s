@@ -8,6 +8,7 @@ attackch62_hC:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x20
 	lui	$6,0x62
 	sd	$16,0($29)

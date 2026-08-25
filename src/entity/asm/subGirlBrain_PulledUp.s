@@ -8,6 +8,7 @@ subGirlBrain_PulledUp:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x170
 	sw	$4,0($29)
 	sd	$20,0xf0($29)

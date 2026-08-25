@@ -8,6 +8,7 @@ girlBrainHide_GoalTurn:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x70
 	sd	$17,0x30($29)
 	sd	$19,0x50($29)

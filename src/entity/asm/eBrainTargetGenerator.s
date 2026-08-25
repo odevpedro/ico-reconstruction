@@ -8,6 +8,7 @@ eBrainTargetGenerator:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 loc_00192380:
 	beqz	$2,loc_001923f0
 	addiu	$4,$29,0x20

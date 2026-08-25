@@ -1,0 +1,60 @@
+	.text
+	.p2align 3
+	.globl	queen_hB
+	.ent	queen_hB
+queen_hB:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	addiu	$29,$29,-0x30
+	lui	$3,0x27
+	sd	$17,0x10($29)
+	lw	$2,0x4ed4($3)
+	move	$17,$4
+	sd	$31,0x20($29)
+	bnez	$2,loc_0019a91c
+	sd	$16,0($29)
+	lw	$2,-0x4b18($28)
+	addiu	$2,$2,1
+	sw	$2,-0x4b18($28)
+loc_0019a91c:
+	jal	0x001e3fc8
+	move	$4,$17
+	move	$4,$17
+	addiu	$5,$0,0x23
+	addiu	$6,$0,0x2c
+	jal	0x001bb8c0
+	addiu	$7,$0,0x199
+	lw	$2,0x15c($17)
+	lw	$16,0x800($2)
+	lw	$3,0xc($16)
+	beqz	$3,loc_0019a974
+	nop	
+	lui	$1,0x4040
+	mtc1	$1,$f12
+	lwc1	$f13,-0x7884($28)
+	jal	0x001c8218
+	lw	$4,0x10($16)
+	lui	$1,0x40a0
+	mtc1	$1,$f12
+	lwc1	$f13,-0x7880($28)
+	jal	0x001c8218
+	lw	$4,0x14($16)
+loc_0019a974:
+	lui	$1,0x42c8
+	mtc1	$1,$f12
+	move	$4,$17
+	lwc1	$f14,-0x787c($28)
+	addiu	$5,$0,1
+	ld	$31,0x20($29)
+	mov.s	$f13,$f12
+	ld	$17,0x10($29)
+	ld	$16,0($29)
+	j	0x103d50
+	addiu	$29,$29,0x30
+	.set	macro
+	.set	reorder
+	.end	queen_hB

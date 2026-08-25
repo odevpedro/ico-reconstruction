@@ -8,6 +8,7 @@ boy_hC:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x50
 	lui	$6,0x62
 	sd	$17,0x10($29)

@@ -8,6 +8,7 @@ eBrainGetTargetGeneratorFromLabelStage:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x40
 	sd	$16,0($29)
 	sd	$18,0x20($29)

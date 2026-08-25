@@ -8,6 +8,7 @@ eBrainGetStatus:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	lw	$2,-0x4b38($28)
 	bltz	$2,loc_00191d3c
 	move	$6,$4

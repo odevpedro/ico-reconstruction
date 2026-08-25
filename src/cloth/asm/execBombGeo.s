@@ -8,6 +8,7 @@ execBombGeo:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x60
 	sd	$18,0x30($29)
 	sd	$17,0x20($29)

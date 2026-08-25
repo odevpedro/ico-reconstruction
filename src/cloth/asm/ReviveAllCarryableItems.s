@@ -8,6 +8,7 @@ ReviveAllCarryableItems:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x40
 	addiu	$4,$0,0x13
 	sd	$17,0x10($29)

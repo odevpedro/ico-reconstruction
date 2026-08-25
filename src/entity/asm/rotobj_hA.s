@@ -1,0 +1,67 @@
+	.text
+	.p2align 3
+	.globl	rotobj_hA
+	.ent	rotobj_hA
+rotobj_hA:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	addiu	$29,$29,-0x50
+	sd	$17,0x20($29)
+	sd	$31,0x40($29)
+	move	$17,$4
+	sd	$18,0x30($29)
+	sd	$16,0x10($29)
+	lw	$2,0x15c($17)
+	lw	$16,0x800($2)
+	jal	0x00105278
+	lw	$18,0xc($2)
+	move	$5,$17
+	jal	0x00104140
+	move	$4,$2
+	jal	0x00104fc0
+	lh	$4,0x20($16)
+	jal	0x00105278
+	nop	
+	lui	$6,0x27
+	move	$5,$2
+	addiu	$6,$6,0x5890
+	jal	0x00118648
+	move	$4,$29
+	sw	$0,4($29)
+	move	$4,$29
+	jal	0x001182f0
+	move	$5,$29
+	jal	0x00105278
+	nop	
+	jal	0x00105fa8
+	move	$4,$2
+	lwc1	$f12,0($29)
+	jal	0x0025e5d8
+	lwc1	$f13,8($29)
+	lwc1	$f1,-0x7528($28)
+	mul.s	$f0,$f0,$f1
+	cvt.w.s	$f1,$f0
+	mfc1	$4,$f1
+	sll	$4,$4,0x10
+	jal	0x00104fc0
+	sra	$4,$4,0x10
+	jal	0x00105278
+	nop	
+	move	$4,$18
+	jal	0x00105f20
+	move	$5,$2
+	jal	0x0010ecb8
+	move	$4,$17
+	ld	$31,0x40($29)
+	ld	$18,0x30($29)
+	ld	$17,0x20($29)
+	ld	$16,0x10($29)
+	jr	$31
+	addiu	$29,$29,0x50
+	.set	macro
+	.set	reorder
+	.end	rotobj_hA

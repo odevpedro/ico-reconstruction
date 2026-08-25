@@ -8,6 +8,7 @@ clothSubForceApply:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x70
 	addiu	$4,$0,0x13
 	swc1	$f21,0x58($29)

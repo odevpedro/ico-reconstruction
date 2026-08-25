@@ -8,6 +8,7 @@ eBrainReturnInit:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	jal	0x0013ebe0
 	move	$4,$16
 	move	$16,$2

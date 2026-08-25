@@ -1,0 +1,122 @@
+	.text
+	.p2align 3
+	.globl	tree_hA
+	.ent	tree_hA
+tree_hA:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	addiu	$29,$29,-0xc0
+	sd	$30,0x90($29)
+	sd	$22,0x80($29)
+	move	$30,$29
+	sd	$21,0x70($29)
+	sd	$31,0xa0($29)
+	move	$21,$4
+	sd	$19,0x50($29)
+	sd	$18,0x40($29)
+	sd	$17,0x30($29)
+	sd	$16,0x20($29)
+	swc1	$f21,0xb8($29)
+	swc1	$f20,0xb0($29)
+	sd	$20,0x60($29)
+	lw	$20,0x15c($21)
+	lw	$3,0x820($20)
+	lb	$19,0x2e($3)
+	sll	$2,$19,9
+	srl	$2,$2,3
+	subu	$29,$29,$2
+	blez	$19,loc_001f1598
+	move	$22,$29
+	move	$16,$29
+	move	$18,$0
+	move	$17,$19
+	nop	
+loc_001f1570:
+	lw	$5,0x40($3)
+	move	$4,$16
+	addiu	$16,$16,0x40
+	addiu	$17,$17,-1
+	addu	$5,$5,$18
+	addiu	$5,$5,0x130
+	jal	0x00105f20
+	addiu	$18,$18,0x180
+	bnel	$17,$0,loc_001f1570
+	lw	$3,0x820($20)
+loc_001f1598:
+	jal	0x0010ecc0
+	move	$4,$21
+	blez	$19,loc_001f162c
+	move	$17,$19
+	mtc1	$0,$f20
+	move	$18,$0
+	lui	$1,0x3f80
+	mtc1	$1,$f21
+	lw	$2,0x820($20)
+	nop	
+loc_001f15c0:
+	addiu	$17,$17,-1
+	lw	$16,0x40($2)
+	addu	$16,$16,$18
+	addiu	$16,$16,0x130
+	jal	0x00105278
+	addiu	$18,$18,0x180
+	jal	0x00243bd8
+	move	$4,$2
+	lui	$1,0xbf00
+	mtc1	$1,$f13
+	mov.s	$f12,$f20
+	jal	0x00105308
+	mov.s	$f14,$f20
+	mov.s	$f12,$f21
+	mov.s	$f13,$f20
+	jal	0x001050b0
+	mov.s	$f14,$f21
+	jal	0x00104f48
+	addiu	$4,$0,0x2000
+	jal	0x00105278
+	nop	
+	move	$4,$16
+	move	$5,$2
+	jal	0x002438e8
+	move	$6,$4
+	bnel	$17,$0,loc_001f15c0
+	lw	$2,0x820($20)
+loc_001f162c:
+	blez	$19,loc_001f1668
+	move	$16,$22
+	move	$17,$19
+	move	$18,$0
+	lw	$2,0x820($20)
+loc_001f1640:
+	move	$5,$16
+	addiu	$16,$16,0x40
+	addiu	$17,$17,-1
+	lw	$4,0x40($2)
+	addu	$4,$4,$18
+	addiu	$4,$4,0x130
+	jal	0x00105f20
+	addiu	$18,$18,0x180
+	bnel	$17,$0,loc_001f1640
+	lw	$2,0x820($20)
+loc_001f1668:
+	move	$29,$30
+	ld	$31,0xa0($29)
+	ld	$30,0x90($29)
+	ld	$22,0x80($29)
+	ld	$21,0x70($29)
+	ld	$20,0x60($29)
+	ld	$19,0x50($29)
+	ld	$18,0x40($29)
+	ld	$17,0x30($29)
+	ld	$16,0x20($29)
+	lwc1	$f21,0xb8($29)
+	lwc1	$f20,0xb0($29)
+	jr	$31
+	addiu	$29,$29,0xc0
+	.set	macro
+	.set	reorder
+	.end	tree_hA

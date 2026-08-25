@@ -8,6 +8,7 @@ eBrainGetTarget:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0xc0
 	lui	$3,0x6d
 	sd	$20,0x70($29)

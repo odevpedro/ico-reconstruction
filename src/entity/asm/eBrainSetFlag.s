@@ -8,6 +8,7 @@ eBrainSetFlag:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	nop	
 	lui	$2,0x11
 	addiu	$29,$29,-0x70

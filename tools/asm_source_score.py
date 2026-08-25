@@ -97,6 +97,72 @@ TARGET_FUNCTIONS = [
     ("eBrainAvoid",        0x192150, 0x188, "entity"),
     ("eBrainReturnInit",   0x1922D8, 0xA8, "entity"),
     ("eBrainTargetGenerator",0x192380, 0x1F8, "entity"),
+    # === NEW: Entity callbacks from descriptor table (runtime-hot) ===
+    # GIRL callbacks (always active: player companion)
+    ("girl_hA",          0x1D1A98, 0x40, "entity"),
+    ("girl_hB",          0x1D17F8, 0x1C4, "entity"),
+    ("girl_hC",          0x1D1668, 0x18C, "entity"),
+    ("girl_hD",          0x1D1AD0, 0x08, "entity"),
+    # ENEMY1 remaining callbacks
+    ("enemy1_hA",        0x1CE690, 0x5C, "entity"),
+    ("enemy1_hD",        0x1CE760, 0x08, "entity"),
+    # QUEEN callbacks (boss encounters)
+    ("queen_hC",         0x19A7E8, 0x108, "entity"),
+    ("queen_hB",         0x19A8F0, 0xB0, "entity"),
+    ("queen_hA",         0x19A9A0, 0x80, "entity"),
+    # BOSS_CTRL callbacks
+    ("bossctrl_hA",      0x198000, 0x110, "entity"),
+    ("bossctrl_hB",      0x197FC8, 0x40, "entity"),
+    # BIRD remaining callbacks
+    ("bird_hA",          0x197080, 0x60, "entity"),
+    ("bird_hB",          0x197078, 0x10, "entity"),
+    # GENERATOR callbacks
+    ("generator_hA",     0x193600, 0x130, "entity"),
+    ("generator_hB",     0x1930B0, 0x550, "entity"),
+    ("generator_hC",     0x193730, 0xE4, "entity"),
+    # === Batch 3: remaining entity callbacks ===
+    ("cage_hA",      0x1C2DF8, 0x00C0, "entity"),
+    ("cage_hB",      0x1C28D0, 0x0500, "entity"),
+    ("cage_hC",      0x1C2338, 0x0424, "entity"),
+    ("cagefix_hA",   0x1C2FA0, 0x0044, "entity"),
+    ("cagefix_hB",   0x1C2F20, 0x007C, "entity"),
+    ("cagefix_hC",   0x1C2FE8, 0x08, "entity"),
+    ("candle_hA",    0x1C3130, 0x0044, "entity"),
+    ("candle_hB",    0x1C3178, 0x00F4, "entity"),
+    ("candle_hC",    0x1C2FF0, 0x100, "entity"),
+    ("chandelier_hA",0x1C3470, 0x0044, "entity"),
+    ("chandelier_hB",0x1C33D8, 0x0094, "entity"),
+    ("chandelier_hC",0x1C34B8, 0x08, "entity"),
+    ("flag_hA",      0x1D01E8, 0x100, "entity"),
+    ("flag_hB",      0x1D00F8, 0x00F0, "entity"),
+    ("flag_hC",      0x1CFB58, 0x500, "entity"),
+    ("seffect_hA",   0x1EF988, 0x08, "entity"),
+    ("seffect_hB",   0x1EF980, 0x08, "entity"),
+    ("seffect_hC",   0x1EF8E8, 0x0094, "entity"),
+    ("lightbit_hA",  0x1F0550, 0x00B4, "entity"),
+    ("lightbit_hB",  0x1F0540, 0x00C4, "entity"),
+    ("lightbit_hC",  0x1F0568, 0x009C, "entity"),
+    ("tree_hA",      0x1F1508, 0x0198, "entity"),
+    ("tree_hB",      0x1F1330, 0x01D8, "entity"),
+    ("tree_hC",      0x1F17B0, 0x0084, "entity"),
+    ("torch_hA",     0x1F2140, 0x08, "entity"),
+    ("torch_hB",     0x1F1CF0, 0x0354, "entity"),
+    ("torch_hC",     0x1F2048, 0x00F4, "entity"),
+    ("rotobj_hA",    0x1EA030, 0x00D4, "entity"),
+    ("rotobj_hB",    0x1E9950, 0x0030, "entity"),
+    ("rotobj_hC",    0x1E9F08, 0x100, "entity"),
+    ("chain_hA",     0x18F640, 0x0154, "entity"),
+    ("chain_hB",     0x18ECC8, 0x100, "entity"),
+    ("chain_hC",     0x18E5B0, 0x05BC, "entity"),
+    ("darkvolume_hA",0x1CBD78, 0x08, "entity"),
+    ("darkvolume_hB",0x1CBD70, 0x08, "entity"),
+    ("darkvolume_hC",0x1CBD68, 0x08, "entity"),
+    ("pobj_hA",      0x1AEA58, 0x0010, "entity"),
+    ("pobj_hB",      0x1AEA50, 0x0018, "entity"),
+    ("pobj_hC",      0x1AEA60, 0x08, "entity"),
+    ("sv_hA",        0x10EC60, 0x0034, "entity"),
+    ("mobj_hA",      0x10ECB0, 0x0030, "entity"),
+    ("sobj_hA",      0x10ECC0, 0x0020, "entity"),
 ]
 
 
@@ -362,6 +428,26 @@ def insn_to_asm(insn: dict, branch_labels: dict,
         word = int.from_bytes(bytes.fromhex(insn["bytes"]), "little")
         return f"\t.word\t0x{word:08x}"
 
+    # R5900-specific: COP2 (VU0) instructions — dmfc2, qmfc2, etc.
+    # EE assembler does not support COP2 operands — emit raw bytes
+    if mnem.startswith("dmfc2") or mnem.startswith("qmfc2") or mnem.startswith("qmtc2"):
+        word = int.from_bytes(bytes.fromhex(insn["bytes"]), "little")
+        return f"\t.word\t0x{word:08x}"
+
+    # R5900-specific: any COP2 instruction not caught above
+    # Capstone may emit various VU0 mnemonics the EE assembler can't handle
+    if mnem in ("vmula", "vmul", "vadd", "vadda", "vmadd", "vmadda",
+                "vsub", "vsuba", "vmsub", "vmsuba", "vmax", "vmaxi",
+                "vmin", "vmini", "vmulai", "vmuli", "vaddi", "vmaddi",
+                "vsubi", "vmsubi", "vdiv", "vsqrt", "vrsqrt", "vleng",
+                "vrseng", "vdadda", "vdsuba", "vclipw", "vswait",
+                "viadd", "viaddi", "viaddk", "visub", "visubi",
+                "vilwr", "viswr", "vitof0", "vitof4", "vitof12", "vitof15",
+                "vf0to4", "vf0to12", "vf0to15", "vftoi0", "vftoi4",
+                "vftoi12", "vftoi15", "vnop", "vcallms", "vcallmsr"):
+        word = int.from_bytes(bytes.fromhex(insn["bytes"]), "little")
+        return f"\t.word\t0x{word:08x}"
+
     # R5900-specific: bbit032, bbit031, bbit030 and other bit test ops
     if mnem.startswith("bbit0"):
         word = int.from_bytes(bytes.fromhex(insn["bytes"]), "little")
@@ -438,6 +524,7 @@ def generate_asm_source(func_name: str, insns: list[dict], va: int) -> str:
     lines.append(f"\t.fmask\t0x00000000,0")
     lines.append(f"\t.set\tnoreorder")
     lines.append(f"\t.set\tnomacro")
+    lines.append(f"\t.set\tnoat")
 
     for insn_idx, insn in enumerate(insns):
         va_curr = insn["va"]

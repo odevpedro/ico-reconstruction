@@ -1,0 +1,95 @@
+	.text
+	.p2align 3
+	.globl	generator_hA
+	.ent	generator_hA
+generator_hA:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	addiu	$29,$29,-0x50
+	sd	$18,0x30($29)
+	sd	$17,0x20($29)
+	sd	$31,0x40($29)
+	move	$17,$4
+	sd	$16,0x10($29)
+	lw	$2,0x15c($17)
+	jal	0x0015eff8
+	lw	$16,0x800($2)
+	lwc1	$f0,0($2)
+	move	$4,$17
+	addiu	$18,$16,0x30
+	jal	0x0015eff8
+	swc1	$f0,0($29)
+	lwc1	$f0,4($2)
+	move	$4,$17
+	jal	0x0015eff8
+	swc1	$f0,4($29)
+	lwc1	$f0,8($2)
+	move	$3,$18
+	addiu	$4,$0,3
+	swc1	$f0,8($29)
+loc_00193658:
+	lw	$2,0($3)
+	addiu	$4,$4,-1
+	lwc1	$f1,0($29)
+	addiu	$3,$3,8
+	swc1	$f1,0x10($2)
+	lwc1	$f0,4($29)
+	swc1	$f0,0x14($2)
+	lwc1	$f1,8($29)
+	bgez	$4,loc_00193658
+	swc1	$f1,0x18($2)
+	lbu	$2,0xd($16)
+	beqz	$2,loc_001936a0
+	addiu	$4,$0,0x1b5
+	lw	$5,0x38($16)
+	jal	0x001e6ca0
+	addiu	$6,$0,1
+	b	loc_001936e4
+	lw	$3,0x58($16)
+loc_001936a0:
+	lw	$5,0x30($16)
+	addiu	$4,$0,0x1b4
+	jal	0x001e6ca0
+	addiu	$6,$0,1
+	lw	$5,0x38($16)
+	addiu	$4,$0,0x1b5
+	jal	0x001e6ca0
+	addiu	$6,$0,1
+	lw	$5,0x40($16)
+	addiu	$4,$0,0x1b6
+	jal	0x001e6ca0
+	addiu	$6,$0,1
+	lw	$5,0x48($16)
+	addiu	$4,$0,0x1b3
+	jal	0x001e6ca0
+	addiu	$6,$0,1
+	lw	$3,0x58($16)
+loc_001936e4:
+	addiu	$2,$0,-1
+	beq	$3,$2,loc_00193718
+	sll	$2,$3,3
+	mtc1	$0,$f1
+	addu	$2,$18,$2
+	lw	$3,0($2)
+	lwc1	$f0,0($3)
+	.word	0x46010034
+	nop	
+	bc1f	loc_0019371c
+	ld	$31,0x40($29)
+	jal	0x00192478
+	move	$4,$17
+loc_00193718:
+	ld	$31,0x40($29)
+loc_0019371c:
+	ld	$18,0x30($29)
+	ld	$17,0x20($29)
+	ld	$16,0x10($29)
+	jr	$31
+	addiu	$29,$29,0x50
+	.set	macro
+	.set	reorder
+	.end	generator_hA

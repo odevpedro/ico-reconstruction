@@ -8,6 +8,7 @@ girlBrainMain_PositionUpdate:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x20
 	lw	$5,-0x6e08($28)
 	sd	$16,0($29)

@@ -8,6 +8,7 @@ eBrainStatusSet:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x10
 	addiu	$2,$0,4
 	beq	$5,$2,loc_00191908

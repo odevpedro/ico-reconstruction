@@ -1,0 +1,64 @@
+	.text
+	.p2align 3
+	.globl	lightbit_hB
+	.ent	lightbit_hB
+lightbit_hB:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	lw	$2,0x15c($4)
+	lw	$3,0x800($2)
+	j	0x1f0098
+	lw	$4,0x20($3)
+	lw	$2,0x15c($4)
+	lw	$5,0x800($2)
+	lw	$4,0x20($5)
+	j	0x1f0260
+	addiu	$5,$5,0x10
+	nop	
+	addiu	$29,$29,-0x30
+	lui	$6,0x62
+	sd	$17,0x10($29)
+	addiu	$6,$6,-0x5b90
+	move	$17,$5
+	lw	$4,-0x68e0($28)
+	sd	$16,0($29)
+	addiu	$5,$0,0x30
+	sd	$31,0x20($29)
+	jal	0x0013a0f8
+	addiu	$7,$0,0x11b
+	lwc1	$f1,0($17)
+	move	$16,$2
+	mtc1	$0,$f0
+	addiu	$6,$0,1
+	lw	$5,0x30($17)
+	.word	0x46010034
+	nop	
+	bc1t	loc_001f05bc
+	sw	$5,0($16)
+	move	$6,$0
+loc_001f05bc:
+	jal	0x001efa60
+	addiu	$4,$0,1
+	lwc1	$f0,0x20($17)
+	lui	$1,0x4300
+	mtc1	$1,$f2
+	swc1	$f0,0x10($16)
+	sw	$2,0x20($16)
+	lwc1	$f0,0x24($17)
+	move	$2,$16
+	ld	$31,0x20($29)
+	swc1	$f0,0x14($16)
+	lwc1	$f1,0x28($17)
+	swc1	$f2,0x1c($16)
+	swc1	$f1,0x18($16)
+	ld	$17,0x10($29)
+	ld	$16,0($29)
+	jr	$31
+	addiu	$29,$29,0x30
+	.set	macro
+	.set	reorder
+	.end	lightbit_hB

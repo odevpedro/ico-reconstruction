@@ -8,6 +8,7 @@ girlBrainRunawayMoveByWay:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x200
 	lwc1	$f0,0($6)
 	sd	$18,0x1c0($29)

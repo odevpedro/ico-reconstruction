@@ -8,6 +8,7 @@ eBrainMovePos:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	lw	$4,-0x6e0c($28)
 	beqz	$4,loc_00191e0c
 	addiu	$5,$0,0xf

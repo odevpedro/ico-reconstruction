@@ -8,6 +8,7 @@ bird_hC:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x40
 	lui	$6,0x56
 	sd	$16,0($29)

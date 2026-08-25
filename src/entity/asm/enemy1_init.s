@@ -8,6 +8,7 @@ enemy1_init:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x1a0
 	sd	$21,0x150($29)
 	move	$21,$4

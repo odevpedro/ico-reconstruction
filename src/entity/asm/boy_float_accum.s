@@ -8,6 +8,7 @@ boy_float_accum:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0x50
 	lw	$4,-0x5650($28)
 	swc1	$f22,0x40($29)

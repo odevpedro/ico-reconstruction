@@ -8,6 +8,7 @@ eBrainSendMes:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	lui	$3,0x6d
 	addiu	$6,$3,0x710
 	lw	$2,0x18($6)

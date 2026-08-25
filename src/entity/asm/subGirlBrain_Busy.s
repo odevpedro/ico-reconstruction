@@ -8,6 +8,7 @@ subGirlBrain_Busy:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
+	.set	noat
 	addiu	$29,$29,-0xa0
 	lui	$2,0x28
 	sw	$4,0($29)
