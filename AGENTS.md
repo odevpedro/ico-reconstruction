@@ -51,6 +51,80 @@ Do not treat previous AI-generated notes as truth unless they are backed by evid
 
 ---
 
+## Required toolchain (pre-flight check)
+
+Before attempting ANY code generation, assembly, compilation, or scoring task,
+the agent MUST verify that the following tools exist on the system. If any
+critical tool is missing, **stop and report it** — do not improvise substitutes.
+
+### Critical path (assembly/scoring pipeline)
+
+| Tool | Purpose | Expected path | Install source |
+|------|---------|---------------|----------------|
+| **ee-gcc 2.9-991111-01** | Assemble .s files, compile C, byte-exact verification | `toolchain/ee-gcc2.9-991111-01/bin/ee-gcc` | `https://github.com/decompme/compilers/releases` → `ee-gcc2.9-991111-01.tar.xz` |
+| **USA ELF** | Target binary for all analysis | `.local/extracted/SCUS_971.13.elf` | Extract via `tools/elf-extractor/elf_extractor.py` from `.local/iso/Ico (USA).bin` (LBA=25, size=5458886) |
+
+### Python packages (pip)
+
+| Package | Required by | Install |
+|---------|-------------|---------|
+| `capstone` | `asm_source_score.py`, `ee_gcc_compile.py`, `asmdiff.py`, `decompme_submit.py`, `symbol_reconcile/reconcile.py` | `pip3 install capstone` |
+| `pyelftools` | `reconcile_full_pipeline.py`, `recover_unmatched_objects.py` | `pip3 install pyelftools` |
+
+### Runtime capture (PCSX2)
+
+| Tool | Purpose | Expected path |
+|------|---------|---------------|
+| **pcsx2-qt** (instrumented fork) | Runtime gameplay capture with breakpoints | `.local/pcsx2-ico-logpoints-fork/build-runtime/bin/pcsx2-qt` |
+| **USA ISO** | Game image | `.local/iso/Ico (USA).bin` |
+
+### Analysis tools (stdlib-only, always available)
+
+These scripts need only Python stdlib — no external dependencies:
+
+- `tools/elf_table_dump.py` — data table extraction
+- `tools/elf-symbol-scan/elf_symbol_scan.py` — symbol table scanner
+- `tools/mips-prologue-scan/mips_prologue_scan.py` — function prologue detection
+- `tools/elf-extractor/elf_extractor.py` — ELF extraction from BIN/CUE
+- `tools/runtime-probe-analyzer/runtime_probe_analyzer.py` — JSONL log analysis
+- `tools/runtime-probe-analyzer/verify_runtime_probe_log.py` — log validation
+- `tools/pal_usa_reconcile/parse_main_map.py` — MAIN.MAP parser
+- `tools/pal_usa_reconcile/prioritize_unmatched_objects.py` — recovery queue ranker
+
+### Optional (for PAL→USA reconciliation)
+
+| Tool | Purpose | Status |
+|------|---------|--------|
+| **PAL ELF** (SCES_507.60) | PAL version for symbol reconciliation | Requires PAL ISO |
+| **PAL MAIN.MAP** | Function/object map from PAL debug symbols | Requires PAL ISO |
+| **PAL SRCFILE.TXT** | Source file provenance from PAL | Requires PAL ISO |
+
+### R5900 assembler limitations
+
+The musl cross-assembler (`mips64el-linux-musl-as`) is available at
+`/tmp/mips64el-linux-musl-cross/bin/` as a fallback but does NOT support:
+
+- `movn` / `movz` (conditional moves, funct=0x2D/0x2C) — emit as `.word`
+- `mult` with accumulator selector (rd field = ac number) — emit as `.word`
+- `bbit032` / `bbit132` (R5900 bit-test branches) — emit as `.word`
+- COP1 compare instructions (`c.olt.s`, etc.) — emit as `.word`
+
+For these instructions, use `.word 0xXXXXXXXX` with the raw encoding.
+
+### Verification command
+
+Run this before starting any task that depends on the toolchain:
+
+```bash
+# Check critical tools
+test -x toolchain/ee-gcc2.9-991111-01/bin/ee-gcc && echo "ee-gcc: OK" || echo "ee-gcc: MISSING"
+test -f .local/extracted/SCUS_971.13.elf && echo "USA ELF: OK" || echo "USA ELF: MISSING"
+python3 -c "import capstone; print('capstone: OK')" 2>/dev/null || echo "capstone: MISSING"
+python3 -c "import elftools; print('pyelftools: OK')" 2>/dev/null || echo "pyelftools: MISSING"
+```
+
+---
+
 ## Project context / AI context file
 
 Before starting any substantial analysis, read the AI context file if it exists:
@@ -92,6 +166,7 @@ research/elf/ghidra-rev077-final-static-analysis.md                      (descri
 research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidation.md  (entity types, init_fn groups, callback masks)
 research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md  (12-step main loop, 17-slot dispatch)
 research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md  (CORRECTION: GirlBrain real range = 0x0016xxxx, not 0x0019xxxx; eBrain/Generator in 0x0019xxxx; 15 new byte-exact .s files; 88 total)
+research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md  (Runtime session: 86K events, 13 world_states, 8 BSS dispatch slots mapped, per-room thread assignment confirmed)
 ```
 
 ---
@@ -128,6 +203,7 @@ Before doing new analysis, read these files in this order if they exist:
 26. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
 27. `research/external/ico-splat-promoted-ranges-experiment.md`
 28. `research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md`
+29. `research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -620,6 +696,48 @@ A secondary but high-impact front is **External Symbol Reconciliation (PAL→USA
 - Quando completo: nomes de função, source_file, e agrupamento por módulo original disponíveis para toda a base de código
 
 ---
+
+## Persistent PCSX2 gameplay sessions (validated 2026-08-25)
+
+When the user says **"vamos para mais uma sessão"**, use the persistent local
+runtime below. Do not clone or rebuild upstream PCSX2 from scratch.
+
+Persistent paths (survive a normal reboot):
+
+```txt
+.local/pcsx2-ico-logpoints-fork/                 odevpedro/pcsx2, branch ico-logpoints
+.local/pcsx2-ico-logpoints-fork/build-runtime/   validated instrumented Release build
+.local/pcsx2-fork-deps/                          local runtime/build dependencies
+.local/pcsx2-runtime/                            BIOS/config/memory-card state
+.local/iso/Ico (USA).bin                         validated game image path
+.local/pcsx2-logs/                               per-session JSONL captures
+```
+
+The `.cue` path failed image-type detection in this fork; use the `.bin` path.
+
+Required workflow:
+
+1. Run `./tools/run-ico-pcsx2-logpoints.sh --check`.
+2. Start `./tools/run-ico-pcsx2-logpoints.sh`. It creates a unique session ID,
+   a new JSONL, `.local/pcsx2-logs/current-session.env`, and the
+   `current-session.jsonl` symlink.
+3. Start `./tools/monitor-ico-pcsx2-logpoints.sh` to follow the current capture.
+4. Before telling the user to play, run:
+
+   ```txt
+   python3 tools/runtime-probe-analyzer/verify_runtime_probe_log.py \
+     .local/pcsx2-logs/current-session.jsonl
+   ```
+
+5. Only release gameplay after the validator reports `status=valid`. The
+   required boot sentinels are `elf_entry_sentinel`, `isys_gobj_init`, and
+   `ios_om_main`.
+
+The 2026-08-25 validation capture contained 43,346 well-formed events from one
+session, including `isys_gobj_proc_add`, `isys_gobj_add`, `init_scene_gobj`,
+`world_state_load`, and the required sentinels. The instrumented fork source
+currently has a deliberate local modification in
+`pcsx2/x86/ix86-32/iR5900.cpp`; do not discard or reset it.
 
 ## Documentation discipline
 

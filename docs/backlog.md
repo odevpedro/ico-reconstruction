@@ -1,7 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
-> Última atualização: 2026-05-22 (session end — Rev.102: GirlBrain/eBrain range correction, 15 new .s, YAML fix, stale cleanup)
+> Última atualização: 2026-08-25 (session end — Rev.103: Runtime session boot→Yorda→bridge→save, 8 dispatch slots mapped, world_state room mapping)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -10,7 +10,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 163 |
+| Completed | 79 |
 | In Progress | 1 |
 | Pending | 1 |
 
@@ -249,6 +249,15 @@ WOODBOX0 entity handler full near-structural decompilation (hA/hB/hC)
 ---
 
 ## Completed
+
+### [x] [SQUAD-TOOLING | rev.103b | 2026-08-25]
+initSceneGObj decompilation + Capstone skipdata fix + toolchain inventory
+
+- **initSceneGObj (0x1B76F8, 2088B)**: decompilada a 100% byte-exact via `asm_source_score.py`. 522 instruções, 6 `.word` directives para R5900-specific instructions (3x `div` 3-operand, 1x `mult ac3`, 2x `c.olt.s`). Ficheiro: `src/entity/asm/initSceneGObj.s` (576 linhas).
+- **Capstone skipdata fix**: `asm_source_score.py` — adicionado `md.skipdata = True` ao `disassemble_mips64()`. Quando Capstone encontra instruções R5900 não reconhecidas, emite `.byte` → `insn_to_asm()` converte para `.word`. Sem este fix, o pipeline parava em 22/522 instruções.
+- **Toolchain inventory no AGENTS.md**: secção "Required toolchain (pre-flight check)" com tabela de ferramentas críticas, pacotes Python, R5900 assembler limitations, e verification command. Previne que agents futuros percam tempo sem dependências.
+- **elf_replacer.py paths corrigidos**: `/home/peter/` hardcoded → relativos ao projecto via `Path(__file__)`.
+- **ee-gcc instalado**: `toolchain/ee-gcc2.9-991111-01/bin/ee-gcc` via decomp.me releases (2.1MB tar.xz).
 
 ### [x] [SQUAD-RUNTIME | rev.087 | 2026-05-18]
 ENEMY1 entity handler full near-structural decompilation (hA/hB/hC/init_fn)
@@ -944,6 +953,7 @@ Call graph analysis
 | rev.100 | 2026-05-22 | SQUAD-ARCH | GObj struct header (isys_process.h: 21+ campos, stride 0x174), dispatch architecture doc (Pass1/2, iosOmCreateDL), 4 GirlBrain .s byte-exact (eBrainSetFlag + eBrainMotionSe + eBrainMovePos + eBrainSystemInit), entity-handlers YAML + scoring pipeline extendido, 46/46 entity/cloth/GirlBrain passam, BSS discovery (type handler + thread table). |
 | rev.101 | 2026-05-22 | SQUAD-ARCH | +4 GirlBrain .s (now 11 total: eBrainPursuit/Avoid/TargetGenerator/subGirlBrain_PulledUp), label cleanup (0f/1f→loc_XXXXXX in all .s), entity-state-blocks.md (offset catalog per type), initSceneGObj + isysGObjProcAdd_ structural analysis, 74/74 functions byte-exact, 35 subsegments in YAML. |
 | rev.102 | 2026-05-22 | SQUAD-ARCH | **CORRECAO:** Rev.097 identificou INCORRETAMENTE 0x00191B70-0x0019C040 como GirlBrain — e na verdade e' eBrain/Generator. GirlBrain real = 0x0016xxxx (10 funcoes verificadas). 15 novos .s byte-exact (10 GirlBrain + 7 eBrain), 8 speculative eBrain preservados. subGirlBrain_PulledUp em 0x1944F8 removido (era epilogo de _MoveGV). eBrainSystemInit renomeado p/ eBrainGetTargetGeneratorFromLabelStage. YAML reescrito com file_offsets corretos (VA - 0xFF000), 91 named functions, 161 linhas. 6 stale .s removidos. 88/88 funcoes byte-exact (48 pipeline + 4 .word + 36 core). Documentado em AGENTS.md Rev.102. |
+| rev.103 | 2026-08-25 | SQUAD-RUNTIME | **Runtime session: boot→Yorda→bridge→first save.** 86,339 events captured. 14 world_state transitions (0x01→0x29→0x2a→0x2b→0x2d→0x28→0x03→0x05→0x04→0x05→0x04→0x06→0x07). 13 unique world states. 8 BSS dispatch slots mapped (0x00677DD8-0x0067E458), each dominant per room. a1=0x00000008 = system DL bootstrap (3.3%). isys_gobj_proc_add: 72% adds, 28% removes; t1=0x1800 universal (99.95%). init_scene_gobj: 5 system entries + room-specific entities (28-170 per room). ws=0x29 anomalous (41.7% mask=0). ELF extracted from BIN via existing elf_extractor.py tool. Nota: research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md. |
 
 ---
 
