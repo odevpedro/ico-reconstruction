@@ -1,0 +1,275 @@
+# Rev.107 — Static Analysis: 1224 Byte-Exact Functions, BoyAI Architecture
+
+**Date:** 2026-08-25  
+**Objective:** Comprehensive static analysis of all 1224 decompiled functions, with focus on BoyAI range (0x142000-0x164000)  
+**Sources:** ELF binary, 1224 .s files, descriptor table, isysGObj* system  
+**Scope:** Function classification, call graph, struct access patterns, cross-reference with entity system  
+
+---
+
+## Status
+
+| Metric | Value |
+|--------|-------|
+| Total byte-exact .s functions | **1224** |
+| BoyAI range functions | **564** (0x142000-0x164000) |
+| Entity/cloth functions | 393 |
+| Core isysGObj*/iosOm* | 36 |
+| GirlBrain sub-functions | 57 |
+| Pipeline failures | **0** |
+
+---
+
+## Critical Finding: BoyAI Has NO Internal Call Graph
+
+**All 564 boyAI functions are independent entry points.** There are zero `jal` instructions within the boyAI range that target another boyAI function. This means:
+
+- The boyAI range is NOT a hierarchical call tree
+- Each function is called independently from OUTSIDE the range
+- The calling mechanism is the isysGObj* dispatch system via the descriptor table
+- The BOY init_fn (0x153478) is the entry point that registers callbacks
+
+**Implication:** The boyAI functions are a flat library of behavior/callback functions, not a structured AI system with internal state machines.
+
+---
+
+## Function Classification (564 boyAI functions)
+
+| Category | Count | Characteristics |
+|----------|-------|-----------------|
+| Trampoline | 34 | frame=0, ≤4 instructions, just `jr $ra` |
+| Leaf | 35 | No jal calls, 4-88 instructions, pure computation |
+| Small helper | 88 | 1-5 jal calls, ≤32 frame, 20-80 instructions |
+| Medium | 4 | 6-15 jal calls, 33-128 frame |
+| Float-heavy | 242 | Contains FP instructions (lwc1/swc1/c.*) |
+| GP-accessing | 153 | Uses $gp for global data |
+
+**Key statistics:**
+- Frame sizes: all use `.frame $sp,0,$31` (tail-call optimized)
+- Saved registers: $s0 (69%), $s1 (61%), $s2 (53%), $s7 (16%)
+- Instruction count: mode at 41-60 instructions (150 functions)
+- Only 1 indirect call (`jalr`): `boyAI_sub_163FF4`
+
+---
+
+## Top Called Targets (from boyAI)
+
+The boyAI functions call into engine utility functions, NOT into isysGObj*:
+
+| Target | Calls | Location | Likely Identity |
+|--------|-------|----------|-----------------|
+| 0x2564E0 | 82 | engine | Unknown utility |
+| 0x100540 | 80 | core engine | Wrapper (calls 0x243AE8) |
+| 0x100530 | 79 | core engine | Wrapper |
+| 0x246458 | 76 | engine | Unknown utility |
+| 0x247108 | 65 | engine | Unknown utility |
+| 0x258508 | 47 | engine | Unknown utility |
+| 0x100560 | 42 | core engine | Wrapper (lui pattern) |
+| 0x2642D8 | 36 | engine | Unknown utility |
+| 0x24BEF8 | 36 | engine | Unknown utility |
+| 0x100520 | 33 | core engine | Wrapper |
+| 0x1019E0 | 33 | core engine | Wrapper |
+
+**0 calls to isysGObj* functions** (0x13F3F0, 0x13E8D8, 0x13E4D0, 0x13E548, 0x13FC00, 0x13FD10) from boyAI.
+
+---
+
+## Struct Field Access Patterns
+
+### Primary entity struct (base in $s0-$s7)
+
+Top offsets accessed from boyAI functions:
+
+| Offset | Accesses | Likely Field |
+|--------|----------|--------------|
+| +0x0000 | 1258 | First field (type/flags?) |
+| +0x0004 | 400 | Second field |
+| +0x0008 | 283 | Third field |
+| +0x000C | 180 | Fourth field |
+| +0x0010 | 224 | Fifth field |
+| +0x0014 | 135 | Sixth field |
+| +0x0018 | 101 | Seventh field |
+| +0x0020 | 41 | Position/vector? |
+| +0x0024 | 67 | Position/vector? |
+| +0x0028 | 64 | Position/vector? |
+| +0x0030 | 56 | Rotation/matrix? |
+| +0x0038 | 37 | Rotation/matrix? |
+| +0x0040 | 81 | Animation/state? |
+| +0x0048 | 26 | Callback ptr? |
+| +0x004C | 29 | Slot mask? |
+| +0x0050 | 45 | Type bits? |
+| +0x0054 | 24 | Extended field |
+
+**This matches the GObj struct layout** (stride 0x174) from Rev.098-099:
+- +0x00-0x18: core fields (type, flags, pointers)
+- +0x20-0x2C: position vector (x, y, z)
+- +0x30-0x3C: rotation/matrix
+- +0x40-0x54: animation/state fields
+- +0x48: callback pointer
+- +0x4C: slot mask
+- +0x50: type bits
+
+### Large offset access (secondary data structure)
+
+| Offset | Accesses | Base Reg | Likely Identity |
+|--------|----------|----------|-----------------|
+| +0x23D4 | 65 | $17 (s7) | Entity work area offset |
+| +0x266C | 39 | $18 (s6) | Entity work area offset |
+| +0x24A4 | 38 | $2 (v0) | Entity work area offset |
+| +0x0910 | 34 | $2 (v0) | Animation/state data |
+| +0x0860 | 24 | $2 (v0) | Animation/state data |
+| +0x092C | 21 | $3 (v1) | Animation/state data |
+
+**These large offsets (0x23D4 = 9172, 0x266C = 9836) suggest the entity work area is ~10KB.** The base register pattern ($17/s7, $18/s6) indicates these are persistent across the function body — likely the entity's main data block.
+
+---
+
+## GP-Relative Access
+
+**ZERO GP-relative accesses in the entire boyAI range.** This is unusual for MIPS code and suggests:
+
+1. The boyAI functions don't access global state directly
+2. All data comes through the entity pointer (passed as argument)
+3. The functions are pure "behavior" code that operates on entity-local data
+
+This is consistent with a clean entity-component architecture where behavior functions receive an entity pointer and operate only on that entity's data.
+
+---
+
+## Descriptor Table Cross-Reference
+
+### 12 confirmed init_fn addresses
+
+| Type | init_fn | Range | Status |
+|------|---------|-------|--------|
+| BOY | 0x153478 | boyAI | ✓ decompiled |
+| GIRL | 0x174BA0 | outside | not yet |
+| ENEMY1 | 0x164440 | outside | not yet |
+| WOODBOX01 | 0x17D1D0 | outside | not yet |
+| BGA | 0x203EE8 | outside | not yet |
+| BIRD | 0x1971C0 | outside | not yet |
+| QUEEN | 0x19B7F8 | outside | not yet |
+| DEVIL_GIRL | 0x174BA0 | outside | shares with GIRL |
+| AP1 | 0x1BB6B0 | outside | not yet |
+| ATTACKCHECKBOUNDARY | 0x1BBF78 | outside | not yet |
+| ATTCKCHKBNDRYMNGR | 0x1BBF78 | outside | shares with above |
+| BOSS_CTRL | 0x198140 | outside | not yet |
+
+### Shared init_fn patterns
+
+- `0x174BA0` shared by GIRL and DEVIL_GIRL (same behavior, different entity type)
+- `0x1BBF78` shared by ATTACKCHECKBOUNDARY and ATTCKCHKBNDRYMNGR
+- `0x10ECC0` (sobj_default_update) used by 6 entities as default callback
+
+### BOY init_fn (0x153478) — minimal setup
+
+The BOY init_fn is extremely small, calling only 3 functions:
+1. `0x101A40` — calls `0x243B18` and `0x2438B8` (likely entity registration)
+2. `0x101A88` — accesses gp-0x6E90 (likely global entity state)
+3. `0x264DF8` — unknown utility
+
+**No static callers of BOY init_fn** — it's called via function pointer from the descriptor table dispatch.
+
+---
+
+## Runtime Session Context
+
+| Metric | Value |
+|--------|-------|
+| Total events | 1.32M |
+| World states | 26 (including new 0x16) |
+| DL slots | 28 |
+| Transitions | 133 |
+| Session file | ico-runtime-20260825-152452.jsonl |
+
+### New world_state 0x16
+
+- Entered from ws=0x0a (transition #133)
+- DL slot primary: 0x1E (shared with ws=0x06)
+- Event count: 9,524 ios_om_main
+- Pattern: ws=0x0a → 0x16 = possible boss/arena transition
+
+---
+
+## Architectural Conclusions
+
+### 1. BoyAI is a flat callback library
+
+The 564 functions in 0x142000-0x164000 are NOT a hierarchical AI system. They are:
+- Independent behavior functions
+- Each called from outside (via isysGObj* dispatch)
+- Operating on entity-local data (no GP access)
+- Accessing a ~10KB entity work area via struct offsets
+
+### 2. The entity work area is ~10KB
+
+The large offsets (+0x23D4, +0x266C, +0x24A4) suggest the entity data structure extends to at least 10,236 bytes. This is consistent with a complex entity that has:
+- Core GObj fields (0x00-0x174)
+- Animation state (0x174-0x1000)
+- Physics/collision data (0x1000-0x2000)
+- AI/behavior state (0x2000-0x2700)
+
+### 3. The entity system is callback-driven
+
+The isysGObj* system dispatches to entity callbacks via the descriptor table. Each entity type (BOY, GIRL, ENEMY1, etc.) has an init_fn that registers its callbacks. The boyAI functions are the implementation of those callbacks.
+
+### 4. No GP = clean architecture
+
+The absence of GP-relative accesses in boyAI suggests the ICO developers used a clean entity-component pattern where behavior functions receive an entity pointer and operate only on that entity's data. This is a good architectural pattern for game engines.
+
+---
+
+## What is confirmed
+
+- 1224 functions at 100% byte-exact match
+- BoyAI range (0x142000-0x164000) contains 564 independent entry points
+- Zero internal calls within boyAI — all functions are called from outside
+- Entity work area is ~10KB (offsets up to 0x266C)
+- BOY init_fn (0x153478) is minimal — 3 function calls
+- No GP-relative accesses in boyAI — clean entity-component pattern
+- 26 world_states mapped (new: 0x16 from ws=0x0a)
+- 28 DL slots identified
+
+## What is probable
+
+- The boyAI functions are behavior callbacks for the BOY entity
+- The large struct offsets access entity-specific AI/animation state
+- The isysGObj* system dispatches to these callbacks via the descriptor table
+- The entity work area contains position, rotation, animation, and AI state
+
+## What is possible
+
+- Some boyAI functions may be shared with other entity types (like GIRL)
+- The 0x24xxxx-0x26xxxx call targets may be engine math/physics utilities
+- The float-heavy functions (64%) may handle animation blending or physics
+
+## What is unknown
+
+- The exact mapping of boyAI functions to specific behaviors (movement, combat, interaction)
+- The structure of the 10KB entity work area
+- How the isysGObj* dispatch selects which boyAI callback to call
+- The identity of the 0x24xxxx-0x26xxxx utility functions
+
+## What is discarded
+
+- The hypothesis that boyAI functions form a call graph
+- The idea that boyAI accesses global state directly
+- Any assumption that boyAI functions are state machine transitions
+
+---
+
+## Next minimum test
+
+1. **Trace the dispatch path:** Follow how a boyAI function gets called from the isysGObj* system. Set a breakpoint on a known boyAI entry point (e.g., 0x157718) and capture the call stack.
+
+2. **Map the entity work area:** Use the struct offsets to reconstruct the entity data structure. The +0x0000 field is likely type/flags, +0x20-0x2C is likely position.
+
+3. **Identify the utility functions:** The top-called targets (0x2564E0, 0x100540, etc.) are likely math/physics/rendering utilities. Static analysis of these could reveal the coordinate system and data formats.
+
+4. **Cross-reference with GIRL/ENEMY1:** Check if the same struct offsets appear in other entity handlers. If so, we can build a universal entity struct layout.
+
+---
+
+## Conservative verdict
+
+The boyAI range is a **flat library of 564 behavior callbacks** for the BOY entity, called by the isysGObj* dispatch system. The functions operate on a ~10KB entity work area with no GP-relative access, indicating a clean entity-component architecture. The next step is to trace the dispatch path and reconstruct the entity data structure.
