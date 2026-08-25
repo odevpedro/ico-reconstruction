@@ -788,7 +788,7 @@ def find_function_size(va: int, all_funcs: list[tuple]) -> int:
 
 
 # --- Main conversion ---
-def convert_function(func_name: str, va: int, category: str, size: int | None = None):
+def convert_function(func_name: str, va: int, category: str, size: int | None = None, save: bool = True):
     """Convert a single function to .s source and verify."""
     print(f"\n{'='*60}")
     print(f"Converting: {func_name} @ 0x{va:08X}")
@@ -799,6 +799,20 @@ def convert_function(func_name: str, va: int, category: str, size: int | None = 
         all_fvas = [(n, v) for n, v, _, _ in TARGET_FUNCTIONS]
         size = find_function_size(va, all_fvas)
         print(f"  Auto-detected size: 0x{size:X} ({size} bytes)")
+
+    # Check if existing .s file is already byte-exact
+    out_dir = ASM_OUTPUT_DIRS.get(category, os.path.join(SRC_ROOT, "entity", "asm"))
+    existing_path = os.path.join(out_dir, f"{func_name}.s")
+    if os.path.exists(existing_path):
+        target_bytes = extract_elf_func(va, size)
+        with open(existing_path) as f:
+            existing_src = f.read()
+        result = assemble_and_verify(existing_src, func_name, va, len(target_bytes))
+        if result.get("success"):
+            print(f"  ✓ EXISTING .s IS BYTE-EXACT — no regeneration needed")
+            return result
+        # Existing .s failed, regenerate from ELF
+        print(f"  Existing .s failed verification, regenerating from ELF...")
 
     # Extract and disassemble
     target_bytes = extract_elf_func(va, size)
@@ -825,18 +839,19 @@ def convert_function(func_name: str, va: int, category: str, size: int | None = 
                 print(f"    ... and {len(result['mismatch_positions']) - 5} more")
 
     # Save .s file
-    out_dir = ASM_OUTPUT_DIRS.get(category, os.path.join(SRC_ROOT, "entity", "asm"))
-    os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, f"{func_name}.s")
+    if save:
+        out_dir = ASM_OUTPUT_DIRS.get(category, os.path.join(SRC_ROOT, "entity", "asm"))
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, f"{func_name}.s")
 
-    with open(out_path, "w") as f:
-        f.write(asm_source)
+        with open(out_path, "w") as f:
+            f.write(asm_source)
 
-    print(f"  Saved: {out_path}")
+        print(f"  Saved: {out_path}")
     return result
 
 
-def convert_all():
+def convert_all(save=True):
     """Convert all non-100% functions."""
     # Auto-detect sizes first
     funcs_with_size = auto_detect_sizes()
@@ -846,7 +861,7 @@ def convert_all():
 
     results = []
     for name, va, size, category in TARGET_FUNCTIONS:
-        result = convert_function(name, va, category, size)
+        result = convert_function(name, va, category, size, save=save)
         results.append((name, va, result.get("success", False)))
         if not result.get("success"):
             print(f"  *** {name} FAILED ***")
@@ -865,8 +880,9 @@ def convert_all():
 
 
 if __name__ == "__main__":
+    no_save = "--no-save" in sys.argv
     if "--all" in sys.argv:
-        convert_all()
+        convert_all(save=not no_save)
     elif "--auto-sizes" in sys.argv:
         funcs = auto_detect_sizes()
         print("Function sizes:")
@@ -881,7 +897,7 @@ if __name__ == "__main__":
             if n == name:
                 category = c
                 break
-        convert_function(name, va, category, size)
+        convert_function(name, va, category, size, save=not no_save)
     else:
         print(f"Usage:")
         print(f"  {sys.argv[0]} <func_name> <va> [size]")

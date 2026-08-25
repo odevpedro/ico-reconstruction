@@ -94,7 +94,7 @@ loc_001e96c0:
 	jal	0x00105f20
 	move	$5,$2
 	slt	$2,$17,$19
-	bnez	$2,loc_001e96c0
+	.word	0x1440ffd0
 	nop	
 	b	loc_001e9790
 	nop	
@@ -106,7 +106,7 @@ loc_001e9790:
 	lw	$2,4($18)
 	move	$6,$20
 	slt	$2,$6,$2
-	bnez	$2,loc_001e9688
+	.word	0x1440ffb8
 	addiu	$2,$0,0x50
 loc_001e97ac:
 	lw	$2,-0x5c28($28)

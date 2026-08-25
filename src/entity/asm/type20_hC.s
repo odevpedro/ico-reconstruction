@@ -287,7 +287,7 @@ loc_001e92d8:
 	swc1	$f0,0x34($5)
 	sh	$0,0x3a($5)
 	swc1	$f0,0x20($5)
-	bnez	$3,loc_001e92d8
+	.word	0x1460ffdb
 	swc1	$f0,0x24($5)
 loc_001e9370:
 	addiu	$2,$0,2

@@ -124,7 +124,7 @@ loc_001f6470:
 	addiu	$17,$17,1
 	addu	$3,$3,$5
 	slt	$4,$17,$21
-	bnez	$4,loc_001f63b0
+	.word	0x1480ffc0
 	sw	$2,0($3)
 	b	loc_001f64cc
 	addiu	$17,$0,0x50
@@ -235,7 +235,7 @@ loc_001f65c8:
 	swc1	$f0,0x34($5)
 	sh	$0,0x3a($5)
 	swc1	$f0,0x20($5)
-	bnez	$8,loc_001f65c8
+	.word	0x1500ffdd
 	swc1	$f0,0x24($5)
 loc_001f6658:
 	addiu	$3,$0,2

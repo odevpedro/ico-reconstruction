@@ -63,7 +63,7 @@ loc_001f6790:
 	jal	0x00105f00
 	addiu	$5,$30,0x5850
 	slt	$2,$18,$21
-	bnez	$2,loc_001f6790
+	.word	0x1440fff3
 	lw	$6,0($19)
 	b	loc_001f67d4
 	lw	$5,4($19)
@@ -72,7 +72,7 @@ loc_001f67d0:
 loc_001f67d4:
 	move	$17,$20
 	slt	$2,$17,$5
-	bnez	$2,loc_001f6758
+	.word	0x1440ffde
 	addiu	$3,$0,0x50
 	b	loc_001f67f4
 	lw	$4,0($29)
@@ -171,7 +171,7 @@ loc_001f68c0:
 	lw	$2,0($17)
 	addu	$16,$16,$2
 	swc1	$f21,0xc($16)
-	bnez	$3,loc_001f68c0
+	.word	0x1460ffdb
 	.word	0x7ba80010
 	b	loc_001f6964
 	lw	$4,4($21)
@@ -180,7 +180,7 @@ loc_001f6960:
 loc_001f6964:
 	move	$18,$22
 	slt	$2,$18,$4
-	bnez	$2,loc_001f6890
+	.word	0x1440ffc8
 	addiu	$2,$0,0x50
 loc_001f6974:
 	lw	$4,0($29)

@@ -244,7 +244,7 @@ loc_001cfde0:
 	lw	$2,0x15c($17)
 	lw	$3,0x840($2)
 	addu	$6,$6,$3
-	bnez	$5,loc_001cfde0
+	.word	0x14a0ffba
 	swc1	$f1,0x28($6)
 	b	loc_001cff18
 	lw	$3,0x15c($17)
@@ -334,7 +334,7 @@ loc_001d0008:
 	swc1	$f20,-0xc($16)
 	lw	$3,0($20)
 	slt	$2,$18,$3
-	bnez	$2,loc_001d0008
+	.word	0x1440ffee
 	addiu	$16,$16,0x30
 loc_001d0054:
 	jal	0x001c5ba0

@@ -52,7 +52,7 @@ loc_001f69f8:
 	lw	$2,0($17)
 	slt	$3,$18,$3
 	addu	$16,$16,$2
-	bnez	$3,loc_001f69f8
+	.word	0x1460ffe7
 	swc1	$f0,-4($16)
 loc_001f6a60:
 	lui	$1,0x3f80
