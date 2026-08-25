@@ -1,0 +1,47 @@
+	.text
+	.p2align 3
+	.globl	boyAI_sub_145E88
+	.ent	boyAI_sub_145E88
+boyAI_sub_145E88:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	mtc1	$0,$f20
+	sw	$2,0x38c($3)
+	move	$4,$16
+	addiu	$5,$0,0x2c
+	jal	0x001e09f8
+	mov.s	$f12,$f20
+	move	$4,$16
+	move	$5,$0
+	jal	0x001e09f8
+	mov.s	$f12,$f20
+	move	$4,$16
+	addiu	$5,$0,1
+	jal	0x001e09f8
+	mov.s	$f12,$f20
+	move	$4,$16
+	addiu	$5,$0,0x22
+	jal	0x001e09f8
+	mov.s	$f12,$f20
+	mov.s	$f12,$f20
+	move	$4,$16
+	jal	0x001e09f8
+	addiu	$5,$0,0x23
+	lw	$4,0x164($16)
+	lw	$6,-0x6e08($28)
+	lw	$3,0x678($4)
+	lw	$2,0x3a0($3)
+	beqz	$2,loc_00145efc
+	addiu	$2,$2,-1
+	sw	$2,0x3a0($3)
+loc_00145efc:
+	.word	0x56060004
+	lw	$3,8($16)
+	jal	0x001752d0
+	.set	macro
+	.set	reorder
+	.end	boyAI_sub_145E88
