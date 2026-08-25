@@ -1,7 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
-> Última atualização: 2026-08-25 (Rev.106e: 1126 functions at 100%, 640 BoyAI sub-functions, 26 world_states)
+> Última atualização: 2026-08-25 (Rev.106f: 1224 functions at 100%, 738 BoyAI sub-functions, 26 world_states)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -70,7 +70,7 @@
 - Total: 25 world_states, 20 DL slots, 82 transitions.
 - Each new world_state has a unique DL slot — per-area dispatch list pattern confirmed.
 - Full physics object type table (0x1A48A0, 31 entries, 74 handlers) cross-referenced — ALL at 100%.
-- 1126 total .s functions pass byte-exact verification (0 failures).
+- 1224 total .s functions pass byte-exact verification (0 failures).
 - Anomalous a2 pointer values (0x31C383B0, 0x31CA06F0) identified — possible overlay slots.
 - Research note: `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
 

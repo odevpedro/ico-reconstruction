@@ -340,17 +340,17 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.106e — all 1126 functions byte-exact)
+### Byte-exact reconstruction status (Rev.106f — all 1224 functions byte-exact)
 
-All 1126 functions are now at **100% byte-exact match** (0 failures).
+All 1224 functions are now at **100% byte-exact match** (0 failures).
 
 | Group | Count | Method |
 |-------|-------|--------|
 | Entity/cloth pipeline (.s) | 393 | Score pipeline (`asm_source_score.py`) |
 | Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
 | GirlBrain sub-functions (.s) | 57 | Batch decompilation (Rev.106) |
-| BoyAI sub-functions (.s) | 640 | Batch decompilation (Rev.106e) |
-| **Total .s files** | **1126** | All scored via `asm_source_score.py --all` |
+| BoyAI sub-functions (.s) | 738 | Batch decompilation (Rev.106f) |
+| **Total .s files** | **1224** | All scored via `asm_source_score.py --all` |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
@@ -620,17 +620,17 @@ Those names require evidence.
 
 The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration (Rev.096-097), and isysGObj* lifecycle analysis (Rev.098-099) are complete.
 
-### Current score status (Rev.106e — all 1126 functions byte-exact)
+### Current score status (Rev.106f — all 1224 functions byte-exact)
 
-All 1126 functions are now at **100% byte-exact match**.
+All 1224 functions are now at **100% byte-exact match**.
 
 | Group | Count | Method |
 |-------|-------|--------|
 | Entity/cloth pipeline (.s) | 393 | Score pipeline (`asm_source_score.py`) |
 | Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
 | GirlBrain sub-functions (.s) | 57 | Batch decompilation (Rev.106) |
-| BoyAI sub-functions (.s) | 640 | Batch decompilation (Rev.106e) |
-| **Total .s files** | **1126** | All scored via `asm_source_score.py --all` |
+| BoyAI sub-functions (.s) | 738 | Batch decompilation (Rev.106f) |
+| **Total .s files** | **1224** | All scored via `asm_source_score.py --all` |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
