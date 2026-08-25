@@ -875,3 +875,45 @@ index that remains separate from the narrative files.
 - Use the evidence index as the canonical control document.
 - Keep the static architecture follow-up narrow and conservative.
 - Preserve the split between validated byte-level work and runtime gaps.
+
+---
+
+# Feature: Extended Runtime Session — 12 DL Slots, 20 World States
+
+> Squad responsible: SQUAD-RUNTIME
+> Revision: rev.104
+> Session: 2026-08-25
+> Status: Validated
+
+## Summary
+
+Extended gameplay session (552K → 755K events) revealed 7 new world_state values (0x08-0x0F), 2 new BSS DL slot addresses (0x678818, 0x67EE98), and a consistent a2/t0 register mapping for slot type identification. The ws=0x0F (whirlpool area) dominates with 304K events (57% of all dispatch).
+
+## Main Flow
+
+### 1. Entry Point
+User played ICO through water/aqueduct sections while runtime probes captured 203K new events.
+
+### 2. Input Validation
+All 755,778 events validated by `verify_runtime_probe_log.py`. 67 world_state_load events mapped with cycle-accurate timing.
+
+### 3. Application Orchestration
+Analyzed register patterns (a1, a2, t0) to discover DL slot type encoding. Mapped 12 BSS slot addresses with clustering patterns (stride 1312 and 656 bytes).
+
+### 4. Business Rules
+- a2/t0 register at `_iosOmMain` entry encodes slot type index (NOT sequential)
+- Slot B (0x6782F8, a2=0x1A) handles 66.6% of all dispatch events
+- ws=0x0F uses only slot B (100% of its 304K events)
+- ws=0x0B has unique slot NEW-2, ws=0x0D has unique slot NEW-1
+
+### 5. Persistence / Integrations
+Updated `docs/data-model.md` (BSS DL slots, world_state values), `docs/system-feature-flows.md` (dispatch flow), `docs/backlog.md` (Rev.104 entry), `AGENTS.md` (slot distribution table).
+
+### 6. Final Response
+Runtime understanding expanded from 10 to 12 DL slots, 13 to 20 world_states. The a2/t0 register provides a reliable slot type identifier for future analysis.
+
+## Key Technical Decisions
+- BSS DL slots form two clusters: A-B-NEW-1-C (stride 1312) and D-E-F-G (stride 656)
+- H-I-J-NEW-2 are scattered, possibly for specialized subsystems
+- a2/t0 values are bitmask positions or combined type+priority encoding, NOT sequential indices
+- ws=0x0F's massive dispatch volume with minimal proc_add suggests active gameplay (combat/puzzle) rather than scene loading

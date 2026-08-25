@@ -1,7 +1,7 @@
 # System & Feature Flows — ICO Reconstruction
 
 > Documento vivo. Atualizado sempre que uma feature for criada ou modificada.
-> **Ultima atualizacao:** 2026-05-22 (Rev.102 — GirlBrain/eBrain correction, YAML fix, stale cleanup)
+> **Ultima atualizacao:** 2026-08-25 (Rev.104 — 12 DL slots, a2/t0 mapping, world_state transitions)
 
 ---
 
@@ -1647,3 +1647,91 @@ Sistema de entrada de IA para geracao de alvos, comunicacao entre entidades e co
 - Analisar struct `omGir*` para documentar campos de estado do GirlBrain
 - Analisar struct `omGen*` para sistema Generator/Enemy (0x00191xxx-0x00193xxx)
 - Captura runtime: breakpoints nas funcoes GirlBrain para validar transicoes de estado
+
+---
+
+## _iosOmMain DL Slot Dispatch Flow (Rev.104)
+
+> **Versão:** 1.0.0
+> **Implementada em:** 2026-08-25 (Rev.104)
+> **Status:** Runtime validated — 755K events captured
+
+### Visão Geral
+
+O dispatcher `_iosOmMain` (0x13F9D0) é o loop principal de processamento de game objects. Ele opera em dois passes: (1) mask slots 0-7 controlados por bits em `gp-0x6724`, e (2) type slots 0x13-0x1B (9 tipos). Cada slot contém uma lista ligada de GObjs que são iterados e processados.
+
+### Fluxo detalhado
+
+```
+_iosOmMain (0x13F9D0)
+  │
+  ├─> Phase 1: Mask Dispatch (bits 0-7 of gp-0x6724)
+  │   ├─> For each bit i in mask:
+  │   │   ├─> Load linked list head from 0x281A70[i*4]
+  │   │   ├─> For each node in list:
+  │   │   │   ├─> Load callback from node+0x48
+  │   │   │   ├─> Load type_bits from node+0x50
+  │   │   │   ├─> AND with GObj+0x50
+  │   │   │   ├─> If match: JALR callback
+  │   │   │   └─> Advance to node+0x10 (next)
+  │   │   └─> Continue until NULL
+  │   └─> All 8 mask bits tested
+  │
+  └─> Phase 2: Type Dispatch (types 0x13-0x1B)
+      ├─> For each type s2 in list:
+      │   ├─> Load inner linked list from s2->field_2C
+      │   ├─> For each inner node s0:
+      │   │   ├─> Load type_mask from s0->field_14
+      │   │   ├─> If field_10 == 0: call special handler (0x13D8A0 or 0x13F6B8)
+      │   │   ├─> If field_10 != 0: JALR s0->field_1C (custom callback)
+      │   │   └─> Advance to s0->field_0C (next)
+      │   └─> Continue until NULL
+      └─> All 9 type slots processed
+```
+
+### Register Mapping (Rev.104)
+
+| Registrador | Conteúdo | Papel |
+|-------------|----------|-------|
+| a1 | Ponteiro para DL slot struct em BSS | Endereço do slot atual (ex: 0x6782F8) |
+| a2 | Índice/tipo do slot (0x18-0x44) | Identifica o tipo de processamento |
+| t0 | Cópia de a2 | Usado internamente pelo dispatcher |
+| a0 | 0 (máscara) ou ponteiro | Contexto do slot |
+| s0 | Ponteiro para node atual | Iterador da lista ligada |
+| s2 | GObj sendo processado | Iterador da lista de GObjs |
+
+### DL Slot BSS Layout
+
+Os 12 slots em BSS formam dois clusters:
+
+```
+Cluster 1 (stride 1312 bytes):
+  0x677DD8 [A]  → 0x6782F8 [B]  → 0x678818 [NEW-1] → 0x678D38 [C]
+  (a2=0x18)      (a2=0x1A)       (a2=0x1C)           (a2=0x1E)
+
+Cluster 2 (stride 656 bytes):
+  0x678FC8 [D]  → 0x679258 [E]  → 0x6794E8 [F]  → 0x679778 [G]
+  (a2=0x1F)      (a2=0x20)       (a2=0x21)       (a2=0x22)
+
+Scattered:
+  0x67A968 [H]  0x67C308 [I]  0x67E458 [J]  0x67EE98 [NEW-2]
+  (a2=0x29)     (a2=0x33)     (a2=0x40)     (a2=0x44)
+```
+
+### Padrões de World State
+
+O dispatch varia drasticamente por world state:
+
+| World State | ios_om_main | Slot dominante | init_scene_gobj |
+|-------------|-------------|----------------|-----------------|
+| 0x0F (redemoinho) | 304,336 | B (100%) | — |
+| 0x09 (água B) | 42,298 | B | 973 |
+| 0x08 (água A) | 52,934 | B | 731 |
+| 0x0D (água E) | 28,646 | NEW-1 exclusivo | 384 |
+| 0x0B (água D) | 26,083 | NEW-2 exclusivo | 252 |
+
+### Próximo passo
+
+- Instrumentar slot addresses individuais para entender a semântica de cada slot
+- Mapear quais callbacks são chamados em cada slot
+- Correlacionar slot patterns com tipos de entidade (BOY, GIRL, ENEMY1, etc.)

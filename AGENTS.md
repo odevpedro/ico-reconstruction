@@ -226,6 +226,7 @@ research/elf/ghidra-rev075-init-fn-callback-dispatch-and-asm-handler-consolidati
 research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md  (12-step main loop, 17-slot dispatch)
 research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md  (CORRECTION: GirlBrain real range = 0x0016xxxx, not 0x0019xxxx; eBrain/Generator in 0x0019xxxx; 15 new byte-exact .s files; 88 total)
 research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md  (Runtime session: 86K events, 13 world_states, 8 BSS dispatch slots mapped, per-room thread assignment confirmed)
+research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md  (755K events, 20 world_states, 12 DL slots, a2/t0 register mapping, ws=0x0F dominant)
 ```
 
 ---
@@ -263,6 +264,7 @@ Before doing new analysis, read these files in this order if they exist:
 27. `research/external/ico-splat-promoted-ranges-experiment.md`
 28. `research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md`
 29. `research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md`
+30. `research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -665,18 +667,28 @@ Files in `src/entity/asm/` (45), `src/cloth/asm/` (6), `src/core/asm/` (36).
 
 The old C-based compiler flag investigation is archived. All 26 asm functions bypass the C compiler entirely.
 
-### Runtime-verified slot distribution
+### Runtime-verified slot distribution (Rev.104 — 12 DL slots)
 
-| Slot | Count | % | Type |
-|------|-------|---|------|
-| 12 | 851,346 | 38.5% | Full pipeline (most active) |
-| 1 | 591,922 | 26.8% | Leaf pos/rot |
-| 3 | 316,996 | 14.3% | Hybrid G1+G2 |
-| 2 | 202,906 | 9.2% | Leaf pos/rot |
-| 6 | 134,228 | 6.1% | Hybrid G1+G2 |
-| 14 | 62,898 | 2.8% | Full pipeline |
-| 15 | 22,418 | 1.0% | Full pipeline |
-| 4,7,10,11,5 | 58,696 | 2.7% | Various |
+| Slot | Address | a2/t0 Index | Count | % | World State |
+|------|---------|-------------|-------|---|-------------|
+| B | 0x6782F8 | 0x1A | 361,536 | 66.6% | 0x09, 0x0E, 0x0F |
+| E | 0x679258 | 0x20 | 52,315 | 9.6% | — |
+| NEW-1 | 0x678818 | 0x1C | 28,267 | 5.2% | 0x0D only |
+| F | 0x6794E8 | 0x21 | 26,292 | 4.8% | — |
+| NEW-2 | 0x67EE98 | 0x44 | 25,872 | 4.7% | 0x0B only |
+| G | 0x679778 | 0x22 | 18,753 | 3.4% | — |
+| I | 0x67C308 | 0x33 | 12,940 | 2.4% | — |
+| C | 0x678D38 | 0x1E | 6,845 | 1.3% | — |
+| D | 0x678FC8 | 0x1F | 4,075 | 0.7% | — |
+| A | 0x677DD8 | 0x18 | 1,567 | 0.3% | — |
+| J | 0x67E458 | 0x40 | 461 | 0.1% | — |
+| H | 0x67A968 | 0x29 | 150 | 0.0% | — |
+
+**Key findings (Rev.104):**
+- **a2/t0 register** at `_iosOmMain` entry = DL slot type index (not sequential)
+- **BSS slot clusters**: A-B-NEW-1-C (stride 1312), D-E-F-G (stride 656), H-I-J-NEW-2 scattered
+- **ws=0x0F** dominates: 304,336 ios_om_main events (57%), single slot B dispatch
+- **ws=0x0B** has unique slot NEW-2, **ws=0x0D** has unique slot NEW-1
 
 ### Current objectives
 

@@ -1,7 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
-> Última atualização: 2026-08-25 (session end — Rev.103: Runtime session boot→Yorda→bridge→save, 8 dispatch slots mapped, world_state room mapping)
+> Última atualização: 2026-08-25 (Rev.104: 7 new world_states, 2 new DL slots, a2/t0 register mapping, ws=0x0F dominant)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -10,7 +10,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 79 |
+| Completed | 80 |
 | In Progress | 1 |
 | Pending | 1 |
 
@@ -88,6 +88,19 @@
 ---
 
 ## Concluídas / Completed
+
+### [x] [SQUAD-RUNTIME | rev.104 | 2026-08-25]
+**Extended runtime session: 7 new world_states, 2 new DL slots, a2/t0 register mapping**
+
+- Session `ico-runtime-20260825-152452`: 755,778 events (was 552K), +203K new events
+- **7 new world_state values**: 0x08, 0x09, 0x0A, 0x0B, 0x0D, 0x0E, 0x0F (20 total, was 13)
+- **2 new DL slot addresses**: 0x678818 (ws=0x0D only), 0x67EE98 (ws=0x0B only) — 12 total
+- **a2/t0 register** at `_iosOmMain` entry = DL slot type index (0x18=A, 0x1A=B, 0x1C=NEW-1, etc.)
+- **ws=0x0F dominates**: 304,336 ios_om_main events (57% of all), single slot B dispatch, 2.6 hours
+- **ws=0x08↔0x09↔0x0A oscillation**: puzzle/backtracking in water area (21 min sustained)
+- **DL slot clusters in BSS**: A-B-NEW-1-C (stride 1312), D-E-F-G (stride 656), H-I-J-NEW-2 scattered
+- **proc_add lifecycle balanced**: 53% add / 47% remove (62,453 add / 55,074 remove)
+- Documented in research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md
 
 ### [x] [SQUAD-ARCH | rev.099 | 2026-05-22]
 **Full isysGObj\* lifecycle analysis: init→alloc→add→dispatch→remove + ios/thread.c**

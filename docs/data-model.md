@@ -1,7 +1,7 @@
 # Data Model — ICO Reconstruction
 
 > Documento vivo do modelo de dados reverso. Atualizado sempre que uma entidade for criada, alterada ou removida.
-> **Ultima atualizacao:** 2026-05-22 (Rev.102 — GirlBrain/eBrain range correction, 15 new .s)
+> **Ultima atualizacao:** 2026-08-25 (Rev.104 — 12 DL slots, a2/t0 register mapping, 20 world_states)
 
 ### Correcao Rev.102 — GirlBrain real = 0x0016xxxx, nao 0x0019xxxx
 
@@ -861,6 +861,39 @@ Node de lista ligada usado pelo sistema de registro de callbacks. Gerenciado por
 | 0 | Entrance, Y=-175 (area A) |
 | 1 | Lower level, Y=-1245 (area B) |
 
+### world_state (runtime, 20 values known)
+
+Valores do registrador `world_state_raw` capturados via breakpoint em `world_state_load` (0x1AF948). Cada valor representa uma "sala" ou zona do jogo. 20 valores únicos documentados (Rev.103-104).
+
+| Valor | Rev. | Eventos ios_om_main | init_scene_gobj | Área provável |
+|-------|------|--------------------|----|-----|
+| 0x00 | 103 | — | — | (não observado em gameplay) |
+| 0x01 | 103 | — | 461 | Boot / tela título |
+| 0x03 | 103 | — | 38 | Pós-ponte sala A |
+| 0x04 | 103 | — | 71 | Sala revisitada / backtrack |
+| 0x05 | 103 | — | 170 | Pós-ponte sala B |
+| 0x06 | 103 | — | 129 | Área de save |
+| 0x07 | 103 | — | 33 | Pós-save |
+| 0x08 | 104 | 52,934 | 731 | **Água A** |
+| 0x09 | 104 | 42,298 | 973 | **Água B** (21 min sustained) |
+| 0x0A | 104 | 24,094 | 624 | **Água C** |
+| 0x0B | 104 | 26,083 | 252 | **Água D** (slot NEW-2 exclusivo) |
+| 0x0D | 104 | 28,646 | 384 | **Água E** (slot NEW-1 exclusivo) |
+| 0x0E | 104 | 11,774 | 185 | **Água F** |
+| 0x0F | 104 | **304,336** | — | **Redemoinho** (57% de todos os eventos) |
+| 0x28 | 103 | — | 28 | Área da ponte |
+| 0x29 | 103 | — | 32 | Corredor prisão A |
+| 0x2A | 103 | — | 30 | Corredor prisão B |
+| 0x2B | 103 | — | 38 | Aproximação do depósito |
+| 0x2D | 103 | — | 38 | Depósito / encontro Yorda |
+
+**Observações:**
+- ws=0x0F domina com 304K eventos dispatch (57%), todos via slot B
+- ws=0x08↔0x09↔0x0A oscilação sugere puzzle/volta em área aquática
+- ws=0x0B tem slot NEW-2 exclusivo (0x67EE98)
+- ws=0x0D tem slot NEW-1 exclusivo (0x678818)
+- Valores 0x0A-0x0F provavelmente representam seções de água/aqueduto
+
 ---
 
 ### GObj (stride 0x174)
@@ -949,6 +982,35 @@ Cada slot em 0x281AB0 aponta para uma lista ligada de nós de dispatch:
 | `callback` | +0x48 | 4 | Função callback a chamar |
 | `type_bits` | +0x50 | 4 | Máscara (AND com GObj+0x50) |
 | `active` | +0x16C | 4 | != 0 = nó ativo |
+
+---
+
+### BSS DL Slot Addresses (Runtime-Mapped, Rev.104)
+
+Endereços de 12 slots de dispatch em BSS, mapeados via runtime analysis (PCSX2 breakpoints). Cada slot contém uma lista ligada de GObjs para um tipo específico de processamento.
+
+**Register mapping:** O registrador `a2` (e `t0`) em `_iosOmMain` entry (0x13F9D0) codifica o índice/tipo do slot. O registrador `a1` contém o ponteiro para a struct do slot em BSS.
+
+| Slot | Endereço BSS | a2/t0 Index | Distância do Anterior | % ios_om_main | World State |
+|------|-------------|-------------|----------------------|---------------|-------------|
+| A | 0x677DD8 | 0x18 (24) | — | 0.3% | — |
+| B | 0x6782F8 | 0x1A (26) | +0x520 (1312) | 66.6% | 0x09, 0x0E, 0x0F |
+| NEW-1 | 0x678818 | 0x1C (28) | +0x520 (1312) | 5.2% | 0x0D only |
+| C | 0x678D38 | 0x1E (30) | +0x520 (1312) | 1.3% | — |
+| D | 0x678FC8 | 0x1F (31) | +0x290 (656) | 0.7% | — |
+| E | 0x679258 | 0x20 (32) | +0x290 (656) | 9.6% | — |
+| F | 0x6794E8 | 0x21 (33) | +0x290 (656) | 4.8% | — |
+| G | 0x679778 | 0x22 (34) | +0x290 (656) | 3.4% | — |
+| H | 0x67A968 | 0x29 (41) | +0x11F0 (4592) | 0.0% | — |
+| I | 0x67C308 | 0x33 (51) | +0x19A0 (6560) | 2.4% | — |
+| J | 0x67E458 | 0x40 (64) | +0x2150 (8528) | 0.1% | — |
+| NEW-2 | 0x67EE98 | 0x44 (68) | +0xA40 (2624) | 4.7% | 0x0B only |
+
+**Clustering:** Slots A-B-NEW-1-C form a contiguous block (stride 1312 bytes). Slots D-E-F-G form another contiguous block (stride 656 bytes). Slots H-I-J-NEW-2 are scattered in BSS.
+
+**Slot B dominance:** 66.6% of all `_iosOmMain` dispatch events go through slot B. During `ws=0x0F`, slot B handles 100% of dispatch (304,336 events).
+
+**a2/t0 values are NOT sequential:** 0x18, 0x1A, 0x1C, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x29, 0x33, 0x40, 0x44. They may represent bitmask positions or combined type+priority encoding.
 
 ---
 
