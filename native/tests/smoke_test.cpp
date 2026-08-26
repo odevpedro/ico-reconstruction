@@ -26,17 +26,14 @@ int main() {
     IsysGObj& gobj = runtime.getIsysGObj();
     assert(gobj.isInitialized());
 
-    // Verify tables are zeroed
-    for (u32 i = 0; i < DL_HEAD_TAIL_COUNT; i++) {
-        assert(gobj.m_headTable[i] == 0);
-        assert(gobj.m_tailTable[i] == 0);
+    assert(gobj.pool().capacity() == 0x140);
+    assert(gobj.pool().empty());
+    assert(gobj.activeMask() == 0);
+    for (u32 i = 0; i < ico::engine::kPrimaryListCount; i++) {
+        assert(gobj.head(static_cast<u8>(i)) == nullptr);
+        assert(gobj.tail(static_cast<u8>(i)) == nullptr);
     }
-    for (u32 i = 0; i < DL_SLOT_COUNT; i++) {
-        assert(gobj.m_dlTable[i] == 0);
-        assert(gobj.m_dlTailTable[i] == 0);
-    }
-    assert(gobj.m_globalMask == 0);
-    assert(gobj.m_globalCounter == 0);
+    assert(gobj.checkInvariants());
 
     runtime.getGameLoop().setUpdateCallback([&runtime](u32 frame) -> bool {
         Logger::info("smoke", "[frame %u] tick", frame);
