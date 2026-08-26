@@ -587,6 +587,45 @@ jal 0x100560  (#68 — read result)
 
 **CHAIN dominates** the entry table with 498 references (nearly half of 512 entries).
 
+### IOP Subsystem at 0x245C18 (PS2 SDK I/O Library)
+
+**Correction:** 0x246458 is NOT a boyAI node factory — it is `sceSifCallRpc`, the central IOP RPC call function. The 76 boyAI callers are just one of 103 total callers.
+
+| Layer | Count | Key Functions |
+|-------|-------|---------------|
+| SIF RPC (EE↔IOP bridge) | 28 | sceSifInitRpc, sceSifBindRpc, sceSifCallRpc |
+| sceFs (file system) | 30 | sceOpen, sceRead, sceWrite, sceIoctl |
+| CDVD (disc I/O) | 34 | sceCdRead, sceCdInit, sceCdSearchFile |
+| Pad (controller) | 28 | scePadInit, scePadRead, scePadInfoAct |
+| Mc (memory card) | 16 | sceMcInit, sceMcOpen, sceMcRead |
+| TLB/Memory + SIF cmd | 12 | _DumpTLB, sceSifInitCmd, _sceSifSendCmd |
+
+**Central hub:** sceSifCallRpc (0x246458) — 103 callers. Every IOP communication flows through this single function.
+
+**boyAI access path:** boyAI → engine layer (kanban.c/backstage) → sceCdRead/scePadRead → sceSifCallRpc → IOP.
+
+### World State → Room Mapping
+
+| World State | Room/Area | Dwell Time | Events | DL Slot | Complexity |
+|-------------|-----------|------------|--------|---------|------------|
+| 0x01 | Beach (entry) | — | 12 | — | Low |
+| 0x03-0x0b | Castle/Hub areas | 23.8min (0x0a) | 36 visits | 0x1D/0x1A/0x22 | High |
+| 0x0d-0x15 | Mid-game areas | — | — | Various | Medium |
+| 0x16 | Credits area | 1.35hr (46%) | 6 visits | 0x1E | Very High |
+| 0x17 | Credits area | 18.7min | 6 visits | — | Medium |
+| 0x18-0x19 | Late-game | — | — | — | Medium |
+| 0x1a | Final area (dead end) | 2.82hr | 1 | 0x1A | Very High |
+| 0x28-0x2d | Intro/Menu | — | — | — | Low |
+| 0x32 | Unknown | — | 1 | — | Low |
+
+**Progression:** Engine Init → FMVs → Title → Beach → Castle → Hub → Mid-game → Bridge → Tower → Late-game → Final → Credits → Dead end
+
+**Key patterns:**
+- 0x0F = Bridge (hottest path, 639.9 events/sec)
+- 0x0a = Hub node (5 incoming, 6 outgoing transitions)
+- 0x14 = Convergence point (17 incoming transitions)
+- 0x16↔0x17 = Credits pair (back-and-forth 6 times)
+
 ### BoyAI × GirlBrain Comparison
 
 **87 shared struct offsets** — same entity work area structure.
