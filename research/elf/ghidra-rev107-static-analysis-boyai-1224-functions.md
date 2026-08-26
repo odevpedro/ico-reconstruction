@@ -273,3 +273,123 @@ The absence of GP-relative accesses in boyAI suggests the ICO developers used a 
 ## Conservative verdict
 
 The boyAI range is a **flat library of 564 behavior callbacks** for the BOY entity, called by the isysGObj* dispatch system. The functions operate on a ~10KB entity work area with no GP-relative access, indicating a clean entity-component architecture. The next step is to trace the dispatch path and reconstruct the entity data structure.
+
+---
+
+## Extended Analysis (Rev.107 continued)
+
+### IOP Syscall Table Discovery
+
+The top-called targets from boyAI are NOT engine functions — they are **EE→IOP syscall wrappers**:
+
+| Address | Syscall # | Calls from boyAI | Role |
+|---------|-----------|-------------------|------|
+| 0x100520 | #64 | 33 | Resource init / file open |
+| 0x100530 | #65 | 79 | Data read / input |
+| 0x100540 | #66 | 80 | Data write / send |
+| 0x100560 | #68 | 42 | Resource close / release |
+
+Each is 3 instructions: `addiu $v1,$zero,N; syscall; jr $ra`. The boyAI system is **I/O-heavy**, communicating with the IOP for file access, input, and data transfer.
+
+### Top Utility Functions Identified
+
+| Address | Calls | Type | Identity |
+|---------|-------|------|----------|
+| 0x2564E0 | 82 | Recursive priority dispatcher | Main orchestration, reads HW status regs |
+| 0x246458 | 76 | Main state machine | 192-byte frame, 37 JALs, central orchestrator |
+| 0x247108 | 65 | Trampoline → syscall #66 | Tail-call shim with GP-0x8690 preload |
+| 0x258508 | 47 | Two-step calc wrapper | Chains 0x258450 + 0x258470 |
+| 0x2642D8 | 36 | Structure dispatcher | Loads from GP+0x3244, calls 0x266970 |
+| 0x24BEF8 | 36 | Cache-aligned DMA/mem ops | Aligns to 64-byte boundaries, calls IOP syscalls |
+
+**Key relationship:** 0x24BEF8 ↔ 0x26458 have **mutual recursion** — the I/O engine and state machine form a feedback loop.
+
+### Entity Struct Layout (Reconstructed)
+
+The boyAI functions access a **large entity-specific data block** (>0x680 bytes), NOT the GObj directly. The GObj (stride 0x174) wraps this via +0x28 (`user_data_ptr`).
+
+#### Universal fields (all entity types)
+
+| Offset | Accesses | Type | Likely Identity |
+|--------|----------|------|-----------------|
+| +0x00 | 373 | READ | type/flags |
+| +0x04 | 359 | READ | state flags |
+| +0x08 | 181 | READ | animation state |
+| +0x0C | 145 | READ | timer/counter |
+| +0x10 | 52 | READ | status (halfword) |
+| +0x14 | 49 | R/W | events |
+| +0x18 | 46 | float | position/angle |
+| +0x20 | 33 | float | coordinate |
+| +0x24 | 28 | float | coordinate |
+| +0x30 | 161 | READ | table pointer |
+| +0x34 | 50 | READ | parent/data pointer |
+| +0x38 | 46 | float | scale/height |
+| +0x48 | 34 | READ | behavior state |
+| +0x15C | 329 | READ | motion sub-struct → +0x800 = state_block |
+| +0x164 | 753 | READ | main AI data block (most accessed field) |
+| +0x670 | 260 | READ | shared scene data pointer |
+| +0x678 | 141 | READ | shared scene data pointer |
+
+#### Entity pointer sources
+
+| GP Offset | Accesses | Role |
+|-----------|----------|------|
+| GP-0x6E08 | 254 | Primary entity pointer (BSS) |
+| GP-0x6E0C | 218 | Secondary entity pointer (BSS) |
+
+### Descriptor Table Handler Slots (Corrected)
+
+| Slot Offset | Role | BOY value |
+|------------|------|-----------|
+| +0x040 | init_fn (constructor) | 0x153478 |
+| +0x048 | hA (reset) | 0x1C1F58 |
+| +0x050 | hB (per-frame update) | 0x1C1DD8 |
+| +0x058 | hC (ctor/setup) | 0x1C1A98 |
+| +0x05C | hD (optional) | — |
+| +0x060 | shared vtable | 0x202A60 |
+
+### Entity-Type-Specific Offsets
+
+| Category | Count | Examples |
+|----------|-------|----------|
+| **UNIVERSAL** (all types) | 17 | +0x04, +0x08, +0x15C, +0x800 |
+| **BOY+ENEMY1 shared** | 76 | +0x164, +0x548/54C, +0x670/678 |
+| **BOY-only** | 76 | +0x2D0, +0x480, +0x554, +0x644/648 |
+| **ENEMY1-only** | 27 | +0x1D4, +0x1E0-1F8, +0x378/380 |
+| **BARREL-only** | 0 | (purely compositional) |
+
+### BOY-Specific Offset Clusters
+
+| Range | Likely Purpose |
+|-------|---------------|
+| +0x182-0x18C | Boy-specific flags/state |
+| +0x2D0-0x2D4 | Player-specific data (weapon state?) |
+| +0x384-0x3A0 | Boy behavior state machine |
+| +0x410-0x420 | Animation/physics sub-system |
+| +0x480 | Mask-based slot selection flag |
+| +0x554 | Per-frame counter |
+| +0x600-0x62F | Weapon/collision state |
+| +0x644-0x648 | Interaction (weapon grab target) |
+
+### Revised Architectural Model
+
+```
+isysGObj* dispatch
+  ↓
+Descriptor Table (0x2A31B8, 68 entries, stride 0x64)
+  ↓
+BOY init_fn (0x153478) → registers callbacks
+  ↓
+hA (0x1C1F58) / hB (0x1C1DD8) / hC (0x1C1A98)
+  ↓
+boyAI callback library (0x142000-0x164000, 564 functions)
+  ↓
+Entity work area (~10KB, accessed via GObj+0x28)
+  ├── Core fields (+0x00-0x54)
+  ├── Motion sub-struct (+0x15C → +0x800)
+  ├── AI data block (+0x164)
+  ├── Scene data (+0x670, +0x678)
+  └── BOY-specific (+0x2D0-0x730)
+  ↓
+IOP syscalls (0x100520-0x100560) for I/O
+```
