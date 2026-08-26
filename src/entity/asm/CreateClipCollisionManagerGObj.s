@@ -1,0 +1,30 @@
+	.text
+	.p2align 3
+	.globl	CreateClipCollisionManagerGObj
+	.ent	CreateClipCollisionManagerGObj
+CreateClipCollisionManagerGObj:
+	.frame	$sp,0,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	addiu	$29,$29,-0x10
+	lui	$8,0x1c
+	sd	$31,0($29)
+	move	$4,$0
+	addiu	$8,$8,0x3760
+	move	$5,$0
+	move	$6,$0
+	move	$7,$0
+	move	$9,$0
+	jal	0x00240ea0
+	move	$10,$0
+	move	$3,$2
+	ld	$31,0($29)
+	sw	$3,-0x564c($28)
+	jr	$31
+	addiu	$29,$29,0x10
+	.set	macro
+	.set	reorder
+	.end	CreateClipCollisionManagerGObj
