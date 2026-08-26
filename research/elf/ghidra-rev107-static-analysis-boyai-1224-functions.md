@@ -642,3 +642,44 @@ jal 0x100560  (#68 — read result)
 | Shared JAL targets | 47 targets | 47 targets | ✓ |
 
 **Verdict:** Same entity structure. boyAI has more complexity (140 vs 68 unique offsets). GirlBrain has simpler extended region focused on pathfinding/hiding.
+
+---
+
+## Rev.107 Final: Entity Work Area & hD Callback Analysis
+
+### BOY Entity Work Area (Verified from 387 .s files)
+
+| Offset | Size | Type | Name | Accesses |
+|--------|------|------|------|----------|
+| +0x0000 | 4B | word | type/entity_type | 43 |
+| +0x0004 | 4B | word | state_flags | 46 |
+| +0x0008 | 4B | word | animation_state | 47 |
+| +0x000C | 4B | word | timer/counter | 37 |
+| +0x0010 | 2B | halfword | status_halfword | 39 |
+| +0x0014 | 4B | word | events | 25 |
+| +0x0018 | 8B | dword | position/angle | 39 |
+| +0x0020 | 8B | dword | coordinate_pair_A | 70 |
+| +0x0024 | 4B | float | coordinate_B | 10 |
+| +0x0028 | 8B | pointer | field_0x28 | 6 |
+| +0x0030 | 4B | word | table_pointer | 31 |
+| +0x0034 | 4B | word | parent_data_ptr | 7 |
+| +0x0038 | 4B | float | scale/height | 20 |
+| +0x0040 | 4B | float | animation_blend | 4 |
+| +0x0048 | 4B | word | behavior_state | 19 |
+| +0x015C | 4B | ptr | MotionSubStruct* | 113 |
+| +0x0164 | 4B | ptr | AIDataBlock* | 131 |
+| +0x0670 | 4B | ptr | shared_scene_data_A | 10 |
+| +0x0678 | 4B | ptr | shared_scene_data_B | 36 |
+
+**Estimated size: ~0x0680 bytes (1664 bytes)** for the contiguous core.
+
+### hD Callbacks — DEAD
+
+| Entity | hD Address | Code | Status |
+|--------|------------|------|--------|
+| GIRL | 0x1D1AD0 | `jr $ra; nop` | Dead stub (hA epilogue) |
+| ENEMY1 | 0x1CE760 | `jr $ra; nop` | Dead stub (hA epilogue) |
+| DEVIL_GIRL | 0x1D1AD0 | Same as GIRL | Dead |
+| ENEMY_TEST | 0x1CE760 | Same as ENEMY1 | Dead |
+
+hD is never called, never dispatched. Structural placeholder. However, hD+8 contains real standalone functions called directly (0x1D1AD8 = GIRL mode setter, 0x1CE768 = ENEMY1 state writer).
