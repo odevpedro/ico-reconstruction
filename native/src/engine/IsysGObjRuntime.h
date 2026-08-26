@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/GObjPool.h"
+#include "engine/ProcessNodePool.h"
 
 #include <array>
 #include <cstddef>
@@ -12,8 +13,10 @@ namespace ico::engine {
 class IsysGObjRuntime {
 public:
     using Callback = std::function<void(GObj&)>;
+    using ProcessCallback = std::function<void(GObj&, ProcessNode&)>;
 
-    bool initialize(std::size_t capacity = 0x140);
+    bool initialize(std::size_t gobjCapacity = 0x140,
+                    std::size_t processCapacity = 0x500);
     void shutdown();
     bool isInitialized() const;
 
@@ -24,6 +27,15 @@ public:
     bool setCallback(GObj& gobj, Callback callback);
     std::size_t dispatchList(u8 listId);
     std::size_t dispatchActiveLists();
+    ProcessNode* registerProcess(GObj& gobj,
+                                 u32 typeMask,
+                                 u32 priority,
+                                 ProcessCallback callback = {});
+    bool removeProcess(ProcessNode& process);
+    bool setProcessActive(ProcessNode& process, bool active);
+    std::size_t dispatchProcesses(GObj& gobj, u32 priority);
+    std::size_t dispatchAllProcesses(GObj& gobj);
+
 
     bool setActiveMask(u32 mask);
     u32 activeMask() const;
@@ -36,6 +48,8 @@ public:
     GObjPool& pool();
     const GObjPool& pool() const;
 
+    ProcessNodePool& processPool();
+    const ProcessNodePool& processPool() const;
     bool checkInvariants() const;
 
 private:
@@ -43,10 +57,18 @@ private:
     void insertSorted(GObj& gobj, bool forceHead);
 
     bool m_initialized = false;
+    void insertProcessSorted(GObj& gobj, ProcessNode& process);
+    void removeAllProcesses(GObj& gobj);
+    std::size_t dispatchProcessesImpl(GObj& gobj,
+                                      bool filterPriority,
+                                      u32 priority);
+
     GObjPool m_pool;
     std::array<GObjHandle, kPrimaryListCount> m_heads{};
     std::array<GObjHandle, kPrimaryListCount> m_tails{};
     std::vector<Callback> m_callbacks;
+    ProcessNodePool m_processPool;
+    std::vector<ProcessCallback> m_processCallbacks;
     u32 m_activeMask = 0;
 };
 

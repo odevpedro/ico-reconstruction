@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(ico_engine_core
     src/engine/GObj.cpp
     src/engine/GObjPool.cpp
+    src/engine/ProcessNodePool.cpp
     src/engine/IsysGObjRuntime.cpp
 )
 target_include_directories(ico_engine_core PUBLIC
@@ -63,7 +64,15 @@ target_link_libraries(gobj_pool_test PRIVATE ico_engine_core)
 add_executable(isysgobj_runtime_test tests/isysgobj_runtime_test.cpp)
 target_link_libraries(isysgobj_runtime_test PRIVATE ico_engine_core)
 
+add_executable(process_node_pool_test tests/process_node_pool_test.cpp)
+target_link_libraries(process_node_pool_test PRIVATE ico_engine_core)
+
+add_executable(isysgobj_process_test tests/isysgobj_process_test.cpp)
+target_link_libraries(isysgobj_process_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
 add_test(NAME isysgobj_runtime COMMAND isysgobj_runtime_test)
+add_test(NAME process_node_pool COMMAND process_node_pool_test)
+add_test(NAME isysgobj_process COMMAND isysgobj_process_test)

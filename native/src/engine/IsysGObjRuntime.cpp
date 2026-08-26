@@ -4,13 +4,17 @@
 
 namespace ico::engine {
 
-bool IsysGObjRuntime::initialize(std::size_t capacity)
+bool IsysGObjRuntime::initialize(std::size_t gobjCapacity,
+                                 std::size_t processCapacity)
 {
-    m_pool.initialize(capacity);
+    m_pool.initialize(gobjCapacity);
+    m_processPool.initialize(processCapacity);
     m_heads.fill(kNullGObjHandle);
     m_tails.fill(kNullGObjHandle);
     m_callbacks.clear();
-    m_callbacks.resize(capacity);
+    m_callbacks.resize(gobjCapacity);
+    m_processCallbacks.clear();
+    m_processCallbacks.resize(processCapacity);
     m_activeMask = 0;
     m_initialized = true;
     return true;
@@ -18,10 +22,12 @@ bool IsysGObjRuntime::initialize(std::size_t capacity)
 
 void IsysGObjRuntime::shutdown()
 {
+    m_processPool.clear();
     m_pool.clear();
     m_heads.fill(kNullGObjHandle);
     m_tails.fill(kNullGObjHandle);
     m_callbacks.clear();
+    m_processCallbacks.clear();
     m_activeMask = 0;
     m_initialized = false;
 }
@@ -110,6 +116,8 @@ bool IsysGObjRuntime::remove(GObj& gobj)
         return false;
     }
 
+    removeAllProcesses(gobj);
+
     const u8 listId = gobj.list_id;
     GObj* next = m_pool.get(gobj.next);
     GObj* prev = m_pool.get(gobj.prev);
@@ -158,9 +166,159 @@ std::size_t IsysGObjRuntime::dispatchList(u8 listId)
         }
 
         const GObjHandle next = gobj->next;
-        Callback& callback = m_callbacks[handle - 1u];
+        Callback callback = m_callbacks[handle - 1u];
         if (callback) {
             callback(*gobj);
+            ++calls;
+        }
+        handle = next;
+    }
+    return calls;
+}
+
+ProcessNode* IsysGObjRuntime::registerProcess(GObj& gobj,
+                                              u32 typeMask,
+                                              u32 priority,
+                                              ProcessCallback callback)
+{
+    if (!m_initialized || !m_pool.owns(gobj) || isGObjSlotFree(gobj)) {
+        return nullptr;
+    }
+
+    ProcessNode* process = m_processPool.acquire(
+        m_pool.handleOf(gobj), typeMask, priority);
+    if (process == nullptr) {
+        return nullptr;
+    }
+
+    const ProcessHandle handle = m_processPool.handleOf(*process);
+    m_processCallbacks[handle - 1u] = std::move(callback);
+    process->callback = m_processCallbacks[handle - 1u] ? 1u : 0u;
+    insertProcessSorted(gobj, *process);
+    return process;
+}
+
+void IsysGObjRuntime::insertProcessSorted(GObj& gobj, ProcessNode& process)
+{
+    const ProcessHandle handle = m_processPool.handleOf(process);
+    ProcessHandle currentHandle = gobj.process_head;
+
+    if (currentHandle == kNullProcessHandle) {
+        gobj.process_head = handle;
+        gobj.process_tail = handle;
+        return;
+    }
+
+    ProcessNode* current = m_processPool.get(currentHandle);
+    if (process.priority < current->priority) {
+        process.next = currentHandle;
+        current->prev = handle;
+        gobj.process_head = handle;
+        return;
+    }
+
+    for (;;) {
+        ProcessNode* next = m_processPool.get(current->next);
+        if (next == nullptr || process.priority < next->priority) {
+            process.prev = m_processPool.handleOf(*current);
+            process.next = current->next;
+            current->next = handle;
+            if (next != nullptr) {
+                next->prev = handle;
+            } else {
+                gobj.process_tail = handle;
+            }
+            return;
+        }
+        current = next;
+    }
+}
+
+bool IsysGObjRuntime::removeProcess(ProcessNode& process)
+{
+    if (!m_initialized || !m_processPool.owns(process) ||
+        isProcessNodeSlotFree(process)) {
+        return false;
+    }
+
+    GObj* parent = m_pool.get(process.parent);
+    if (parent == nullptr || isGObjSlotFree(*parent)) {
+        return false;
+    }
+
+    ProcessNode* next = m_processPool.get(process.next);
+    ProcessNode* prev = m_processPool.get(process.prev);
+
+    if (prev != nullptr) {
+        prev->next = process.next;
+    } else {
+        parent->process_head = process.next;
+    }
+
+    if (next != nullptr) {
+        next->prev = process.prev;
+    } else {
+        parent->process_tail = process.prev;
+    }
+
+    const ProcessHandle handle = m_processPool.handleOf(process);
+    m_processCallbacks[handle - 1u] = ProcessCallback{};
+    return m_processPool.release(process);
+}
+
+void IsysGObjRuntime::removeAllProcesses(GObj& gobj)
+{
+    while (gobj.process_head != kNullProcessHandle) {
+        ProcessNode* process = m_processPool.get(gobj.process_head);
+        if (process == nullptr || !removeProcess(*process)) {
+            gobj.process_head = kNullProcessHandle;
+            gobj.process_tail = kNullProcessHandle;
+            return;
+        }
+    }
+}
+
+bool IsysGObjRuntime::setProcessActive(ProcessNode& process, bool active)
+{
+    if (!m_initialized || !m_processPool.owns(process) ||
+        isProcessNodeSlotFree(process)) {
+        return false;
+    }
+    process.active = active ? 1u : 0u;
+    return true;
+}
+
+std::size_t IsysGObjRuntime::dispatchProcesses(GObj& gobj, u32 priority)
+{
+    return dispatchProcessesImpl(gobj, true, priority);
+}
+
+std::size_t IsysGObjRuntime::dispatchAllProcesses(GObj& gobj)
+{
+    return dispatchProcessesImpl(gobj, false, 0);
+}
+
+std::size_t IsysGObjRuntime::dispatchProcessesImpl(GObj& gobj,
+                                                   bool filterPriority,
+                                                   u32 priority)
+{
+    if (!m_initialized || !m_pool.owns(gobj) || isGObjSlotFree(gobj)) {
+        return 0;
+    }
+
+    std::size_t calls = 0;
+    ProcessHandle handle = gobj.process_head;
+    while (handle != kNullProcessHandle) {
+        ProcessNode* process = m_processPool.get(handle);
+        if (process == nullptr || isProcessNodeSlotFree(*process)) {
+            break;
+        }
+
+        const ProcessHandle next = process->next;
+        ProcessCallback callback = m_processCallbacks[handle - 1u];
+        if (process->active != 0 && process->type_mask != 0 && callback &&
+            (!filterPriority || process->priority == priority)) {
+            callback(gobj, *process);
             ++calls;
         }
         handle = next;
@@ -228,12 +386,25 @@ const GObjPool& IsysGObjRuntime::pool() const
     return m_pool;
 }
 
+ProcessNodePool& IsysGObjRuntime::processPool()
+{
+    return m_processPool;
+}
+
+const ProcessNodePool& IsysGObjRuntime::processPool() const
+{
+    return m_processPool;
+}
+
 bool IsysGObjRuntime::checkInvariants() const
 {
+    std::size_t visitedGObjs = 0;
+    std::size_t visitedProcesses = 0;
+
     for (u8 listId = 0; listId < kPrimaryListCount; ++listId) {
         GObjHandle handle = m_heads[listId];
         GObjHandle previous = kNullGObjHandle;
-        std::size_t visited = 0;
+        std::size_t visitedInList = 0;
 
         if ((m_heads[listId] == kNullGObjHandle) !=
             (m_tails[listId] == kNullGObjHandle)) {
@@ -246,9 +417,46 @@ bool IsysGObjRuntime::checkInvariants() const
                 gobj->list_id != listId || gobj->prev != previous) {
                 return false;
             }
+
+            ProcessHandle processHandle = gobj->process_head;
+            ProcessHandle processPrevious = kNullProcessHandle;
+            u32 previousPriority = 0;
+            bool havePriority = false;
+            std::size_t objectProcesses = 0;
+
+            if ((gobj->process_head == kNullProcessHandle) !=
+                (gobj->process_tail == kNullProcessHandle)) {
+                return false;
+            }
+
+            while (processHandle != kNullProcessHandle) {
+                const ProcessNode* process = m_processPool.get(processHandle);
+                if (process == nullptr || isProcessNodeSlotFree(*process) ||
+                    process->parent != handle ||
+                    process->prev != processPrevious ||
+                    (havePriority && process->priority < previousPriority)) {
+                    return false;
+                }
+
+                havePriority = true;
+                previousPriority = process->priority;
+                processPrevious = processHandle;
+                processHandle = process->next;
+                ++objectProcesses;
+                ++visitedProcesses;
+                if (objectProcesses > m_processPool.activeCount()) {
+                    return false;
+                }
+            }
+
+            if (processPrevious != gobj->process_tail) {
+                return false;
+            }
+
             previous = handle;
             handle = gobj->next;
-            if (++visited > m_pool.activeCount()) {
+            ++visitedGObjs;
+            if (++visitedInList > m_pool.activeCount()) {
                 return false;
             }
         }
@@ -257,7 +465,8 @@ bool IsysGObjRuntime::checkInvariants() const
             return false;
         }
     }
-    return true;
+    return visitedGObjs == m_pool.activeCount() &&
+           visitedProcesses == m_processPool.activeCount();
 }
 
 } // namespace ico::engine
