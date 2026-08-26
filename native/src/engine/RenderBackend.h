@@ -179,7 +179,7 @@ struct RenderCmd {
             TextureHandle texture;
             u8 corners[4][4]; // per-corner RGBA (gouraud)
         } spriteGouraud;
-        struct { RenderTargetHandle target; } pass;
+        struct { RenderTargetHandle target; RenderList list; } pass;
     };
 };
 

@@ -7,17 +7,37 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_library(ico_engine_core
+option(ICO_ENABLE_OPENGL "Enable OpenGL rendering backend (requires GL + X11)" OFF)
+
+set(ICO_ENGINE_SOURCES
     src/engine/GObj.cpp
     src/engine/GObjPool.cpp
     src/engine/ProcessNodePool.cpp
     src/engine/IsysGObjRuntime.cpp
     src/engine/RenderBackend.cpp
+    src/engine/Tm2Format.cpp
+    src/engine/Tm2Converter.cpp
+    src/engine/GifTag.cpp
+    src/engine/GifCommandBuffer.cpp
+    src/engine/GifCommandExecutor.cpp
 )
+
+if(ICO_ENABLE_OPENGL)
+    find_package(OpenGL REQUIRED)
+    find_package(X11 REQUIRED)
+    list(APPEND ICO_ENGINE_SOURCES src/engine/OpenGLBackend.cpp)
+endif()
+
+add_library(ico_engine_core ${ICO_ENGINE_SOURCES})
 target_include_directories(ico_engine_core PUBLIC
     src
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
 )
+
+if(ICO_ENABLE_OPENGL)
+    target_link_libraries(ico_engine_core PUBLIC OpenGL::GL X11::X11 ${CMAKE_DL_LIBS})
+    target_compile_definitions(ico_engine_core PUBLIC ICO_HAS_OPENGL=1)
+endif()
 
 # Source files
 set(ICO_NATIVE_SOURCES
@@ -77,6 +97,15 @@ target_link_libraries(slot_dispatch_test PRIVATE ico_engine_core)
 add_executable(render_backend_test tests/render_backend_test.cpp)
 target_link_libraries(render_backend_test PRIVATE ico_engine_core)
 
+add_executable(tm2_test tests/tm2_test.cpp)
+target_link_libraries(tm2_test PRIVATE ico_engine_core)
+
+add_executable(gif_command_test tests/gif_command_test.cpp)
+target_link_libraries(gif_command_test PRIVATE ico_engine_core)
+
+add_executable(gif_executor_test tests/gif_executor_test.cpp)
+target_link_libraries(gif_executor_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
@@ -85,3 +114,12 @@ add_test(NAME process_node_pool COMMAND process_node_pool_test)
 add_test(NAME isysgobj_process COMMAND isysgobj_process_test)
 add_test(NAME slot_dispatch COMMAND slot_dispatch_test)
 add_test(NAME render_backend COMMAND render_backend_test)
+add_test(NAME tm2 COMMAND tm2_test)
+add_test(NAME gif_command COMMAND gif_command_test)
+add_test(NAME gif_executor COMMAND gif_executor_test)
+
+if(ICO_ENABLE_OPENGL)
+    add_executable(opengl_backend_test tests/opengl_backend_test.cpp)
+    target_link_libraries(opengl_backend_test PRIVATE ico_engine_core)
+    add_test(NAME opengl_backend COMMAND opengl_backend_test)
+endif()
