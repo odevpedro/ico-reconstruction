@@ -1,0 +1,5 @@
+address,label,hits_in_log,observation
+0x00153478,BOY_init_fn,0,NOT_OBSERVED_IN_LOG
+0x001C1A98,BOY_hC_constructor,0,NOT_OBSERVED_IN_LOG
+0x001C1DD8,BOY_hB_per_frame,0,NOT_OBSERVED_IN_LOG
+0x001C1F58,BOY_hA_update,0,NOT_OBSERVED_IN_LOG

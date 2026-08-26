@@ -1,0 +1,5 @@
+address,label,hits,observation
+0x002564E0,SIF_Resource_Loader,0,NOT_OBSERVED_IN_LOG
+0x00246458,sceSifCallRpc,0,NOT_OBSERVED_IN_LOG
+0x0024BEF8,D_Cache_Invalidate,0,NOT_OBSERVED_IN_LOG
+0x001A48A0,CODE_not_physics_table,0,NOT_OBSERVED_IN_LOG
