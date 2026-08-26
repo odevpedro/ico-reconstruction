@@ -535,18 +535,57 @@ jal 0x100560  (#68 — read result)
 
 | Metric | Value |
 |--------|-------|
-| Total events | 1.57M |
-| World states | **30** (new: 0x18, 0x19, 0x1a) |
+| Total events | 1.65M |
+| World states | **30** (0x01-0x1a, 0x28-0x2d, 0x32) |
 | DL slots | 29 |
-| Unique entity work area ptrs | 26 (all in Heap 0x008xxxxx-0x015xxxxx) |
-| Top entity | 0x013E63A0 (41.1% of dispatch cycles) |
-| Dominant DL slot | 0x1A (467K events, 29.8%) |
+| Transitions | 133 |
+| Unique transitions | 49 |
+| Session segments | 4 (3 reboots detected) |
 
 **Key runtime findings:**
 - Entity→DL slot binding is **1:1 primary** (each entity has one dominant slot)
 - Entity→world_state affinity is strong (85-99% per entity)
 - GObj pointers (0x0083xxxx) are separate from entity work area pointers
 - a0 = 0x00 at ios_om_main entry (not entity pointer); a1 = DL slot; a2 = slot type
+
+### World State Transition Graph
+
+| Feature | Detail |
+|---------|--------|
+| Entry | 0x01 — no incoming transitions |
+| Dead end | 0x1a — no outgoing transitions |
+| Boot corridor | 0x29→0x2a→0x2b→0x2d→0x28→0x03 (linear, single-use) |
+| Hub node | 0x0a — 5 incoming, 6 outgoing, 23.8min dwell |
+| Hottest loop | 0x14 ↔ 0x15 — 12+13 bidirectional transitions |
+| Longest dwell | 0x16 — 1.35hr (46% of session) |
+| Anomaly | 0x0f — 3.73hr dwell (likely AFK/pause) |
+
+**Main game loop:** 0x08 ↔ 0x09 ↔ 0x0a with branches to:
+- 0x0b/0x0d
+- 0x12/0x13/0x14/0x15
+- 0x10/0x11
+- 0x16/0x17→0x18→0x19→0x1a
+
+### Descriptor Table Analysis (Corrected)
+
+**Correction:** 0x1A48A0 is CODE (instruction `move a0, s0`), NOT a data table. The real descriptor table is at **0x2A31B8** (68 entries, stride 0x64).
+
+| Stat | Value |
+|------|-------|
+| Total entries | 68 |
+| With init_fn | 12 |
+| With hA | 56 |
+| With hB/hC | 49 each |
+| With hD (cb_routine4) | 4 (GIRL, ENEMY1, ENEMY_TEST, DEVIL_GIRL) |
+| With vtable | 29 |
+| Unique handler addrs | 143 |
+| Shared handler addrs | 19 |
+
+**Most shared handler:** 0x10ECC0 (sobj_default_update) — 7 entities (SOBJ, SOFA, DEMOMOTCTRL, INTEREST1/3/10/20).
+
+**GIRL family:** GIRL, GIRLDEMOCTRL, DEVIL_GIRL share all 3 main handlers (0x1D1A98, 0x1D17F8, 0x1D1668). DEVIL_GIRL also shares girl_init and hD.
+
+**CHAIN dominates** the entry table with 498 references (nearly half of 512 entries).
 
 ### BoyAI × GirlBrain Comparison
 
