@@ -644,6 +644,26 @@ tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration
 (Rev.096-097), isysGObj* lifecycle analysis (Rev.098-099), and canonical
 GObj/ProcessNode ABI bridge (Rev.109) are complete.
 
+### Required runtime-first reconstruction sequence
+
+For work informed by a gameplay session, use this order:
+
+1. **Runtime capture first.** Launch and validate the instrumented PCSX2
+   session, then let the JSONL probes capture the observed execution.
+2. **Analyze the captured evidence.** Identify new world states, object/process
+   activity, dispatch slots, callsites, and other reproducible runtime facts.
+3. **Decompile/reconstruct from those facts.** Use the runtime observations to
+   choose and constrain the next static-analysis or byte-exact reconstruction
+   target. Keep confirmed behavior distinct from hypotheses.
+4. **Feed validated results into the native port.** Only after the original
+   behavior and data contract are sufficiently evidenced should a semantic
+   native implementation or platform abstraction be added.
+
+During an active gameplay session, do not treat unrelated native-port work as
+the next priority merely because the capture is running. The capture is the
+primary source of new evidence; native-port work follows the validated
+reconstruction it enables. The user may explicitly request an exception.
+
 ### Current score status (Rev.106f — all 1224 functions byte-exact)
 
 All 1224 functions are now at **100% byte-exact match**.
