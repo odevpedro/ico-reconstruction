@@ -477,6 +477,60 @@ All 76 callers invoke it to create boyAI objects. The "state machine" behavior i
 | 0x02/0x07/0x16 | 2 each | Auxiliary types |
 | 0x05/0x0E/0x14/0x1C/0x20 | 1 each | Rare/specialized |
 
+### 0x24BEF8 — D-Cache Line Invalidation (NOT DMA Engine)
+
+**Correction:** This function is NOT a DMA engine. It is a **D-Cache Line Invalidation Helper** (leaf function).
+
+| Property | Value |
+|----------|-------|
+| Size | 42 instructions (168 bytes) |
+| Type | Leaf — zero calls, zero IOP syscalls |
+| Cache ops | 9x `cache 0x18` (D-Cache Hit Invalidate) |
+| Alignment mask | 0xFFFFFFC0 (64-byte cache lines) |
+| Unrolled loop | 8 lines × 64B = 512 bytes per outer iteration |
+
+**Algorithm:**
+```c
+void dcacheLineInvalidate(void *addr, int size) {
+    aligned_start = addr & ~0x3F;
+    aligned_end   = (addr + size - 1) & ~0x3F;
+    lines = ((aligned_end - aligned_start) >> 6) + 1;
+    // Phase 1: handle remainder (1-7 lines)
+    // Phase 2: unrolled 8-line blocks (512B stride)
+}
+```
+
+`cache 0x18` = D-Cache Hit Invalidate — discards dirty data without writeback (correct for DMA: IOP wrote to main memory, EE cache is stale).
+
+### IOP Syscall Table (Corrected)
+
+The table is **one giant contiguous array** from 0x100100 to 0x100990 — **138 entries**, 16 bytes each. Entries 65-74 (0x100520-0x1005D0) are the ones boyAI uses.
+
+| Entry | Address | Syscall# | Callers | Role |
+|-------|---------|----------|---------|------|
+| 65 | 0x100520 | #64 | 68 | Send command |
+| 66 | 0x100530 | #65 | 110 | Wait/poll result |
+| 67 | 0x100540 | #66 | 93 | Data transfer |
+| 68 | 0x100550 | #65469 (-67) | 8 | Error path |
+| 69 | 0x100560 | #68 | 85 | Read result |
+| 70 | 0x100570 | #69 | 21 | Rare operation |
+| 71 | 0x100580 | #65466 (-70) | 0 | Dead code |
+| 72 | 0x100590 | #71 | 5 | Rare |
+| 73 | 0x1005A0 | #65464 (-72) | 0 | Dead code |
+| 74 | 0x1005B0 | #73 | 0 | Dead code |
+| 75 | 0x1005C0 | #74 | 0 | Dead code |
+
+**Calling pattern — syscall triplets:**
+```
+jal 0x100520  (#64 — send command)
+...
+jal 0x100530  (#65 — wait/poll result)
+...
+jal 0x100560  (#68 — read result)
+```
+
+**Convention:** $v1 = syscall number, $a0 = argument (set in delay slot), $v0 = return value.
+
 ### Runtime Entity Analysis (1.57M events)
 
 | Metric | Value |
