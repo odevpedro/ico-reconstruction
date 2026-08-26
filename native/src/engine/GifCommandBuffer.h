@@ -54,6 +54,7 @@ public:
 
     u32 commandCount() const;
     const RenderCmd& command(u32 index) const;
+    std::vector<RenderCmd>& commands();
     const std::vector<RenderCmd>& commands() const;
 
     void setScreenSize(u32 width, u32 height);

@@ -66,6 +66,71 @@ void GifCommandExecutor::executeCommand(const RenderCmd& cmd) {
                                         cmd.spriteGouraud.texture,
                                         cmd.spriteGouraud.corners);
             break;
+        case RenderCommand::DrawLine: {
+            RenderVertex vertices[2]{};
+            vertices[0].x = cmd.line.x0;
+            vertices[0].y = cmd.line.y0;
+            vertices[0].r = cmd.line.r;
+            vertices[0].g = cmd.line.g;
+            vertices[0].b = cmd.line.b;
+            vertices[0].a = cmd.line.a;
+            vertices[1].x = cmd.line.x1;
+            vertices[1].y = cmd.line.y1;
+            vertices[1].r = cmd.line.r;
+            vertices[1].g = cmd.line.g;
+            vertices[1].b = cmd.line.b;
+            vertices[1].a = cmd.line.a;
+            m_backend.drawPrimitive(GSPrimitive::Line, RenderList::Opaque,
+                                    vertices, 2, kNullTexture,
+                                    cmd.line.r, cmd.line.g, cmd.line.b, cmd.line.a);
+            break;
+        }
+        case RenderCommand::DrawPoint: {
+            RenderVertex vertex{};
+            vertex.x = cmd.point.x;
+            vertex.y = cmd.point.y;
+            vertex.r = cmd.point.r;
+            vertex.g = cmd.point.g;
+            vertex.b = cmd.point.b;
+            vertex.a = cmd.point.a;
+            m_backend.drawPrimitive(GSPrimitive::Point, RenderList::Opaque,
+                                    &vertex, 1, kNullTexture,
+                                    cmd.point.r, cmd.point.g, cmd.point.b, cmd.point.a);
+            break;
+        }
+        case RenderCommand::DrawTriangle: {
+            RenderVertex vertices[3]{};
+            vertices[0].x = cmd.triangle.x0;
+            vertices[0].y = cmd.triangle.y0;
+            vertices[0].u = cmd.triangle.u0;
+            vertices[0].v = cmd.triangle.v0;
+            vertices[0].r = cmd.triangle.r;
+            vertices[0].g = cmd.triangle.g;
+            vertices[0].b = cmd.triangle.b;
+            vertices[0].a = cmd.triangle.a;
+            vertices[1].x = cmd.triangle.x1;
+            vertices[1].y = cmd.triangle.y1;
+            vertices[1].u = cmd.triangle.u1;
+            vertices[1].v = cmd.triangle.v1;
+            vertices[1].r = cmd.triangle.r;
+            vertices[1].g = cmd.triangle.g;
+            vertices[1].b = cmd.triangle.b;
+            vertices[1].a = cmd.triangle.a;
+            vertices[2].x = cmd.triangle.x2;
+            vertices[2].y = cmd.triangle.y2;
+            vertices[2].u = cmd.triangle.u2;
+            vertices[2].v = cmd.triangle.v2;
+            vertices[2].r = cmd.triangle.r;
+            vertices[2].g = cmd.triangle.g;
+            vertices[2].b = cmd.triangle.b;
+            vertices[2].a = cmd.triangle.a;
+            m_backend.drawPrimitive(GSPrimitive::Triangle, RenderList::Opaque,
+                                    vertices, 3, kNullTexture,
+                                    cmd.triangle.r, cmd.triangle.g, cmd.triangle.b, cmd.triangle.a);
+            break;
+        }
+        case RenderCommand::CopyTexture:
+            break;
         case RenderCommand::BeginPass:
             m_backend.beginPass(cmd.pass.list);
             break;

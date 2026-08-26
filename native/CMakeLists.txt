@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(ICO_ENABLE_OPENGL "Enable OpenGL rendering backend (requires GL + X11)" OFF)
 
 set(ICO_ENGINE_SOURCES
+    src/game/KanbanSceneLoader.cpp
     src/engine/GObj.cpp
     src/engine/GObjPool.cpp
     src/engine/ProcessNodePool.cpp
@@ -20,6 +21,7 @@ set(ICO_ENGINE_SOURCES
     src/engine/GifTag.cpp
     src/engine/GifCommandBuffer.cpp
     src/engine/GifCommandExecutor.cpp
+    src/engine/GifPacket.cpp
 )
 
 if(ICO_ENABLE_OPENGL)
@@ -106,6 +108,12 @@ target_link_libraries(gif_command_test PRIVATE ico_engine_core)
 add_executable(gif_executor_test tests/gif_executor_test.cpp)
 target_link_libraries(gif_executor_test PRIVATE ico_engine_core)
 
+add_executable(gif_packet_test tests/gif_packet_test.cpp)
+target_link_libraries(gif_packet_test PRIVATE ico_engine_core)
+
+add_executable(scene_loader_test tests/scene_loader_test.cpp)
+target_link_libraries(scene_loader_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
@@ -117,6 +125,8 @@ add_test(NAME render_backend COMMAND render_backend_test)
 add_test(NAME tm2 COMMAND tm2_test)
 add_test(NAME gif_command COMMAND gif_command_test)
 add_test(NAME gif_executor COMMAND gif_executor_test)
+add_test(NAME gif_packet COMMAND gif_packet_test)
+add_test(NAME scene_loader COMMAND scene_loader_test)
 
 if(ICO_ENABLE_OPENGL)
     add_executable(opengl_backend_test tests/opengl_backend_test.cpp)

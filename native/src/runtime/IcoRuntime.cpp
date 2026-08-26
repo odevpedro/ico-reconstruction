@@ -67,6 +67,11 @@ bool IcoRuntime::initialize() {
         return false;
     }
 
+    if (!m_sceneLoader.initialize(m_isysGObj)) {
+        Logger::error("runtime", "Failed to initialize kanban scene loader");
+        return false;
+    }
+
     m_initialized = true;
     Logger::info("runtime", "ICO Native Runtime initialized successfully");
     return true;
@@ -79,6 +84,7 @@ void IcoRuntime::shutdown() {
 
     Logger::info("runtime", "Shutting down ICO Native Runtime...");
 
+    m_sceneLoader.shutdown();
     m_isysGObj.shutdown();
     m_gameLoop.shutdown();
     m_timing.shutdown();
@@ -136,4 +142,8 @@ GameLoop& IcoRuntime::getGameLoop() {
 
 IsysGObj& IcoRuntime::getIsysGObj() {
     return m_isysGObj;
+}
+
+KanbanSceneLoader& IcoRuntime::getSceneLoader() {
+    return m_sceneLoader;
 }

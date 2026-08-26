@@ -11,6 +11,7 @@
 #include "platform/IopStub.h"
 #include "runtime/GameLoop.h"
 #include "game/IsysGObj.h"
+#include "game/KanbanSceneLoader.h"
 
 class IcoRuntime {
 public:
@@ -32,6 +33,7 @@ public:
     IopStub& getIop();
     GameLoop& getGameLoop();
     IsysGObj& getIsysGObj();
+    KanbanSceneLoader& getSceneLoader();
 
 private:
     bool m_initialized;
@@ -46,4 +48,5 @@ private:
     IopStub m_iop;
     GameLoop m_gameLoop;
     IsysGObj m_isysGObj;
+    KanbanSceneLoader m_sceneLoader;
 };

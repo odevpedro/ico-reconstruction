@@ -449,6 +449,10 @@ const RenderCmd& GifCommandBuffer::command(u32 index) const {
     return m_commands[index];
 }
 
+std::vector<RenderCmd>& GifCommandBuffer::commands() {
+    return m_commands;
+}
+
 const std::vector<RenderCmd>& GifCommandBuffer::commands() const {
     return m_commands;
 }

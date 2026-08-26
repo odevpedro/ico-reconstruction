@@ -212,6 +212,62 @@ static void test_executor_direct_commands() {
     assert(backend.m_depthWrite == false);
 }
 
+static void test_executor_bridge_geometry_commands() {
+    TestBackend backend;
+    backend.initialize(640, 448);
+    GifCommandExecutor exec(backend);
+
+    RenderCmd lineCmd{};
+    lineCmd.type = RenderCommand::DrawLine;
+    lineCmd.line.x0 = 10.0f;
+    lineCmd.line.y0 = 20.0f;
+    lineCmd.line.x1 = 30.0f;
+    lineCmd.line.y1 = 40.0f;
+    lineCmd.line.r = 1;
+    lineCmd.line.g = 2;
+    lineCmd.line.b = 3;
+    lineCmd.line.a = 4;
+    exec.executeCommand(lineCmd);
+    assert(backend.m_drawPrimCalls == 1);
+    assert(backend.m_lastPrim == GSPrimitive::Line);
+    assert(backend.m_lastPrimCount == 2);
+
+    RenderCmd pointCmd{};
+    pointCmd.type = RenderCommand::DrawPoint;
+    pointCmd.point.x = 11.0f;
+    pointCmd.point.y = 22.0f;
+    pointCmd.point.r = 5;
+    pointCmd.point.g = 6;
+    pointCmd.point.b = 7;
+    pointCmd.point.a = 8;
+    exec.executeCommand(pointCmd);
+    assert(backend.m_drawPrimCalls == 2);
+    assert(backend.m_lastPrim == GSPrimitive::Point);
+    assert(backend.m_lastPrimCount == 1);
+
+    RenderCmd triCmd{};
+    triCmd.type = RenderCommand::DrawTriangle;
+    triCmd.triangle.x0 = 0.0f;
+    triCmd.triangle.y0 = 0.0f;
+    triCmd.triangle.x1 = 1.0f;
+    triCmd.triangle.y1 = 0.0f;
+    triCmd.triangle.x2 = 0.0f;
+    triCmd.triangle.y2 = 1.0f;
+    triCmd.triangle.r = 9;
+    triCmd.triangle.g = 10;
+    triCmd.triangle.b = 11;
+    triCmd.triangle.a = 12;
+    exec.executeCommand(triCmd);
+    assert(backend.m_drawPrimCalls == 3);
+    assert(backend.m_lastPrim == GSPrimitive::Triangle);
+    assert(backend.m_lastPrimCount == 3);
+
+    RenderCmd copyCmd{};
+    copyCmd.type = RenderCommand::CopyTexture;
+    exec.executeCommand(copyCmd);
+    assert(backend.m_drawPrimCalls == 3);
+}
+
 static void test_executor_empty() {
     TestBackend backend;
     backend.initialize(640, 448);
@@ -228,6 +284,7 @@ static void test_executor_empty() {
 int main() {
     test_executor_sprite();
     test_executor_direct_commands();
+    test_executor_bridge_geometry_commands();
     test_executor_empty();
 
     std::printf("gif_executor_test: all passed\n");
