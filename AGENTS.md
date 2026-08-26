@@ -2,23 +2,19 @@
 
 ## Project identity
 
-This repository is a reverse engineering / digital archaeology project focused on studying the PlayStation 2 game **ICO**.
+This repository is a reverse engineering project focused on building a **native PC port** of the PlayStation 2 game **ICO**.
 
-The goal is to incrementally reconstruct verified technical knowledge about:
+The project follows a staged reconstruction approach:
 
-- the PS2 ELF binary;
-- MIPS code;
-- Ghidra analysis;
-- PCSX2 runtime behavior;
-- entity/state systems;
-- asset references;
-- overlays;
-- internal dispatch patterns;
-- possible reconstruction paths.
+1. **Verified reverse engineering** — recover symbols, function boundaries, source file mapping, data structures, runtime behavior, and engine architecture
+2. **Byte-exact preservation** — preserve original PS2 functions as `.s` when C reconstruction is not yet possible; `.s` is documentation and ground truth, not the final form
+3. **Semantic C++ reconstruction** — progressively convert verified functions into readable C++ suitable for native compilation
+4. **Platform abstraction** — replace PS2-specific systems with portable equivalents (rendering, audio, input, filesystem, timing)
+5. **Native runtime** — build a PC executable that runs reconstructed game logic against modern platform services
 
 This is not a race to produce conclusions.
 
-The goal is to build an auditable chain of evidence.
+The goal is to build an auditable chain of evidence that enables a native PC port.
 
 Prefer one small confirmed fact over a large speculative theory.
 
@@ -48,6 +44,42 @@ Direct evidence may include:
 - consistent cross-document validation.
 
 Do not treat previous AI-generated notes as truth unless they are backed by evidence.
+
+---
+
+## Priority Rule
+
+When choosing between two tasks, prefer the task that moves the project closer to a native PC port.
+
+Priority order:
+
+1. Confirm original architecture and source file ownership.
+2. Recover structs and data layouts used by gameplay systems.
+3. Convert small verified functions from `.s` to C/C++ when practical.
+4. Identify PS2 platform dependencies that will need native replacements.
+5. Design abstraction layers for input, filesystem, rendering, audio, timing, and resource loading.
+6. Preserve byte-exact `.s` only when C reconstruction is blocked or not currently efficient.
+
+Do not treat documentation-only discoveries as the final objective. Documentation is valuable when it enables reconstruction, portability, or native runtime design.
+
+---
+
+## Long-Term Goal: Native PC Port
+
+The long-term goal of this project is to make a native PC port of ICO possible.
+
+The current decompilation/reconstruction work is the foundation for this goal, but agents must distinguish between:
+
+- verified PS2 reconstruction;
+- byte-exact `.s` preservation;
+- semantic C/C++ reconstruction;
+- native PC runtime work.
+
+The `main`/`master` branch remains the conservative source of truth for decompilation and reverse engineering.
+
+The `native-port` branch is experimental and may contain platform abstraction work, native runtime scaffolding, and PC-specific prototypes.
+
+Do not introduce native-port experiments into `main`/`master` unless they improve the decompilation/reconstruction project itself.
 
 ---
 
