@@ -377,19 +377,89 @@ The boyAI functions access a **large entity-specific data block** (>0x680 bytes)
 isysGObj* dispatch
   ↓
 Descriptor Table (0x2A31B8, 68 entries, stride 0x64)
+  ├── +0x040: init_fn (constructor)
+  ├── +0x048: hA (reset/update)
+  ├── +0x050: hB (per-frame)
+  ├── +0x058: hC (ctor/setup)
+  └── +0x060: shared vtable
   ↓
 BOY init_fn (0x153478) → registers callbacks
   ↓
 hA (0x1C1F58) / hB (0x1C1DD8) / hC (0x1C1A98)
   ↓
 boyAI callback library (0x142000-0x164000, 564 functions)
+  ├── 0x246458: Node factory (NOT state machine) — allocates from 0x00714BC0 pool
+  ├── 0x2564E0: Recursive priority dispatcher
+  ├── 0x24BEF8: Cache-aligned DMA/mem ops
+  └── 0x100520-0x100560: IOP syscall wrappers
   ↓
 Entity work area (~10KB, accessed via GObj+0x28)
-  ├── Core fields (+0x00-0x54)
+  ├── Core fields (+0x00-0x54) — shared with GirlBrain
   ├── Motion sub-struct (+0x15C → +0x800)
   ├── AI data block (+0x164)
   ├── Scene data (+0x670, +0x678)
-  └── BOY-specific (+0x2D0-0x730)
-  ↓
-IOP syscalls (0x100520-0x100560) for I/O
+  ├── BOY-specific (+0x2D0-0x730)
+  └── GirlBrain-specific (+0x57D0-0x5904, +0x1F60, +0x0D4-0x0F4)
 ```
+
+### BOY Handler Callback Analysis
+
+#### hC (0x1C1A98) — ctor/setup, 107 insns, 80B frame
+
+Per-instance constructor:
+1. Allocates entity private data (stride 0x4C, tag 0xFE)
+2. Sets up 5 model/animation resources via model_setup()
+3. Creates 3 child entities (types 0x1=model root, 0xB=hitbox, 0xC=shadow/proxy)
+4. Initializes cloth physics
+5. Writes initial state fields
+
+Key struct offsets on private data ($s0):
+- +0x4/+0x8/+0xC: child entity pointers
+- +0x18/+0x1C/+0x20/+0x24/+0x28: model setup results
+- +0x2C/+0x30: state=0x14
+- +0x34/+0x38: float=500.0
+- +0x48: flag=0x80808080
+
+#### hB (0x1C1DD8) — per-frame, 51 insns, 48B frame
+
+Thin orchestrator — all real work in callees:
+1. cloth_update → cloth_physics
+2. syncMotion_proximity → boy_other
+3. cloth_render → bone_callback
+4. movement_solver
+5. Queries boyAI_state() for walk speed (30.0 or 20.0)
+6. Calls isysGObjProcAdd(entity, 6, entity) if movement returns nonzero
+
+#### hA (0x1C1F58) — reset/update, 80 insns, 96B frame
+
+Primary update with two paths:
+- **Active path** (entity+0x800 field +0x10 nonzero): transforms, animation, heading, distance. If world_state==0x27 and distance > 20.0, triggers interaction
+- **Idle path** (entity+0x800 field +0x10 == 0): reset_something → update_something → boy_dispCrown → boy_sub
+
+### 0x246458 — Node Factory (NOT State Machine)
+
+**Correction:** This function is NOT a state machine. It is a **boyAI node factory/constructor**:
+1. Allocates from pool 0x00714BC0
+2. Initializes fields from 8+ arguments (world_state, coords, type, flags)
+3. Registers with memory system (0x24BD50, flag 0x8000000A)
+4. Links into active list (0x100520)
+5. Returns 0 on success, -1/-2/-3 on failure
+
+All 76 callers invoke it to create boyAI objects. The "state machine" behavior is in the 76 callers, not in this function.
+
+### BoyAI × GirlBrain Comparison
+
+**87 shared struct offsets** — same entity work area structure.
+
+| Category | boyAI | GirlBrain | Shared |
+|----------|-------|-----------|--------|
+| Core fields (0x00-0x17F) | 140 unique | 68 unique | 87 |
+| Extended (0x400-0x7FF) | 373 accesses | minimal | — |
+| Navigation (0x57D0-0x5904) | — | path data | — |
+| Hide/runaway (0x0D4-0x0F4) | — | state | — |
+| GP globals | gp-0x6E08 (88) | gp-0x6E08 (19) | ✓ |
+| | gp-0x6E0C (74) | gp-0x6E0C (61) | ✓ |
+| | gp-0x6F60 (17) | gp-0x6F60 (3) | ✓ |
+| Shared JAL targets | 47 targets | 47 targets | ✓ |
+
+**Verdict:** Same entity structure. boyAI has more complexity (140 vs 68 unique offsets). GirlBrain has simpler extended region focused on pathfinding/hiding.
