@@ -356,6 +356,71 @@ u32 IsysGObjRuntime::activeMask() const
     return m_activeMask;
 }
 
+std::size_t IsysGObjRuntime::dispatchTypeSlots()
+{
+    if (!m_initialized) {
+        return 0;
+    }
+
+    std::size_t calls = 0;
+    for (u32 bit = 0; bit < kPrimaryListCount; ++bit) {
+        if ((m_activeMask & (1u << bit)) == 0) {
+            continue;
+        }
+
+        GObjHandle gobjHandle = m_heads[bit];
+        while (gobjHandle != kNullGObjHandle) {
+            GObj* gobj = m_pool.get(gobjHandle);
+            if (gobj == nullptr || isGObjSlotFree(*gobj)) {
+                break;
+            }
+
+            const GObjHandle nextGObj = gobj->next;
+
+            if (gobj->state_16c == 0) {
+                gobjHandle = nextGObj;
+                continue;
+            }
+
+            for (u32 typeSlot = kTypeSlotStart; typeSlot < kTypeSlotEnd;
+                 ++typeSlot) {
+                ProcessHandle processHandle = gobj->process_head;
+                while (processHandle != kNullProcessHandle) {
+                    ProcessNode* process = m_processPool.get(processHandle);
+                    if (process == nullptr ||
+                        isProcessNodeSlotFree(*process)) {
+                        break;
+                    }
+
+                    const ProcessHandle nextProcess = process->next;
+
+                    if (process->priority == typeSlot &&
+                        process->active != 0) {
+                        const ProcessHandle pHandle =
+                            m_processPool.handleOf(*process);
+                        ProcessCallback& cb =
+                            m_processCallbacks[pHandle - 1u];
+                        if (cb) {
+                            cb(*gobj, *process);
+                            ++calls;
+                        }
+                    }
+
+                    processHandle = nextProcess;
+                }
+            }
+
+            gobjHandle = nextGObj;
+        }
+    }
+    return calls;
+}
+
+std::size_t IsysGObjRuntime::dispatchAll()
+{
+    return dispatchActiveLists() + dispatchTypeSlots();
+}
+
 GObj* IsysGObjRuntime::head(u8 listId)
 {
     return listId < kPrimaryListCount ? m_pool.get(m_heads[listId]) : nullptr;

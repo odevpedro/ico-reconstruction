@@ -70,9 +70,13 @@ target_link_libraries(process_node_pool_test PRIVATE ico_engine_core)
 add_executable(isysgobj_process_test tests/isysgobj_process_test.cpp)
 target_link_libraries(isysgobj_process_test PRIVATE ico_engine_core)
 
+add_executable(slot_dispatch_test tests/slot_dispatch_test.cpp)
+target_link_libraries(slot_dispatch_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
 add_test(NAME isysgobj_runtime COMMAND isysgobj_runtime_test)
 add_test(NAME process_node_pool COMMAND process_node_pool_test)
 add_test(NAME isysgobj_process COMMAND isysgobj_process_test)
+add_test(NAME slot_dispatch COMMAND slot_dispatch_test)

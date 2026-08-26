@@ -40,6 +40,9 @@ public:
     bool setActiveMask(u32 mask);
     u32 activeMask() const;
 
+    std::size_t dispatchTypeSlots();
+    std::size_t dispatchAll();
+
     GObj* head(u8 listId);
     const GObj* head(u8 listId) const;
     GObj* tail(u8 listId);

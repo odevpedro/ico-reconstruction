@@ -10,7 +10,9 @@ using ico::engine::ProcessNode;
 int main()
 {
     IsysGObjRuntime runtime;
-    assert(runtime.initialize(2, 4));
+    const bool initOk = runtime.initialize(2, 4);
+    assert(initOk);
+    (void)initOk;
 
     GObj* gobj = runtime.add(1, 0);
     GObj* other = runtime.add(2, 0);

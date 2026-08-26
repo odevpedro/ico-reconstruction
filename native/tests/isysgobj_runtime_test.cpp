@@ -9,7 +9,9 @@ using ico::engine::kPrimaryListCount;
 int main()
 {
     IsysGObjRuntime runtime;
-    assert(runtime.initialize(4));
+    const bool initOk = runtime.initialize(4);
+    assert(initOk);
+    (void)initOk;
     assert(runtime.isInitialized());
     assert(runtime.pool().empty());
 
