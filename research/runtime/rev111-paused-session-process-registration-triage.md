@@ -49,6 +49,12 @@ input associated with the created thread/process node.  Its exact runtime role
 (for example, thread entry versus type descriptor) remains probable, pending
 a probe at thread startup/dispatch.
 
+### Existing dispatcher evidence, distinguished from this capture
+
+Earlier byte-level analysis documents a dispatcher at `0x0013FB70` that loads `node + 0x1C` and invokes the resulting pointer with an object/context argument (see `ghidra-rev034-callback-signature-and-record-selection.md` and `ghidra-rev035-entry-table-and-descriptor-correction.md`). This confirms that the `+0x1C` field is a dispatchable callback slot in the general system.
+
+It does **not** establish that the particular value `0x001C34C0` registered in this session reaches that dispatcher. That last association remains the next runtime validation target.
+
 ## Byte-exact preservation selected from the capture
 
 The imported Ghidra symbol listing names `0x001c34c0` as
