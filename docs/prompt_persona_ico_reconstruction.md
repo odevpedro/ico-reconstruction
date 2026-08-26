@@ -51,18 +51,20 @@ A compelling scene is not technical evidence.
   reconstruction on `master`.
 - `native-port` consumes that ABI through a contiguous GObj pool, ProcessNode
   pool, priority-ordered registration, attached-process dispatch, ordered
-  lists, removal/reuse, invariant checks, mock callbacks, and CTest coverage
-  (5 tests). This is an engine-core prototype, not a playable port.
+  lists, removal/reuse, invariant checks, mock callbacks, CTest coverage
+  (6 tests), type-slot dispatch (`dispatchTypeSlots` for type slots 19-27),
+  and combined `dispatchAll()` = `dispatchActiveLists` + `dispatchTypeSlots`.
+  This is an engine-core prototype, not a playable port.
 
 ## Current engine priority
 
-Continue with `iosOmCreateDL` slot dispatch and type-based routing on
-`native-port`. The GObj pool, ProcessNode pool, priority-ordered
-registration, removal, attached-process dispatch, and callback mocks are
-implemented and tested (5 CTest tests).
+The `iosOmCreateDL` slot dispatch and type-based routing are implemented and
+tested. The next step is evaluating how to bridge the display-list model to a
+rendering abstraction for the native port.
 
-Do not move to renderer, assets, BOY, or real gameplay until the central GObj
-and ProcessNode behavior is reliable and testable.
+Do not move to real gameplay logic, assets, or BOY/AI until the rendering
+entry point is established and the GObj/ProcessNode dispatch pipeline is
+reliable end-to-end.
 
 ## Sources to prefer
 

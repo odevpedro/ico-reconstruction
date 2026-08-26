@@ -791,7 +791,8 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 36. ~~**Rev.109: canonical `IcoGObj`/`IcoProcessNode` ABI, 8-vs-32 table correction, and semantic C core**~~ **DONE (2026-08-26)**
 37. ~~**Native bridge: contiguous GObj pool, ordered lists, remove/reuse, callback mocks, and CTest coverage**~~ **DONE on `native-port` (2026-08-26)**
 38. ~~**Native engine: ProcessNode/TCB pool, priority registration, removal, attached dispatch**~~ **DONE on `native-port` (2026-08-26)**
-39. **Native engine next:** implement `iosOmCreateDL` slot dispatch and type-based routing on `native-port`, then evaluate rendering entry point.
+39. ~~**Native engine: iosOmCreateDL slot dispatch and type-based routing** — `dispatchTypeSlots()` (type slots 19-27 per GObj), `dispatchAll()` = `dispatchActiveLists` + `dispatchTypeSlots`, `slot_dispatch_test.cpp` with full coverage. Fixed critical `assert(runtime.initialize(...))` UB where NDEBUG stripped the init call in Release mode causing SIGSEGV.~~ **DONE (2026-08-26)**
+40. **Native engine next:** evaluate rendering entry point — determine how to bridge the `iosOmCreateDL` display-list model to a rendering abstraction for the native port.
 
 ---
 
