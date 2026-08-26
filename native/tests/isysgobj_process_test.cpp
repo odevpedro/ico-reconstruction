@@ -81,6 +81,25 @@ int main()
     assert(runtime.remove(*gobj));
     assert(priority30->self == 0);
     assert(runtime.processPool().activeCount() == 1);
+
+    // The dispatcher snapshots `next` before invoking a callback. The native
+    // runtime must therefore continue to the successor when a callback removes
+    // its own process node.
+    std::vector<u32> selfRemovalOrder;
+    ProcessNode* selfRemoving = runtime.registerProcess(
+        *other, 1, 6, [&](GObj&, ProcessNode& process) {
+            selfRemovalOrder.push_back(process.priority);
+            assert(runtime.removeProcess(process));
+        });
+    ProcessNode* successor = runtime.registerProcess(
+        *other, 1, 7, [&](GObj&, ProcessNode& process) {
+            selfRemovalOrder.push_back(process.priority);
+        });
+    assert(selfRemoving != nullptr && successor != nullptr);
+    assert(runtime.dispatchAllProcesses(*other) == 3);
+    assert((selfRemovalOrder == std::vector<u32>{6, 7}));
+    assert(selfRemoving->self == 0);
+    assert(runtime.checkInvariants());
     assert(runtime.remove(*other));
     assert(runtime.processPool().empty());
     assert(runtime.pool().empty());
