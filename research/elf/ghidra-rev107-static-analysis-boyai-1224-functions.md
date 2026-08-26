@@ -447,6 +447,53 @@ Primary update with two paths:
 
 All 76 callers invoke it to create boyAI objects. The "state machine" behavior is in the 76 callers, not in this function.
 
+### 0x2564E0 — SIF Resource Loader (NOT Recursive Dispatcher)
+
+**Correction:** This function is NOT a recursive priority dispatcher. It is a **SIF (Sub-processor Interface) Resource Loader** for EE→IOP data transfer.
+
+| Property | Value |
+|----------|-------|
+| Frame | 96 bytes |
+| Instructions | 90 |
+| Self-recursion | **Zero** (the "8+ recursive calls" were external callers) |
+| Resource types | 14 unique codes (0x01-0x20) |
+| Timeout | 5001 iterations → calls 0x251D48 (error handler) |
+
+**Execution flow:**
+1. Read SIF status register (0x10002010), check bits 31+14
+2. Timeout poll loop (5001 iterations max)
+3. Write DMA address to 0x10002000
+4. Poll completion via 0x256028 (called twice)
+5. Return loaded resource pointer in $v0
+
+**Resource type codes:**
+
+| Code | Calls | Likely meaning |
+|------|-------|----------------|
+| 0x01 | 26 | Primary entity data |
+| 0x03 | 4 | Tertiary data |
+| 0x08 | 4 | Secondary data |
+| 0x04/0x06/0x10 | 3 each | Physics/sound/higher-order |
+| 0x02/0x07/0x16 | 2 each | Auxiliary types |
+| 0x05/0x0E/0x14/0x1C/0x20 | 1 each | Rare/specialized |
+
+### Runtime Entity Analysis (1.57M events)
+
+| Metric | Value |
+|--------|-------|
+| Total events | 1.57M |
+| World states | **30** (new: 0x18, 0x19, 0x1a) |
+| DL slots | 29 |
+| Unique entity work area ptrs | 26 (all in Heap 0x008xxxxx-0x015xxxxx) |
+| Top entity | 0x013E63A0 (41.1% of dispatch cycles) |
+| Dominant DL slot | 0x1A (467K events, 29.8%) |
+
+**Key runtime findings:**
+- Entity→DL slot binding is **1:1 primary** (each entity has one dominant slot)
+- Entity→world_state affinity is strong (85-99% per entity)
+- GObj pointers (0x0083xxxx) are separate from entity work area pointers
+- a0 = 0x00 at ios_om_main entry (not entity pointer); a1 = DL slot; a2 = slot type
+
 ### BoyAI × GirlBrain Comparison
 
 **87 shared struct offsets** — same entity work area structure.
