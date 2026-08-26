@@ -211,6 +211,7 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
+research/elf/rev109-isysgobj-abi-consolidation.md  (canonical 32-bit GObj/ProcessNode ABI; four 8-entry head/tail tables; 32-bit mask-loop distinction; semantic C bridge)
 research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md       (full isysGObj* lifecycle: init→alloc→add→dispatch→remove; ios/thread.c=thread creation; 36 byte-exact .s sources)
 research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md  (isysGObjProcAdd_=488B central registration; _iosOmMain=17 slots matching runtime data; initSceneGObj=2088B connects descriptor table to isysGObj*)
 research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md  (ARCHITECTURAL CORRECTION: _Clip is collision not dispatcher; isysGObj* is real game object system)
@@ -239,33 +240,34 @@ Before doing new analysis, read these files in this order if they exist:
 2. `.local/key-concepts.md`
 3. `.local/ai-context.md`
 4. `key-concepts.md`
-5. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
-6. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
-7. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
-8. `research/ghidra-exploration-2026-05-21.md`
-9. `research/elf/ghidra-rev096-halfword-runtime-session-analysis.md`
-10. `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`
-11. `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md`
-12. `research/elf/ghidra-rev093-three-investigations.md`
-13. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
-14. `research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md`
-15. `research/elf/ghidra-rev087-enemy1-boy-decompilation.md`
-16. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
-17. `research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`
-18. `research/elf/ghidra-rev084-runtime-validation-extended-session.md`
-19. `research/elf/ghidra-rev077-final-static-analysis.md`
-20. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
-21. `research/elf/ghidra-rev039-cloth-domain-correction.md`
-22. `research/ico-decomp-cross-reference-2026-05-14.md`
-23. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
-24. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
-25. `research/external/sotc-tooling-relevance-survey.md`
-26. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
-27. `research/external/ico-splat-promoted-ranges-experiment.md`
-28. `research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md`
-29. `research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md`
-30. `research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md`
-31. `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
+5. `research/elf/rev109-isysgobj-abi-consolidation.md`
+6. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+7. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+8. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+9. `research/ghidra-exploration-2026-05-21.md`
+10. `research/elf/ghidra-rev096-halfword-runtime-session-analysis.md`
+11. `research/elf/ghidra-rev094-halfword-runtime-second-caller.md`
+12. `research/elf/ghidra-rev093b-halfword-entry-runtime-validation.md`
+13. `research/elf/ghidra-rev093-three-investigations.md`
+14. `research/elf/ghidra-rev089-runtime-session-rev086-worldstate-gp-m49b4.md`
+15. `research/elf/ghidra-rev088-barrel-rope-woodbox0-decompilation.md`
+16. `research/elf/ghidra-rev087-enemy1-boy-decompilation.md`
+17. `research/elf/ghidra-rev086-static-analysis-vtables-enveffect-cbroutine4-vblank.md`
+18. `research/elf/ghidra-rev085-death-validation-and-next-session-plan.md`
+19. `research/elf/ghidra-rev084-runtime-validation-extended-session.md`
+20. `research/elf/ghidra-rev077-final-static-analysis.md`
+21. `research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks.md`
+22. `research/elf/ghidra-rev039-cloth-domain-correction.md`
+23. `research/ico-decomp-cross-reference-2026-05-14.md`
+24. `research/elf/ghidra-rev037-remaining-callers-and-rope-gap.md`
+25. `research/elf/ghidra-rev025-runtime-confirmed-caller-context.md`
+26. `research/external/sotc-tooling-relevance-survey.md`
+27. `research/external/ico-rabbitizer-spimdisasm-dispatcher-check.md`
+28. `research/external/ico-splat-promoted-ranges-experiment.md`
+29. `research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md`
+30. `research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md`
+31. `research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md`
+32. `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -322,8 +324,27 @@ Key structures:
   +0x4C (slot mask), +0x50 (type bits)
 - **Process node (TCB)**: stride 0x94, fields at +0x1C (callback), +0x14 (priority),
   +0x10 (type mask), +0x18 (active flag)
-- **Dispatch table 0x281AB0**: 32 slot entries, each a linked list of callback nodes
+- **DL heads 0x281AB0 / tails 0x281AD0**: 8 entries each; the separate
+  `iosOmCreateDL` loop scans a 32-bit control mask
 - **Thread table 0x6A6F30**: indexed by thread_id, stores process ptrs
+
+### Canonical ABI and native bridge (Rev.109)
+
+Rev.109 converts the verified `isysGObj*` layout into an auditable, portable
+boundary without replacing the byte-exact `.s` ground truth:
+
+- `src/core/gobj_abi.h` defines `IcoGObj` (`0x174`) and `IcoProcessNode`
+  (`0x94`) using fixed-width fields and compile-time size/offset assertions.
+- `src/core/isysgobj_semantic.c` reconstructs first-free allocation, ordered
+  and head insertion, unlink, recycling, and DL-table init as semantic C. It
+  is explicitly not claimed byte-exact.
+- `0x281A70/0x281A90` are 8 primary-list heads/tails.
+- `0x281AB0/0x281AD0` are 8 DL-list heads/tails.
+- The `iosOmCreateDL` loop scans a 32-bit mask. This does not prove a physical
+  32-entry head table; bits 8-31 remaining inactive is a probable invariant.
+- On `native-port`, the ABI feeds a contiguous `GObjPool` and minimal
+  `IsysGObjRuntime` with add/remove/reuse, ordered lists, callback mocks,
+  invariants, and CTest coverage. This is not a playable port.
 
 ### GirlBrain / eBrain correction (Rev.102)
 
@@ -618,7 +639,10 @@ Those names require evidence.
 
 ## Current priority
 
-The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075), tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration (Rev.096-097), and isysGObj* lifecycle analysis (Rev.098-099) are complete.
+The static analysis phase (Rev.001-037), runtime validation phase (Rev.064-075),
+tee-gcc scoring pipeline (Rev.090-091), Ghidra headless exploration
+(Rev.096-097), isysGObj* lifecycle analysis (Rev.098-099), and canonical
+GObj/ProcessNode ABI bridge (Rev.109) are complete.
 
 ### Current score status (Rev.106f — all 1224 functions byte-exact)
 
@@ -731,6 +755,9 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 33. ~~**Rev.101: +4 GirlBrain .s (11 total), label cleanup, entity-state-blocks.md, initSceneGObj analysis**~~ **DONE (2026-05-22)**
 34. ~~**Rev.102: GirlBrain/eBrain range correction (0x0016xxxx=GirlBrain, 0x0019xxxx=eBrain/Generator); 15 new .s (10 GirlBrain + 7 eBrain); 8 speculative eBrain preserved; 6 stale .s files removed; YAML rewritten with correct USA file offsets**~~ **DONE (2026-05-22)**
 35. ~~**Rev.105: Extended session — 25 world_states, 20 DL slots, 352 functions at 100%, physics table fully covered**~~ **DONE (2026-08-25)**
+36. ~~**Rev.109: canonical `IcoGObj`/`IcoProcessNode` ABI, 8-vs-32 table correction, and semantic C core**~~ **DONE (2026-08-26)**
+37. ~~**Native bridge: contiguous GObj pool, ordered lists, remove/reuse, callback mocks, and CTest coverage**~~ **DONE on `native-port` (2026-08-26)**
+38. **Native engine next:** implement the portable ProcessNode pool, priority-ordered registration, removal, and attached-process dispatch before renderer/assets/BOY work.
 
 ---
 
