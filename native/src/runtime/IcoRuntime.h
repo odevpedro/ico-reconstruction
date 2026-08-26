@@ -10,6 +10,7 @@
 #include "platform/SifRpcStub.h"
 #include "platform/IopStub.h"
 #include "runtime/GameLoop.h"
+#include "game/IsysGObj.h"
 
 class IcoRuntime {
 public:
@@ -30,6 +31,7 @@ public:
     SifRpcStub& getSifRpc();
     IopStub& getIop();
     GameLoop& getGameLoop();
+    IsysGObj& getIsysGObj();
 
 private:
     bool m_initialized;
@@ -43,4 +45,5 @@ private:
     SifRpcStub m_sifRpc;
     IopStub m_iop;
     GameLoop m_gameLoop;
+    IsysGObj m_isysGObj;
 };

@@ -62,6 +62,11 @@ bool IcoRuntime::initialize() {
         return false;
     }
 
+    if (!m_isysGObj.initialize()) {
+        Logger::error("runtime", "Failed to initialize isysGObj");
+        return false;
+    }
+
     m_initialized = true;
     Logger::info("runtime", "ICO Native Runtime initialized successfully");
     return true;
@@ -74,6 +79,7 @@ void IcoRuntime::shutdown() {
 
     Logger::info("runtime", "Shutting down ICO Native Runtime...");
 
+    m_isysGObj.shutdown();
     m_gameLoop.shutdown();
     m_timing.shutdown();
     m_render.shutdown();
@@ -126,4 +132,8 @@ IopStub& IcoRuntime::getIop() {
 
 GameLoop& IcoRuntime::getGameLoop() {
     return m_gameLoop;
+}
+
+IsysGObj& IcoRuntime::getIsysGObj() {
+    return m_isysGObj;
 }

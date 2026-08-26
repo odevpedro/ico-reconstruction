@@ -22,6 +22,7 @@ set(ICO_NATIVE_SOURCES
     src/platform/SifRpcStub.cpp
     src/platform/IopStub.cpp
     src/ps2/Ps2Memory.cpp
+    src/game/IsysGObj.cpp
 )
 
 # Main executable
@@ -42,6 +43,7 @@ add_executable(smoke_test tests/smoke_test.cpp
     src/platform/SifRpcStub.cpp
     src/platform/IopStub.cpp
     src/ps2/Ps2Memory.cpp
+    src/game/IsysGObj.cpp
 )
 target_include_directories(smoke_test PRIVATE src)
 
