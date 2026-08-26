@@ -49,20 +49,17 @@ A compelling scene is not technical evidence.
 - Preferred integration direction is `master -> native-port`.
 - Rev.109 introduced the canonical fixed-width ABI header and small semantic C
   reconstruction on `master`.
-- `native-port` consumes that ABI through a contiguous GObj pool, ordered
-  lists, removal/reuse, invariant checks, mock callbacks, and CTest coverage.
-- This is an engine-core prototype, not a playable port.
+- `native-port` consumes that ABI through a contiguous GObj pool, ProcessNode
+  pool, priority-ordered registration, attached-process dispatch, ordered
+  lists, removal/reuse, invariant checks, mock callbacks, and CTest coverage
+  (5 tests). This is an engine-core prototype, not a playable port.
 
 ## Current engine priority
 
-Continue with the portable `ProcessNode`/TCB pool and the verified
-GObj-attached process lifecycle:
-
-1. first-free ProcessNode allocation;
-2. priority-ordered registration;
-3. removal and slot reuse;
-4. attached-process dispatch with mock callbacks;
-5. deterministic invariant and pool-full tests.
+Continue with `iosOmCreateDL` slot dispatch and type-based routing on
+`native-port`. The GObj pool, ProcessNode pool, priority-ordered
+registration, removal, attached-process dispatch, and callback mocks are
+implemented and tested (5 CTest tests).
 
 Do not move to renderer, assets, BOY, or real gameplay until the central GObj
 and ProcessNode behavior is reliable and testable.

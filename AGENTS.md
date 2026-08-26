@@ -374,9 +374,10 @@ boundary without replacing the byte-exact `.s` ground truth:
 - `0x281AB0/0x281AD0` are 8 DL-list heads/tails.
 - The `iosOmCreateDL` loop scans a 32-bit mask. This does not prove a physical
   32-entry head table; bits 8-31 remaining inactive is a probable invariant.
-- On `native-port`, the ABI feeds a contiguous `GObjPool` and minimal
-  `IsysGObjRuntime` with add/remove/reuse, ordered lists, callback mocks,
-  invariants, and CTest coverage. This is not a playable port.
+- On `native-port`, the ABI feeds a contiguous `GObjPool`, `ProcessNodePool`,
+  and `IsysGObjRuntime` with add/remove/reuse, priority-ordered process
+  registration, attached-process dispatch, callback mocks, invariants, and
+  CTest coverage (5 tests). This is not a playable port.
 
 ### GirlBrain / eBrain correction (Rev.102)
 
@@ -789,7 +790,8 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 35. ~~**Rev.105: Extended session — 25 world_states, 20 DL slots, 352 functions at 100%, physics table fully covered**~~ **DONE (2026-08-25)**
 36. ~~**Rev.109: canonical `IcoGObj`/`IcoProcessNode` ABI, 8-vs-32 table correction, and semantic C core**~~ **DONE (2026-08-26)**
 37. ~~**Native bridge: contiguous GObj pool, ordered lists, remove/reuse, callback mocks, and CTest coverage**~~ **DONE on `native-port` (2026-08-26)**
-38. **Native engine next:** implement the portable ProcessNode pool, priority-ordered registration, removal, and attached-process dispatch before renderer/assets/BOY work.
+38. ~~**Native engine: ProcessNode/TCB pool, priority registration, removal, attached dispatch**~~ **DONE on `native-port` (2026-08-26)**
+39. **Native engine next:** implement `iosOmCreateDL` slot dispatch and type-based routing on `native-port`, then evaluate rendering entry point.
 
 ---
 
