@@ -30,6 +30,30 @@ int main() {
     record->sortKey = 42;
     record->userData = 0x1234;
 
+    // Rev.112: entry+0x24 wins; entry+0x40 supplies the wrapper's t0 value.
+    desc->processCallback_40 = 0x00123456;
+    record->processCallback_24 = 0x00654321;
+    record->processArgument_40 = 5;
+    const SceneProcessRegistrationSpec entryRegistration =
+        KanbanSceneLoader::selectProcessRegistration(*record, *desc);
+    assert(entryRegistration.callback == 0x00654321);
+    assert(entryRegistration.wrapperT0 == 0x1400);
+    assert(entryRegistration.usesEntryOverride);
+
+    record->processCallback_24 = 0;
+    record->processArgument_40 = 0;
+    const SceneProcessRegistrationSpec fallbackRegistration =
+        KanbanSceneLoader::selectProcessRegistration(*record, *desc);
+    assert(fallbackRegistration.callback == 0x00123456);
+    assert(fallbackRegistration.wrapperT0 == 0x1800);
+    assert(!fallbackRegistration.usesEntryOverride);
+
+    desc->processCallback_40 = 0;
+    const SceneProcessRegistrationSpec noRegistration =
+        KanbanSceneLoader::selectProcessRegistration(*record, *desc);
+    assert(noRegistration.callback == 0);
+    assert(!noRegistration.usesEntryOverride);
+
     assert(loader.hotInitSceneObjects(7) == 1);
     assert(loader.requestScene(7));
     assert(loader.pendingRequestCount() == 1);

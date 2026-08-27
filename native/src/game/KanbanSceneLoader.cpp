@@ -21,6 +21,8 @@ bool KanbanSceneLoader::initialize(IsysGObj& runtime) {
         record.enabled = false;
         record.sortKey = 0;
         record.userData = 0;
+        record.processCallback_24 = 0;
+        record.processArgument_40 = 0;
     }
 
     return true;
@@ -138,6 +140,21 @@ std::size_t KanbanSceneLoader::hotInitSceneObjects(u32 sceneId) const {
     }
 
     return hotCount;
+}
+
+SceneProcessRegistrationSpec KanbanSceneLoader::selectProcessRegistration(
+    const SceneEntryRecord& record, const SceneGObjDescriptor& descriptor) {
+    SceneProcessRegistrationSpec result;
+    if (record.processArgument_40 != 0) {
+        result.wrapperT0 = static_cast<u32>(record.processArgument_40) << 10u;
+    }
+    if (record.processCallback_24 != 0) {
+        result.callback = record.processCallback_24;
+        result.usesEntryOverride = true;
+    } else {
+        result.callback = descriptor.processCallback_40;
+    }
+    return result;
 }
 
 u32 KanbanSceneLoader::currentSceneId() const {

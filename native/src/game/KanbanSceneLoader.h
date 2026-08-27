@@ -18,6 +18,8 @@ struct SceneGObjDescriptor {
     u8 listId = 0;
     bool hasInitFn = false;
     InitFn initFn{};
+    /* Raw original descriptor field at +0x40; its source-level name is unknown. */
+    ico_ptr32 processCallback_40 = 0;
 };
 
 struct SceneEntryRecord {
@@ -26,6 +28,15 @@ struct SceneEntryRecord {
     bool enabled = false;
     u32 sortKey = 0;
     ico_ptr32 userData = 0;
+    /* Raw original entry fields used by initSceneGObj's registration gate. */
+    ico_ptr32 processCallback_24 = 0;
+    u16 processArgument_40 = 0;
+};
+
+struct SceneProcessRegistrationSpec {
+    ico_ptr32 callback = 0;
+    u32 wrapperT0 = 0x1800;
+    bool usesEntryOverride = false;
 };
 
 class KanbanSceneLoader {
@@ -46,6 +57,10 @@ public:
     bool execute();
     std::size_t initSceneGObj(u32 sceneId);
     std::size_t hotInitSceneObjects(u32 sceneId) const;
+
+    /* Returns raw PS2 values; it intentionally does not invoke host callbacks. */
+    static SceneProcessRegistrationSpec selectProcessRegistration(
+        const SceneEntryRecord& record, const SceneGObjDescriptor& descriptor);
 
     u32 currentSceneId() const;
 
