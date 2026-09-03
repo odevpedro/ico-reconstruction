@@ -202,6 +202,11 @@ public:
     void setBlendMode(GSBlendMode mode) override { (void)mode; }
     void setDepthTest(GSDepthTest test, bool write) override { (void)test; (void)write; }
     void setAlphaTest(GSAlphaTest test, u8 ref, u8 mask) override { (void)test; (void)ref; (void)mask; }
+    void setFramebuffer(u32 fbp, u32 fbw, u32 psm) override { (void)fbp; (void)fbw; (void)psm; }
+    void setZBuffer(u32 zbp, u32 psm, bool zmsk) override { (void)zbp; (void)psm; (void)zmsk; }
+    void setAlpha(u32 aba, u32 abb, u32 abc, u32 abd, u32 afix) override {
+        (void)aba; (void)abb; (void)abc; (void)abd; (void)afix;
+    }
 
     TextureHandle createTexture(const TextureDesc& desc) override {
         (void)desc;

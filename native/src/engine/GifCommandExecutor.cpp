@@ -32,6 +32,16 @@ void GifCommandExecutor::executeCommand(const RenderCmd& cmd) {
         case RenderCommand::SetAlphaTest:
             m_backend.setAlphaTest(cmd.alphaTest.test, cmd.alphaTest.ref, cmd.alphaTest.mask);
             break;
+        case RenderCommand::SetFramebuffer:
+            m_backend.setFramebuffer(cmd.framebuffer.fbp, cmd.framebuffer.fbw, cmd.framebuffer.psm);
+            break;
+        case RenderCommand::SetZBuffer:
+            m_backend.setZBuffer(cmd.zbuffer.zbp, cmd.zbuffer.psm, cmd.zbuffer.zmsk);
+            break;
+        case RenderCommand::SetAlpha:
+            m_backend.setAlpha(cmd.alpha.aba, cmd.alpha.abb, cmd.alpha.abc,
+                               cmd.alpha.abd, cmd.alpha.afix);
+            break;
         case RenderCommand::SetTexture:
             m_backend.bindTexture(cmd.texture.tex, cmd.texture.slot);
             break;

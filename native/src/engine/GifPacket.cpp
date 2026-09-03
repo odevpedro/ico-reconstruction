@@ -5,8 +5,10 @@
 
 namespace ico::engine {
 
-GifPacketBridge::GifPacketBridge()
+GifPacketBridge::GifPacketBridge(RenderBackend& backend)
     : m_buffer{}
+    , m_backend(backend)
+    , m_executor(backend)
     , m_packetOpen(false)
     , m_currentPath(0)
     , m_screenWidth(kPs2ScreenWidth)
@@ -51,24 +53,87 @@ void GifPacketBridge::endPacketPath1() {
 void GifPacketBridge::setGsReg(u32 addr, u64 value) {
     if (!m_packetOpen) return;
 
-    if (addr == kGsAddrTEX0_1 || addr == kGsAddrTEX0_2) {
-        GsTex0 tex0{};
-        tex0.value = value;
+    switch (addr) {
+        case kGsAddrTEX0_1:
+        case kGsAddrTEX0_2: {
+            GsTex0 tex0{};
+            tex0.value = value;
 
-        RenderCmd cmd{};
-        cmd.type = RenderCommand::SetTexture;
-        cmd.texture.tex = tex0.tbp0();
-        cmd.texture.slot = (addr == kGsAddrTEX0_2) ? 1u : 0u;
-        m_buffer.commands().push_back(cmd);
+            RenderCmd cmd{};
+            cmd.type = RenderCommand::SetTexture;
+            cmd.texture.tex = tex0.tbp0();
+            cmd.texture.slot = (addr == kGsAddrTEX0_2) ? 1u : 0u;
+            m_buffer.commands().push_back(cmd);
+            break;
+        }
+        case kGsAddrALPHA_1:
+        case kGsAddrALPHA_2: {
+            GsAlpha alpha{};
+            alpha.value = static_cast<u32>(value & 0xFFFFFFFFu);
+            RenderCmd cmd{};
+            cmd.type = RenderCommand::SetAlpha;
+            cmd.alpha.aba = alpha.aba();
+            cmd.alpha.abb = alpha.abb();
+            cmd.alpha.abc = alpha.abc();
+            cmd.alpha.abd = alpha.abd();
+            cmd.alpha.afix = alpha.afix();
+            m_buffer.commands().push_back(cmd);
+            break;
+        }
+        case kGsAddrTEST_1:
+        case kGsAddrTEST_2: {
+            GsTest test{};
+            test.value = value;
+            RenderCmd cmd{};
+            cmd.type = RenderCommand::SetDepthTest;
+            cmd.depthTest.test = static_cast<GSDepthTest>(test.ztst());
+            cmd.depthTest.write = test.zte() != 0;
+            m_buffer.commands().push_back(cmd);
+
+            RenderCmd atestCmd{};
+            atestCmd.type = RenderCommand::SetAlphaTest;
+            atestCmd.alphaTest.test = static_cast<GSAlphaTest>(test.atst());
+            atestCmd.alphaTest.ref = static_cast<u8>(test.aref());
+            atestCmd.alphaTest.mask = 0xFF;
+            m_buffer.commands().push_back(atestCmd);
+            break;
+        }
+        case kGsAddrFRAME_1:
+        case kGsAddrFRAME_2: {
+            GsFrame frame{};
+            frame.value = value;
+            RenderCmd cmd{};
+            cmd.type = RenderCommand::SetFramebuffer;
+            cmd.framebuffer.fbp = frame.fbp();
+            cmd.framebuffer.fbw = frame.fbw();
+            cmd.framebuffer.psm = frame.psm();
+            m_buffer.commands().push_back(cmd);
+            break;
+        }
+        case kGsAddrZBUF_1:
+        case kGsAddrZBUF_2: {
+            GsZbuf zbuf{};
+            zbuf.value = value;
+            RenderCmd cmd{};
+            cmd.type = RenderCommand::SetZBuffer;
+            cmd.zbuffer.zbp = zbuf.zbp();
+            cmd.zbuffer.psm = zbuf.psm();
+            cmd.zbuffer.zmsk = zbuf.zmsk() != 0;
+            m_buffer.commands().push_back(cmd);
+            break;
+        }
+        default:
+            break;
     }
 }
 
-void GifPacketBridge::setAlpha(u32 /* abc */, u32 /* abd */, u32 abe, u32 /* abfix */) {
+void GifPacketBridge::setAlpha(u32 abc, u32 /* abd */, u32 abe, u32 /* abfix */) {
     if (!m_packetOpen) return;
 
     RenderCmd cmd{};
     cmd.type = RenderCommand::SetBlendMode;
     cmd.blendMode.mode = abe ? GSBlendMode::Alpha : GSBlendMode::None;
+    (void)abc;
     m_buffer.commands().push_back(cmd);
 }
 
@@ -93,7 +158,7 @@ void GifPacketBridge::setZWrite(u32 zte, u32 ztst) {
 }
 
 void GifPacketBridge::setDrawEnvironment(float /* x */, float /* y */, float w, float h,
-                                         u32 /* fbp */, u32 /* psm */, u32 /* fbw */) {
+                                         u32 fbp, u32 psm, u32 fbw) {
     if (!m_packetOpen) return;
 
     RenderCmd cmd{};
@@ -103,6 +168,13 @@ void GifPacketBridge::setDrawEnvironment(float /* x */, float /* y */, float w, 
     cmd.viewport.w = static_cast<u32>(w);
     cmd.viewport.h = static_cast<u32>(h);
     m_buffer.commands().push_back(cmd);
+
+    RenderCmd frameCmd{};
+    frameCmd.type = RenderCommand::SetFramebuffer;
+    frameCmd.framebuffer.fbp = fbp;
+    frameCmd.framebuffer.fbw = fbw;
+    frameCmd.framebuffer.psm = psm;
+    m_buffer.commands().push_back(frameCmd);
 }
 
 void GifPacketBridge::setHalfOffset(u32 /* h */, u32 /* v */) {
@@ -262,8 +334,8 @@ void GifPacketBridge::pointOffset(float x, float y, u8 r, u8 g, u8 b, u8 a) {
 }
 
 void GifPacketBridge::moveImage(float /* srcX */, float /* srcY */, float /* dstX */, float /* dstY */,
-                                float /* w */, float /* h */) {
-    if (!m_packetOpen) return;
+                                float w, float h) {
+    if (!m_packetOpen || w <= 0.0f || h <= 0.0f) return;
 
     RenderCmd cmd{};
     cmd.type = RenderCommand::CopyTexture;
@@ -279,6 +351,15 @@ GifCommandBuffer& GifPacketBridge::commandBuffer() { return m_buffer; }
 const GifCommandBuffer& GifPacketBridge::commandBuffer() const { return m_buffer; }
 
 void GifPacketBridge::flush() {
+    if (m_buffer.commandCount() == 0 || !m_packetOpen) {
+        return;
+    }
+    m_executor.execute(m_buffer);
+    m_buffer.reset();
+}
+
+RenderBackend& GifPacketBridge::backend() const {
+    return m_backend;
 }
 
 void GifPacketBridge::emitSpriteQuad(float x, float y, float w, float h,

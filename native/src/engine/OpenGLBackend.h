@@ -41,6 +41,9 @@ public:
     void setBlendMode(GSBlendMode mode) override;
     void setDepthTest(GSDepthTest test, bool write) override;
     void setAlphaTest(GSAlphaTest test, u8 ref, u8 mask) override;
+    void setFramebuffer(u32 fbp, u32 fbw, u32 psm) override;
+    void setZBuffer(u32 zbp, u32 psm, bool zmsk) override;
+    void setAlpha(u32 aba, u32 abb, u32 abc, u32 abd, u32 afix) override;
 
     TextureHandle createTexture(const TextureDesc& desc) override;
     void destroyTexture(TextureHandle handle) override;

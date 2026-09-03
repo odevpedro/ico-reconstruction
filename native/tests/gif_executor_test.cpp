@@ -39,6 +39,9 @@ public:
     void setBlendMode(GSBlendMode mode) override { m_lastBlend = mode; }
     void setDepthTest(GSDepthTest test, bool write) override { m_lastDepthTest = test; m_depthWrite = write; }
     void setAlphaTest(GSAlphaTest test, u8 ref, u8 mask) override { (void)test; (void)ref; (void)mask; }
+    void setFramebuffer(u32, u32, u32) override {}
+    void setZBuffer(u32, u32, bool) override {}
+    void setAlpha(u32, u32, u32, u32, u32) override {}
 
     TextureHandle createTexture(const TextureDesc& desc) override { (void)desc; return ++m_nextTex; }
     void destroyTexture(TextureHandle) override {}

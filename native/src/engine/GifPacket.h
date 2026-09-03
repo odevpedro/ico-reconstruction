@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/GifCommandBuffer.h"
+#include "engine/GifCommandExecutor.h"
 #include "engine/GifTag.h"
 #include "engine/RenderBackend.h"
 
@@ -12,7 +13,7 @@ namespace ico::engine {
 
 class GifPacketBridge {
 public:
-    GifPacketBridge();
+    explicit GifPacketBridge(RenderBackend& backend);
 
     void init(u32 screenWidth, u32 screenHeight);
 
@@ -76,6 +77,7 @@ public:
     const GifCommandBuffer& commandBuffer() const;
 
     void flush();
+    RenderBackend& backend() const;
 
 private:
     void emitSpriteQuad(float x, float y, float w, float h,
@@ -94,6 +96,8 @@ private:
                       u8 r, u8 g, u8 b, u8 a);
 
     GifCommandBuffer m_buffer;
+    RenderBackend& m_backend;
+    GifCommandExecutor m_executor;
     bool m_packetOpen;
     u32 m_currentPath;
 

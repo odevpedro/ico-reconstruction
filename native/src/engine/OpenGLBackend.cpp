@@ -863,6 +863,57 @@ void OpenGLBackend::setAlphaTest(GSAlphaTest test, u8 ref, u8 mask) {
     }
 }
 
+void OpenGLBackend::setFramebuffer(u32 /*fbp*/, u32 /*fbw*/, u32 /*psm*/) {
+    /* PS2 framebuffer binding is a no-op on the GL backend; the render target
+       is set via setRenderTarget(). Stored for future FBO mapping. */
+}
+
+void OpenGLBackend::setZBuffer(u32 /*zbp*/, u32 /*psm*/, bool zmsk) {
+    auto& I = *m_impl;
+    if (!hasGL()) return;
+    flushBatch();
+    p_glDepthMask(zmsk ? GL_FALSE : GL_TRUE);
+    I.depthWrite = !zmsk;
+}
+
+void OpenGLBackend::setAlpha(u32 aba, u32 abb, u32 abc, u32 abd, u32 afix) {
+    auto& I = *m_impl;
+    if (!hasGL()) return;
+    flushBatch();
+
+    GSBlendMode mode = GSBlendMode::None;
+    if (aba == 0 && abb == 1) {
+        mode = GSBlendMode::Alpha;
+    } else if (aba == 1 && abb == 2) {
+        mode = GSBlendMode::Additive;
+    }
+
+    if (I.currentBlendMode != mode) {
+        I.currentBlendMode = mode;
+        switch (mode) {
+            case GSBlendMode::None:
+                p_glDisable(GL_BLEND);
+                break;
+            case GSBlendMode::Alpha:
+                p_glEnable(GL_BLEND);
+                p_glBlendEquation(GL_FUNC_ADD);
+                p_glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                break;
+            case GSBlendMode::Additive:
+                p_glEnable(GL_BLEND);
+                p_glBlendEquation(GL_FUNC_ADD);
+                p_glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                break;
+            case GSBlendMode::Subtractive:
+                p_glEnable(GL_BLEND);
+                p_glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+                p_glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                break;
+        }
+    }
+    (void)abc; (void)abd; (void)afix;
+}
+
 TextureHandle OpenGLBackend::createTexture(const TextureDesc& desc) {
     auto& I = *m_impl;
     if (!hasGL()) return kNullTexture;

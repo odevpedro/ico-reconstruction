@@ -129,6 +129,9 @@ enum class RenderCommand : u8 {
     SetBlendMode,
     SetDepthTest,
     SetAlphaTest,
+    SetFramebuffer,
+    SetZBuffer,
+    SetAlpha,
     SetTexture,
     SetMatrices,
     DrawPrimitive,
@@ -153,6 +156,9 @@ struct RenderCmd {
         struct { GSDepthTest test; bool write; } depthTest;
         struct { GSAlphaTest test; u8 ref; u8 mask; } alphaTest;
         struct { TextureHandle tex; u32 slot; } texture;
+        struct { u32 fbp; u32 fbw; u32 psm; } framebuffer;
+        struct { u32 zbp; u32 psm; bool zmsk; } zbuffer;
+        struct { u32 aba; u32 abb; u32 abc; u32 abd; u32 afix; } alpha;
         struct { Matrix4x4 projection; Matrix4x4 view; Matrix4x4 model; } matrices;
         struct {
             GSPrimitive primitive;
@@ -243,6 +249,11 @@ public:
 
     // Double buffering (matching dl_Swap / sceGsSwapDBuff)
     virtual void swapBuffers() = 0;
+
+    // Framebuffer (matching gs_SetDrawEnv / FRAME register)
+    virtual void setFramebuffer(u32 fbp, u32 fbw, u32 psm) = 0;
+    virtual void setZBuffer(u32 zbp, u32 psm, bool zmsk) = 0;
+    virtual void setAlpha(u32 aba, u32 abb, u32 abc, u32 abd, u32 afix) = 0;
 
     // State management
     virtual void setBlendMode(GSBlendMode mode) = 0;
