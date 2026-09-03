@@ -16,33 +16,33 @@ Rank the current residual PAL->USA objects so the next offline pass can target t
 
 | Rank | Object | Funcs | Priority | Recoverability | Impact | Source files | Nearest known |
 |------|--------|-------|----------|----------------|--------|--------------|---------------|
-| 1 | end.o | 52 | 172 | 62 | 110 | Basic.c | deja.o;st00a.o |
-| 2 | girl_act.o | 60 | 148 | 8 | 140 | - | fieldCollision.o |
-| 3 | particleEffect.o | 19 | 101 | 59 | 42 | debug.c | particleLayout.o |
-| 4 | way_util.o | 39 | 91 | 8 | 83 | - | script.o |
-| 5 | windField.o | 10 | 88 | 67 | 21 | debug.c | weapon.o;windManager.o |
-| 6 | st05c.o | 14 | 83 | 54 | 29 | debug.c | st04r.o |
-| 7 | backStage.o | 8 | 76 | 59 | 17 | debug.c | charFileManager.o |
-| 8 | st04a.o | 30 | 76 | 8 | 68 | - | st04c.o |
-| 9 | DisplayFont.o | 5 | 70 | 59 | 11 | debug.c | BgAnimation.o |
-| 10 | st03t.o | 21 | 59 | 15 | 44 | - | st00a.o;st04c.o |
-| 11 | queen.o | 23 | 59 | 9 | 50 | - | lightning.o |
-| 12 | thread.o | 23 | 56 | 9 | 47 | - | gobj.o |
-| 13 | st08b.o | 16 | 50 | 17 | 33 | - | st08a.o;st09a.o |
-| 14 | gamesys.o | 19 | 48 | 9 | 39 | - | haveParentSimpleObj.o |
-| 15 | act.o | 18 | 46 | 6 | 40 | - | way_llf.o |
-| 16 | st17a.o | 17 | 44 | 9 | 35 | - | st13d.o |
-| 17 | op.o | 15 | 43 | 9 | 34 | - | st00a.o |
-| 18 | Shadow.o | 11 | 41 | 8 | 33 | - | Primitive.o |
-| 19 | act_bird.o | 12 | 36 | 9 | 27 | - | gv.o |
-| 20 | mv_videodec.o | 9 | 35 | 17 | 18 | - | mv_strfile.o;mv_vobuf.o |
+| 1 | end.o | 52 | 169 | 59 | 110 | Basic.c | e3.o |
+| 2 | box.o | 44 | 166 | 68 | 98 | debug.c | attackCheckBoundary.o;boy.o |
+| 3 | girl_act.o | 60 | 148 | 8 | 140 | - | fieldCollision.o |
+| 4 | st13c.o | 42 | 143 | 54 | 89 | debug.c | st13b.o |
+| 5 | GifPacket.o | 38 | 140 | 59 | 81 | debug.c | GsBase.o |
+| 6 | st10r.o | 28 | 125 | 67 | 58 | debug.c | st10l.o;st13a.o |
+| 7 | particleEffect.o | 19 | 101 | 59 | 42 | debug.c | multiBgaManager.o |
+| 8 | pool.o | 14 | 99 | 67 | 32 | debug.c | motionManager2.o;quaternion.o |
+| 9 | way_util.o | 39 | 91 | 8 | 83 | - | script.o |
+| 10 | st05c.o | 14 | 88 | 59 | 29 | debug.c | st05d.o |
+| 11 | st09a.o | 14 | 87 | 59 | 28 | st01b.c | st10l.o |
+| 12 | backStage.o | 8 | 84 | 67 | 17 | debug.c | StageManager.o;charFileManager.o |
+| 13 | Primitive.o | 12 | 82 | 54 | 28 | debug.c | MicroCode.o |
+| 14 | windField.o | 10 | 80 | 59 | 21 | debug.c | weapon.o |
+| 15 | DisplayFont.o | 5 | 78 | 67 | 11 | debug.c | BgAnimation.o;DisplayList.o |
+| 16 | st04a.o | 30 | 77 | 9 | 68 | - | st04b.o |
+| 17 | deja.o | 6 | 72 | 59 | 13 | debug.c | e3.o |
+| 18 | queen.o | 23 | 58 | 8 | 50 | - | stage_orient.o |
+| 19 | gobj.o | 23 | 57 | 9 | 48 | - | gobj_dl.o |
+| 20 | thread.o | 23 | 56 | 9 | 47 | - | shockdriver.o |
 
 ## Notes
 
-- Residual objects ranked: 81
-- Residual functions represented: 715
-- Objects with source provenance: 6
-- Objects with a known neighbor within 5 positions: 77
+- Residual objects ranked: 123
+- Residual functions represented: 1185
+- Objects with source provenance: 14
+- Objects with a known neighbor within 5 positions: 123
 
 ## Next Step
 

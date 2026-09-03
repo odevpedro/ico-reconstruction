@@ -1,209 +1,209 @@
 object_file,pal_start,pal_end,function_count,seed_count,offset_used,functions_mapped,confidence,notes
-main.o,0x00101C80,0x00102620,5,0,0x00000000,0,NONE,No anchor found
-sampleMode.o,0x00102648,0x00102868,5,0,0x00000000,0,NONE,No anchor found
-delayFreeManager.o,0x001028F8,0x00102A20,3,1,0x-0000048,2,MEDIUM,"2/3 validated, 0 mismatches, offset=0x-0000048"
-geometryManager.o,0x00102B30,0x00104C08,45,1,0x-0000048,44,MEDIUM,"44/45 validated, 0 mismatches, offset=0x-0000048"
-keyInput.o,0x00104D68,0x00104E50,2,1,0x-0000048,1,MEDIUM,"1/2 validated, 0 mismatches, offset=0x-0000048"
-matrixDrive.o,0x001050C0,0x00106218,37,1,0x-0000048,29,MEDIUM,"29/37 validated, 7 mismatches, offset=0x-0000048"
-motionManager2.o,0x00106260,0x0010B3E0,76,0,0x00000000,0,NONE,No anchor found
-pool.o,0x0010B798,0x0010DAC0,14,1,0x00000008,2,LOW,"2/14 validated, 11 mismatches, offset=0x00000008"
-quaternion.o,0x0010DB40,0x0010F088,45,1,0x00000038,37,MEDIUM,"37/45 validated, 7 mismatches, offset=0x00000038"
-tableSin.o,0x0010F0B0,0x0010F368,6,0,0x00000000,0,NONE,No anchor found
-DisplayP2O.o,0x0010F3B0,0x0010F438,11,1,0x-0000028,5,LOW,"5/11 validated, 5 mismatches, offset=0x-0000028"
-FileManager.o,0x0010F440,0x0010FD20,2,0,0x00000000,0,NONE,No anchor found
-GifPacket.o,0x0010FD98,0x001129C8,38,1,0x-0000078,10,LOW,"10/38 validated, 27 mismatches, offset=0x-0000078"
-GsBase.o,0x00112A30,0x00115718,18,0,0x00000000,0,NONE,No anchor found
-Light.o,0x00115900,0x00118010,8,0,0x00000000,0,NONE,No anchor found
-Matrix.o,0x00118140,0x001192A8,62,0,0x00000000,0,NONE,No anchor found
-MicroCode.o,0x00119458,0x00119788,4,1,0x-00018C8,3,MEDIUM,"3/4 validated, 0 mismatches, offset=0x-00018C8"
-Packet.o,0x001199B0,0x0011C750,5,0,0x00000000,0,NONE,No anchor found
-Primitive.o,0x0011C7B8,0x0011EC78,12,1,0x-00017C8,11,MEDIUM,"11/12 validated, 0 mismatches, offset=0x-00017C8"
-RegistPacket.o,0x001223D8,0x00122EF8,9,0,0x00000000,0,NONE,No anchor found
-Shadow.o,0x00122F48,0x00128A58,11,0,0x00000000,0,NONE,No anchor found
-StageAnimation.o,0x00128CF0,0x0012B0D8,23,0,0x00000000,0,NONE,No anchor found
-Texture.o,0x0012B168,0x00130470,22,0,0x00000000,0,NONE,No anchor found
-ZFog.o,0x001304E8,0x00131230,3,0,0x00000000,0,NONE,No anchor found
-cdvd.o,0x001319B0,0x001336A0,25,0,0x00000000,0,NONE,No anchor found
-inflate.o,0x00135530,0x00135AC0,3,0,0x00000000,0,NONE,No anchor found
-ios.o,0x00135E08,0x00135FD8,2,0,0x00000000,0,NONE,No anchor found
-mblock.o,0x001361A8,0x001362B8,4,1,0x-0001DF0,1,LOW,"1/4 validated, 2 mismatches, offset=0x-0001DF0"
-mcard.o,0x001363A0,0x00138338,18,0,0x00000000,0,NONE,No anchor found
-mcdata.o,0x00138630,0x00138738,2,0,0x00000000,0,NONE,No anchor found
-memory.o,0x00138910,0x0013A068,12,0,0x00000000,0,NONE,No anchor found
-message.o,0x0013A150,0x0013A6C8,7,0,0x00000000,0,NONE,No anchor found
-pad.o,0x0013AC58,0x0013BA78,20,0,0x00000000,0,NONE,No anchor found
-shockdriver.o,0x0013BA80,0x0013CFA0,38,0,0x00000000,0,NONE,No anchor found
-thread.o,0x0013D0B0,0x0013DC20,23,0,0x00000000,0,NONE,No anchor found
-gobj.o,0x0013DCA0,0x0013EC78,23,1,0x-00023E8,22,MEDIUM,"22/23 validated, 0 mismatches, offset=0x-00023E8"
-gobj_dl.o,0x0013ED58,0x0013F278,10,0,0x00000000,0,NONE,No anchor found
-gobj_process.o,0x0013F2E8,0x0013F890,16,1,0x-00023E8,15,MEDIUM,"15/16 validated, 0 mismatches, offset=0x-00023E8"
-isys.o,0x0013F898,0x0013F898,1,0,0x00000000,0,NONE,No anchor found
-obj_manager.o,0x0013F8A0,0x0013FF48,13,0,0x00000000,0,NONE,No anchor found
-s_init.o,0x00140030,0x001435B8,40,1,0x-00023E8,39,MEDIUM,"39/40 validated, 0 mismatches, offset=0x-00023E8"
-soundManager.o,0x00143650,0x0014A9A0,92,1,0x-00023E8,19,LOW,"19/92 validated, 72 mismatches, offset=0x-00023E8"
-boyact.o,0x0014C230,0x00153588,72,0,0x00000000,0,NONE,No anchor found
-commonact.o,0x00153618,0x0015D890,138,1,0x-00001B4,1,LOW,"1/138 validated, 136 mismatches, offset=0x-00001B4"
-enemy_act.o,0x0015DF28,0x00163F78,58,0,0x00000000,0,NONE,No anchor found
-fieldCollision.o,0x00163FA0,0x00168130,47,1,0x-00048A8,1,LOW,"1/47 validated, 45 mismatches, offset=0x-00048A8"
-fuzio.o,0x00168150,0x001683D8,8,0,0x00000000,0,NONE,No anchor found
-girl_act.o,0x001685F0,0x00173E38,60,0,0x00000000,0,NONE,No anchor found
-jimaku.o,0x00174018,0x00174A50,8,0,0x00000000,0,NONE,No anchor found
-way_sys.o,0x00174A60,0x00176588,6,0,0x00000000,0,NONE,No anchor found
-way_util.o,0x001765E8,0x00178CD0,39,0,0x00000000,0,NONE,No anchor found
-gflag.o,0x00178D60,0x00178ED8,6,0,0x00000000,0,NONE,No anchor found
-script.o,0x00178F08,0x0017C338,89,1,0x-0005FE0,4,LOW,"4/89 validated, 84 mismatches, offset=0x-0005FE0"
-st25a.o,0x0017C3D0,0x0017E0A0,20,1,0x-0006738,1,LOW,"1/20 validated, 18 mismatches, offset=0x-0006738"
-warpGirl.o,0x0017E128,0x0017E4A0,3,0,0x00000000,0,NONE,No anchor found
-attackhit.o,0x0017F098,0x0017F268,5,1,0x-0000DA0,1,LOW,"1/5 validated, 3 mismatches, offset=0x-0000DA0"
-brain.o,0x0017F418,0x0018A2F0,107,1,0x-0006478,2,LOW,"2/107 validated, 104 mismatches, offset=0x-0006478"
-chain.o,0x0018B2F8,0x0018E198,28,0,0x00000000,0,NONE,No anchor found
-ebrain.o,0x0018E280,0x0018F470,11,0,0x00000000,0,NONE,No anchor found
-fightSound.o,0x0018F6A0,0x0018F7E8,6,1,0x-0007758,5,MEDIUM,"5/6 validated, 0 mismatches, offset=0x-0007758"
-generator.o,0x0018F7F8,0x001915F8,33,1,0x-0007758,1,LOW,"1/33 validated, 31 mismatches, offset=0x-0007758"
-gv.o,0x00191670,0x00192B60,36,1,0x-0007AE8,3,LOW,"3/36 validated, 32 mismatches, offset=0x-0007AE8"
-act_bird.o,0x00192D38,0x001948F8,12,0,0x00000000,0,NONE,No anchor found
-gather_effect.o,0x00194968,0x00194D68,4,0,0x00000000,0,NONE,No anchor found
-itou_boss.o,0x00194E70,0x00195990,10,0,0x00000000,0,NONE,No anchor found
-itou_gflag.o,0x001959C0,0x001959D0,3,1,0x-0000060,2,MEDIUM,"2/3 validated, 0 mismatches, offset=0x-0000060"
-itou_sub.o,0x00195C18,0x00195CB0,4,1,0x-0007CF8,1,LOW,"1/4 validated, 2 mismatches, offset=0x-0007CF8"
-lightning.o,0x00196110,0x00196E60,5,1,0x-0008178,4,MEDIUM,"4/5 validated, 0 mismatches, offset=0x-0008178"
-queen.o,0x00197000,0x001991D0,23,0,0x00000000,0,NONE,No anchor found
-queen_barrier_disp.o,0x001994D8,0x00199C60,4,0,0x00000000,0,NONE,No anchor found
-stage_orient.o,0x00199C98,0x00199D88,2,1,0x-0008440,1,MEDIUM,"1/2 validated, 0 mismatches, offset=0x-0008440"
-mv_main.o,0x00199EB8,0x0019A800,4,1,0x-0008440,3,MEDIUM,"3/4 validated, 0 mismatches, offset=0x-0008440"
-mv_readbuf.o,0x0019A870,0x0019A9F0,6,1,0x-000626C,1,LOW,"1/6 validated, 4 mismatches, offset=0x-000626C"
-mv_strfile.o,0x0019AA10,0x0019AA68,3,1,0x-0008558,2,MEDIUM,"2/3 validated, 0 mismatches, offset=0x-0008558"
-mv_videodec.o,0x0019AA90,0x0019B0C8,9,0,0x00000000,0,NONE,No anchor found
-mv_vobuf.o,0x0019B220,0x0019B4C8,8,1,0x-0008550,7,MEDIUM,"7/8 validated, 0 mismatches, offset=0x-0008550"
-DObj.o,0x0019C1B0,0x0019C3C0,4,0,0x00000000,0,NONE,No anchor found
-StageManager.o,0x0019CB00,0x0019CEC8,8,0,0x00000000,0,NONE,No anchor found
-backStage.o,0x0019CF28,0x0019DE68,8,0,0x00000000,0,NONE,No anchor found
-charFileManager.o,0x0019DE70,0x0019FB98,21,1,0x-0008DB8,20,MEDIUM,"20/21 validated, 0 mismatches, offset=0x-0008DB8"
-debug.o,0x0019FBB8,0x001A7C70,59,0,0x00000000,0,NONE,No anchor found
-debug_exception.o,0x001A7DF0,0x001AA3A0,17,1,0x-0008E30,14,MEDIUM,"14/17 validated, 2 mismatches, offset=0x-0008E30"
-debug_menu.o,0x001AA4C0,0x001AA628,2,0,0x00000000,0,NONE,No anchor found
-gamesys.o,0x001AA678,0x001AB3B0,19,0,0x00000000,0,NONE,No anchor found
-haveParentSimpleObj.o,0x001AB4B8,0x001AB4C8,3,1,0x-000008C,1,LOW,"1/3 validated, 1 mismatches, offset=0x-000008C"
-icoMisc.o,0x001ABBF8,0x001AC608,4,0,0x00000000,0,NONE,No anchor found
-kanban.o,0x001AC610,0x001AD020,7,0,0x00000000,0,NONE,No anchor found
-kanbanBoot.o,0x001AD358,0x001AD4C0,3,0,0x00000000,0,NONE,No anchor found
-layout_action.o,0x001AD4D0,0x001B24B0,57,1,0x-0001384,1,LOW,"1/57 validated, 55 mismatches, offset=0x-0001384"
-layout_texture.o,0x001B2778,0x001B3B38,13,0,0x00000000,0,NONE,No anchor found
-sceneManager.o,0x001B3CB0,0x001B4A38,9,0,0x00000000,0,NONE,No anchor found
-staffroll.o,0x001B4A48,0x001B4F50,3,1,0x-0008AE8,2,MEDIUM,"2/3 validated, 0 mismatches, offset=0x-0008AE8"
-a_p_1.o,0x001B4FB0,0x001B7050,11,1,0x-0008AE8,3,LOW,"3/11 validated, 7 mismatches, offset=0x-0008AE8"
-act_a_p_1.o,0x001B7770,0x001B8140,12,1,0x-0008B98,6,MEDIUM,"6/12 validated, 5 mismatches, offset=0x-0008B98"
-actressLight.o,0x001B8150,0x001B8150,1,0,0x00000000,0,NONE,No anchor found
-attackCheckBoundary.o,0x001B8218,0x001B8928,12,0,0x00000000,0,NONE,No anchor found
-box.o,0x001B8938,0x001BD8B0,44,1,0x-0001BA8,2,LOW,"2/44 validated, 41 mismatches, offset=0x-0001BA8"
-boy.o,0x001BDA70,0x001BE748,8,0,0x00000000,0,NONE,No anchor found
-cage.o,0x001BE790,0x001BF498,9,0,0x00000000,0,NONE,No anchor found
-cageFix.o,0x001BF4E0,0x001BF5A8,3,0,0x00000000,0,NONE,No anchor found
-candle.o,0x001BF5B0,0x001BF8F8,5,0,0x00000000,0,NONE,No anchor found
-chandelier.o,0x001BF998,0x001BFA78,3,0,0x00000000,0,NONE,No anchor found
-clipCollisionManager.o,0x001BFCA0,0x001BFCE0,2,0,0x00000000,0,NONE,No anchor found
-clothAnimation.o,0x001BFD38,0x001C5770,34,0,0x00000000,0,NONE,No anchor found
-clothTest.o,0x001C5898,0x001C58F0,3,0,0x00000000,0,NONE,No anchor found
-darkVolume.o,0x001C7ED0,0x001C8438,11,1,0x-0009F70,4,LOW,"4/11 validated, 6 mismatches, offset=0x-0009F70"
-effectTool.o,0x001C9A98,0x001C9A98,1,0,0x00000000,0,NONE,No anchor found
-enemy.o,0x001CA3F0,0x001CB318,29,0,0x00000000,0,NONE,No anchor found
-enemyParts.o,0x001CB370,0x001CC000,11,0,0x00000000,0,NONE,No anchor found
-flag.o,0x001CC138,0x001CC7C8,3,0,0x00000000,0,NONE,No anchor found
-flyManager.o,0x001CC980,0x001CCA98,5,1,0x-000A588,4,MEDIUM,"4/5 validated, 0 mismatches, offset=0x-000A588"
-frameDependSequence.o,0x001CD400,0x001CDA10,7,0,0x00000000,0,NONE,No anchor found
-girl.o,0x001CDD98,0x001CE208,5,0,0x00000000,0,NONE,No anchor found
-girlForceField.o,0x001CE260,0x001CE428,3,0,0x00000000,0,NONE,No anchor found
-handManager.o,0x001CEB10,0x001CEB10,1,0,0x00000000,0,NONE,No anchor found
-item.o,0x001CEC80,0x001D08A0,18,0,0x00000000,0,NONE,No anchor found
-lineManager.o,0x001D0958,0x001D1188,7,0,0x00000000,0,NONE,No anchor found
-lodManager.o,0x001D1270,0x001D1270,1,0,0x00000000,0,NONE,No anchor found
-motionFileManager.o,0x001D13F8,0x001D15A0,7,0,0x00000000,0,NONE,No anchor found
-motionManager.o,0x001D4B08,0x001DD2A0,12,0,0x00000000,0,NONE,No anchor found
-motionOrientManager.o,0x001DD5F0,0x001E0F10,16,0,0x00000000,0,NONE,No anchor found
-motionViewer.o,0x001E1E20,0x001E2550,2,0,0x00000000,0,NONE,No anchor found
-moveColTest.o,0x001E2D60,0x001E2F40,3,0,0x00000000,0,NONE,No anchor found
-multiBgaManager.o,0x001E2FB0,0x001E3278,6,0,0x00000000,0,NONE,No anchor found
-particleEffect.o,0x001E49E0,0x001E5438,19,0,0x00000000,0,NONE,No anchor found
-particleLayout.o,0x001E5460,0x001E54E8,4,1,0x-000C888,3,MEDIUM,"3/4 validated, 0 mismatches, offset=0x-000C888"
-rope.o,0x001E54F0,0x001E5DC8,7,0,0x00000000,0,NONE,No anchor found
-ropeFix.o,0x001E5E40,0x001E5EC8,3,1,0x-000C88C,2,MEDIUM,"2/3 validated, 0 mismatches, offset=0x-000C88C"
-rotObject.o,0x001E5F08,0x001E6608,13,0,0x00000000,0,NONE,No anchor found
-spider.o,0x001E6628,0x001E7890,16,0,0x00000000,0,NONE,No anchor found
-spiderGroupManager.o,0x001E7908,0x001E7F38,7,0,0x00000000,0,NONE,No anchor found
-stageMultiBgaManager.o,0x001E7F98,0x001E81C8,4,0,0x00000000,0,NONE,No anchor found
-staticBlur.o,0x001E97E0,0x001EBB30,17,1,0x-000C970,1,LOW,"1/17 validated, 15 mismatches, offset=0x-000C970"
-stormTest.o,0x001EBB38,0x001EC640,8,0,0x00000000,0,NONE,No anchor found
-streamMotionManager.o,0x001EC910,0x001ED208,13,1,0x-000CA08,12,MEDIUM,"12/13 validated, 0 mismatches, offset=0x-000CA08"
-sugiTree.o,0x001ED398,0x001ED818,5,0,0x00000000,0,NONE,No anchor found
-torch.o,0x001ED8A0,0x001EE168,12,1,0x00001B68,1,LOW,"1/12 validated, 10 mismatches, offset=0x00001B68"
-waySystemManager.o,0x001EE1B8,0x001EE1F8,2,1,0x-000CA18,1,MEDIUM,"1/2 validated, 0 mismatches, offset=0x-000CA18"
-weapon.o,0x001EE2A0,0x001F03E0,28,1,0x00000554,1,LOW,"1/28 validated, 26 mismatches, offset=0x00000554"
-windField.o,0x001F03F8,0x001F0E80,10,0,0x00000000,0,NONE,No anchor found
-windManager.o,0x001F0F00,0x001F11B0,5,1,0x-000CE88,4,MEDIUM,"4/5 validated, 0 mismatches, offset=0x-000CE88"
-wireLetter.o,0x001F1290,0x001F1538,5,0,0x00000000,0,NONE,No anchor found
-worm.o,0x001F1FF0,0x001F29B8,8,0,0x00000000,0,NONE,No anchor found
-Basic.o,0x001F2B38,0x001F2D18,10,0,0x00000000,0,NONE,No anchor found
-BgAnimation.o,0x001F2D78,0x001F6610,20,1,0x-000CEE0,1,LOW,"1/20 validated, 18 mismatches, offset=0x-000CEE0"
-DisplayFont.o,0x001F6618,0x001F7010,5,0,0x00000000,0,NONE,No anchor found
-DisplayList.o,0x001F7030,0x001F76A8,11,0,0x00000000,0,NONE,No anchor found
-DmaPacket.o,0x001F76B0,0x001F7780,3,0,0x00000000,0,NONE,No anchor found
-EnemyInit.o,0x001F77B0,0x001F7AF0,2,0,0x00000000,0,NONE,No anchor found
-gobj_cam_dl.o,0x001F7BA8,0x001F8028,10,0,0x00000000,0,NONE,No anchor found
-adpcm_init.o,0x001F8088,0x001FE370,30,0,0x00000000,0,NONE,No anchor found
-act.o,0x001FE388,0x00200258,18,0,0x00000000,0,NONE,No anchor found
-act2.o,0x00200318,0x00200470,2,0,0x00000000,0,NONE,No anchor found
-seMail.o,0x002004D0,0x00200648,2,0,0x00000000,0,NONE,No anchor found
-way_kidnap.o,0x00200788,0x00201588,9,0,0x00000000,0,NONE,No anchor found
-way_llf.o,0x00201608,0x00201E60,25,1,0x-000E830,10,LOW,"10/25 validated, 14 mismatches, offset=0x-000E830"
-way_tool.o,0x00202638,0x00203478,3,0,0x00000000,0,NONE,No anchor found
-deja.o,0x002034F8,0x00203D98,6,1,0x-000F010,5,MEDIUM,"5/6 validated, 0 mismatches, offset=0x-000F010"
-e3.o,0x00203DC0,0x00206A38,41,0,0x00000000,0,NONE,No anchor found
-end.o,0x00206AC8,0x00209B58,52,0,0x00000000,0,NONE,No anchor found
-op.o,0x00209C18,0x0020BBE0,15,0,0x00000000,0,NONE,No anchor found
-st00a.o,0x0020BD68,0x0020CEF8,22,1,0x-000FF90,6,LOW,"6/22 validated, 15 mismatches, offset=0x-000FF90"
-st01b.o,0x0020CFD8,0x0020D908,18,0,0x00000000,0,NONE,No anchor found
-st02a.o,0x0020D9B8,0x0020F168,36,0,0x00000000,0,NONE,No anchor found
-st03t.o,0x0020F1B8,0x00210230,21,0,0x00000000,0,NONE,No anchor found
-st04a.o,0x002102D8,0x002142C8,30,0,0x00000000,0,NONE,No anchor found
-st04b.o,0x002143A8,0x00214C48,14,0,0x00000000,0,NONE,No anchor found
-st04c.o,0x00214CD0,0x002155A0,16,1,0x-0010C20,15,MEDIUM,"15/16 validated, 0 mismatches, offset=0x-0010C20"
-st04d.o,0x002155B0,0x00215FE0,12,0,0x00000000,0,NONE,No anchor found
-st04e.o,0x002160C0,0x002162B8,5,0,0x00000000,0,NONE,No anchor found
-st04l.o,0x00216330,0x0021B2A0,115,0,0x00000000,0,NONE,No anchor found
-st04r.o,0x0021B2E8,0x0021FA28,104,1,0x-000BC18,1,LOW,"1/104 validated, 102 mismatches, offset=0x-000BC18"
-st05b.o,0x0021FA70,0x00220068,9,0,0x00000000,0,NONE,No anchor found
-st05c.o,0x002200F0,0x00220A00,14,0,0x00000000,0,NONE,No anchor found
-st05d.o,0x00220A70,0x002211A8,10,0,0x00000000,0,NONE,No anchor found
-st05e.o,0x00221218,0x002215E8,7,0,0x00000000,0,NONE,No anchor found
-st06a.o,0x00221660,0x00223460,44,0,0x00000000,0,NONE,No anchor found
-st07a.o,0x00223528,0x002252F0,32,0,0x00000000,0,NONE,No anchor found
-st08a.o,0x00225368,0x00225BB8,16,1,0x-0002E90,1,LOW,"1/16 validated, 14 mismatches, offset=0x-0002E90"
-st08b.o,0x00225C60,0x00226A88,16,0,0x00000000,0,NONE,No anchor found
-st09a.o,0x00226AF0,0x00227210,14,1,0x-00120B0,3,LOW,"3/14 validated, 10 mismatches, offset=0x-00120B0"
-st10l.o,0x00227268,0x00228940,37,0,0x00000000,0,NONE,No anchor found
-st10r.o,0x00228998,0x00229E08,28,1,0x-0012284,2,LOW,"2/28 validated, 25 mismatches, offset=0x-0012284"
-st13a.o,0x00229E80,0x0022A900,15,0,0x00000000,0,NONE,No anchor found
-st13b.o,0x0022A9B0,0x0022CA30,32,0,0x00000000,0,NONE,No anchor found
-st13b2.o,0x0022CAE8,0x0022CAE8,1,0,0x00000000,0,NONE,No anchor found
-st13c.o,0x0022CB18,0x0022F7B8,42,1,0x-0012D70,4,LOW,"4/42 validated, 37 mismatches, offset=0x-0012D70"
-st13d.o,0x0022F810,0x0022FA90,4,1,0x-000E288,1,LOW,"1/4 validated, 2 mismatches, offset=0x-000E288"
-st17a.o,0x0022FA98,0x002308F8,17,0,0x00000000,0,NONE,No anchor found
-st17b.o,0x00230948,0x00230AC8,5,0,0x00000000,0,NONE,No anchor found
-st18a.o,0x00230B68,0x00231CC0,21,0,0x00000000,0,NONE,No anchor found
-st19a.o,0x00231D40,0x00232AB8,18,0,0x00000000,0,NONE,No anchor found
-st20a.o,0x00232B58,0x00233C58,24,0,0x00000000,0,NONE,No anchor found
-st22a.o,0x00233CD0,0x00234188,4,0,0x00000000,0,NONE,No anchor found
-st24a.o,0x002342A0,0x002344E8,3,0,0x00000000,0,NONE,No anchor found
-st47a.o,0x00234528,0x00235CA0,41,0,0x00000000,0,NONE,No anchor found
-st99a.o,0x00235D10,0x002363A0,16,0,0x00000000,0,NONE,No anchor found
-stageSEProc.o,0x00236408,0x00238070,47,0,0x00000000,0,NONE,No anchor found
-access.o,0x00238100,0x00238148,2,0,0x00000000,0,NONE,No anchor found
-lws_kyomi.o,0x002381F8,0x00238288,3,1,0x00000058,1,LOW,"1/3 validated, 1 mismatches, offset=0x00000058"
-objact.o,0x00238338,0x00238520,5,1,0x00000060,1,LOW,"1/5 validated, 3 mismatches, offset=0x00000060"
-mv_audiodec.o,0x00238580,0x00238FF0,9,0,0x00000000,0,NONE,No anchor found
-mv_disp.o,0x00239088,0x0023A438,34,0,0x00000000,0,NONE,No anchor found
-mv_sub.o,0x0023A468,0x0023A478,2,1,0x-0000184,1,MEDIUM,"1/2 validated, 0 mismatches, offset=0x-0000184"
-mv_vibuf.o,0x0023A5E8,0x0023B6F8,12,0,0x00000000,0,NONE,No anchor found
-GobjProc.o,0x0023B7E8,0x0023BB28,8,1,0x-0000040,1,LOW,"1/8 validated, 6 mismatches, offset=0x-0000040"
-PObj.o,0x0023C078,0x0023C688,3,0,0x00000000,0,NONE,No anchor found
-vobj.o,0x0023C6A8,0x002EC7C0,706,0,0x00000000,0,NONE,No anchor found
+main.o,0x00101C80,0x00102620,5,1,0x-0002438,1,LOW,"1/5 validated (2 seq, 2 no_fp); offset=0x-0002438"
+sampleMode.o,0x00102648,0x00102868,5,0,0x00000000,0,NONE,No seeds for this object
+delayFreeManager.o,0x001028F8,0x00102A20,3,0,0x00000000,0,NONE,No seeds for this object
+geometryManager.o,0x00102B30,0x00104C08,45,2,0x-0000048,33,HIGH,All 33/45 functions validated; offset=0x-0000048
+keyInput.o,0x00104D68,0x00104E50,2,0,0x00000000,0,NONE,No seeds for this object
+matrixDrive.o,0x001050C0,0x00106218,37,2,0x-0000048,31,HIGH,All 31/37 functions validated; offset=0x-0000048
+motionManager2.o,0x00106260,0x0010B3E0,76,4,0x00000008,53,MEDIUM,"53/76 validated (1 seq, 22 no_fp); offset=0x00000008"
+pool.o,0x0010B798,0x0010DAC0,14,0,0x00000000,0,NONE,No seeds for this object
+quaternion.o,0x0010DB40,0x0010F088,45,3,0x00000038,40,HIGH,All 40/45 functions validated; offset=0x00000038
+tableSin.o,0x0010F0B0,0x0010F368,6,0,0x00000000,0,NONE,No seeds for this object
+DisplayP2O.o,0x0010F3B0,0x0010F438,11,0,0x00000000,0,NONE,No seeds for this object
+FileManager.o,0x0010F440,0x0010FD20,2,0,0x00000000,0,NONE,No seeds for this object
+GifPacket.o,0x0010FD98,0x001129C8,38,0,0x00000000,0,NONE,No seeds for this object
+GsBase.o,0x00112A30,0x00115718,18,1,0x-0000550,4,HIGH,All 4/18 functions validated; offset=0x-0000550
+Light.o,0x00115900,0x00118010,8,1,0x-0013594,4,HIGH,All 4/8 functions validated; offset=0x-0013594
+Matrix.o,0x00118140,0x001192A8,62,2,0x-00016C8,15,HIGH,All 15/62 functions validated; offset=0x-00016C8
+MicroCode.o,0x00119458,0x00119788,4,1,0x-0001988,4,HIGH,All 4/4 functions validated; offset=0x-0001988
+Packet.o,0x001199B0,0x0011C750,5,0,0x00000000,0,NONE,No seeds for this object
+Primitive.o,0x0011C7B8,0x0011EC78,12,0,0x00000000,0,NONE,No seeds for this object
+RegistPacket.o,0x001223D8,0x00122EF8,9,0,0x00000000,0,NONE,No seeds for this object
+Shadow.o,0x00122F48,0x00128A58,11,0,0x00000000,0,NONE,No seeds for this object
+StageAnimation.o,0x00128CF0,0x0012B0D8,23,1,0x-0001710,8,MEDIUM,"8/23 validated (1 seq, 14 no_fp); offset=0x-0001710"
+Texture.o,0x0012B168,0x00130470,22,1,0x-0001A20,7,HIGH,All 7/22 functions validated; offset=0x-0001A20
+ZFog.o,0x001304E8,0x00131230,3,0,0x00000000,0,NONE,No seeds for this object
+cdvd.o,0x001319B0,0x001336A0,25,1,0x-0001EA0,6,MEDIUM,"6/25 validated (2 seq, 17 no_fp); offset=0x-0001EA0"
+inflate.o,0x00135530,0x00135AC0,3,0,0x00000000,0,NONE,No seeds for this object
+ios.o,0x00135E08,0x00135FD8,2,0,0x00000000,0,NONE,No seeds for this object
+mblock.o,0x001361A8,0x001362B8,4,0,0x00000000,0,NONE,No seeds for this object
+mcard.o,0x001363A0,0x00138338,18,2,0x-00021F8,12,HIGH,All 12/18 functions validated; offset=0x-00021F8
+mcdata.o,0x00138630,0x00138738,2,0,0x00000000,0,NONE,No seeds for this object
+memory.o,0x00138910,0x0013A068,12,0,0x00000000,0,NONE,No seeds for this object
+message.o,0x0013A150,0x0013A6C8,7,1,0x-0002450,4,MEDIUM,"4/7 validated (1 seq, 2 no_fp); offset=0x-0002450"
+pad.o,0x0013AC58,0x0013BA78,20,2,0x-0002288,10,HIGH,All 10/20 functions validated; offset=0x-0002288
+shockdriver.o,0x0013BA80,0x0013CFA0,38,3,0x-0002288,23,HIGH,All 23/38 functions validated; offset=0x-0002288
+thread.o,0x0013D0B0,0x0013DC20,23,0,0x00000000,0,NONE,No seeds for this object
+gobj.o,0x0013DCA0,0x0013EC78,23,0,0x00000000,0,NONE,No seeds for this object
+gobj_dl.o,0x0013ED58,0x0013F278,10,1,0x-0039DA8,2,HIGH,All 2/10 functions validated; offset=0x-0039DA8
+gobj_process.o,0x0013F2E8,0x0013F890,16,0,0x00000000,0,NONE,No seeds for this object
+isys.o,0x0013F898,0x0013F898,1,0,0x00000000,0,NONE,No seeds for this object
+obj_manager.o,0x0013F8A0,0x0013FF48,13,2,0x-00023E8,10,HIGH,All 10/13 functions validated; offset=0x-00023E8
+s_init.o,0x00140030,0x001435B8,40,3,0x-003FCC8,16,MEDIUM,"16/40 validated (6 seq, 18 no_fp); offset=0x-003FCC8"
+soundManager.o,0x00143650,0x0014A9A0,92,3,0x-0002780,16,MEDIUM,"16/92 validated (1 seq, 75 no_fp); offset=0x-0002780"
+boyact.o,0x0014C230,0x00153588,72,2,0x-0002F9C,16,MEDIUM,"16/72 validated (2 seq, 54 no_fp); offset=0x-0002F9C"
+commonact.o,0x00153618,0x0015D890,138,4,0x-0056F20,20,MEDIUM,"20/138 validated (6 seq, 112 no_fp); offset=0x-0056F20"
+enemy_act.o,0x0015DF28,0x00163F78,58,5,0x-00047A0,31,MEDIUM,"31/58 validated (5 seq, 22 no_fp); offset=0x-00047A0"
+fieldCollision.o,0x00163FA0,0x00168130,47,4,0x-0004C20,17,MEDIUM,"17/47 validated (2 seq, 28 no_fp); offset=0x-0004C20"
+fuzio.o,0x00168150,0x001683D8,8,0,0x00000000,0,NONE,No seeds for this object
+girl_act.o,0x001685F0,0x00173E38,60,0,0x00000000,0,NONE,No seeds for this object
+jimaku.o,0x00174018,0x00174A50,8,0,0x00000000,0,NONE,No seeds for this object
+way_sys.o,0x00174A60,0x00176588,6,0,0x00000000,0,NONE,No seeds for this object
+way_util.o,0x001765E8,0x00178CD0,39,0,0x00000000,0,NONE,No seeds for this object
+gflag.o,0x00178D60,0x00178ED8,6,0,0x00000000,0,NONE,No seeds for this object
+script.o,0x00178F08,0x0017C338,89,2,0x-0076D50,7,MEDIUM,"7/89 validated (4 seq, 78 no_fp); offset=0x-0076D50"
+st25a.o,0x0017C3D0,0x0017E0A0,20,0,0x00000000,0,NONE,No seeds for this object
+warpGirl.o,0x0017E128,0x0017E4A0,3,0,0x00000000,0,NONE,No seeds for this object
+attackhit.o,0x0017F098,0x0017F268,5,0,0x00000000,0,NONE,No seeds for this object
+brain.o,0x0017F418,0x0018A2F0,107,3,0x-0006F40,35,MEDIUM,"35/107 validated (5 seq, 67 no_fp); offset=0x-0006F40"
+chain.o,0x0018B2F8,0x0018E198,28,1,0x-0007758,10,HIGH,All 10/28 functions validated; offset=0x-0007758
+ebrain.o,0x0018E280,0x0018F470,11,0,0x00000000,0,NONE,No seeds for this object
+fightSound.o,0x0018F6A0,0x0018F7E8,6,0,0x00000000,0,NONE,No seeds for this object
+generator.o,0x0018F7F8,0x001915F8,33,1,0x-0007AE8,16,HIGH,All 16/33 functions validated; offset=0x-0007AE8
+gv.o,0x00191670,0x00192B60,36,3,0x-0007AE8,3,HIGH,All 3/36 functions validated; offset=0x-0007AE8
+act_bird.o,0x00192D38,0x001948F8,12,0,0x00000000,0,NONE,No seeds for this object
+gather_effect.o,0x00194968,0x00194D68,4,0,0x00000000,0,NONE,No seeds for this object
+itou_boss.o,0x00194E70,0x00195990,10,1,0x-0007F78,3,HIGH,All 3/10 functions validated; offset=0x-0007F78
+itou_gflag.o,0x001959C0,0x001959D0,3,0,0x00000000,0,NONE,No seeds for this object
+itou_sub.o,0x00195C18,0x00195CB0,4,0,0x00000000,0,NONE,No seeds for this object
+lightning.o,0x00196110,0x00196E60,5,0,0x00000000,0,NONE,No seeds for this object
+queen.o,0x00197000,0x001991D0,23,0,0x00000000,0,NONE,No seeds for this object
+queen_barrier_disp.o,0x001994D8,0x00199C60,4,0,0x00000000,0,NONE,No seeds for this object
+stage_orient.o,0x00199C98,0x00199D88,2,1,0x-0008440,2,HIGH,All 2/2 functions validated; offset=0x-0008440
+mv_main.o,0x00199EB8,0x0019A800,4,0,0x00000000,0,NONE,No seeds for this object
+mv_readbuf.o,0x0019A870,0x0019A9F0,6,0,0x00000000,0,NONE,No seeds for this object
+mv_strfile.o,0x0019AA10,0x0019AA68,3,0,0x00000000,0,NONE,No seeds for this object
+mv_videodec.o,0x0019AA90,0x0019B0C8,9,0,0x00000000,0,NONE,No seeds for this object
+mv_vobuf.o,0x0019B220,0x0019B4C8,8,0,0x00000000,0,NONE,No seeds for this object
+DObj.o,0x0019C1B0,0x0019C3C0,4,0,0x00000000,0,NONE,No seeds for this object
+StageManager.o,0x0019CB00,0x0019CEC8,8,1,0x-009C4C0,1,LOW,"1/8 validated (5 seq, 2 no_fp); offset=0x-009C4C0"
+backStage.o,0x0019CF28,0x0019DE68,8,0,0x00000000,0,NONE,No seeds for this object
+charFileManager.o,0x0019DE70,0x0019FB98,21,1,0x-0008DB8,16,HIGH,All 16/21 functions validated; offset=0x-0008DB8
+debug.o,0x0019FBB8,0x001A7C70,59,8,0x-0008E30,36,MEDIUM,"36/59 validated (2 seq, 21 no_fp); offset=0x-0008E30"
+debug_exception.o,0x001A7DF0,0x001AA3A0,17,0,0x00000000,0,NONE,No seeds for this object
+debug_menu.o,0x001AA4C0,0x001AA628,2,0,0x00000000,0,NONE,No seeds for this object
+gamesys.o,0x001AA678,0x001AB3B0,19,0,0x00000000,0,NONE,No seeds for this object
+haveParentSimpleObj.o,0x001AB4B8,0x001AB4C8,3,0,0x00000000,0,NONE,No seeds for this object
+icoMisc.o,0x001ABBF8,0x001AC608,4,0,0x00000000,0,NONE,No seeds for this object
+kanban.o,0x001AC610,0x001AD020,7,0,0x00000000,0,NONE,No seeds for this object
+kanbanBoot.o,0x001AD358,0x001AD4C0,3,0,0x00000000,0,NONE,No seeds for this object
+layout_action.o,0x001AD4D0,0x001B24B0,57,2,0x-00A76E8,22,MEDIUM,"22/57 validated (3 seq, 32 no_fp); offset=0x-00A76E8"
+layout_texture.o,0x001B2778,0x001B3B38,13,1,0x-0008A88,11,HIGH,All 11/13 functions validated; offset=0x-0008A88
+sceneManager.o,0x001B3CB0,0x001B4A38,9,1,0x-0008AE8,5,HIGH,All 5/9 functions validated; offset=0x-0008AE8
+staffroll.o,0x001B4A48,0x001B4F50,3,0,0x00000000,0,NONE,No seeds for this object
+a_p_1.o,0x001B4FB0,0x001B7050,11,1,0x-0008BD0,9,HIGH,All 9/11 functions validated; offset=0x-0008BD0
+act_a_p_1.o,0x001B7770,0x001B8140,12,0,0x00000000,0,NONE,No seeds for this object
+actressLight.o,0x001B8150,0x001B8150,1,0,0x00000000,0,NONE,No seeds for this object
+attackCheckBoundary.o,0x001B8218,0x001B8928,12,2,0x-0008BA0,8,HIGH,All 8/12 functions validated; offset=0x-0008BA0
+box.o,0x001B8938,0x001BD8B0,44,0,0x00000000,0,NONE,No seeds for this object
+boy.o,0x001BDA70,0x001BE748,8,1,0x-00B97D4,4,HIGH,All 4/8 functions validated; offset=0x-00B97D4
+cage.o,0x001BE790,0x001BF498,9,1,0x-00BE438,5,MEDIUM,"5/9 validated (4 seq, 0 no_fp); offset=0x-00BE438"
+cageFix.o,0x001BF4E0,0x001BF5A8,3,0,0x00000000,0,NONE,No seeds for this object
+candle.o,0x001BF5B0,0x001BF8F8,5,0,0x00000000,0,NONE,No seeds for this object
+chandelier.o,0x001BF998,0x001BFA78,3,0,0x00000000,0,NONE,No seeds for this object
+clipCollisionManager.o,0x001BFCA0,0x001BFCE0,2,0,0x00000000,0,NONE,No seeds for this object
+clothAnimation.o,0x001BFD38,0x001C5770,34,1,0x-0070AB8,8,MEDIUM,"8/34 validated (6 seq, 20 no_fp); offset=0x-0070AB8"
+clothTest.o,0x001C5898,0x001C58F0,3,0,0x00000000,0,NONE,No seeds for this object
+darkVolume.o,0x001C7ED0,0x001C8438,11,0,0x00000000,0,NONE,No seeds for this object
+effectTool.o,0x001C9A98,0x001C9A98,1,0,0x00000000,0,NONE,No seeds for this object
+enemy.o,0x001CA3F0,0x001CB318,29,3,0x-00C8928,5,MEDIUM,"5/29 validated (1 seq, 23 no_fp); offset=0x-00C8928"
+enemyParts.o,0x001CB370,0x001CC000,11,0,0x00000000,0,NONE,No seeds for this object
+flag.o,0x001CC138,0x001CC7C8,3,0,0x00000000,0,NONE,No seeds for this object
+flyManager.o,0x001CC980,0x001CCA98,5,0,0x00000000,0,NONE,No seeds for this object
+frameDependSequence.o,0x001CD400,0x001CDA10,7,0,0x00000000,0,NONE,No seeds for this object
+girl.o,0x001CDD98,0x001CE208,5,1,0x-000A5D0,4,HIGH,All 4/5 functions validated; offset=0x-000A5D0
+girlForceField.o,0x001CE260,0x001CE428,3,1,0x-000A5D0,2,HIGH,All 2/3 functions validated; offset=0x-000A5D0
+handManager.o,0x001CEB10,0x001CEB10,1,0,0x00000000,0,NONE,No seeds for this object
+item.o,0x001CEC80,0x001D08A0,18,2,0x-000AAE8,10,HIGH,All 10/18 functions validated; offset=0x-000AAE8
+lineManager.o,0x001D0958,0x001D1188,7,0,0x00000000,0,NONE,No seeds for this object
+lodManager.o,0x001D1270,0x001D1270,1,0,0x00000000,0,NONE,No seeds for this object
+motionFileManager.o,0x001D13F8,0x001D15A0,7,0,0x00000000,0,NONE,No seeds for this object
+motionManager.o,0x001D4B08,0x001DD2A0,12,1,0x-000BBE8,11,HIGH,All 11/12 functions validated; offset=0x-000BBE8
+motionOrientManager.o,0x001DD5F0,0x001E0F10,16,1,0x-000C2B0,2,MEDIUM,"2/16 validated (1 seq, 13 no_fp); offset=0x-000C2B0"
+motionViewer.o,0x001E1E20,0x001E2550,2,0,0x00000000,0,NONE,No seeds for this object
+moveColTest.o,0x001E2D60,0x001E2F40,3,0,0x00000000,0,NONE,No seeds for this object
+multiBgaManager.o,0x001E2FB0,0x001E3278,6,1,0x-00D7654,2,HIGH,All 2/6 functions validated; offset=0x-00D7654
+particleEffect.o,0x001E49E0,0x001E5438,19,0,0x00000000,0,NONE,No seeds for this object
+particleLayout.o,0x001E5460,0x001E54E8,4,0,0x00000000,0,NONE,No seeds for this object
+rope.o,0x001E54F0,0x001E5DC8,7,0,0x00000000,0,NONE,No seeds for this object
+ropeFix.o,0x001E5E40,0x001E5EC8,3,0,0x00000000,0,NONE,No seeds for this object
+rotObject.o,0x001E5F08,0x001E6608,13,0,0x00000000,0,NONE,No seeds for this object
+spider.o,0x001E6628,0x001E7890,16,2,0x-000C898,12,HIGH,All 12/16 functions validated; offset=0x-000C898
+spiderGroupManager.o,0x001E7908,0x001E7F38,7,0,0x00000000,0,NONE,No seeds for this object
+stageMultiBgaManager.o,0x001E7F98,0x001E81C8,4,0,0x00000000,0,NONE,No seeds for this object
+staticBlur.o,0x001E97E0,0x001EBB30,17,0,0x00000000,0,NONE,No seeds for this object
+stormTest.o,0x001EBB38,0x001EC640,8,0,0x00000000,0,NONE,No seeds for this object
+streamMotionManager.o,0x001EC910,0x001ED208,13,1,0x-000CA08,8,HIGH,All 8/13 functions validated; offset=0x-000CA08
+sugiTree.o,0x001ED398,0x001ED818,5,0,0x00000000,0,NONE,No seeds for this object
+torch.o,0x001ED8A0,0x001EE168,12,0,0x00000000,0,NONE,No seeds for this object
+waySystemManager.o,0x001EE1B8,0x001EE1F8,2,0,0x00000000,0,NONE,No seeds for this object
+weapon.o,0x001EE2A0,0x001F03E0,28,1,0x-000CA38,13,MEDIUM,"13/28 validated (1 seq, 14 no_fp); offset=0x-000CA38"
+windField.o,0x001F03F8,0x001F0E80,10,0,0x00000000,0,NONE,No seeds for this object
+windManager.o,0x001F0F00,0x001F11B0,5,0,0x00000000,0,NONE,No seeds for this object
+wireLetter.o,0x001F1290,0x001F1538,5,1,0x-000CE88,3,HIGH,All 3/5 functions validated; offset=0x-000CE88
+worm.o,0x001F1FF0,0x001F29B8,8,0,0x00000000,0,NONE,No seeds for this object
+Basic.o,0x001F2B38,0x001F2D18,10,1,0x-000CEE0,4,HIGH,All 4/10 functions validated; offset=0x-000CEE0
+BgAnimation.o,0x001F2D78,0x001F6610,20,2,0x-000CEE0,3,HIGH,All 3/20 functions validated; offset=0x-000CEE0
+DisplayFont.o,0x001F6618,0x001F7010,5,0,0x00000000,0,NONE,No seeds for this object
+DisplayList.o,0x001F7030,0x001F76A8,11,1,0x-00F62D4,3,HIGH,All 3/11 functions validated; offset=0x-00F62D4
+DmaPacket.o,0x001F76B0,0x001F7780,3,0,0x00000000,0,NONE,No seeds for this object
+EnemyInit.o,0x001F77B0,0x001F7AF0,2,0,0x00000000,0,NONE,No seeds for this object
+gobj_cam_dl.o,0x001F7BA8,0x001F8028,10,0,0x00000000,0,NONE,No seeds for this object
+adpcm_init.o,0x001F8088,0x001FE370,30,2,0x-000D820,22,HIGH,All 22/30 functions validated; offset=0x-000D820
+act.o,0x001FE388,0x00200258,18,0,0x00000000,0,NONE,No seeds for this object
+act2.o,0x00200318,0x00200470,2,0,0x00000000,0,NONE,No seeds for this object
+seMail.o,0x002004D0,0x00200648,2,0,0x00000000,0,NONE,No seeds for this object
+way_kidnap.o,0x00200788,0x00201588,9,0,0x00000000,0,NONE,No seeds for this object
+way_llf.o,0x00201608,0x00201E60,25,2,0x-000E830,15,HIGH,All 15/25 functions validated; offset=0x-000E830
+way_tool.o,0x00202638,0x00203478,3,0,0x00000000,0,NONE,No seeds for this object
+deja.o,0x002034F8,0x00203D98,6,0,0x00000000,0,NONE,No seeds for this object
+e3.o,0x00203DC0,0x00206A38,41,1,0x-01051B4,5,HIGH,All 5/41 functions validated; offset=0x-01051B4
+end.o,0x00206AC8,0x00209B58,52,0,0x00000000,0,NONE,No seeds for this object
+op.o,0x00209C18,0x0020BBE0,15,0,0x00000000,0,NONE,No seeds for this object
+st00a.o,0x0020BD68,0x0020CEF8,22,0,0x00000000,0,NONE,No seeds for this object
+st01b.o,0x0020CFD8,0x0020D908,18,2,0x-00101D0,5,MEDIUM,"5/18 validated (1 seq, 12 no_fp); offset=0x-00101D0"
+st02a.o,0x0020D9B8,0x0020F168,36,2,0x-001035C,8,MEDIUM,"8/36 validated (1 seq, 27 no_fp); offset=0x-001035C"
+st03t.o,0x0020F1B8,0x00210230,21,0,0x00000000,0,NONE,No seeds for this object
+st04a.o,0x002102D8,0x002142C8,30,0,0x00000000,0,NONE,No seeds for this object
+st04b.o,0x002143A8,0x00214C48,14,2,0x-0010CE0,4,MEDIUM,"4/14 validated (1 seq, 9 no_fp); offset=0x-0010CE0"
+st04c.o,0x00214CD0,0x002155A0,16,1,0x-0010C20,14,HIGH,All 14/16 functions validated; offset=0x-0010C20
+st04d.o,0x002155B0,0x00215FE0,12,1,0x-0010C20,6,HIGH,All 6/12 functions validated; offset=0x-0010C20
+st04e.o,0x002160C0,0x002162B8,5,1,0x-0010C20,5,HIGH,All 5/5 functions validated; offset=0x-0010C20
+st04l.o,0x00216330,0x0021B2A0,115,7,0x-00E02A4,34,MEDIUM,"34/115 validated (2 seq, 79 no_fp); offset=0x-00E02A4"
+st04r.o,0x0021B2E8,0x0021FA28,104,7,0x-0011798,39,MEDIUM,"39/104 validated (5 seq, 60 no_fp); offset=0x-0011798"
+st05b.o,0x0021FA70,0x00220068,9,0,0x00000000,0,NONE,No seeds for this object
+st05c.o,0x002200F0,0x00220A00,14,0,0x00000000,0,NONE,No seeds for this object
+st05d.o,0x00220A70,0x002211A8,10,1,0x-0120448,5,MEDIUM,"5/10 validated (3 seq, 2 no_fp); offset=0x-0120448"
+st05e.o,0x00221218,0x002215E8,7,0,0x00000000,0,NONE,No seeds for this object
+st06a.o,0x00221660,0x00223460,44,5,0x-0011A78,30,MEDIUM,"30/44 validated (3 seq, 11 no_fp); offset=0x-0011A78"
+st07a.o,0x00223528,0x002252F0,32,2,0x-0121C50,11,MEDIUM,"11/32 validated (1 seq, 20 no_fp); offset=0x-0121C50"
+st08a.o,0x00225368,0x00225BB8,16,0,0x00000000,0,NONE,No seeds for this object
+st08b.o,0x00225C60,0x00226A88,16,0,0x00000000,0,NONE,No seeds for this object
+st09a.o,0x00226AF0,0x00227210,14,0,0x00000000,0,NONE,No seeds for this object
+st10l.o,0x00227268,0x00228940,37,1,0x-0123E74,9,HIGH,All 9/37 functions validated; offset=0x-0123E74
+st10r.o,0x00228998,0x00229E08,28,0,0x00000000,0,NONE,No seeds for this object
+st13a.o,0x00229E80,0x0022A900,15,1,0x-0012A78,8,HIGH,All 8/15 functions validated; offset=0x-0012A78
+st13b.o,0x0022A9B0,0x0022CA30,32,1,0x-0012950,29,MEDIUM,"29/32 validated (2 seq, 1 no_fp); offset=0x-0012950"
+st13b2.o,0x0022CAE8,0x0022CAE8,1,0,0x00000000,0,NONE,No seeds for this object
+st13c.o,0x0022CB18,0x0022F7B8,42,0,0x00000000,0,NONE,No seeds for this object
+st13d.o,0x0022F810,0x0022FA90,4,0,0x00000000,0,NONE,No seeds for this object
+st17a.o,0x0022FA98,0x002308F8,17,0,0x00000000,0,NONE,No seeds for this object
+st17b.o,0x00230948,0x00230AC8,5,0,0x00000000,0,NONE,No seeds for this object
+st18a.o,0x00230B68,0x00231CC0,21,1,0x-0013E20,17,HIGH,All 17/21 functions validated; offset=0x-0013E20
+st19a.o,0x00231D40,0x00232AB8,18,1,0x-0013E28,15,MEDIUM,"15/18 validated (2 seq, 1 no_fp); offset=0x-0013E28"
+st20a.o,0x00232B58,0x00233C58,24,2,0x-0020508,14,MEDIUM,"14/24 validated (1 seq, 9 no_fp); offset=0x-0020508"
+st22a.o,0x00233CD0,0x00234188,4,0,0x00000000,0,NONE,No seeds for this object
+st24a.o,0x002342A0,0x002344E8,3,0,0x00000000,0,NONE,No seeds for this object
+st47a.o,0x00234528,0x00235CA0,41,2,0x-0019CB8,17,HIGH,All 17/41 functions validated; offset=0x-0019CB8
+st99a.o,0x00235D10,0x002363A0,16,1,0x-01354E4,3,HIGH,All 3/16 functions validated; offset=0x-01354E4
+stageSEProc.o,0x00236408,0x00238070,47,2,0x-002DE88,21,MEDIUM,"21/47 validated (3 seq, 23 no_fp); offset=0x-002DE88"
+access.o,0x00238100,0x00238148,2,0,0x00000000,0,NONE,No seeds for this object
+lws_kyomi.o,0x002381F8,0x00238288,3,0,0x00000000,0,NONE,No seeds for this object
+objact.o,0x00238338,0x00238520,5,2,0x-0018FF0,5,HIGH,All 5/5 functions validated; offset=0x-0018FF0
+mv_audiodec.o,0x00238580,0x00238FF0,9,1,0x-0014470,7,HIGH,All 7/9 functions validated; offset=0x-0014470
+mv_disp.o,0x00239088,0x0023A438,34,4,0x-00147B8,25,HIGH,All 25/34 functions validated; offset=0x-00147B8
+mv_sub.o,0x0023A468,0x0023A478,2,0,0x00000000,0,NONE,No seeds for this object
+mv_vibuf.o,0x0023A5E8,0x0023B6F8,12,1,0x-0139B80,7,HIGH,All 7/12 functions validated; offset=0x-0139B80
+GobjProc.o,0x0023B7E8,0x0023BB28,8,0,0x00000000,0,NONE,No seeds for this object
+PObj.o,0x0023C078,0x0023C688,3,1,0x-0015370,3,HIGH,All 3/3 functions validated; offset=0x-0015370
+vobj.o,0x0023C6A8,0x002EC7C0,706,40,0x-0019B58,364,MEDIUM,"364/706 validated (31 seq, 311 no_fp); offset=0x-0019B58"

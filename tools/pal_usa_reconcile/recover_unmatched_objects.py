@@ -6,10 +6,10 @@ exists in both PAL and USA, by:
   1. op_seq_hash match (instruction pattern)
   2. raw_sha1 match (binary-identical)
 
-Once a match is found, applies the object-range offset to all functions
-in the object. Validates with pre-computed fingerprints.
+Once a match is found, reports its validated object-range offset.
+Validation uses pre-computed fingerprints.
 
-Output: updates pal_usa_object_range_candidates.csv and pal_usa_function_map_candidates.csv
+Output: writes recovery_log.csv, unmatched_objects.csv, and pal_usa_recovery_report.md
 """
 import csv, hashlib, json, struct, sys
 from pathlib import Path
@@ -93,14 +93,16 @@ def _op_seq_hash(data: bytes) -> str:
     return hashlib.sha1(bytes(out)).hexdigest()
 
 
-def precompute_usa_index(usa_data: bytes, sizes_needed: set[int]) -> dict[str, list[tuple[int, int]]]:
-    """Build {op_seq_hash: [(usa_off, size)]} for all required sizes."""
+def precompute_usa_index(usa_fp_by_va: dict[int, dict]) -> dict[str, list[tuple[int, int]]]:
+    """Index only pre-fingerprinted USA function starts.
+
+    Indexing every possible .text window was unbounded in memory and allowed
+    non-function instruction sequences to become anchors.
+    """
     index = defaultdict(list)
-    for size in sorted(sizes_needed):
-        stride = 4 if size <= 64 else 8 if size <= 256 else 16
-        for off in range(0, len(usa_data) - size + 1, stride):
-            chunk = usa_data[off:off + size]
-            index[_op_seq_hash(chunk)].append((off, size))
+    for usa_va, fp in usa_fp_by_va.items():
+        if fp['size'] >= 4:
+            index[fp['op_seq_hash']].append((usa_va, fp['size']))
     return index
 
 
@@ -188,19 +190,18 @@ def find_seed_for_object(
                     'name': f['name'],
                 })
 
-        # Try a whole-.text op_seq scan to recover objects without seeds.
-        # Evaluate every possible anchor and keep the offset that validates
-        # the most functions in the object.
+        # Match only against known USA function starts. This avoids treating a
+        # coincidental instruction sequence inside a function as an anchor.
         if pal_fp['size'] < 4:
             continue
 
-        for usa_off, size in usa_index.get(pal_fp['op_seq_hash'], []):
+        for usa_va, size in usa_index.get(pal_fp['op_seq_hash'], []):
             if size != pal_fp['size']:
                 continue
-            offset = (usa_text_va + usa_off) - pal_va
+            offset = usa_va - pal_va
             candidate_offsets[offset].append({
                 'pal_va': pal_va,
-                'usa_va': usa_text_va + usa_off,
+                'usa_va': usa_va,
                 'method': 'op_seq_hash',
                 'confidence': 0.95,
                 'name': f['name'],
@@ -269,8 +270,8 @@ def main():
             if fp and fp['size'] >= 8:
                 sizes_needed.add(fp['size'])
 
-    print(f"[INDEX] scanning {len(sizes_needed)} unique sizes from unmatched objects")
-    usa_index = precompute_usa_index(usa_data, sizes_needed)
+    print(f"[INDEX] {len(usa_fp_by_va)} verified USA function starts")
+    usa_index = precompute_usa_index(usa_fp_by_va)
 
     # Group PAL functions by object
     pal_by_obj = defaultdict(list)

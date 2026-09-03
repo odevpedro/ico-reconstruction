@@ -1,82 +1,124 @@
 object_file,pal_start,pal_end,function_count,notes
-sampleMode.o,0x00102648,0x00102868,5,No anchor found
-tableSin.o,0x0010F0B0,0x0010F368,6,No anchor found
-FileManager.o,0x0010F440,0x0010FD20,2,No anchor found
-Packet.o,0x001199B0,0x0011C750,5,No anchor found
-RegistPacket.o,0x001223D8,0x00122EF8,9,No anchor found
-Shadow.o,0x00122F48,0x00128A58,11,No anchor found
-ZFog.o,0x001304E8,0x00131230,3,No anchor found
-inflate.o,0x00135530,0x00135AC0,3,No anchor found
-ios.o,0x00135E08,0x00135FD8,2,No anchor found
-mcdata.o,0x00138630,0x00138738,2,No anchor found
-memory.o,0x00138910,0x0013A068,12,No anchor found
-thread.o,0x0013D0B0,0x0013DC20,23,No anchor found
-isys.o,0x0013F898,0x0013F898,1,No anchor found
-fuzio.o,0x00168150,0x001683D8,8,No anchor found
-girl_act.o,0x001685F0,0x00173E38,60,No anchor found
-jimaku.o,0x00174018,0x00174A50,8,No anchor found
-way_sys.o,0x00174A60,0x00176588,6,No anchor found
-way_util.o,0x001765E8,0x00178CD0,39,No anchor found
-gflag.o,0x00178D60,0x00178ED8,6,No anchor found
-warpGirl.o,0x0017E128,0x0017E4A0,3,No anchor found
-ebrain.o,0x0018E280,0x0018F470,11,No anchor found
-act_bird.o,0x00192D38,0x001948F8,12,No anchor found
-gather_effect.o,0x00194968,0x00194D68,4,No anchor found
-queen.o,0x00197000,0x001991D0,23,No anchor found
-queen_barrier_disp.o,0x001994D8,0x00199C60,4,No anchor found
-mv_videodec.o,0x0019AA90,0x0019B0C8,9,No anchor found
-DObj.o,0x0019C1B0,0x0019C3C0,4,No anchor found
-backStage.o,0x0019CF28,0x0019DE68,8,No anchor found
-debug_menu.o,0x001AA4C0,0x001AA628,2,No anchor found
-gamesys.o,0x001AA678,0x001AB3B0,19,No anchor found
-icoMisc.o,0x001ABBF8,0x001AC608,4,No anchor found
-kanban.o,0x001AC610,0x001AD020,7,No anchor found
-kanbanBoot.o,0x001AD358,0x001AD4C0,3,No anchor found
-actressLight.o,0x001B8150,0x001B8150,1,No anchor found
-cageFix.o,0x001BF4E0,0x001BF5A8,3,No anchor found
-candle.o,0x001BF5B0,0x001BF8F8,5,No anchor found
-chandelier.o,0x001BF998,0x001BFA78,3,No anchor found
-clipCollisionManager.o,0x001BFCA0,0x001BFCE0,2,No anchor found
-clothTest.o,0x001C5898,0x001C58F0,3,No anchor found
-effectTool.o,0x001C9A98,0x001C9A98,1,No anchor found
-enemyParts.o,0x001CB370,0x001CC000,11,No anchor found
-flag.o,0x001CC138,0x001CC7C8,3,No anchor found
-frameDependSequence.o,0x001CD400,0x001CDA10,7,No anchor found
-handManager.o,0x001CEB10,0x001CEB10,1,No anchor found
-lineManager.o,0x001D0958,0x001D1188,7,No anchor found
-lodManager.o,0x001D1270,0x001D1270,1,No anchor found
-motionFileManager.o,0x001D13F8,0x001D15A0,7,No anchor found
-motionViewer.o,0x001E1E20,0x001E2550,2,No anchor found
-moveColTest.o,0x001E2D60,0x001E2F40,3,No anchor found
-particleEffect.o,0x001E49E0,0x001E5438,19,No anchor found
-rope.o,0x001E54F0,0x001E5DC8,7,No anchor found
-rotObject.o,0x001E5F08,0x001E6608,13,No anchor found
-spiderGroupManager.o,0x001E7908,0x001E7F38,7,No anchor found
-stageMultiBgaManager.o,0x001E7F98,0x001E81C8,4,No anchor found
-stormTest.o,0x001EBB38,0x001EC640,8,No anchor found
-sugiTree.o,0x001ED398,0x001ED818,5,No anchor found
-windField.o,0x001F03F8,0x001F0E80,10,No anchor found
-worm.o,0x001F1FF0,0x001F29B8,8,No anchor found
-DisplayFont.o,0x001F6618,0x001F7010,5,No anchor found
-DmaPacket.o,0x001F76B0,0x001F7780,3,No anchor found
-EnemyInit.o,0x001F77B0,0x001F7AF0,2,No anchor found
-gobj_cam_dl.o,0x001F7BA8,0x001F8028,10,No anchor found
-act.o,0x001FE388,0x00200258,18,No anchor found
-act2.o,0x00200318,0x00200470,2,No anchor found
-seMail.o,0x002004D0,0x00200648,2,No anchor found
-way_kidnap.o,0x00200788,0x00201588,9,No anchor found
-way_tool.o,0x00202638,0x00203478,3,No anchor found
-end.o,0x00206AC8,0x00209B58,52,No anchor found
-op.o,0x00209C18,0x0020BBE0,15,No anchor found
-st03t.o,0x0020F1B8,0x00210230,21,No anchor found
-st04a.o,0x002102D8,0x002142C8,30,No anchor found
-st05b.o,0x0021FA70,0x00220068,9,No anchor found
-st05c.o,0x002200F0,0x00220A00,14,No anchor found
-st05e.o,0x00221218,0x002215E8,7,No anchor found
-st08b.o,0x00225C60,0x00226A88,16,No anchor found
-st13b2.o,0x0022CAE8,0x0022CAE8,1,No anchor found
-st17a.o,0x0022FA98,0x002308F8,17,No anchor found
-st17b.o,0x00230948,0x00230AC8,5,No anchor found
-st22a.o,0x00233CD0,0x00234188,4,No anchor found
-st24a.o,0x002342A0,0x002344E8,3,No anchor found
-access.o,0x00238100,0x00238148,2,No anchor found
+sampleMode.o,0x00102648,0x00102868,5,No seeds for this object
+delayFreeManager.o,0x001028F8,0x00102A20,3,No seeds for this object
+keyInput.o,0x00104D68,0x00104E50,2,No seeds for this object
+pool.o,0x0010B798,0x0010DAC0,14,No seeds for this object
+tableSin.o,0x0010F0B0,0x0010F368,6,No seeds for this object
+DisplayP2O.o,0x0010F3B0,0x0010F438,11,No seeds for this object
+FileManager.o,0x0010F440,0x0010FD20,2,No seeds for this object
+GifPacket.o,0x0010FD98,0x001129C8,38,No seeds for this object
+Packet.o,0x001199B0,0x0011C750,5,No seeds for this object
+Primitive.o,0x0011C7B8,0x0011EC78,12,No seeds for this object
+RegistPacket.o,0x001223D8,0x00122EF8,9,No seeds for this object
+Shadow.o,0x00122F48,0x00128A58,11,No seeds for this object
+ZFog.o,0x001304E8,0x00131230,3,No seeds for this object
+inflate.o,0x00135530,0x00135AC0,3,No seeds for this object
+ios.o,0x00135E08,0x00135FD8,2,No seeds for this object
+mblock.o,0x001361A8,0x001362B8,4,No seeds for this object
+mcdata.o,0x00138630,0x00138738,2,No seeds for this object
+memory.o,0x00138910,0x0013A068,12,No seeds for this object
+thread.o,0x0013D0B0,0x0013DC20,23,No seeds for this object
+gobj.o,0x0013DCA0,0x0013EC78,23,No seeds for this object
+gobj_process.o,0x0013F2E8,0x0013F890,16,No seeds for this object
+isys.o,0x0013F898,0x0013F898,1,No seeds for this object
+fuzio.o,0x00168150,0x001683D8,8,No seeds for this object
+girl_act.o,0x001685F0,0x00173E38,60,No seeds for this object
+jimaku.o,0x00174018,0x00174A50,8,No seeds for this object
+way_sys.o,0x00174A60,0x00176588,6,No seeds for this object
+way_util.o,0x001765E8,0x00178CD0,39,No seeds for this object
+gflag.o,0x00178D60,0x00178ED8,6,No seeds for this object
+st25a.o,0x0017C3D0,0x0017E0A0,20,No seeds for this object
+warpGirl.o,0x0017E128,0x0017E4A0,3,No seeds for this object
+attackhit.o,0x0017F098,0x0017F268,5,No seeds for this object
+ebrain.o,0x0018E280,0x0018F470,11,No seeds for this object
+fightSound.o,0x0018F6A0,0x0018F7E8,6,No seeds for this object
+act_bird.o,0x00192D38,0x001948F8,12,No seeds for this object
+gather_effect.o,0x00194968,0x00194D68,4,No seeds for this object
+itou_gflag.o,0x001959C0,0x001959D0,3,No seeds for this object
+itou_sub.o,0x00195C18,0x00195CB0,4,No seeds for this object
+lightning.o,0x00196110,0x00196E60,5,No seeds for this object
+queen.o,0x00197000,0x001991D0,23,No seeds for this object
+queen_barrier_disp.o,0x001994D8,0x00199C60,4,No seeds for this object
+mv_main.o,0x00199EB8,0x0019A800,4,No seeds for this object
+mv_readbuf.o,0x0019A870,0x0019A9F0,6,No seeds for this object
+mv_strfile.o,0x0019AA10,0x0019AA68,3,No seeds for this object
+mv_videodec.o,0x0019AA90,0x0019B0C8,9,No seeds for this object
+mv_vobuf.o,0x0019B220,0x0019B4C8,8,No seeds for this object
+DObj.o,0x0019C1B0,0x0019C3C0,4,No seeds for this object
+backStage.o,0x0019CF28,0x0019DE68,8,No seeds for this object
+debug_exception.o,0x001A7DF0,0x001AA3A0,17,No seeds for this object
+debug_menu.o,0x001AA4C0,0x001AA628,2,No seeds for this object
+gamesys.o,0x001AA678,0x001AB3B0,19,No seeds for this object
+haveParentSimpleObj.o,0x001AB4B8,0x001AB4C8,3,No seeds for this object
+icoMisc.o,0x001ABBF8,0x001AC608,4,No seeds for this object
+kanban.o,0x001AC610,0x001AD020,7,No seeds for this object
+kanbanBoot.o,0x001AD358,0x001AD4C0,3,No seeds for this object
+staffroll.o,0x001B4A48,0x001B4F50,3,No seeds for this object
+act_a_p_1.o,0x001B7770,0x001B8140,12,No seeds for this object
+actressLight.o,0x001B8150,0x001B8150,1,No seeds for this object
+box.o,0x001B8938,0x001BD8B0,44,No seeds for this object
+cageFix.o,0x001BF4E0,0x001BF5A8,3,No seeds for this object
+candle.o,0x001BF5B0,0x001BF8F8,5,No seeds for this object
+chandelier.o,0x001BF998,0x001BFA78,3,No seeds for this object
+clipCollisionManager.o,0x001BFCA0,0x001BFCE0,2,No seeds for this object
+clothTest.o,0x001C5898,0x001C58F0,3,No seeds for this object
+darkVolume.o,0x001C7ED0,0x001C8438,11,No seeds for this object
+effectTool.o,0x001C9A98,0x001C9A98,1,No seeds for this object
+enemyParts.o,0x001CB370,0x001CC000,11,No seeds for this object
+flag.o,0x001CC138,0x001CC7C8,3,No seeds for this object
+flyManager.o,0x001CC980,0x001CCA98,5,No seeds for this object
+frameDependSequence.o,0x001CD400,0x001CDA10,7,No seeds for this object
+handManager.o,0x001CEB10,0x001CEB10,1,No seeds for this object
+lineManager.o,0x001D0958,0x001D1188,7,No seeds for this object
+lodManager.o,0x001D1270,0x001D1270,1,No seeds for this object
+motionFileManager.o,0x001D13F8,0x001D15A0,7,No seeds for this object
+motionViewer.o,0x001E1E20,0x001E2550,2,No seeds for this object
+moveColTest.o,0x001E2D60,0x001E2F40,3,No seeds for this object
+particleEffect.o,0x001E49E0,0x001E5438,19,No seeds for this object
+particleLayout.o,0x001E5460,0x001E54E8,4,No seeds for this object
+rope.o,0x001E54F0,0x001E5DC8,7,No seeds for this object
+ropeFix.o,0x001E5E40,0x001E5EC8,3,No seeds for this object
+rotObject.o,0x001E5F08,0x001E6608,13,No seeds for this object
+spiderGroupManager.o,0x001E7908,0x001E7F38,7,No seeds for this object
+stageMultiBgaManager.o,0x001E7F98,0x001E81C8,4,No seeds for this object
+staticBlur.o,0x001E97E0,0x001EBB30,17,No seeds for this object
+stormTest.o,0x001EBB38,0x001EC640,8,No seeds for this object
+sugiTree.o,0x001ED398,0x001ED818,5,No seeds for this object
+torch.o,0x001ED8A0,0x001EE168,12,No seeds for this object
+waySystemManager.o,0x001EE1B8,0x001EE1F8,2,No seeds for this object
+windField.o,0x001F03F8,0x001F0E80,10,No seeds for this object
+windManager.o,0x001F0F00,0x001F11B0,5,No seeds for this object
+worm.o,0x001F1FF0,0x001F29B8,8,No seeds for this object
+DisplayFont.o,0x001F6618,0x001F7010,5,No seeds for this object
+DmaPacket.o,0x001F76B0,0x001F7780,3,No seeds for this object
+EnemyInit.o,0x001F77B0,0x001F7AF0,2,No seeds for this object
+gobj_cam_dl.o,0x001F7BA8,0x001F8028,10,No seeds for this object
+act.o,0x001FE388,0x00200258,18,No seeds for this object
+act2.o,0x00200318,0x00200470,2,No seeds for this object
+seMail.o,0x002004D0,0x00200648,2,No seeds for this object
+way_kidnap.o,0x00200788,0x00201588,9,No seeds for this object
+way_tool.o,0x00202638,0x00203478,3,No seeds for this object
+deja.o,0x002034F8,0x00203D98,6,No seeds for this object
+end.o,0x00206AC8,0x00209B58,52,No seeds for this object
+op.o,0x00209C18,0x0020BBE0,15,No seeds for this object
+st00a.o,0x0020BD68,0x0020CEF8,22,No seeds for this object
+st03t.o,0x0020F1B8,0x00210230,21,No seeds for this object
+st04a.o,0x002102D8,0x002142C8,30,No seeds for this object
+st05b.o,0x0021FA70,0x00220068,9,No seeds for this object
+st05c.o,0x002200F0,0x00220A00,14,No seeds for this object
+st05e.o,0x00221218,0x002215E8,7,No seeds for this object
+st08a.o,0x00225368,0x00225BB8,16,No seeds for this object
+st08b.o,0x00225C60,0x00226A88,16,No seeds for this object
+st09a.o,0x00226AF0,0x00227210,14,No seeds for this object
+st10r.o,0x00228998,0x00229E08,28,No seeds for this object
+st13b2.o,0x0022CAE8,0x0022CAE8,1,No seeds for this object
+st13c.o,0x0022CB18,0x0022F7B8,42,No seeds for this object
+st13d.o,0x0022F810,0x0022FA90,4,No seeds for this object
+st17a.o,0x0022FA98,0x002308F8,17,No seeds for this object
+st17b.o,0x00230948,0x00230AC8,5,No seeds for this object
+st22a.o,0x00233CD0,0x00234188,4,No seeds for this object
+st24a.o,0x002342A0,0x002344E8,3,No seeds for this object
+access.o,0x00238100,0x00238148,2,No seeds for this object
+lws_kyomi.o,0x002381F8,0x00238288,3,No seeds for this object
+mv_sub.o,0x0023A468,0x0023A478,2,No seeds for this object
+GobjProc.o,0x0023B7E8,0x0023BB28,8,No seeds for this object
