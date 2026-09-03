@@ -67,7 +67,12 @@ public:
 private:
     void processTag(const GifTag& tag, const u8* data, u32 dataSize);
     void processPackedData(const GifTag& tag, const u8* data, u32 dataSize);
+    void processRegsData(const GifTag& tag, const u8* data, u32 dataSize);
     void processImageLoop(const GifTag& tag, const u8* data, u32 dataSize);
+
+    void dispatchReg(GifReg reg, const u8* regData);
+    void dispatchByAddress(u8 addr, const u8* regData);
+    void handleAD(const u8* data);
 
     void handlePrim(const u8* data);
     void handleRgbaq(const u8* data);

@@ -98,18 +98,46 @@ constexpr u32 kGsAddrPRIM    = 0x00;
 constexpr u32 kGsAddrRGBAQ   = 0x01;
 constexpr u32 kGsAddrSTQ     = 0x02;
 constexpr u32 kGsAddrUV      = 0x03;
-constexpr u32 kGsAddrXYZ2    = 0x04;
-constexpr u32 kGsAddrXYZ3    = 0x05;
+constexpr u32 kGsAddrXYZF2   = 0x04;
+constexpr u32 kGsAddrXYZ2    = 0x05;
 constexpr u32 kGsAddrTEX0_1  = 0x06;
 constexpr u32 kGsAddrTEX0_2  = 0x07;
-constexpr u32 kGsAddrTEX1_1  = 0x08;
-constexpr u32 kGsAddrTEX1_2  = 0x09;
-constexpr u32 kGsAddrTEX2_1  = 0x0A;
-constexpr u32 kGsAddrTEX2_2  = 0x0B;
-constexpr u32 kGsAddrCLAMP_1 = 0x0C;
-constexpr u32 kGsAddrCLAMP_2 = 0x0D;
-constexpr u32 kGsAddrFOG     = 0x0E;
+constexpr u32 kGsAddrCLAMP_1 = 0x08;
+constexpr u32 kGsAddrCLAMP_2 = 0x09;
+constexpr u32 kGsAddrFOG     = 0x0A;
+constexpr u32 kGsAddrXYZF3   = 0x0C;
+constexpr u32 kGsAddrXYZ3    = 0x0D;
+constexpr u32 kGsAddrTEX1_1  = 0x14;
+constexpr u32 kGsAddrTEX1_2  = 0x15;
+constexpr u32 kGsAddrTEX2_1  = 0x16;
+constexpr u32 kGsAddrTEX2_2  = 0x17;
+constexpr u32 kGsAddrA_D     = 0x0E;
+/* GS register page 2 (SCISSOR/ALPHA/DIMX/DTHE/COLCLAMP/TEST/FBA/FRAME/ZBUF)
+   Addresses per PS2Tek GS Register List. */
+constexpr u32 kGsAddrSCISSOR_1 = 0x40;
+constexpr u32 kGsAddrSCISSOR_2 = 0x41;
+constexpr u32 kGsAddrALPHA_1 = 0x42;
+constexpr u32 kGsAddrALPHA_2 = 0x43;
+constexpr u32 kGsAddrDTHE     = 0x45;
+constexpr u32 kGsAddrCOLCLAMP = 0x46;
+constexpr u32 kGsAddrTEST_1  = 0x47;
+constexpr u32 kGsAddrTEST_2  = 0x48;
+constexpr u32 kGsAddrFBA_1   = 0x4A;
+constexpr u32 kGsAddrFBA_2   = 0x4B;
+constexpr u32 kGsAddrFRAME_1 = 0x4C;
+constexpr u32 kGsAddrFRAME_2 = 0x4D;
+constexpr u32 kGsAddrZBUF_1  = 0x4E;
+constexpr u32 kGsAddrZBUF_2  = 0x4F;
+constexpr u32 kGsAddrBITBLTBUF = 0x50;
+constexpr u32 kGsAddrTRXPOS    = 0x51;
+constexpr u32 kGsAddrTRXREG    = 0x52;
+constexpr u32 kGsAddrTRXDIR    = 0x53;
 constexpr u32 kGsAddrNOP     = 0x0F;
+
+/* PACKED-mode register descriptor addresses (PS2Tek GS Register List).
+   Corrected: TEX1_1/2 = 0x14/0x15, CLAMP_1/2 = 0x08/0x09.
+   (Pre-existing TEX1_1=0x08 / CLAMP_1=0x0C in GifReg are inconsistent with the
+   real GS register list and are tracked as a latent known-issue.) */
 
 struct GsTex0 {
     u64 value;

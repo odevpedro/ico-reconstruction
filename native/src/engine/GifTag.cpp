@@ -207,13 +207,13 @@ u32 GsFrame::fw() const   { return static_cast<u32>((value >> 0) & 0x7FF); }
 u32 GsFrame::fh() const   { return static_cast<u32>((value >> 11) & 0xFFF); }
 u32 GsFrame::psm() const  { return static_cast<u32>((value >> 24) & 0x3F); }
 u32 GsFrame::fbw() const  { return static_cast<u32>((value >> 32) & 0x3F); }
-u32 GsFrame::fbp() const  { return static_cast<u32>((value >> 36) & 0x1FF); }
+u32 GsFrame::fbp() const  { return static_cast<u32>(value) & 0x1FF; }
 
 void GsFrame::setFw(u32 v)   { value = (value & ~0x7FFull) | (v & 0x7FF); }
 void GsFrame::setFh(u32 v)   { value = (value & ~(0xFFFull << 11)) | (static_cast<u64>(v & 0xFFF) << 11); }
 void GsFrame::setPsm(u32 v)  { value = (value & ~(0x3Full << 24)) | (static_cast<u64>(v & 0x3F) << 24); }
 void GsFrame::setFbw(u32 v)  { value = (value & ~(0x3Full << 32)) | (static_cast<u64>(v & 0x3F) << 32); }
-void GsFrame::setFbp(u32 v)  { value = (value & ~(0x1FFull << 36)) | (static_cast<u64>(v & 0x1FF) << 36); }
+void GsFrame::setFbp(u32 v)  { value = (value & ~0x1FFull) | (static_cast<u64>(v & 0x1FF)); }
 
 u32 GsZbuf::zbp() const   { return static_cast<u32>(value) & 0x1FF; }
 u32 GsZbuf::psm() const   { return static_cast<u32>((value >> 24) & 0x0F); }
@@ -227,7 +227,7 @@ u32 GsAlpha::aba() const  { return value & 0x03; }
 u32 GsAlpha::abb() const  { return (value >> 2) & 0x03; }
 u32 GsAlpha::abc() const  { return (value >> 4) & 0x03; }
 u32 GsAlpha::abd() const  { return (value >> 6) & 0x03; }
-u32 GsAlpha::afix() const { return value & 0xFF; }
+u32 GsAlpha::afix() const { return (value >> 8) & 0xFF; }
 
 void GsAlpha::setAba(u32 v)  { value = (value & ~0x03u) | (v & 0x03); }
 void GsAlpha::setAbb(u32 v)  { value = (value & ~(0x03u << 2)) | ((v & 0x03) << 2); }

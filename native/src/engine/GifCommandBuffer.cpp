@@ -75,7 +75,25 @@ bool GifCommandBuffer::parsePacket(const u8* data, u32 size) {
             break;
         }
 
-        u32 packetBytes = nloop * kGifTagSize;
+        /* Data size depends on the transfer mode (PS2Tek GIF Data Formats):
+           - Packed/Unpacked: NLOOP * NREG quadwords
+           - Regs (REGLIST):  NLOOP * NREG doublewords
+           - Image:           NLOOP quadwords */
+        u32 regsPerLoop = tag.regCount();
+        u32 packetBytes;
+        switch (tag.flg()) {
+            case GifFlg::Regs:
+                packetBytes = static_cast<u32>(nloop) * regsPerLoop * 8;
+                break;
+            case GifFlg::Image:
+                packetBytes = static_cast<u32>(nloop) * kGifTagSize;
+                break;
+            case GifFlg::Packed:
+            case GifFlg::Unpacked:
+            default:
+                packetBytes = static_cast<u32>(nloop) * kGifTagSize;
+                break;
+        }
         if (offset + packetBytes > size) {
             packetBytes = size - offset;
         }
@@ -96,6 +114,8 @@ void GifCommandBuffer::processTag(const GifTag& tag, const u8* data, u32 dataSiz
     if (flg == GifFlg::Packed) {
         processPackedData(tag, data, dataSize);
     } else if (flg == GifFlg::Regs) {
+        processRegsData(tag, data, dataSize);
+    } else if (flg == GifFlg::Image) {
         processImageLoop(tag, data, dataSize);
     }
 }
@@ -114,30 +134,101 @@ void GifCommandBuffer::processPackedData(const GifTag& tag, const u8* data, u32 
     while (offset + kGifTagSize <= dataSize) {
         for (u32 r = 0; r < nreg && offset + kGifTagSize <= dataSize; ++r) {
             GifReg reg = tag.reg(r);
-            const u8* regData = data + offset;
-
-            switch (reg) {
-                case GifReg::PRIM:   handlePrim(regData); break;
-                case GifReg::RGBAQ:  handleRgbaq(regData); break;
-                case GifReg::STQ:    handleStq(regData); break;
-                case GifReg::UV:     handleUv(regData); break;
-                case GifReg::XYZ2:   handleXyz2(regData); break;
-                case GifReg::XYZ3:   handleXyz2(regData); break;
-                case GifReg::TEX0_1: handleTex0(regData); break;
-                case GifReg::TEX0_2: handleTex0(regData); break;
-                case GifReg::TEX1_1: handleTex1(regData); break;
-                case GifReg::TEX1_2: handleTex1(regData); break;
-                case GifReg::A_D:    handleAlpha(regData); break;
-                case GifReg::NOP:    handleNop(regData); break;
-                default: break;
-            }
-
+            dispatchReg(reg, data + offset);
             offset += kGifTagSize;
         }
     }
 }
 
-void GifCommandBuffer::processImageLoop(const GifTag& /*tag*/, const u8* /*data*/, u32 /*dataSize*/) {
+void GifCommandBuffer::processRegsData(const GifTag& tag, const u8* data, u32 dataSize) {
+    /* REGLIST (REGS): PS2Tek "GIF Data Formats" — each data element is one
+       doubleword (8 bytes), routed to the register named by the tag's
+       descriptor list. Total elements = NREGS * NLOOP. */
+    if (tag.pre()) {
+        m_currentPrim.value = tag.prim();
+        m_hasPrim = true;
+    }
+
+    u32 nreg = tag.regCount();
+    if (nreg == 0) return;
+
+    u32 offset = 0;
+    while (offset + 8 <= dataSize) {
+        for (u32 r = 0; r < nreg && offset + 8 <= dataSize; ++r) {
+            GifReg reg = tag.reg(r);
+            dispatchReg(reg, data + offset);
+            offset += 8;
+        }
+    }
+}
+
+void GifCommandBuffer::dispatchReg(GifReg reg, const u8* regData) {
+    switch (reg) {
+        case GifReg::PRIM:   handlePrim(regData); break;
+        case GifReg::RGBAQ:  handleRgbaq(regData); break;
+        case GifReg::STQ:    handleStq(regData); break;
+        case GifReg::UV:     handleUv(regData); break;
+        case GifReg::XYZ2:   handleXyz2(regData); break;
+        case GifReg::XYZ3:   handleXyz2(regData); break;
+        case GifReg::TEX0_1: handleTex0(regData); break;
+        case GifReg::TEX0_2: handleTex0(regData); break;
+        case GifReg::TEX1_1: handleTex1(regData); break;
+        case GifReg::TEX1_2: handleTex1(regData); break;
+        case GifReg::A_D:    handleAD(regData); break;
+        case GifReg::NOP:    handleNop(regData); break;
+        default: break;
+    }
+}
+
+void GifCommandBuffer::handleAD(const u8* data) {
+    /* A+D (reg=Eh): the data quadword embeds the target register address in
+       byte 8, data in bytes 0-7. (PS2Tek GIF Data Formats, PCSX2
+       Gif_HandlerAD). */
+    u8 addr = data[8];
+    dispatchByAddress(addr, data);
+}
+
+void GifCommandBuffer::dispatchByAddress(u8 addr, const u8* regData) {
+    /* Map a raw GS register address (PS2Tek GS Register List) to a handler.
+       The low 5 bits (plus a few 6-bit page-2 addresses) cover the registers
+       the buffer understands. Unhandled addresses are ignored (VRAM/bitblt
+       transfer registers are not modeled yet). */
+    switch (addr) {
+        case kGsAddrPRIM:    handlePrim(regData); break;
+        case kGsAddrRGBAQ:   handleRgbaq(regData); break;
+        case kGsAddrSTQ:     handleStq(regData); break;
+        case kGsAddrUV:      handleUv(regData); break;
+        case kGsAddrXYZF2:   handleXyz2(regData); break;
+        case kGsAddrXYZ2:    handleXyz2(regData); break;
+        case kGsAddrXYZF3:   handleXyz2(regData); break;
+        case kGsAddrXYZ3:    handleXyz2(regData); break;
+        case kGsAddrTEX0_1:  handleTex0(regData); break;
+        case kGsAddrTEX0_2:  handleTex0(regData); break;
+        case kGsAddrTEX1_1:  handleTex1(regData); break;
+        case kGsAddrTEX1_2:  handleTex1(regData); break;
+        case kGsAddrFOG:     handleFog(regData); break;
+        case kGsAddrALPHA_1: handleAlpha(regData); break;
+        case kGsAddrALPHA_2: handleAlpha(regData); break;
+        case kGsAddrTEST_1:  handleTest(regData); break;
+        case kGsAddrTEST_2:  handleTest(regData); break;
+        case kGsAddrFRAME_1: handleFrame(regData); break;
+        case kGsAddrFRAME_2: handleFrame(regData); break;
+        case kGsAddrZBUF_1:  handleZbuf(regData); break;
+        case kGsAddrZBUF_2:  handleZbuf(regData); break;
+        default: break;
+    }
+}
+
+void GifCommandBuffer::processImageLoop(const GifTag& tag, const u8* data, u32 dataSize) {
+    /* IMAGE: PS2Tek "GIF Data Formats" — raw raster upload. Total data =
+       NLOOP quadwords, written to the GS HWREG / VRAM write pointer. The
+       destination address comes from BITBLTBUF/TRXPOS/TRXREG registers, which
+       are not yet modeled. Consume the quadwords to keep parsing aligned. */
+    u32 nloop = tag.nloop();
+    u32 expected = nloop * kGifTagSize;
+    (void)data;
+    (void)dataSize;
+    (void)expected;
 }
 
 void GifCommandBuffer::handlePrim(const u8* data) {

@@ -413,6 +413,159 @@ static void test_command_buffer_screen_size() {
     assert(buf.commandCount() == 0);
 }
 
+static void test_gs_register_address_constants() {
+    /* PS2Tek GS Register List (ratified) */
+    assert(ico::engine::kGsAddrPRIM == 0x00);
+    assert(ico::engine::kGsAddrRGBAQ == 0x01);
+    assert(ico::engine::kGsAddrUV == 0x03);
+    assert(ico::engine::kGsAddrXYZ2 == 0x05);
+    assert(ico::engine::kGsAddrTEX0_1 == 0x06);
+    assert(ico::engine::kGsAddrCLAMP_1 == 0x08);
+    assert(ico::engine::kGsAddrFOG == 0x0A);
+    assert(ico::engine::kGsAddrTEX1_1 == 0x14);
+    assert(ico::engine::kGsAddrALPHA_1 == 0x42);
+    assert(ico::engine::kGsAddrTEST_1 == 0x47);
+    assert(ico::engine::kGsAddrFRAME_1 == 0x4C);
+    assert(ico::engine::kGsAddrZBUF_1 == 0x4E);
+}
+
+static void test_command_buffer_regs_mode() {
+    /* REGLIST/REGS mode (PS2Tek): each data element is an 8-byte doubleword
+       routed positionally to the descriptor in the tag's reg list. Use
+       page-1 (low 16) registers only. */
+    GifCommandBuffer buf;
+    GifTag tag{};
+    tag.setNloop(3);
+    tag.setEop(true);
+    tag.setPre(true);
+    tag.setPrim(GsPrimReg::make(GsPrimType::Triangle, false, false,
+                                          false, false, false, false).value);
+    tag.setFlg(GifFlg::Regs);
+    tag.setNreg(3);
+    tag.setReg(0, GifReg::RGBAQ);
+    tag.setReg(1, GifReg::UV);
+    tag.setReg(2, GifReg::XYZ2);
+
+    std::vector<u8> packet;
+    packet.resize(kGifTagSize);
+    std::memcpy(packet.data(), tag.bytes, kGifTagSize);
+
+    /* Doublewords: [RGBAQ][UV][XYZ2] x 3 loops = one triangle (3 vertices). */
+    static const float verts[3][3] = {
+        {1.0f, 2.0f, 3.0f}, {10.0f, 20.0f, 30.0f}, {50.0f, 60.0f, 70.0f} };
+    GsRgbaq c = GsRgbaq::make(10, 20, 30, 255);
+    for (int i = 0; i < 3; ++i) {
+        packet.resize(packet.size() + 8);
+        std::memcpy(packet.data() + packet.size() - 8, &c.value, 8);
+        packet.resize(packet.size() + 8);
+        std::uint8_t uv[8] = {};
+        GsUv uv0 = GsUv::make(0.0f, 0.0f);
+        std::memcpy(uv, &uv0.value, 4);
+        std::memcpy(packet.data() + packet.size() - 8, uv, 8);
+        (void)uv;
+        packet.resize(packet.size() + 8);
+        GsXyz2 x = GsXyz2::make(verts[i][0], verts[i][1], verts[i][2]);
+        std::memcpy(packet.data() + packet.size() - 8, &x.value, 8);
+    }
+
+    bool ok = buf.parsePacket(packet.data(), static_cast<u32>(packet.size()));
+    assert(ok);
+    assert(buf.commandCount() > 0);
+    (void)ok;
+}
+
+static void test_command_buffer_packed_a_d_mode() {
+    /* PACKED mode with an A_D descriptor: the data quadword embeds the target
+       GS register address at byte 8, data in bytes 0-7. Covers the page-2
+       registers (FRAME/ZBUF/ALPHA/TEST) that a REGS descriptor list cannot
+       name directly. */
+    GifCommandBuffer buf;
+    GifTag tag = GifTag::makeSimple(1, true, GifFlg::Packed, 1);
+    tag.setReg(0, GifReg::A_D);
+    std::vector<u8> packet;
+    packet.resize(kGifTagSize);
+    std::memcpy(packet.data(), tag.bytes, kGifTagSize);
+
+    /* ZBUF_1 (0x4E): data = zbp=0x100, psm=0, zmsk=1 -> depth write disabled */
+    packet.resize(packet.size() + 16);
+    std::uint8_t* qw = packet.data() + kGifTagSize;
+    std::uint64_t dat = 0;
+    GsZbuf zb{};
+    zb.setZbp(0x100);
+    zb.setZmsk(1);   /* mask Z write */
+    dat = zb.value;
+    std::memcpy(qw, &dat, 8);
+    qw[8] = static_cast<std::uint8_t>(ico::engine::kGsAddrZBUF_1);
+
+    bool ok = buf.parsePacket(packet.data(), static_cast<u32>(packet.size()));
+    assert(ok);
+    assert(!buf.currentDepthWrite());   /* zmsk=1 -> no depth writes */
+    (void)ok;
+
+    /* TEST_1 (0x47): ztst=2 (Greater), zte=1 -> depth test Greater */
+    GifCommandBuffer buf2;
+    GifTag tag2 = GifTag::makeSimple(1, true, GifFlg::Packed, 1);
+    tag2.setReg(0, GifReg::A_D);
+    std::vector<u8> packet2;
+    packet2.resize(kGifTagSize);
+    std::memcpy(packet2.data(), tag2.bytes, kGifTagSize);
+    packet2.resize(packet2.size() + 16);
+    std::uint8_t* qw2 = packet2.data() + kGifTagSize;
+    std::uint64_t dat2 = 0;
+    GsTest ts{};
+    ts.setZte(1);
+    ts.setZtst(2);
+    dat2 = ts.value;
+    std::memcpy(qw2, &dat2, 8);
+    qw2[8] = static_cast<std::uint8_t>(ico::engine::kGsAddrTEST_1);
+    ok = buf2.parsePacket(packet2.data(), static_cast<u32>(packet2.size()));
+    assert(ok);
+    assert(buf2.currentDepthTest() == GSDepthTest::Greater);
+    (void)ok;
+}
+
+static void test_command_buffer_image_mode() {
+    /* IMAGE mode (PS2Tek): NLOOP quadwords of raw raster. Consumed for
+       alignment; no VRAM destination model yet. */
+    GifCommandBuffer buf;
+    GifTag tag{};
+    tag.setNloop(3);
+    tag.setEop(true);
+    tag.setFlg(GifFlg::Image);
+    std::vector<u8> packet;
+    packet.resize(kGifTagSize);
+    std::memcpy(packet.data(), tag.bytes, kGifTagSize);
+    packet.resize(packet.size() + 3 * 16);
+
+    bool ok = buf.parsePacket(packet.data(), static_cast<u32>(packet.size()));
+    assert(ok);
+    /* IMAGE is an upload, no draw commands emitted */
+    assert(buf.commandCount() == 0);
+    (void)ok;
+}
+
+static void test_command_buffer_regs_pre_prim() {
+    /* REGS mode with PRE prim in the tag itself (no PRIM doubleword). */
+    GifCommandBuffer buf;
+    GifTag tag{};
+    tag.setNloop(1);
+    tag.setEop(true);
+    tag.setPre(true);
+    tag.setPrim(GsPrimReg::make(GsPrimType::Sprite, false, false,
+                                          false, false, false, false).value);
+    tag.setFlg(GifFlg::Regs);
+    tag.setNreg(1);
+    tag.setReg(0, GifReg::NOP);
+    std::vector<u8> packet;
+    packet.resize(kGifTagSize);
+    std::memcpy(packet.data(), tag.bytes, kGifTagSize);
+    packet.resize(packet.size() + 8);
+
+    bool ok = buf.parsePacket(packet.data(), static_cast<u32>(packet.size()));
+    assert(ok);
+    (void)ok;
+}
+
 int main() {
     test_gif_tag_nloop();
     test_gif_tag_eop();
@@ -439,6 +592,11 @@ int main() {
     test_command_buffer_state_tracking();
     test_command_buffer_reset();
     test_command_buffer_screen_size();
+    test_gs_register_address_constants();
+    test_command_buffer_regs_mode();
+    test_command_buffer_packed_a_d_mode();
+    test_command_buffer_image_mode();
+    test_command_buffer_regs_pre_prim();
 
     std::printf("gif_command_test: all passed\n");
     return 0;
