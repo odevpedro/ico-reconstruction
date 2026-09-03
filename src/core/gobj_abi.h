@@ -17,7 +17,8 @@ enum {
     ICO_PROCESS_NODE_SIZE = 0x94,
     ICO_GOBJ_PRIMARY_LIST_COUNT = 8,
     ICO_GOBJ_DL_LIST_COUNT = 8,
-    ICO_GOBJ_DL_MASK_BITS = 32
+    ICO_GOBJ_DL_MASK_BITS = 32,
+    ICO_GOBJ_TYPE_TABLE_ENTRIES = 0x44
 };
 
 enum {
@@ -77,6 +78,11 @@ typedef struct IcoProcessNode {
 typedef struct IcoGObjPointerTable8 {
     ico_ptr32 entries[8];
 } IcoGObjPointerTable8;
+
+/* Type table (0x6A93D0): one head per type, chained via IcoGObj.type_next. */
+typedef struct IcoGObjTypeHeadTable {
+    ico_ptr32 entries[ICO_GOBJ_TYPE_TABLE_ENTRIES];
+} IcoGObjTypeHeadTable;
 
 #if defined(__cplusplus)
 #define ICO_STATIC_ASSERT(condition, message) static_assert((condition), message)
@@ -147,6 +153,8 @@ typedef struct IcoGObjSemanticPool {
     IcoGObjPointerTable8 primary_tails;
     IcoGObjPointerTable8 dl_heads;
     IcoGObjPointerTable8 dl_tails;
+    IcoGObjTypeHeadTable kind_heads;
+    u32 kind_table_disabled;   /* mirrors gp-0x6730: high when table is off */
 } IcoGObjSemanticPool;
 
 #ifdef __cplusplus
@@ -166,6 +174,30 @@ IcoGObj *ico_semantic_isysGObjAddHead(IcoGObjSemanticPool *pool,
                                       u8 list_id,
                                       u32 sort_key);
 void ico_semantic_isysGObjRemove(IcoGObjSemanticPool *pool, IcoGObj *gobj);
+IcoGObj *ico_semantic_isysGObjAddAfterGObj(IcoGObjSemanticPool *pool,
+                                           ico_ptr32 user_data,
+                                           IcoGObj *ref);
+IcoGObj *ico_semantic_isysGObjAddBeforeGObj(IcoGObjSemanticPool *pool,
+                                            ico_ptr32 user_data,
+                                            IcoGObj *ref);
+void ico_semantic_isysGObjMove(IcoGObjSemanticPool *pool, IcoGObj *gobj,
+                               u8 list_id, u32 sort_key);
+void ico_semantic_isysGObjMoveBeforeGObj(IcoGObjSemanticPool *pool,
+                                         IcoGObj *gobj, IcoGObj *ref);
+void ico_semantic_isysGObjMoveAfterGObj(IcoGObjSemanticPool *pool,
+                                        IcoGObj *gobj, IcoGObj *ref);
+void ico_semantic_isysGObjKindTableAdd(IcoGObjSemanticPool *pool,
+                                       IcoGObj *gobj, u32 type);
+void ico_semantic_isysGObjKindTableRemove(IcoGObjSemanticPool *pool,
+                                          IcoGObj *gobj);
+void ico_semantic_isysGObjLinkObjDL(IcoGObjSemanticPool *pool,
+                                    IcoGObj *gobj, ico_ptr32 callback,
+                                    u8 type_id, u32 sort_key, u32 type_bits);
+void ico_semantic_isysGObjLinkCameraDL(IcoGObjSemanticPool *pool,
+                                       IcoGObj *gobj, ico_ptr32 callback,
+                                       u8 type_id, u32 sort_key,
+                                       u32 type_bits);
+void ico_semantic_isysGObjActiveLink(void);
 
 #ifdef __cplusplus
 }
