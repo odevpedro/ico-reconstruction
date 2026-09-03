@@ -726,3 +726,43 @@ void ico_semantic_isysGObjLinkCameraDL(IcoGObjSemanticPool *pool,
     (void)pool;
     (void)sort_key;
 }
+
+/*
+ * NOTES ON THE DISPATCH CORE (iosOmExeEachGObj / iosOmCreateDL / _iosOmMain)
+ *
+ * These three functions invoke per-GObj / per-DL-entry callbacks that the
+ * canonical ABI stores as 32-bit ee pointers (IcoGObj.callback +0x48, field
+ * `callback`). The semantic pool deliberately keeps those fields 32-bit to
+ * mirror the EE ABI, so they cannot carry 64-bit host function pointers.
+ * Correctly invoking them therefore requires the native engine's pool (which
+ * stores real host pointers), not this semantic model.
+ *
+ * Confirmed structure (from the byte-exact .s; recorded as documentation, not
+ * re-implemented here to avoid a half-runnable callback path):
+ *
+ *  iosOmExeEachGObj (0x0013FD10):
+ *    walks primary-list head 0x281A70[slot] via +0x10 (next), invoking
+ *    cb(gobj, arg) on each element. -> pool.primary_heads[slot] via next.
+ *
+ *  iosOmCreateDL (0x0013FC00):
+ *    walks a GObj chain linked via +0x34 (dl_next), head from gp-0x671C;
+ *    mask gp-0x6724 gates slots; slot 0 also fires the GObj's own +0x48
+ *    callback when mask bit 0 is set and callback is non-null; for each of
+ *    32 slots, if mask bit(slot) and GObj slot_mask (+0x4C) bit(slot) are
+ *    set, walks DL head 0x281AB0[slot] via +0x34, invoking +0x48 of each DL
+ *    entry whose +0x16C is non-zero and whose type_mask (+0x50) ANDs
+ *    non-zero with the GObj's type_mask.
+ *
+ *  _iosOmMain (0x0013F9D0):
+ *    Pass 1 walks mask-enabled slots (0..7) of gp-0x6724 over primary head
+ *    0x281A70[slot]; each GObj whose +0x16C and +0x170 are non-zero has its
+ *    +0x28 user_data called as a callback. Pass 2 iterates the same mask
+ *    over a type-node chain rooted at +0x2C, dispatching process nodes for
+ *    types 0x13..0x1B via helpers 0x13D8A0 / 0x13D928 / 0x13F6B8 and the
+ *    gp-0x6710 transient.
+ *
+ * The native engine already implements this dispatch with real pointers
+ * (dispatchActiveLists / dispatchTypeSlots / dispatchAll, see Rev.105 /
+ * native-port). This semantic core intentionally leaves the three functions
+ * as documentation instead of shipping callbacks through 32-bit handles.
+ */

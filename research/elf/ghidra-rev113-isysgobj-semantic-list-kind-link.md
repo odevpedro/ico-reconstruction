@@ -158,6 +158,78 @@ reconstruction is attempted for these float branches this revision.
 
 ---
 
+## Dispatch core: field/table mapping confirmed (≥ 0x13FD10 / 0x13FC00 / 0x13F9D0)
+
+This revision decoded the three dispatch functions from their byte-exact `.s`
+and thereby **confirmed** the cross-function link-field / table model. They are
+recorded as documentation; see the design note below for why they are not
+re-implemented as runnable semantic functions in `isysgobj_semantic.c`.
+
+### Two distinct link fields and two head tables
+
+| Walk | Head table | Link field | Used by |
+|------|-----------|------------|---------|
+| primary list | `0x00281A70` (pool `primary_heads`) | `+0x10` (next) | `iosOmExeEachGObj`, `_iosOmMain` pass 1 |
+| DL list | `0x00281AB0` (pool `dl_heads`) | `+0x34` (dl_next) | `iosOmCreateDL`; also GObj chain via `+0x34` |
+
+This cleanly resolves the earlier ambiguity (0x1A70 vs 0x1AB0): **0x1A70 is
+the primary head table** walked by `+0x10`; **0x1AB0 is the DL head table**
+walked by `+0x34`. `iosOmCreateDL`'s outer GObj chain (head gp-0x671C) also
+uses `+0x34`.
+
+### `iosOmExeEachGObj` (0x0013FD10) — confirmed
+
+```
+cur = primary_heads[slot];            # 0x281A70[slot]
+while (cur) { cb(cur, arg); cur = cur->next; }   # next = +0x10
+```
+
+### `iosOmCreateDL` (0x0013FC00) — confirmed
+
+```
+g = chain_from(gp-0x671C);            # walk via dl_next (+0x34)
+while (g) {
+  for slot in 0..31:                  # ICO_GOBJ_DL_MASK_BITS == 32
+    mbit = (mask(gp-0x6724) >> slot) & 1
+    if slot==0: if mbit and g->callback(+0x48): call g->callback(g)
+                if not mbit: continue
+    if not mbit or not ((g->slot_mask(+0x4C)>>slot)&1): continue
+    dl = dl_heads[slot]               # 0x281AB0, walk via dl_next +0x34
+    while (dl):
+      if dl->state_16c(+0x16C) and (g->type_mask(+0x50)&dl->type_mask(+0x50))
+         and dl->callback(+0x48):
+           call dl->callback(dl)
+      dl = dl->dl_next
+    g = g->dl_next
+}
+```
+
+### `_iosOmMain` (0x0013F9D0) — two-pass structure confirmed
+
+- **Pass 1** (mask slots 0..7 of `gp-0x6724`): walk `primary_heads[slot]` via
+  `+0x10`; for each GObj with both `+0x16C` and `+0x170` non-zero, call its
+  `+0x28` (user_data) as a callback with `a0 = GObj`.
+- **Pass 2** (same mask slots): walk the process-node chain rooted at GObj
+  `+0x2C`; dispatch process nodes for type values `0x13..0x1B` (i.e. 19..27),
+  consulting helpers `0x13D8A0`, `0x13D928`, `0x13F6B8` and transient
+  gp-0x6710.
+
+### Design decision: dispatch NOT re-implemented as runnable semantic C
+
+The canonical ABI stores callbacks as 32-bit ee pointers
+(`IcoGObj.callback` +0x48, and ProcessNode callbacks). The semantic pool keeps
+these fields 32-bit to mirror the EE ABI, so they cannot carry 64-bit host
+function pointers. Invoking them on a 64-bit host truncates the pointer and
+crashes (verified: a test driver core-dumped attempting it). Correct execution
+is owned by the native engine (`dispatchActiveLists` / `dispatchTypeSlots` /
+`dispatchAll`, Rev.105, native-port) which stores real host pointers.
+
+Therefore `isysgobj_semantic.c` documents the three functions (comment block)
+and leaves execution to the native engine, avoiding a half-runnable callback
+path that would violate the "quality without speculation" rule.
+
+---
+
 ## Next minimum test
 
 - Link the semantic core into the native CTest suite (on `native-port`) and
