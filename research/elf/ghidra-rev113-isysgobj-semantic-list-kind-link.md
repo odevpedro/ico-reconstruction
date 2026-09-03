@@ -98,6 +98,66 @@ list link family that was still `.s`-only. This is decompilation truth work on
 - Do not re-derive byte-exact asm from these semantic functions — the `.s`
   remains the ground truth.
 
+---
+
+## Appendix: the four `.word` R5900/COP1 fallback functions
+
+Four GirlBrain/eBrain functions were preserved as byte-exact `.s` with raw
+`.word` emissions that Capstone could not handle. Decoding the raw words this
+revision shows they fall into **two distinct classes**, not one:
+
+### Class 1 — COP1 single compare `c.OLT.s`
+
+The `0x4600xxxx` words are the R5900 COP1 *ordered-less-than* comparison in
+single-float format (`c.OLT.s fs, ft`). They are genuine float compares used to
+select a minimum/maximum value in a scan. Present in `eBrainProcess` (2) and
+`girlBrainRunawaySearchPoint` (5).
+
+| Word | Decode |
+|------|--------|
+| `0x46000834` | `c.OLT.s $f1, $f0` |
+| `0x46001034` | `c.OLT.s $f2, $f0` |
+| `0x46010034` | `c.OLT.s $f0, $f1` |
+| `0x46011034` | `c.OLT.s $f2, $f1` |
+| `0x46140034` | `c.OLT.s $f0, $f20` |
+| `0x46150034` | `c.OLT.s $f0, $f21` |
+| `0x46160034` | `c.OLT.s $f0, $f22` |
+
+### Class 2 — MIPS branches emitted raw (target outside symbol range)
+
+The other words are standard MIPS branches that the assembler could not
+relocate because the branch target lay outside the local function symbol, so
+they were emitted as raw bytes. They are **not** COP1:
+
+| Word | Decode |
+|------|--------|
+| `0x1040007B` | `beqz $v0, +0x1F0` |
+| `0x1840002B` | `blez $v0, +0xB0` |
+| `0x1AE00054` | `blez $s7, +0x154` |
+| `0x18600015` | `blez $v1, +0x58` |
+| `0x1453005C` | `bne $v0, $s3, +0x174` |
+| `0x10000011` | `b +0x48` |
+| `0x1040000D` | `beqz $v0, +0x38` |
+
+### `eBrainProcess` (0x190B10 region) — confirmed shape
+
+Iterates up to `0x20` entries; each entry is `0x1C` bytes. Two chains are
+tracked at `0x6D0710` and `0x6D0B10` (index 0x2A in the `0x6D0000` block);
+each candidate holds a float at +0x8 and +0xC and a halfword kind at +0x0.
+Two float-min scans (`0x46000834` = `c.OLT.s`) pick the lowest float, with a
+running counter at gp-0x4B48 / gp-0x4B4C and a count-up at +0x14 when kind==1.
+What these fields mean for gameplay is **not** claimed here; only the `.s`
+structure is recorded.
+
+### Conclusion
+
+All four fallback functions are byte-exact `.s` ground truth. The raw `.word`
+are explained: `c.OLT.s` float compares plus out-of-range MIPS branches. They
+are deliberately kept outside the automated `asm_source_score.py` pipeline. No
+reconstruction is attempted for these float branches this revision.
+
+---
+
 ## Next minimum test
 
 - Link the semantic core into the native CTest suite (on `native-port`) and
