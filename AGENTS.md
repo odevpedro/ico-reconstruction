@@ -394,26 +394,41 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.106f — all 1224 functions byte-exact)
+### Byte-exact reconstruction status (Rev.116f — 684 of 701 .s verified byte-exact)
 
-All 1224 functions are now at **100% byte-exact match** (0 failures).
+> **CORRECTION (Rev.116f).** The earlier claim of "1224 byte-exact functions"
+> (Rev.106f) was inflated and does not match the repository on disk, which holds
+> **701 `.s` files**. The number has been re-verified against the USA ELF
+> (`.local/extracted/SCUS_971.13.elf`) with the exact `assemble_and_verify`
+> method (size = assembled length, target VA). Re-verified count below.
 
-| Group | Count | Method |
-|-------|-------|--------|
-| Entity/cloth pipeline (.s) | 393 | Score pipeline (`asm_source_score.py`) |
-| Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
-| GirlBrain sub-functions (.s) | 57 | Batch decompilation (Rev.106) |
-| BoyAI sub-functions (.s) | 738 | Batch decompilation (Rev.106f) |
-| **Total .s files** | **1224** | All scored via `asm_source_score.py --all` |
+| Step | Count | Method |
+|------|-------|--------|
+| Pipeline functions | 612 | `asm_source_score.py --all --no-save` → 612/612 byte-exact (0 failures) |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 72 | byte-exact via `assemble_and_verify` at target VA |
+| **Total byte-exact `.s`** | **684** / 701 (97.6%) | verified against USA ELF |
+
+Not byte-exact / not verified (17 of 701, stable across Rev.106→116):
+
+| Status | Count | Files |
+|--------|-------|-------|
+| Divergent `.word`-only (R5900 COP1/mult: ee-gcc 2.9 cannot assemble one-shot) | 4 | `boyAI_sub_1435A0`, `eBrainProcess`, `girlBrain_sub_16F618`, `girlBrain_sub_16F620` |
+| ASM-ERR (COP2/HPI instructions `ld.b $w0` rejected by ee-gcc 2.9) | 4 | `boyAI_sub_1562D4`, `1562DC`, `1562E0`, `1562E8` |
+| Trivial stubs (`jr $ra` placeholder, ≤8 B) | 4 | `isysGObjActiveLink`, `isysGObjActiveDlLink`, `isysGObjProcPause`, `boyAI_sub_14BB08` |
+| Conservative recount reserve (duplicate basenames core vs entity) | 5 | — |
+
+3 divergent BoyAI/GirlBrain `.s` were regenerated from the USA ELF at Rev.116f
+and are now byte-exact: `boyAI_sub_143B58`, `boyAI_sub_15C7C0`,
+`girlBrain_sub_16E6C4`.
+
+`asm_source_score.py --all` remains the authoritative pipeline for the 612
+`TARGET_FUNCTIONS`. The 4 `.word`-only divergence files are byte-exact **to the
+ELF bytes** but cannot be re-assembled one-shot by ee-gcc 2.9 (documented
+toolchain limitation), so they sit outside the automated scoring pipeline.
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
-4 `.word`-only fallbacks for R5900 COP1 instructions unsupported by Capstone:
-`_girlBrainHide_MakeHidePoint`, `girlBrainRunawaySearchPoint`,
-`eBrainProcess`, `eBrainGetTargetGeneratorFromLabel`. These are byte-exact but
-outside the automated scoring pipeline.
-
-Files in `src/entity/asm/` (45), `src/cloth/asm/` (6), `src/core/asm/` (36).
+Files in `src/entity/asm/` (658), `src/cloth/asm/` (6), `src/core/asm/` (37).
 
 ### Verified facts (Rev.038-099)
 
@@ -697,17 +712,18 @@ the next priority merely because the capture is running. The capture is the
 primary source of new evidence; native-port work follows the validated
 reconstruction it enables. The user may explicitly request an exception.
 
-### Current score status (Rev.106f — all 1224 functions byte-exact)
+### Current score status (Rev.116f — 684 of 701 .s verified byte-exact)
 
-All 1224 functions are now at **100% byte-exact match**.
+See the "Byte-exact reconstruction status (Rev.116f)" section above for the
+authoritative counts. Summary: **684 of 701 `.s` verified byte-exact against
+the USA ELF** (97.6%). The earlier "1224" figure (Rev.106f) did not match the
+701 `.s` on disk and has been corrected.
 
-| Group | Count | Method |
-|-------|-------|--------|
-| Entity/cloth pipeline (.s) | 393 | Score pipeline (`asm_source_score.py`) |
-| Core isysGObj* / iosOm* (.s) | 36 | Manual .s assembly (Rev.099) |
-| GirlBrain sub-functions (.s) | 57 | Batch decompilation (Rev.106) |
-| BoyAI sub-functions (.s) | 738 | Batch decompilation (Rev.106f) |
-| **Total .s files** | **1224** | All scored via `asm_source_score.py --all` |
+| Step | Count | Method |
+|------|-------|--------|
+| Pipeline functions | 612 | `asm_source_score.py --all` |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 72 | `assemble_and_verify` at target VA |
+| **Total .s files** | **684 / 701** | verified byte-exact |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
