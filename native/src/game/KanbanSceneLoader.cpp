@@ -1,5 +1,8 @@
 #include "game/KanbanSceneLoader.h"
 
+#include "engine/GifPacket.h"
+
+#include <algorithm>
 #include <cassert>
 
 bool KanbanSceneLoader::initialize(IsysGObj& runtime) {
@@ -8,6 +11,7 @@ bool KanbanSceneLoader::initialize(IsysGObj& runtime) {
     m_currentSceneId = 0;
     m_requests.clear();
 
+    m_sceneGObjs.clear();
     for (std::size_t i = 0; i < m_descriptors.size(); ++i) {
         m_descriptors[i].descriptorIndex = static_cast<u16>(i);
         m_descriptors[i].listId = 0;
@@ -32,6 +36,7 @@ void KanbanSceneLoader::shutdown() {
     m_requests.clear();
     m_runtime = nullptr;
     m_initialized = false;
+    m_sceneGObjs.clear();
     m_currentSceneId = 0;
 }
 
@@ -100,6 +105,7 @@ std::size_t KanbanSceneLoader::initSceneGObj(u32 sceneId) {
     }
 
     std::size_t created = 0;
+    m_sceneGObjs.clear();
     for (const SceneEntryRecord& record : m_entries) {
         if (!record.enabled || record.sceneId != sceneId ||
             record.descriptorIndex >= m_descriptors.size()) {
@@ -112,6 +118,7 @@ std::size_t KanbanSceneLoader::initSceneGObj(u32 sceneId) {
             continue;
         }
 
+        m_sceneGObjs.push_back(m_runtime->pool().handleOf(*gobj));
         ++created;
         if (desc.hasInitFn && desc.initFn) {
             desc.initFn(*gobj, desc);
@@ -159,4 +166,34 @@ SceneProcessRegistrationSpec KanbanSceneLoader::selectProcessRegistration(
 
 u32 KanbanSceneLoader::currentSceneId() const {
     return m_currentSceneId;
+}
+
+std::size_t KanbanSceneLoader::renderSyntheticScene(
+    ico::engine::GifPacketBridge& bridge,
+    const SyntheticSceneRenderStyle& style) const {
+    if (!m_initialized || m_runtime == nullptr || !bridge.checkOpen() ||
+        style.columns == 0 || style.cellWidth <= 0.0f || style.cellHeight <= 0.0f) {
+        return 0;
+    }
+
+    std::size_t emitted = 0;
+    for (u8 listId = 0; listId < ico::engine::kPrimaryListCount; ++listId) {
+        ico::engine::GObj* gobj = m_runtime->head(listId);
+        while (gobj != nullptr) {
+            const ico::engine::GObjHandle handle = m_runtime->pool().handleOf(*gobj);
+            if (std::find(m_sceneGObjs.begin(), m_sceneGObjs.end(), handle) !=
+                m_sceneGObjs.end()) {
+                const std::size_t column = emitted % style.columns;
+                const std::size_t row = emitted / style.columns;
+                bridge.makeSpriteNoTexture(
+                    style.originX + static_cast<float>(column) * style.cellWidth,
+                    style.originY + static_cast<float>(row) * style.cellHeight,
+                    style.cellWidth,
+                    style.cellHeight);
+                ++emitted;
+            }
+            gobj = m_runtime->pool().get(gobj->next);
+        }
+    }
+    return emitted;
 }

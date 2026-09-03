@@ -726,3 +726,16 @@ void ico_semantic_isysGObjLinkCameraDL(IcoGObjSemanticPool *pool,
     (void)pool;
     (void)sort_key;
 }
+
+/* Semantic reconstruction of processPoll's direct (non-NULL) path.
+ * Ground truth: src/core/asm/processPoll.s at 0x0013D8A0. */
+u32 ico_semantic_processPoll(const IcoProcessNode *process)
+{
+    return process == NULL ? 0 : process->active;
+}
+
+/* 0x22 selects isysGObjProcRemove in _iosOmMain's thread path. */
+int ico_semantic_processNeedsRemoval(const IcoProcessNode *process)
+{
+    return ico_semantic_processPoll(process) == 0x22;
+}

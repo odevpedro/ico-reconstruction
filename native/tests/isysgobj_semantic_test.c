@@ -43,4 +43,12 @@ int main(void)
     assert(pool.kind_heads.entries[5] == second->self);
     assert(pool.primary_heads.entries[2] == second->self);
     return 0;
+    {
+        IcoProcessNode process = {0};
+        process.active = 0x22;
+        assert(ico_semantic_processPoll(&process) == 0x22);
+        assert(ico_semantic_processNeedsRemoval(&process));
+        assert(ico_semantic_processPoll(0) == 0);
+        assert(!ico_semantic_processNeedsRemoval(0));
+    }
 }

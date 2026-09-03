@@ -188,6 +188,14 @@ void ico_semantic_isysGObjMoveAfterGObj(IcoGObjSemanticPool *pool,
                                         IcoGObj *gobj, IcoGObj *ref);
 void ico_semantic_isysGObjKindTableAdd(IcoGObjSemanticPool *pool,
                                        IcoGObj *gobj, u32 type);
+/*
+ * processPoll (0x0013D8A0): the non-NULL path returns ProcessNode+0x18.
+ * The original NULL path resolves the current thread through 0x6A6F30; the
+ * host semantic model has no kernel thread table and returns zero for NULL.
+ */
+u32 ico_semantic_processPoll(const IcoProcessNode *process);
+int ico_semantic_processNeedsRemoval(const IcoProcessNode *process);
+
 void ico_semantic_isysGObjKindTableRemove(IcoGObjSemanticPool *pool,
                                           IcoGObj *gobj);
 void ico_semantic_isysGObjLinkObjDL(IcoGObjSemanticPool *pool,
