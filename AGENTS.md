@@ -2,23 +2,19 @@
 
 ## Project identity
 
-This repository is a reverse engineering / digital archaeology project focused on studying the PlayStation 2 game **ICO**.
+This repository is a reverse engineering project focused on building a **native PC port** of the PlayStation 2 game **ICO**.
 
-The goal is to incrementally reconstruct verified technical knowledge about:
+The project follows a staged reconstruction approach:
 
-- the PS2 ELF binary;
-- MIPS code;
-- Ghidra analysis;
-- PCSX2 runtime behavior;
-- entity/state systems;
-- asset references;
-- overlays;
-- internal dispatch patterns;
-- possible reconstruction paths.
+1. **Verified reverse engineering** — recover symbols, function boundaries, source file mapping, data structures, runtime behavior, and engine architecture
+2. **Byte-exact preservation** — preserve original PS2 functions as `.s` when C reconstruction is not yet possible; `.s` is documentation and ground truth, not the final form
+3. **Semantic C++ reconstruction** — progressively convert verified functions into readable C++ suitable for native compilation
+4. **Platform abstraction** — replace PS2-specific systems with portable equivalents (rendering, audio, input, filesystem, timing)
+5. **Native runtime** — build a PC executable that runs reconstructed game logic against modern platform services
 
 This is not a race to produce conclusions.
 
-The goal is to build an auditable chain of evidence.
+The goal is to build an auditable chain of evidence that enables a native PC port.
 
 Prefer one small confirmed fact over a large speculative theory.
 
@@ -48,6 +44,42 @@ Direct evidence may include:
 - consistent cross-document validation.
 
 Do not treat previous AI-generated notes as truth unless they are backed by evidence.
+
+---
+
+## Priority Rule
+
+When choosing between two tasks, prefer the task that moves the project closer to a native PC port.
+
+Priority order:
+
+1. Confirm original architecture and source file ownership.
+2. Recover structs and data layouts used by gameplay systems.
+3. Convert small verified functions from `.s` to C/C++ when practical.
+4. Identify PS2 platform dependencies that will need native replacements.
+5. Design abstraction layers for input, filesystem, rendering, audio, timing, and resource loading.
+6. Preserve byte-exact `.s` only when C reconstruction is blocked or not currently efficient.
+
+Do not treat documentation-only discoveries as the final objective. Documentation is valuable when it enables reconstruction, portability, or native runtime design.
+
+---
+
+## Long-Term Goal: Native PC Port
+
+The long-term goal of this project is to make a native PC port of ICO possible.
+
+The current decompilation/reconstruction work is the foundation for this goal, but agents must distinguish between:
+
+- verified PS2 reconstruction;
+- byte-exact `.s` preservation;
+- semantic C/C++ reconstruction;
+- native PC runtime work.
+
+The `main`/`master` branch remains the conservative source of truth for decompilation and reverse engineering.
+
+The `native-port` branch is experimental and may contain platform abstraction work, native runtime scaffolding, and PC-specific prototypes.
+
+Do not introduce native-port experiments into `main`/`master` unless they improve the decompilation/reconstruction project itself.
 
 ---
 
@@ -342,9 +374,10 @@ boundary without replacing the byte-exact `.s` ground truth:
 - `0x281AB0/0x281AD0` are 8 DL-list heads/tails.
 - The `iosOmCreateDL` loop scans a 32-bit mask. This does not prove a physical
   32-entry head table; bits 8-31 remaining inactive is a probable invariant.
-- On `native-port`, the ABI feeds a contiguous `GObjPool` and minimal
-  `IsysGObjRuntime` with add/remove/reuse, ordered lists, callback mocks,
-  invariants, and CTest coverage. This is not a playable port.
+- On `native-port`, the ABI feeds a contiguous `GObjPool`, `ProcessNodePool`,
+  and `IsysGObjRuntime` with add/remove/reuse, priority-ordered process
+  registration, attached-process dispatch, callback mocks, invariants, and
+  CTest coverage (5 tests). This is not a playable port.
 
 ### GirlBrain / eBrain correction (Rev.102)
 
@@ -777,7 +810,11 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 35. ~~**Rev.105: Extended session — 25 world_states, 20 DL slots, 352 functions at 100%, physics table fully covered**~~ **DONE (2026-08-25)**
 36. ~~**Rev.109: canonical `IcoGObj`/`IcoProcessNode` ABI, 8-vs-32 table correction, and semantic C core**~~ **DONE (2026-08-26)**
 37. ~~**Native bridge: contiguous GObj pool, ordered lists, remove/reuse, callback mocks, and CTest coverage**~~ **DONE on `native-port` (2026-08-26)**
-38. **Native engine next:** implement the portable ProcessNode pool, priority-ordered registration, removal, and attached-process dispatch before renderer/assets/BOY work.
+38. ~~**Native engine: ProcessNode/TCB pool, priority registration, removal, attached dispatch**~~ **DONE on `native-port` (2026-08-26)**
+39. ~~**Native engine: iosOmCreateDL slot dispatch and type-based routing** — `dispatchTypeSlots()` (type slots 19-27 per GObj), `dispatchAll()` = `dispatchActiveLists` + `dispatchTypeSlots`, `slot_dispatch_test.cpp` with full coverage. Fixed critical `assert(runtime.initialize(...))` UB where NDEBUG stripped the init call in Release mode causing SIGSEGV.~~ **DONE (2026-08-26)**
+40. ~~**Native engine: RenderBackend abstraction** — PS2 GIF/GS rendering pipeline modeled as `RenderBackend` interface with textures, render targets, blend/depth/alpha test, sprites (flat + gouraud), primitives, indexed draw, render passes per display list, double-buffer swap. `Matrix4x4` math library. `Rev.110` research note mapping ~200 rendering functions across 12 modules. `render_backend_test` with 7 tests (all passing).~~ **DONE (2026-08-26)**
+41. ~~**Native engine: rendering pipeline** — TM2 texture loading (PSMCT32/CT24/CT16/PSMT8/PSMT4, CLUT, GS page swizzle), GIF command buffer (tag parsing, state tracking, quad accumulation), GIF executor (bridges command buffer to RenderBackend), OpenGL backend (GLX windowing, GL 3.3 core/fallback, batch renderer, FBO, shaders, test mode). 47 new tests across 4 files. All 10 test targets pass. Fixed PSMT4 nibble order.~~ **DONE (2026-08-26)**
+42. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model, then begin scene loading integration.
 
 ---
 
@@ -888,6 +925,32 @@ When updating `README.md`, keep it conservative:
 Do not rewrite history.
 
 If a previous note is wrong, create a new correction note or clearly mark the contradiction in the current revision.
+
+## Verify-before-reconstruct (avoid redoing resolved work)
+
+Before writing ANY new reconstruction code (semantic C/C++, native bridge,
+fixtures, tests) or proposing a new decompilation target, FIRST verify what
+already exists:
+
+1. **Search the repo for the target** before creating anything:
+   - byte-exact `.s` files in `src/**/asm/` (e.g. `initSceneGObj.s`);
+   - semantic C/C++ in `src/core/` and `native/src/`;
+   - existing research notes (`research/`) covering the same address/function;
+   - existing tests (`native/tests/`, `tests/`).
+2. **Read the relevant notes and source before deciding** the work is new.
+   A function may already be reconstructed (even if only as `.s` or a semantic
+   wrapper). Reconstructing something already resolved wastes time and risks
+   conflicting changes.
+3. **Only create new code when there is a genuine gap** — a target with no
+   existing `.s`, no semantic wrapper, and no research note documenting it.
+   When a real gap exists, prefer extending an existing module over creating a
+   parallel one.
+4. **If you are unsure whether a gap exists, ask or state the uncertainty**
+   before writing code, rather than assuming it is new work.
+
+This rule applies to both the `main`/`master` (decompilation truth) and the
+`native-port` branch. Treat "already resolved or already partially covered" as
+the default assumption until proven otherwise.
 
 ## Blog persona prompt maintenance
 
