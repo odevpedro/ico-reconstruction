@@ -926,6 +926,32 @@ Do not rewrite history.
 
 If a previous note is wrong, create a new correction note or clearly mark the contradiction in the current revision.
 
+## Verify-before-reconstruct (avoid redoing resolved work)
+
+Before writing ANY new reconstruction code (semantic C/C++, native bridge,
+fixtures, tests) or proposing a new decompilation target, FIRST verify what
+already exists:
+
+1. **Search the repo for the target** before creating anything:
+   - byte-exact `.s` files in `src/**/asm/` (e.g. `initSceneGObj.s`);
+   - semantic C/C++ in `src/core/` and `native/src/`;
+   - existing research notes (`research/`) covering the same address/function;
+   - existing tests (`native/tests/`, `tests/`).
+2. **Read the relevant notes and source before deciding** the work is new.
+   A function may already be reconstructed (even if only as `.s` or a semantic
+   wrapper). Reconstructing something already resolved wastes time and risks
+   conflicting changes.
+3. **Only create new code when there is a genuine gap** — a target with no
+   existing `.s`, no semantic wrapper, and no research note documenting it.
+   When a real gap exists, prefer extending an existing module over creating a
+   parallel one.
+4. **If you are unsure whether a gap exists, ask or state the uncertainty**
+   before writing code, rather than assuming it is new work.
+
+This rule applies to both the `main`/`master` (decompilation truth) and the
+`native-port` branch. Treat "already resolved or already partially covered" as
+the default assumption until proven otherwise.
+
 ## Blog persona prompt maintenance
 
 The file below is a required companion context for narrative/blog-style writing about this project:

@@ -114,6 +114,9 @@ target_link_libraries(gif_packet_test PRIVATE ico_engine_core)
 add_executable(scene_loader_test tests/scene_loader_test.cpp)
 target_link_libraries(scene_loader_test PRIVATE ico_engine_core)
 
+add_executable(world_state_slot_test tests/world_state_slot_test.cpp)
+target_link_libraries(world_state_slot_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
@@ -127,6 +130,7 @@ add_test(NAME gif_command COMMAND gif_command_test)
 add_test(NAME gif_executor COMMAND gif_executor_test)
 add_test(NAME gif_packet COMMAND gif_packet_test)
 add_test(NAME scene_loader COMMAND scene_loader_test)
+add_test(NAME world_state_slot COMMAND world_state_slot_test)
 
 if(ICO_ENABLE_OPENGL)
     add_executable(opengl_backend_test tests/opengl_backend_test.cpp)
