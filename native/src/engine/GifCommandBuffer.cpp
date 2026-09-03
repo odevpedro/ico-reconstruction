@@ -29,6 +29,11 @@ GifCommandBuffer::GifCommandBuffer()
     , m_spriteUv0{}
     , m_spriteUv1{}
     , m_spriteVertexCount(0)
+    , m_transferBitbltBuf{}
+    , m_transferTrxPos{}
+    , m_transferTrxReg{}
+    , m_transferTrxDir{}
+    , m_nextTextureHandle(0)
 {
 }
 
@@ -55,6 +60,12 @@ void GifCommandBuffer::reset() {
     m_spriteVertices.clear();
     m_spriteUvs.clear();
     m_spriteColors.clear();
+    m_transferBitbltBuf = GsBitbltBuf{};
+    m_transferTrxPos = GsTrxPos{};
+    m_transferTrxReg = GsTrxReg{};
+    m_transferTrxDir = GsTrxDir{};
+    m_uploads.clear();
+    m_nextTextureHandle = 0;
 }
 
 bool GifCommandBuffer::parsePacket(const u8* data, u32 size) {
@@ -215,6 +226,10 @@ void GifCommandBuffer::dispatchByAddress(u8 addr, const u8* regData) {
         case kGsAddrFRAME_2: handleFrame(regData); break;
         case kGsAddrZBUF_1:  handleZbuf(regData); break;
         case kGsAddrZBUF_2:  handleZbuf(regData); break;
+        case kGsAddrBITBLTBUF: handleBitbltBuf(regData); break;
+        case kGsAddrTRXPOS:    handleTrxPos(regData); break;
+        case kGsAddrTRXREG:    handleTrxReg(regData); break;
+        case kGsAddrTRXDIR:    handleTrxDir(regData); break;
         default: break;
     }
 }
@@ -222,13 +237,64 @@ void GifCommandBuffer::dispatchByAddress(u8 addr, const u8* regData) {
 void GifCommandBuffer::processImageLoop(const GifTag& tag, const u8* data, u32 dataSize) {
     /* IMAGE: PS2Tek "GIF Data Formats" — raw raster upload. Total data =
        NLOOP quadwords, written to the GS HWREG / VRAM write pointer. The
-       destination address comes from BITBLTBUF/TRXPOS/TRXREG registers, which
-       are not yet modeled. Consume the quadwords to keep parsing aligned. */
+       destination comes from BITBLTBUF/TRXPOS/TRXREG registers. Rev.118 models
+       the host->VRAM direction (TRXDIR xdir=0) as a decoded RGBA8 texture and
+       resolves it to a texture handle via TEX0.tbp0. */
     u32 nloop = tag.nloop();
     u32 expected = nloop * kGifTagSize;
-    (void)data;
-    (void)dataSize;
-    (void)expected;
+    if (dataSize < expected) {
+        return;
+    }
+
+    if (m_transferTrxDir.xdir() != 0) {
+        /* Only host->VRAM (xdir=0) is modeled. xdir=1 (local->host) and
+           xdir=2 (local->local) are outside this model. */
+        return;
+    }
+
+    if (m_transferBitbltBuf.dpsm() != static_cast<u32>(TextureFormat::PSMCT32)) {
+        /* Only PSMCT32 host->VRAM uploads are decoded (Rev.118). Other PSMs
+           (16/8/4, indexed palettes) remain unmodeled. */
+        return;
+    }
+
+    u32 w = m_transferTrxReg.rrw();
+    u32 h = m_transferTrxReg.rrh();
+    if (w == 0 || h == 0 || w > 512 || h > 512) {
+        return;
+    }
+
+    std::size_t pixelCount = static_cast<std::size_t>(w) * h;
+    std::vector<u8> rgba(pixelCount * 4, 0);
+
+    u32 quadwords = nloop;
+    std::size_t pixelIndex = 0;
+    for (u32 qi = 0; qi < quadwords; ++qi) {
+        const u8* qw = data + static_cast<std::size_t>(qi) * kGifTagSize;
+        u32 px[4];
+        std::memcpy(px, qw, sizeof(px));
+        for (u32 pi = 0; pi < 4; ++pi) {
+            if (pixelIndex >= pixelCount) {
+                break;
+            }
+            u32 c = px[pi];
+            std::size_t o = pixelIndex * 4;
+            rgba[o + 0] = static_cast<u8>(c & 0xFF);
+            rgba[o + 1] = static_cast<u8>((c >> 8) & 0xFF);
+            rgba[o + 2] = static_cast<u8>((c >> 16) & 0xFF);
+            rgba[o + 3] = static_cast<u8>((c >> 24) & 0xFF);
+            ++pixelIndex;
+        }
+    }
+
+    UploadedTexture tex;
+    tex.handle = ++m_nextTextureHandle;
+    tex.tbp0 = m_transferBitbltBuf.dbase();
+    tex.width = w;
+    tex.height = h;
+    tex.format = TextureFormat::PSMCT32;
+    tex.rgba = std::move(rgba);
+    m_uploads.push_back(std::move(tex));
 }
 
 void GifCommandBuffer::handlePrim(const u8* data) {
@@ -346,7 +412,7 @@ void GifCommandBuffer::handleXyz2(const u8* data) {
             cmd.draw.list = RenderList::Opaque;
             cmd.draw.vertexOffset = 0;
             cmd.draw.vertexCount = static_cast<u32>(m_spriteVertices.size());
-            cmd.draw.texture = kNullTexture;
+            cmd.draw.texture = currentTexture();
 
             if (!m_spriteColors.empty()) {
                 cmd.draw.r = m_spriteColors.back().r();
@@ -423,6 +489,30 @@ void GifCommandBuffer::handleZbuf(const u8* data) {
     m_currentZbuf.value = val;
 }
 
+void GifCommandBuffer::handleBitbltBuf(const u8* data) {
+    u64 val = 0;
+    std::memcpy(&val, data, 8);
+    m_transferBitbltBuf.value = val;
+}
+
+void GifCommandBuffer::handleTrxPos(const u8* data) {
+    u64 val = 0;
+    std::memcpy(&val, data, 8);
+    m_transferTrxPos.value = val;
+}
+
+void GifCommandBuffer::handleTrxReg(const u8* data) {
+    u64 val = 0;
+    std::memcpy(&val, data, 8);
+    m_transferTrxReg.value = val;
+}
+
+void GifCommandBuffer::handleTrxDir(const u8* data) {
+    u64 val = 0;
+    std::memcpy(&val, data, 8);
+    m_transferTrxDir.value = val;
+}
+
 void GifCommandBuffer::handleFog(const u8* data) {
     u32 val = 0;
     std::memcpy(&val, data, 4);
@@ -446,7 +536,7 @@ void GifCommandBuffer::emitSprite() {
     cmd.sprite.g = m_currentRgbaq.g();
     cmd.sprite.b = m_currentRgbaq.b();
     cmd.sprite.a = m_currentRgbaq.a();
-    cmd.sprite.texture = kNullTexture;
+    cmd.sprite.texture = currentTexture();
     m_commands.push_back(cmd);
 }
 
@@ -460,7 +550,7 @@ void GifCommandBuffer::emitGouraudSprite() {
     cmd.spriteGouraud.v0 = m_spriteUv0[1];
     cmd.spriteGouraud.u1 = m_spriteUv1[0];
     cmd.spriteGouraud.v1 = m_spriteUv1[1];
-    cmd.spriteGouraud.texture = kNullTexture;
+    cmd.spriteGouraud.texture = currentTexture();
     cmd.spriteGouraud.corners[0][0] = m_currentRgbaq.r();
     cmd.spriteGouraud.corners[0][1] = m_currentRgbaq.g();
     cmd.spriteGouraud.corners[0][2] = m_currentRgbaq.b();
@@ -486,7 +576,7 @@ void GifCommandBuffer::emitLine() {
     cmd.draw.list = RenderList::Opaque;
     cmd.draw.vertexOffset = 0;
     cmd.draw.vertexCount = 2;
-    cmd.draw.texture = kNullTexture;
+    cmd.draw.texture = currentTexture();
     cmd.draw.r = m_currentRgbaq.r();
     cmd.draw.g = m_currentRgbaq.g();
     cmd.draw.b = m_currentRgbaq.b();
@@ -500,7 +590,7 @@ void GifCommandBuffer::emitPoint() {
     cmd.draw.list = RenderList::Opaque;
     cmd.draw.vertexOffset = 0;
     cmd.draw.vertexCount = 1;
-    cmd.draw.texture = kNullTexture;
+    cmd.draw.texture = currentTexture();
     cmd.draw.r = m_currentRgbaq.r();
     cmd.draw.g = m_currentRgbaq.g();
     cmd.draw.b = m_currentRgbaq.b();
@@ -566,7 +656,34 @@ GSBlendMode GifCommandBuffer::currentBlendMode() const {
 }
 
 TextureHandle GifCommandBuffer::currentTexture() const {
+    if (m_currentTex0.tcc() == 0 || m_uploads.empty()) {
+        return kNullTexture;
+    }
+    u32 tbp0 = m_currentTex0.tbp0();
+    for (const UploadedTexture& tex : m_uploads) {
+        if (tex.tbp0 == tbp0) {
+            return tex.handle;
+        }
+    }
     return kNullTexture;
+}
+
+bool GifCommandBuffer::uploadedTexture(TextureHandle handle, u32& width, u32& height,
+                                       TextureFormat& format, std::vector<u8>& rgba) const {
+    for (const UploadedTexture& tex : m_uploads) {
+        if (tex.handle == handle) {
+            width = tex.width;
+            height = tex.height;
+            format = tex.format;
+            rgba = tex.rgba;
+            return true;
+        }
+    }
+    return false;
+}
+
+std::size_t GifCommandBuffer::uploadedTextureCount() const {
+    return m_uploads.size();
 }
 
 bool GifCommandBuffer::currentDepthWrite() const {

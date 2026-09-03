@@ -219,6 +219,58 @@ struct GsZbuf {
     void setZmsk(u32 v);
 };
 
+struct GsBitbltBuf {
+    u64 value;
+
+    u32 sbase() const;
+    u32 sbw() const;
+    u32 spsm() const;
+    u32 dbase() const;
+    u32 dbw() const;
+    u32 dpsm() const;
+
+    void setSbase(u32 v);
+    void setSbw(u32 v);
+    void setSpsm(u32 v);
+    void setDbase(u32 v);
+    void setDbw(u32 v);
+    void setDpsm(u32 v);
+};
+
+struct GsTrxPos {
+    u64 value;
+
+    u32 ssx() const;
+    u32 ssy() const;
+    u32 dsx() const;
+    u32 dsy() const;
+    u32 dir() const;
+
+    void setSsx(u32 v);
+    void setSsy(u32 v);
+    void setDsx(u32 v);
+    void setDsy(u32 v);
+    void setDir(u32 v);
+};
+
+struct GsTrxReg {
+    u64 value;
+
+    u32 rrw() const;
+    u32 rrh() const;
+
+    void setRrw(u32 v);
+    void setRrh(u32 v);
+};
+
+struct GsTrxDir {
+    u64 value;
+
+    u32 xdir() const;
+
+    void setXdir(u32 v);
+};
+
 struct GsAlpha {
     u32 value;
 

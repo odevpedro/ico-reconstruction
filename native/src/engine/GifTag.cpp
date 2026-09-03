@@ -223,6 +223,42 @@ void GsZbuf::setZbp(u32 v)   { value = (value & ~0x1FFull) | (v & 0x1FF); }
 void GsZbuf::setPsm(u32 v)   { value = (value & ~(0x0Full << 24)) | (static_cast<u64>(v & 0x0F) << 24); }
 void GsZbuf::setZmsk(u32 v)  { value = (value & ~(1ull << 31)) | (static_cast<u64>(v & 1) << 31); }
 
+u32 GsBitbltBuf::sbase() const { return static_cast<u32>(value) & 0x3FFF; }
+u32 GsBitbltBuf::sbw() const   { return (static_cast<u32>(value) >> 16) & 0x3F; }
+u32 GsBitbltBuf::spsm() const  { return (static_cast<u32>(value) >> 24) & 0x3F; }
+u32 GsBitbltBuf::dbase() const { return static_cast<u32>((value >> 32) & 0x3FFF); }
+u32 GsBitbltBuf::dbw() const   { return static_cast<u32>((value >> 48) & 0x3F); }
+u32 GsBitbltBuf::dpsm() const  { return static_cast<u32>((value >> 56) & 0x3F); }
+
+void GsBitbltBuf::setSbase(u32 v) { value = (value & ~0x3FFFull) | (v & 0x3FFF); }
+void GsBitbltBuf::setSbw(u32 v)   { value = (value & ~(0x3Full << 16)) | (static_cast<u64>(v & 0x3F) << 16); }
+void GsBitbltBuf::setSpsm(u32 v)  { value = (value & ~(0x3Full << 24)) | (static_cast<u64>(v & 0x3F) << 24); }
+void GsBitbltBuf::setDbase(u32 v) { value = (value & ~(0x3FFFull << 32)) | (static_cast<u64>(v & 0x3FFF) << 32); }
+void GsBitbltBuf::setDbw(u32 v)   { value = (value & ~(0x3Full << 48)) | (static_cast<u64>(v & 0x3F) << 48); }
+void GsBitbltBuf::setDpsm(u32 v)  { value = (value & ~(0x3Full << 56)) | (static_cast<u64>(v & 0x3F) << 56); }
+
+u32 GsTrxPos::ssx() const { return static_cast<u32>(value) & 0x7FF; }
+u32 GsTrxPos::ssy() const { return static_cast<u32>((value >> 16) & 0x7FF); }
+u32 GsTrxPos::dsx() const { return static_cast<u32>((value >> 32) & 0x7FF); }
+u32 GsTrxPos::dsy() const { return static_cast<u32>((value >> 48) & 0x7FF); }
+u32 GsTrxPos::dir() const { return static_cast<u32>((value >> 59) & 0x03); }
+
+void GsTrxPos::setSsx(u32 v) { value = (value & ~0x7FFull) | (v & 0x7FF); }
+void GsTrxPos::setSsy(u32 v) { value = (value & ~(0x7FFull << 16)) | (static_cast<u64>(v & 0x7FF) << 16); }
+void GsTrxPos::setDsx(u32 v) { value = (value & ~(0x7FFull << 32)) | (static_cast<u64>(v & 0x7FF) << 32); }
+void GsTrxPos::setDsy(u32 v) { value = (value & ~(0x7FFull << 48)) | (static_cast<u64>(v & 0x7FF) << 48); }
+void GsTrxPos::setDir(u32 v) { value = (value & ~(3ull << 59)) | (static_cast<u64>(v & 0x03) << 59); }
+
+u32 GsTrxReg::rrw() const { return static_cast<u32>(value) & 0xFFF; }
+u32 GsTrxReg::rrh() const { return static_cast<u32>((value >> 16) & 0xFFF); }
+
+void GsTrxReg::setRrw(u32 v) { value = (value & ~0xFFFull) | (v & 0xFFF); }
+void GsTrxReg::setRrh(u32 v) { value = (value & ~(0xFFFull << 16)) | (static_cast<u64>(v & 0xFFF) << 16); }
+
+u32 GsTrxDir::xdir() const { return static_cast<u32>(value) & 0x03; }
+
+void GsTrxDir::setXdir(u32 v) { value = (value & ~3ull) | (v & 0x03); }
+
 u32 GsAlpha::aba() const  { return value & 0x03; }
 u32 GsAlpha::abb() const  { return (value >> 2) & 0x03; }
 u32 GsAlpha::abc() const  { return (value >> 4) & 0x03; }

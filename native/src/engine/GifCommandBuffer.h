@@ -64,6 +64,13 @@ public:
     bool currentDepthWrite() const;
     GSDepthTest currentDepthTest() const;
 
+    /* VRAM texture upload model: after a host->VRAM IMAGE transfer resolved by
+       a matching TEX0, exposes the decoded RGBA8 plane for a texture handle so a
+       renderer can create a real texture. */
+    bool uploadedTexture(TextureHandle handle, u32& width, u32& height,
+                         TextureFormat& format, std::vector<u8>& rgba) const;
+    std::size_t uploadedTextureCount() const;
+
 private:
     void processTag(const GifTag& tag, const u8* data, u32 dataSize);
     void processPackedData(const GifTag& tag, const u8* data, u32 dataSize);
@@ -85,6 +92,10 @@ private:
     void handleTest(const u8* data);
     void handleFrame(const u8* data);
     void handleZbuf(const u8* data);
+    void handleBitbltBuf(const u8* data);
+    void handleTrxPos(const u8* data);
+    void handleTrxReg(const u8* data);
+    void handleTrxDir(const u8* data);
     void handleFog(const u8* data);
     void handleNop(const u8* data);
 
@@ -127,6 +138,24 @@ private:
     std::vector<std::array<float, 2>> m_spriteVertices;
     std::vector<std::array<float, 2>> m_spriteUvs;
     std::vector<GsRgbaq> m_spriteColors;
+
+    /* GS block-transfer state (PS2Tek GS registers 0x50-0x53). */
+    GsBitbltBuf m_transferBitbltBuf;
+    GsTrxPos m_transferTrxPos;
+    GsTrxReg m_transferTrxReg;
+    GsTrxDir m_transferTrxDir;
+
+    /* Decoded host->VRAM texture uploads, keyed by an opaque handle. */
+    struct UploadedTexture {
+        TextureHandle handle;
+        u32 tbp0;
+        u32 width;
+        u32 height;
+        TextureFormat format;
+        std::vector<u8> rgba; /* RGBA8 plane, row-major */
+    };
+    std::vector<UploadedTexture> m_uploads;
+    TextureHandle m_nextTextureHandle;
 };
 
 } // namespace ico::engine

@@ -1,5 +1,7 @@
 #include "engine/GifCommandExecutor.h"
 
+#include <vector>
+
 namespace ico::engine {
 
 GifCommandExecutor::GifCommandExecutor(RenderBackend& backend)
@@ -8,8 +10,51 @@ GifCommandExecutor::GifCommandExecutor(RenderBackend& backend)
 
 void GifCommandExecutor::execute(const GifCommandBuffer& buffer) {
     for (u32 i = 0; i < buffer.commandCount(); ++i) {
-        executeCommand(buffer.command(i));
+        RenderCmd cmd = buffer.command(i);
+        resolveTextureHandles(cmd, buffer);
+        executeCommand(cmd);
     }
+}
+
+void GifCommandExecutor::resolveTextureHandles(RenderCmd& cmd, const GifCommandBuffer& buffer) {
+    TextureHandle* texPtr = nullptr;
+    switch (cmd.type) {
+        case RenderCommand::DrawPrimitive:      texPtr = &cmd.draw.texture; break;
+        case RenderCommand::DrawIndexed:        texPtr = &cmd.drawIndexed.texture; break;
+        case RenderCommand::DrawSprite:         texPtr = &cmd.sprite.texture; break;
+        case RenderCommand::DrawSpriteGouraud:  texPtr = &cmd.spriteGouraud.texture; break;
+        default: return;
+    }
+    if (*texPtr == kNullTexture) {
+        return;
+    }
+
+    auto it = m_virtualToReal.find(*texPtr);
+    if (it != m_virtualToReal.end()) {
+        *texPtr = it->second;
+        return;
+    }
+
+    TextureFormat format;
+    u32 w = 0;
+    u32 h = 0;
+    std::vector<u8> rgba;
+    if (!buffer.uploadedTexture(*texPtr, w, h, format, rgba)) {
+        return;
+    }
+
+    TextureDesc desc{};
+    desc.width = w;
+    desc.height = h;
+    desc.format = format;
+    desc.data = rgba.data();
+    desc.dataSize = static_cast<u32>(rgba.size());
+    desc.generateMipmaps = false;
+
+    TextureHandle real = m_backend.createTexture(desc);
+    m_backend.bindTexture(real, 0);
+    m_virtualToReal[*texPtr] = real;
+    *texPtr = real;
 }
 
 void GifCommandExecutor::executeCommand(const RenderCmd& cmd) {

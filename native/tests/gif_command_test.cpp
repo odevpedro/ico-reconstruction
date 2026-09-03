@@ -29,6 +29,12 @@ using ico::engine::RenderCmd;
 using ico::engine::GSPrimitive;
 using ico::engine::GSBlendMode;
 using ico::engine::GSDepthTest;
+using ico::engine::TextureHandle;
+using ico::engine::TextureFormat;
+using ico::engine::GsBitbltBuf;
+using ico::engine::GsTrxPos;
+using ico::engine::GsTrxReg;
+using ico::engine::GsTrxDir;
 
 static void test_gif_tag_nloop() {
     GifTag tag{};
@@ -566,6 +572,129 @@ static void test_command_buffer_regs_pre_prim() {
     (void)ok;
 }
 
+static void test_image_vram_upload() {
+    /* Rev.118 VRAM-destination model: a host->VRAM IMAGE transfer
+       (BITBLTBUF + TRXPOS + TRXREG + TRXDIR then IMAGE) is decoded to an
+       RGBA8 texture, resolved to a handle via TEX0.tbp0, and bound to draws. */
+    GifCommandBuffer buf;
+
+    auto addAD = [&](u32 addr, u64 value) {
+        GifTag tag = GifTag::makeSimple(1, true, GifFlg::Packed, 1);
+        tag.setReg(0, GifReg::A_D);
+        std::vector<u8> packet;
+        packet.resize(kGifTagSize);
+        std::memcpy(packet.data(), tag.bytes, kGifTagSize);
+        packet.resize(packet.size() + 16);
+        std::uint8_t* qw = packet.data() + kGifTagSize;
+        std::memcpy(qw, &value, 8);
+        qw[8] = static_cast<std::uint8_t>(addr);
+        assert(buf.parsePacket(packet.data(), static_cast<u32>(packet.size())));
+    };
+
+    GsBitbltBuf bb{};
+    bb.setDbase(0x2000);
+    bb.setDbw(1);
+    bb.setDpsm(0); /* PSMCT32 */
+    addAD(ico::engine::kGsAddrBITBLTBUF, bb.value);
+
+    GsTrxPos tp{};
+    tp.setDsx(0);
+    tp.setDsy(0);
+    addAD(ico::engine::kGsAddrTRXPOS, tp.value);
+
+    GsTrxReg tr{};
+    tr.setRrw(4);
+    tr.setRrh(1);
+    addAD(ico::engine::kGsAddrTRXREG, tr.value);
+
+    GsTrxDir td{};
+    td.setXdir(0); /* host->VRAM */
+    addAD(ico::engine::kGsAddrTRXDIR, td.value);
+
+    /* IMAGE: one quadword = 4 pixels PSMCT32 (R | G<<8 | B<<16 | A<<24). */
+    {
+        GifTag tag{};
+        tag.setNloop(1);
+        tag.setEop(true);
+        tag.setFlg(GifFlg::Image);
+        std::vector<u8> packet;
+        packet.resize(kGifTagSize);
+        std::memcpy(packet.data(), tag.bytes, kGifTagSize);
+        u32 px[4] = {0x000000FFu, 0x0000FF00u, 0x00FF0000u, 0xFF000080u};
+        packet.resize(packet.size() + 16);
+        std::memcpy(packet.data() + kGifTagSize, px, sizeof(px));
+        assert(buf.parsePacket(packet.data(), static_cast<u32>(packet.size())));
+    }
+
+    assert(buf.uploadedTextureCount() == 1);
+    /* IMAGE alone emits no draw command. */
+    assert(buf.commandCount() == 0);
+
+    /* Bind the upload to the current TEX0 (tbp0 == dbase, tcc=1). */
+    GsTex0 tex0{};
+    tex0.setTbp0(0x2000);
+    tex0.setTcc(1);
+    addAD(ico::engine::kGsAddrTEX0_1, tex0.value);
+
+    TextureHandle handle = buf.currentTexture();
+    assert(handle != ico::engine::kNullTexture);
+
+    u32 w = 0, h = 0;
+    TextureFormat fmt{};
+    std::vector<u8> rgba;
+    assert(buf.uploadedTexture(handle, w, h, fmt, rgba));
+    assert(w == 4);
+    assert(h == 1);
+    assert(fmt == TextureFormat::PSMCT32);
+    assert(rgba.size() == 16);
+    /* px0 0x000000FF: R=0xFF G=0 B=0 A=0 */
+    assert(rgba[0] == 0xFF && rgba[1] == 0 && rgba[2] == 0 && rgba[3] == 0);
+    /* px1 0x0000FF00: R=0 G=0xFF B=0 A=0 */
+    assert(rgba[4] == 0 && rgba[5] == 0xFF && rgba[6] == 0 && rgba[7] == 0);
+    /* px2 0x00FF0000: R=0 G=0 B=0xFF A=0 */
+    assert(rgba[8] == 0 && rgba[9] == 0 && rgba[10] == 0xFF && rgba[11] == 0);
+    /* px3 0xFF000080: R=0x80 G=0 B=0 A=0xFF */
+    assert(rgba[12] == 0x80 && rgba[13] == 0 && rgba[14] == 0 && rgba[15] == 0xFF);
+
+    /* A subsequent draw with that TEX0 active binds the uploaded handle.
+       (Same buffer: upload and referencing draw share one GIF stream/frame.)
+       TEX0 is already bound above; emit the sprite directly. */
+    GifTag sp{};
+    sp.setNloop(6);
+    sp.setEop(true);
+    sp.setPre(true);
+    sp.setPrim(6 | (1 << 5));
+    sp.setFlg(GifFlg::Packed);
+    sp.setNreg(3);
+    sp.setReg(0, GifReg::RGBAQ);
+    sp.setReg(1, GifReg::UV);
+    sp.setReg(2, GifReg::XYZ2);
+    std::vector<u8> spk;
+    spk.resize(kGifTagSize);
+    std::memcpy(spk.data(), sp.bytes, kGifTagSize);
+    GsRgbaq c = GsRgbaq::make(255, 128, 64, 200);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize, &c.value, 8);
+    GsUv uv0 = GsUv::make(0.0f, 0.0f);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 16, &uv0.value, 4);
+    GsXyz2 x0 = GsXyz2::make(10.0f, 20.0f, 0.0f);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 32, &x0.value, 8);
+    GsRgbaq c2 = GsRgbaq::make(255, 128, 64, 200);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 48, &c2.value, 8);
+    GsUv uv1 = GsUv::make(100.0f, 50.0f);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 64, &uv1.value, 4);
+    GsXyz2 x1 = GsXyz2::make(110.0f, 70.0f, 0.0f);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 80, &x1.value, 8);
+    assert(buf.parsePacket(spk.data(), static_cast<u32>(spk.size())));
+    assert(buf.commandCount() == 1);
+    assert(buf.command(0).sprite.texture != ico::engine::kNullTexture);
+}
+
 int main() {
     test_gif_tag_nloop();
     test_gif_tag_eop();
@@ -597,6 +726,7 @@ int main() {
     test_command_buffer_packed_a_d_mode();
     test_command_buffer_image_mode();
     test_command_buffer_regs_pre_prim();
+    test_image_vram_upload();
 
     std::printf("gif_command_test: all passed\n");
     return 0;

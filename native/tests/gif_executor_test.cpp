@@ -43,7 +43,7 @@ public:
     void setZBuffer(u32, u32, bool) override {}
     void setAlpha(u32, u32, u32, u32, u32) override {}
 
-    TextureHandle createTexture(const TextureDesc& desc) override { (void)desc; return ++m_nextTex; }
+    TextureHandle createTexture(const TextureDesc& desc) override { (void)desc; ++m_createTextureCalls; return ++m_nextTex; }
     void destroyTexture(TextureHandle) override {}
     void bindTexture(TextureHandle h, u32 s) override { m_boundTex = h; m_texSlot = s; }
 
@@ -102,6 +102,7 @@ public:
     bool m_depthWrite = true;
 
     TextureHandle m_nextTex = kNullTexture;
+    u32 m_createTextureCalls = 0;
     TextureHandle m_boundTex = kNullTexture;
     u32 m_texSlot = 0;
     RenderTargetHandle m_nextRT = kNullRenderTarget;
@@ -284,11 +285,110 @@ static void test_executor_empty() {
     assert(backend.m_clearCalls == 0);
 }
 
+static void test_executor_vram_upload() {
+    /* Rev.118: the executor resolves a buffer-uploaded texture handle into a
+       real backend texture via createTexture+bindTexture before drawing. */
+    TestBackend backend;
+    backend.initialize(640, 448);
+    GifCommandExecutor exec(backend);
+
+    GifCommandBuffer buf;
+    auto addAD = [&](u32 addr, u64 value) {
+        GifTag tag = GifTag::makeSimple(1, true, GifFlg::Packed, 1);
+        tag.setReg(0, GifReg::A_D);
+        std::vector<u8> packet;
+        packet.resize(kGifTagSize);
+        std::memcpy(packet.data(), tag.bytes, kGifTagSize);
+        packet.resize(packet.size() + 16);
+        std::uint8_t* qw = packet.data() + kGifTagSize;
+        std::memcpy(qw, &value, 8);
+        qw[8] = static_cast<std::uint8_t>(addr);
+        assert(buf.parsePacket(packet.data(), static_cast<u32>(packet.size())));
+    };
+
+    GsBitbltBuf bb{};
+    bb.setDbase(0x2000);
+    bb.setDbw(1);
+    bb.setDpsm(0);
+    addAD(kGsAddrBITBLTBUF, bb.value);
+    GsTrxPos tp{};
+    tp.setDsx(0);
+    tp.setDsy(0);
+    addAD(kGsAddrTRXPOS, tp.value);
+    GsTrxReg tr{};
+    tr.setRrw(4);
+    tr.setRrh(1);
+    addAD(kGsAddrTRXREG, tr.value);
+    GsTrxDir td{};
+    td.setXdir(0);
+    addAD(kGsAddrTRXDIR, td.value);
+
+    {
+        GifTag img{};
+        img.setNloop(1);
+        img.setEop(true);
+        img.setFlg(GifFlg::Image);
+        std::vector<u8> packet;
+        packet.resize(kGifTagSize);
+        std::memcpy(packet.data(), img.bytes, kGifTagSize);
+        u32 px[4] = {0x000000FFu, 0x0000FF00u, 0x00FF0000u, 0xFF000080u};
+        packet.resize(packet.size() + 16);
+        std::memcpy(packet.data() + kGifTagSize, px, sizeof(px));
+        assert(buf.parsePacket(packet.data(), static_cast<u32>(packet.size())));
+    }
+
+    GsTex0 tex0{};
+    tex0.setTbp0(0x2000);
+    tex0.setTcc(1);
+    addAD(kGsAddrTEX0_1, tex0.value);
+
+    GifTag sp{};
+    sp.setNloop(6);
+    sp.setEop(true);
+    sp.setPre(true);
+    sp.setPrim(6 | (1 << 5));
+    sp.setFlg(GifFlg::Packed);
+    sp.setNreg(3);
+    sp.setReg(0, GifReg::RGBAQ);
+    sp.setReg(1, GifReg::UV);
+    sp.setReg(2, GifReg::XYZ2);
+    std::vector<u8> spk;
+    spk.resize(kGifTagSize);
+    std::memcpy(spk.data(), sp.bytes, kGifTagSize);
+    GsRgbaq c = GsRgbaq::make(255, 128, 64, 200);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize, &c.value, 8);
+    GsUv uv0 = GsUv::make(0.0f, 0.0f);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 16, &uv0.value, 4);
+    GsXyz2 x0 = GsXyz2::make(10.0f, 20.0f, 0.0f);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 32, &x0.value, 8);
+    GsRgbaq c2 = GsRgbaq::make(255, 128, 64, 200);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 48, &c2.value, 8);
+    GsUv uv1 = GsUv::make(100.0f, 50.0f);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 64, &uv1.value, 4);
+    GsXyz2 x1 = GsXyz2::make(110.0f, 70.0f, 0.0f);
+    spk.resize(spk.size() + 16);
+    std::memcpy(spk.data() + kGifTagSize + 80, &x1.value, 8);
+    assert(buf.parsePacket(spk.data(), static_cast<u32>(spk.size())));
+
+    exec.execute(buf);
+
+    assert(backend.m_createTextureCalls == 1);
+    assert(backend.m_spriteCalls == 1);
+    assert(backend.m_lastSpriteTex != kNullTexture);
+    assert(backend.m_boundTex == backend.m_lastSpriteTex);
+}
+
 int main() {
     test_executor_sprite();
     test_executor_direct_commands();
     test_executor_bridge_geometry_commands();
     test_executor_empty();
+    test_executor_vram_upload();
 
     std::printf("gif_executor_test: all passed\n");
     return 0;
