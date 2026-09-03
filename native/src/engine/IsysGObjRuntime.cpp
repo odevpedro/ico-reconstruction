@@ -326,17 +326,36 @@ std::size_t IsysGObjRuntime::dispatchProcessesImpl(GObj& gobj,
     return calls;
 }
 
+/*
+ * Pass 1 of _iosOmMain (0x0013F9D0), faithfully mirroring the byte-exact .s.
+ * For each mask-enabled primary list, walks the list and, for each GObj whose
+ * +0x16C and +0x170 are BOTH non-zero, invokes the per-GObj callback.
+ * The callback in the original is the GObj +0x28 (user_data) value jalr'd with
+ * a0 = GObj; here it is the host callback registered via setCallback().
+ */
 std::size_t IsysGObjRuntime::dispatchActiveLists()
 {
     std::size_t calls = 0;
-    for (u32 bit = 0; bit < kDlMaskBits; ++bit) {
+    for (u32 bit = 0; bit < kPrimaryListCount; ++bit) {
         if ((m_activeMask & (1u << bit)) == 0) {
             continue;
         }
-        if (bit >= kPrimaryListCount) {
-            return calls;
+        GObjHandle handle = m_heads[bit];
+        while (handle != kNullGObjHandle) {
+            GObj* gobj = m_pool.get(handle);
+            if (gobj == nullptr || isGObjSlotFree(*gobj)) {
+                break;
+            }
+            const GObjHandle next = gobj->next;
+            if (gobj->state_16c != 0 && gobj->state_170 != 0) {
+                Callback callback = m_callbacks[handle - 1u];
+                if (callback) {
+                    callback(*gobj);
+                    ++calls;
+                }
+            }
+            handle = next;
         }
-        calls += dispatchList(static_cast<u8>(bit));
     }
     return calls;
 }
@@ -356,6 +375,15 @@ u32 IsysGObjRuntime::activeMask() const
     return m_activeMask;
 }
 
+/*
+ * Pass 2 of _iosOmMain (0x0013F9D0). Mirrors the byte-exact .s: for each
+ * mask-enabled primary list, for each GObj with +0x16C and +0x170 both
+ * non-zero, walk the attached process chain (+0x2C) and dispatch process
+ * nodes whose +0x14 (priority) equals the current type slot (0x13..0x1B) and
+ * whose +0x18 (active) is non-zero. The non-callback "thread" path (process
+ * +0x10 == 0, ios/thread.c, helpers 0x13D8A0/0x13D928/0x13F6B8) is reserved
+ * and not modeled here.
+ */
 std::size_t IsysGObjRuntime::dispatchTypeSlots()
 {
     if (!m_initialized) {
@@ -377,7 +405,7 @@ std::size_t IsysGObjRuntime::dispatchTypeSlots()
 
             const GObjHandle nextGObj = gobj->next;
 
-            if (gobj->state_16c == 0) {
+            if (gobj->state_16c == 0 || gobj->state_170 == 0) {
                 gobjHandle = nextGObj;
                 continue;
             }

@@ -21,10 +21,12 @@ int main()
     assert(runtime.dispatchTypeSlots() == 0);
     assert(runtime.dispatchAll() == 0);
 
-    // Add a GObj on list 0 with state_16c = 1
+    // Add a GObj on list 0 with state_16c = 1 (and state_170 = 1, the
+    // confirmed _iosOmMain gates) so the GObj is dispatch-eligible
     GObj* gobj = runtime.add(0, 0);
     assert(gobj != nullptr);
     gobj->state_16c = 1;
+    gobj->state_170 = 1;
 
     // Active mask but no processes → 0 type-slot calls
     assert(runtime.setActiveMask(1u << 0));
@@ -62,7 +64,12 @@ int main()
         kTypeSlotStart, kTypeSlotStart + 3}));
     assert(runtime.setProcessActive(*p20, true));
 
-    // state_16c == 0 → entire GObj skipped
+    // state_16c or state_170 == 0 → entire GObj skipped
+    priorities.clear();
+    gobj->state_170 = 0;
+    assert(runtime.dispatchTypeSlots() == 0);
+    gobj->state_170 = 1;
+    assert(runtime.dispatchTypeSlots() == 3);
     priorities.clear();
     gobj->state_16c = 0;
     assert(runtime.dispatchTypeSlots() == 0);
@@ -81,6 +88,7 @@ int main()
     GObj* gobj2 = runtime.add(3, 0);
     assert(gobj2 != nullptr);
     gobj2->state_16c = 1;
+    gobj2->state_170 = 1;
     assert(runtime.setActiveMask((1u << 0) | (1u << 3)));
 
     priorities.clear();

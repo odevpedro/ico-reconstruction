@@ -30,6 +30,14 @@ int main()
     assert(runtime.pool().full());
     assert(runtime.add(2, 40) == nullptr);
 
+    // Enable the confirmed _iosOmMain dispatch gates (+0x16C and +0x170).
+    head->state_16c = 1;
+    head->state_170 = 1;
+    middle->state_16c = 1;
+    middle->state_170 = 1;
+    tail->state_16c = 1;
+    tail->state_170 = 1;
+
     assert(runtime.head(2) == head);
     assert(runtime.tail(2) == tail);
     assert(head->next == runtime.pool().handleOf(*middle));
