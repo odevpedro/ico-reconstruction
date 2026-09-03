@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
-project(ico_native VERSION 0.1.0 LANGUAGES CXX)
+project(ico_native VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -22,6 +24,7 @@ set(ICO_ENGINE_SOURCES
     src/engine/GifCommandBuffer.cpp
     src/engine/GifCommandExecutor.cpp
     src/engine/GifPacket.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/core/isysgobj_semantic.c
 )
 
 if(ICO_ENABLE_OPENGL)
@@ -87,6 +90,12 @@ target_link_libraries(gobj_pool_test PRIVATE ico_engine_core)
 add_executable(isysgobj_runtime_test tests/isysgobj_runtime_test.cpp)
 target_link_libraries(isysgobj_runtime_test PRIVATE ico_engine_core)
 
+add_executable(isysgobj_semantic_test tests/isysgobj_semantic_test.c)
+target_link_libraries(isysgobj_semantic_test PRIVATE ico_engine_core)
+
+add_executable(isysgobj_semantic_runtime_test tests/isysgobj_semantic_runtime_test.cpp)
+target_link_libraries(isysgobj_semantic_runtime_test PRIVATE ico_engine_core)
+
 add_executable(process_node_pool_test tests/process_node_pool_test.cpp)
 target_link_libraries(process_node_pool_test PRIVATE ico_engine_core)
 
@@ -121,6 +130,8 @@ enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
 add_test(NAME isysgobj_runtime COMMAND isysgobj_runtime_test)
+add_test(NAME isysgobj_semantic COMMAND isysgobj_semantic_test)
+add_test(NAME isysgobj_semantic_runtime COMMAND isysgobj_semantic_runtime_test)
 add_test(NAME process_node_pool COMMAND process_node_pool_test)
 add_test(NAME isysgobj_process COMMAND isysgobj_process_test)
 add_test(NAME slot_dispatch COMMAND slot_dispatch_test)

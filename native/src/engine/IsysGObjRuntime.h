@@ -22,6 +22,17 @@ public:
 
     GObj* add(u8 listId, u32 sortKey = 0, ico_ptr32 userData = 0);
     GObj* addHead(u8 listId, u32 sortKey = 0, ico_ptr32 userData = 0);
+    GObj* addAfter(GObj& reference, ico_ptr32 userData = 0);
+    GObj* addBefore(GObj& reference, ico_ptr32 userData = 0);
+    bool move(GObj& gobj, u8 listId, u32 sortKey);
+    bool moveBefore(GObj& gobj, GObj& reference);
+    bool moveAfter(GObj& gobj, GObj& reference);
+
+    // Mirrors the verified 0x6A93D0 kind-table and gp-0x6730 gate.
+    bool setKindTableDisabled(bool disabled);
+    bool setKind(GObj& gobj, u32 kind);
+    GObj* kindHead(u32 kind);
+    const GObj* kindHead(u32 kind) const;
     bool remove(GObj& gobj);
 
     bool setCallback(GObj& gobj, Callback callback);
@@ -57,7 +68,10 @@ public:
 
 private:
     GObj* addImpl(u8 listId, u32 sortKey, ico_ptr32 userData, bool forceHead);
+    GObj* addRelative(GObj& reference, ico_ptr32 userData, bool before);
     void insertSorted(GObj& gobj, bool forceHead);
+    void unlinkPrimary(GObj& gobj);
+    void unlinkKind(GObj& gobj);
 
     bool m_initialized = false;
     void insertProcessSorted(GObj& gobj, ProcessNode& process);
@@ -69,6 +83,8 @@ private:
     GObjPool m_pool;
     std::array<GObjHandle, kPrimaryListCount> m_heads{};
     std::array<GObjHandle, kPrimaryListCount> m_tails{};
+    std::array<GObjHandle, kTypeTableEntries> m_kindHeads{};
+    bool m_kindTableDisabled = false;
     std::vector<Callback> m_callbacks;
     ProcessNodePool m_processPool;
     std::vector<ProcessCallback> m_processCallbacks;

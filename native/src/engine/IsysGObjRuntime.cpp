@@ -11,6 +11,8 @@ bool IsysGObjRuntime::initialize(std::size_t gobjCapacity,
     m_processPool.initialize(processCapacity);
     m_heads.fill(kNullGObjHandle);
     m_tails.fill(kNullGObjHandle);
+    m_kindHeads.fill(kNullGObjHandle);
+    m_kindTableDisabled = false;
     m_callbacks.clear();
     m_callbacks.resize(gobjCapacity);
     m_processCallbacks.clear();
@@ -26,6 +28,8 @@ void IsysGObjRuntime::shutdown()
     m_pool.clear();
     m_heads.fill(kNullGObjHandle);
     m_tails.fill(kNullGObjHandle);
+    m_kindHeads.fill(kNullGObjHandle);
+    m_kindTableDisabled = false;
     m_callbacks.clear();
     m_processCallbacks.clear();
     m_activeMask = 0;
@@ -61,7 +65,7 @@ GObj* IsysGObjRuntime::addImpl(u8 listId,
         return nullptr;
     }
 
-    gobj->type = listId;
+    gobj->type = 0;
     gobj->list_id = listId;
     gobj->sort_key = sortKey;
     gobj->user_data = userData;
@@ -70,6 +74,134 @@ GObj* IsysGObjRuntime::addImpl(u8 listId,
     gobj->state_170 = 0;
     insertSorted(*gobj, forceHead);
     return gobj;
+}
+
+GObj* IsysGObjRuntime::addAfter(GObj& reference, ico_ptr32 userData)
+{
+    return addRelative(reference, userData, false);
+}
+
+GObj* IsysGObjRuntime::addBefore(GObj& reference, ico_ptr32 userData)
+{
+    return addRelative(reference, userData, true);
+}
+
+GObj* IsysGObjRuntime::addRelative(GObj& reference,
+                                   ico_ptr32 userData,
+                                   bool before)
+{
+    if (!m_initialized || !m_pool.owns(reference) ||
+        isGObjSlotFree(reference) || reference.list_id >= kPrimaryListCount) {
+        return nullptr;
+    }
+    GObj* gobj = m_pool.acquire();
+    if (gobj == nullptr) {
+        return nullptr;
+    }
+    const GObjHandle handle = m_pool.handleOf(*gobj);
+    gobj->user_data = userData;
+    gobj->list_id = reference.list_id;
+    gobj->sort_key = reference.sort_key;
+    if (before) {
+        GObj* previous = m_pool.get(reference.prev);
+        gobj->prev = reference.prev;
+        gobj->next = m_pool.handleOf(reference);
+        reference.prev = handle;
+        if (previous != nullptr) {
+            previous->next = handle;
+        } else {
+            m_heads[gobj->list_id] = handle;
+        }
+    } else {
+        GObj* next = m_pool.get(reference.next);
+        gobj->prev = m_pool.handleOf(reference);
+        gobj->next = reference.next;
+        reference.next = handle;
+        if (next != nullptr) {
+            next->prev = handle;
+        } else {
+            m_tails[gobj->list_id] = handle;
+        }
+    }
+    return gobj;
+}
+
+void IsysGObjRuntime::unlinkPrimary(GObj& gobj)
+{
+    const u8 listId = gobj.list_id;
+    GObj* next = m_pool.get(gobj.next);
+    GObj* previous = m_pool.get(gobj.prev);
+    if (previous != nullptr) {
+        previous->next = gobj.next;
+    } else {
+        m_heads[listId] = gobj.next;
+    }
+    if (next != nullptr) {
+        next->prev = gobj.prev;
+    } else {
+        m_tails[listId] = gobj.prev;
+    }
+    gobj.next = kNullGObjHandle;
+    gobj.prev = kNullGObjHandle;
+}
+
+bool IsysGObjRuntime::move(GObj& gobj, u8 listId, u32 sortKey)
+{
+    if (!m_initialized || !m_pool.owns(gobj) || isGObjSlotFree(gobj) ||
+        listId >= kPrimaryListCount) {
+        return false;
+    }
+    unlinkPrimary(gobj);
+    gobj.list_id = listId;
+    gobj.sort_key = sortKey;
+    insertSorted(gobj, false);
+    return true;
+}
+
+bool IsysGObjRuntime::moveBefore(GObj& gobj, GObj& reference)
+{
+    if (!m_initialized || &gobj == &reference || !m_pool.owns(gobj) ||
+        !m_pool.owns(reference) || isGObjSlotFree(gobj) ||
+        isGObjSlotFree(reference) || reference.list_id >= kPrimaryListCount) {
+        return false;
+    }
+    unlinkPrimary(gobj);
+    const GObjHandle handle = m_pool.handleOf(gobj);
+    GObj* previous = m_pool.get(reference.prev);
+    gobj.list_id = reference.list_id;
+    gobj.sort_key = reference.sort_key;
+    gobj.prev = reference.prev;
+    gobj.next = m_pool.handleOf(reference);
+    reference.prev = handle;
+    if (previous != nullptr) {
+        previous->next = handle;
+    } else {
+        m_heads[gobj.list_id] = handle;
+    }
+    return true;
+}
+
+bool IsysGObjRuntime::moveAfter(GObj& gobj, GObj& reference)
+{
+    if (!m_initialized || &gobj == &reference || !m_pool.owns(gobj) ||
+        !m_pool.owns(reference) || isGObjSlotFree(gobj) ||
+        isGObjSlotFree(reference) || reference.list_id >= kPrimaryListCount) {
+        return false;
+    }
+    unlinkPrimary(gobj);
+    const GObjHandle handle = m_pool.handleOf(gobj);
+    GObj* next = m_pool.get(reference.next);
+    gobj.list_id = reference.list_id;
+    gobj.sort_key = reference.sort_key;
+    gobj.prev = m_pool.handleOf(reference);
+    gobj.next = reference.next;
+    reference.next = handle;
+    if (next != nullptr) {
+        next->prev = handle;
+    } else {
+        m_tails[gobj.list_id] = handle;
+    }
+    return true;
 }
 
 void IsysGObjRuntime::insertSorted(GObj& gobj, bool forceHead)
@@ -109,6 +241,69 @@ void IsysGObjRuntime::insertSorted(GObj& gobj, bool forceHead)
     }
 }
 
+bool IsysGObjRuntime::setKindTableDisabled(bool disabled)
+{
+    m_kindTableDisabled = disabled;
+    return true;
+}
+
+void IsysGObjRuntime::unlinkKind(GObj& gobj)
+{
+    if (m_kindTableDisabled || gobj.type == 0 ||
+        gobj.type >= kTypeTableEntries) {
+        gobj.type_next = kNullGObjHandle;
+        return;
+    }
+    GObjHandle* link = &m_kindHeads[gobj.type];
+    while (*link != kNullGObjHandle) {
+        GObj* current = m_pool.get(*link);
+        if (current == nullptr) {
+            break;
+        }
+        if (current == &gobj) {
+            *link = current->type_next;
+            break;
+        }
+        link = &current->type_next;
+    }
+    gobj.type_next = kNullGObjHandle;
+}
+
+bool IsysGObjRuntime::setKind(GObj& gobj, u32 kind)
+{
+    if (!m_initialized || !m_pool.owns(gobj) || isGObjSlotFree(gobj)) {
+        return false;
+    }
+    unlinkKind(gobj);
+    gobj.type = kind;
+    if (m_kindTableDisabled || kind == 0 || kind >= kTypeTableEntries) {
+        return true;
+    }
+    const GObjHandle handle = m_pool.handleOf(gobj);
+    GObjHandle* link = &m_kindHeads[kind];
+    while (*link != kNullGObjHandle) {
+        GObj* current = m_pool.get(*link);
+        if (current == nullptr) {
+            return false;
+        }
+        link = &current->type_next;
+    }
+    *link = handle;
+    return true;
+}
+
+GObj* IsysGObjRuntime::kindHead(u32 kind)
+{
+    return !m_kindTableDisabled && kind > 0 && kind < kTypeTableEntries
+        ? m_pool.get(m_kindHeads[kind]) : nullptr;
+}
+
+const GObj* IsysGObjRuntime::kindHead(u32 kind) const
+{
+    return !m_kindTableDisabled && kind > 0 && kind < kTypeTableEntries
+        ? m_pool.get(m_kindHeads[kind]) : nullptr;
+}
+
 bool IsysGObjRuntime::remove(GObj& gobj)
 {
     if (!m_initialized || !m_pool.owns(gobj) || isGObjSlotFree(gobj) ||
@@ -118,21 +313,8 @@ bool IsysGObjRuntime::remove(GObj& gobj)
 
     removeAllProcesses(gobj);
 
-    const u8 listId = gobj.list_id;
-    GObj* next = m_pool.get(gobj.next);
-    GObj* prev = m_pool.get(gobj.prev);
-
-    if (prev != nullptr) {
-        prev->next = gobj.next;
-    } else {
-        m_heads[listId] = gobj.next;
-    }
-
-    if (next != nullptr) {
-        next->prev = gobj.prev;
-    } else {
-        m_tails[listId] = gobj.prev;
-    }
+    unlinkKind(gobj);
+    unlinkPrimary(gobj);
 
     const GObjHandle handle = m_pool.handleOf(gobj);
     m_callbacks[handle - 1u] = Callback{};
@@ -558,6 +740,27 @@ bool IsysGObjRuntime::checkInvariants() const
             return false;
         }
     }
+    if (!m_kindTableDisabled) {
+        std::vector<bool> kindSeen(m_pool.capacity(), false);
+        for (u32 kind = 1; kind < kTypeTableEntries; ++kind) {
+            GObjHandle handle = m_kindHeads[kind];
+            std::size_t members = 0;
+            while (handle != kNullGObjHandle) {
+                const GObj* gobj = m_pool.get(handle);
+                if (gobj == nullptr || isGObjSlotFree(*gobj) ||
+                    gobj->type != kind || handle > kindSeen.size() ||
+                    kindSeen[handle - 1u]) {
+                    return false;
+                }
+                kindSeen[handle - 1u] = true;
+                handle = gobj->type_next;
+                if (++members > m_pool.activeCount()) {
+                    return false;
+                }
+            }
+        }
+    }
+
     return visitedGObjs == m_pool.activeCount() &&
            visitedProcesses == m_processPool.activeCount();
 }

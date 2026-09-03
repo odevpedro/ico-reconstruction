@@ -14,6 +14,7 @@ constexpr ProcessHandle kNullProcessHandle = 0;
 constexpr u32 kPrimaryListCount = ICO_GOBJ_PRIMARY_LIST_COUNT;
 constexpr u32 kDlListCount = ICO_GOBJ_DL_LIST_COUNT;
 constexpr u32 kDlMaskBits = ICO_GOBJ_DL_MASK_BITS;
+constexpr u32 kTypeTableEntries = ICO_GOBJ_TYPE_TABLE_ENTRIES;
 constexpr u32 kTypeSlotStart = 0x13;
 constexpr u32 kTypeSlotCount = 9;
 constexpr u32 kTypeSlotEnd = kTypeSlotStart + kTypeSlotCount;
