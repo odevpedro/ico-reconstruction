@@ -82,7 +82,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00106040,MatrixDrive_SetTransposeMatrix,matrixDrive.o,,,
 0x00105658,MatrixDrive_TurnXObjectMatrixZY,matrixDrive.o,,,
 0x001061D0,VectorLength,matrixDrive.o,,,
-0x00106178,UnitRotation,matrixDrive.o,matrixDrive.c,/backup/ico/20020116MasterVer1.00EU/ico2/sugipon/src/matrixDrive.c,400
+0x00106178,UnitRotation,matrixDrive.o,,,
 0x00106118,CopyMatrixUncached,matrixDrive.o,,,
 0x00105D88,MatrixDrive_GetTurnZAngleXY,matrixDrive.o,,,
 0x001060F0,CopyMatrix,matrixDrive.o,,,
@@ -176,7 +176,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0010CDB8,InitLimitedPoolReflactionMesh,pool.o,,,
 0x0010B798,SetFallDownSplash,pool.o,,,
 0x0010B9B8,GetPoolGlobalDrainVector,pool.o,,,
-0x0010CF00,SetLayoutedPoolReflactionMesh,pool.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0010CF00,SetLayoutedPoolReflactionMesh,pool.o,,,
 0x0010D788,GetPoolGlobalHeight,pool.o,,,
 0x0010D8F8,InitLayoutedPoolReflactionMesh,pool.o,,,
 0x0010D8E0,CheckPoolHasGridMesh,pool.o,,,
@@ -259,7 +259,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00112178,gif_MakePoint2DOffset,GifPacket.o,,,
 0x00112710,gif_SetAlpha,GifPacket.o,,,
 0x00110290,gif_MakeSpriteOffset,GifPacket.o,,,
-0x001107B8,gif_Line,GifPacket.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001107B8,gif_Line,GifPacket.o,,,
 0x00111A30,gif_DrawStripG,GifPacket.o,,,
 0x00112458,gif_MakeSpriteNoTextureOffset,GifPacket.o,,,
 0x00110B48,gif_SpriteSensitive,GifPacket.o,,,
@@ -338,7 +338,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00118C70,_UnitVector,Matrix.o,,,
 0x00118BA8,_SubVectorXYZ,Matrix.o,,,
 0x00118C80,_InterVector,Matrix.o,,,
-0x00119270,_GetRandomVector,Matrix.o,delayFreeManager.c,/backup/ico/20020116MasterVer1.00EU/ico2/sugipon/src/delayFreeManager.c,14
+0x00119270,_GetRandomVector,Matrix.o,,,
 0x00118980,_InverseCurrentMatrix,Matrix.o,,,
 0x00118C38,_FTOI0Vector,Matrix.o,,,
 0x00118858,_MulCurrentMatrixL,Matrix.o,,,
@@ -390,7 +390,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0011E660,prim_DeleteParticle,Primitive.o,,,
 0x0011DF90,prim_DispMesh3D,Primitive.o,,,
 0x0011E488,prim_DispParticle,Primitive.o,,,
-0x0011C7B8,prim_InitFan2D,Primitive.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0011C7B8,prim_InitFan2D,Primitive.o,,,
 0x0011D388,prim_InitMesh3D,Primitive.o,,,
 0x0011EC78,prim_DispWireBox,Primitive.o,,,
 0x0011E838,prim_DispWireYCylinder,Primitive.o,,,
@@ -571,7 +571,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0013C778,ShockRequestBox_VoiceSetUseRequestFree,shockdriver.o,,,
 0x0013CAD0,ShockDriver_GetShockVoiceSet,shockdriver.o,,,
 0x0013C858,ShockRequestBox_RequestCancel,shockdriver.o,,,
-0x0013C438,ShockRequestBox_Clear,shockdriver.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0013C438,ShockRequestBox_Clear,shockdriver.o,,,
 0x0013C948,Init_ShockDriver,shockdriver.o,,,
 0x0013CB78,ShockEmulator_EmulationWave,shockdriver.o,,,
 0x0013BA80,Vibration_ShotDecode,shockdriver.o,,,
@@ -642,7 +642,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0013E548,isysGObjKindTableAdd,gobj.o,,,
 0x0013E6F8,isysGObjMoveAfterGObj,gobj.o,,,
 0x0013EA50,isysGObjSearchFromObjKindID_begin,gobj.o,,,
-0x0013EFE8,isysGObjMoveObjDLHead,gobj_dl.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0013EFE8,isysGObjMoveObjDLHead,gobj_dl.o,,,
 0x0013F160,isysGObjLinkObjDLBeforeGObj,gobj_dl.o,,,
 0x0013F278,isysGObjMoveObjDLBeforeGObj,gobj_dl.o,,,
 0x0013EFA0,isysGObjMoveObjDL,gobj_dl.o,,,
@@ -744,7 +744,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00147ED0,ACTLookTargetSystem_Exec,soundManager.o,,,
 0x00143CE0,ACTGame_TryDisconnectHand,soundManager.o,,,
 0x0014A310,ActGame_GetOrientQ,soundManager.o,,,
-0x0014A708,ACTGame_SetMotionPlaySpeedRatio_Exec,soundManager.o,s_init.c,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/sound/s_init.c,1507
+0x0014A708,ACTGame_SetMotionPlaySpeedRatio_Exec,soundManager.o,,,
 0x00149218,PAIR_IsStatus_BOY_WAIT,soundManager.o,,,
 0x00148C28,ACTGame_StageChangeGObjID,soundManager.o,,,
 0x00144678,_ACTCharStatus_Clear,soundManager.o,,,
@@ -784,7 +784,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001443C8,ACTLookTarget_Exec,soundManager.o,,,
 0x00148E30,SetDirectRootPositionWithNodePointLimit,soundManager.o,,,
 0x00148F68,ACTGameView_Init,soundManager.o,,,
-0x00149C28,ACTGameView_Check,soundManager.o,act-game.c,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/src/act-game.c,2872
+0x00149C28,ACTGameView_Check,soundManager.o,,,
 0x001493B8,ACTGame_isWeaponEnableCatchfire,soundManager.o,,,
 0x001438D8,ACTGame_StageChangeGObj,soundManager.o,,,
 0x001490E8,PAIR_GetPosition_BOY,soundManager.o,,,
@@ -851,7 +851,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0014C230,motBoyHand50,boyact.o,,,
 0x00152D30,IsBoyStatus_EnemyMustWait,boyact.o,,,
 0x00152F48,IsBackFromEfStage,boyact.o,,,
-0x0014C5F0,motBoyHand200,boyact.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0014C5F0,motBoyHand200,boyact.o,,,
 0x00152E58,OnGirlEscortFlag,boyact.o,,,
 0x0014C8E0,hand_heroin,boyact.o,,,
 0x00152458,actBoyReadyMove,boyact.o,,,
@@ -885,7 +885,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00150010,actBoyWalk,boyact.o,,,
 0x00152870,actBoyHand100,boyact.o,,,
 0x00153378,afterBoyTakeWeapon,boyact.o,,,
-0x00150698,actBoyTakeWeapon,boyact.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00150698,actBoyTakeWeapon,boyact.o,,,
 0x0015B948,actCommonPlay,commonact.o,,,
 0x001553E8,motCommonRopeTurnL,commonact.o,,,
 0x00159C98,SetMotionDirectionSmooze,commonact.o,,,
@@ -1120,9 +1120,9 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001669D8,GetFloorAttribute,fieldCollision.o,,,
 0x001664F0,ClipFloorR,fieldCollision.o,,,
 0x00166608,LoadCollision,fieldCollision.o,,,
-0x001651F0,DrawGObjWallCollision,fieldCollision.o,commonact.c,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/src/commonact.c,5405
+0x001651F0,DrawGObjWallCollision,fieldCollision.o,,,
 0x001656D8,DBG_VECTOR,fieldCollision.o,,,
-0x00166420,ClipWallAdjustPos,fieldCollision.o,commonact.c,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/src/commonact.c,5077
+0x00166420,ClipWallAdjustPos,fieldCollision.o,,,
 0x00166360,ClipWallR,fieldCollision.o,,,
 0x001665C8,ChangeFieldCollisionDebugMode,fieldCollision.o,,,
 0x001680D0,ClipWallVector,fieldCollision.o,,,
@@ -1271,7 +1271,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0017BCC0,scpIsWallLever2On,script.o,,,
 0x0017AAB0,scpTransLinear,script.o,,,
 0x0017B888,scpPlayMotNode,script.o,,,
-0x0017A328,scpLinkBGAtoLayoutedTargetSkeltonWithLocalRotationFlag,script.o,girl_act.c,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/src/girl_act.c,2548
+0x0017A328,scpLinkBGAtoLayoutedTargetSkeltonWithLocalRotationFlag,script.o,,,
 0x0017BB80,RequestStageChangeSimple,script.o,,,
 0x0017BA08,InitStageChange,script.o,,,
 0x0017BC50,scpFadeIn,script.o,,,
@@ -1284,8 +1284,8 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0017BA10,RequestStageChange,script.o,,,
 0x0017C308,scpDoorTypeUpMain,script.o,,,
 0x0017A1E0,scpActivateAllWithKind,script.o,,,
-0x0017AED0,scpTriggerFloorAttr,script.o,crt0.s,/usr/local/sce/ee/lib/crt0.s,32
-0x0017BF18,scpSetStreamMotionRootOffset,script.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0017AED0,scpTriggerFloorAttr,script.o,,,
+0x0017BF18,scpSetStreamMotionRootOffset,script.o,,,
 0x0017B578,scpMaskGeneratorAll,script.o,,,
 0x00179130,scpPlayJump,script.o,,,
 0x00178F38,scpTorchLightOff,script.o,,,
@@ -1331,7 +1331,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0017ADB8,scpTriggerBall,script.o,,,
 0x0017B238,scpTriggerPosBox,script.o,,,
 0x0017A220,scpDisActivateAllWithKind,script.o,,,
-0x001791B8,scpPlayEnd,script.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001791B8,scpPlayEnd,script.o,,,
 0x0017A458,scpGetWallCollision,script.o,,,
 0x0017C338,actSubSekizoSe,script.o,,,
 0x00179048,scpPlayMot,script.o,,,
@@ -1399,7 +1399,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00181C20,dispCameraGroupType2,brain.o,,,
 0x001829D8,menuGroupSelect,brain.o,,,
 0x00182C28,menuGroupEdit,brain.o,,,
-0x00180588,gif_test,brain.o,delayFreeManager.c,/backup/ico/20020116MasterVer1.00EU/ico2/sugipon/src/delayFreeManager.c,14
+0x00180588,gif_test,brain.o,,,
 0x00184B50,CameraEdit_reflect_pin,brain.o,,,
 0x00183D80,_CameraEdit_del_box,brain.o,,,
 0x00185210,group_select,brain.o,,,
@@ -1456,7 +1456,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0018A258,CameraSetTargetPos,brain.o,,,
 0x0018A028,InsertCamera_Set,brain.o,,,
 0x0018A280,GetCameraInfo_tmp,brain.o,,,
-0x0018A1C0,GetCurrentCameraSet2,brain.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0018A1C0,GetCurrentCameraSet2,brain.o,,,
 0x0018A200,CameraSetCameraPosition,brain.o,,,
 0x00189DA0,Camctrl_ExitEveRock,brain.o,,,
 0x00188A70,ConvertCameraSet,brain.o,,,
@@ -1466,7 +1466,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00189540,SetCameraMatrix,brain.o,,,
 0x00189F10,CameraGetTargets,brain.o,,,
 0x00189F38,CameraGetMode,brain.o,,,
-0x0018A260,GetCameraPos,brain.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0018A260,GetCameraPos,brain.o,,,
 0x00189E38,CameraSetTargetGObj,brain.o,,,
 0x00189E48,CameraChangeTargetParallel,brain.o,,,
 0x00189E00,GetCameraDefaultTargetGObj,brain.o,,,
@@ -1505,7 +1505,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0018DBC8,GetRootPositionHandExtra,chain.o,,,
 0x0018DD88,UnLockChainGeo,chain.o,,,
 0x0018DDF8,IsAbleChainHang,chain.o,,,
-0x0018DDA8,GetChainLength,chain.o,script.c,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/script.c,1202
+0x0018DDA8,GetChainLength,chain.o,,,
 0x0018DB30,CheckChainClimbablePos,chain.o,,,
 0x0018DB58,GetChainClimbCollision,chain.o,,,
 0x0018E4C0,eBrainGetTargetGeneratorFromLabel,ebrain.o,,,
@@ -1704,7 +1704,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0019CB00,StageManager,StageManager.o,,,
 0x0019CE30,stgmgrForceSwitchWithFadeColor,StageManager.o,,,
 0x0019DE48,backStageProcessInit,backStage.o,,,
-0x0019DE60,backStageDebugTimeZero,backStage.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0019DE60,backStageDebugTimeZero,backStage.o,,,
 0x0019DCF8,backStageSave,backStage.o,,,
 0x0019DDA0,backStageLoad,backStage.o,,,
 0x0019D878,backStageProcessInStage,backStage.o,,,
@@ -1737,7 +1737,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001A65E0,debug_Menu,debug.o,,,
 0x001A69E0,debug_SetBar,debug.o,,,
 0x001A6CC8,debug_DispMatrix,debug.o,,,
-0x001A6D18,debug_SelectCsvWindowWithLine,debug.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001A6D18,debug_SelectCsvWindowWithLine,debug.o,,,
 0x001A2988,debug_SnapShot,debug.o,,,
 0x001A38F0,debug_StdPrintfDummy,debug.o,,,
 0x001A70C0,debugCdvdLoadInfoSegAdd,debug.o,,,
@@ -1982,11 +1982,11 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001B8940,switchReleaseSE,box.o,,,
 0x001BCD38,GetBoxGlobalHoldPoint,box.o,,,
 0x001BD330,InitWallLeverGeo,box.o,,,
-0x001B89C0,FloorLeverTriStateGeo,box.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001B89C0,FloorLeverTriStateGeo,box.o,,,
 0x001BD2E8,IsWallLeverStatus,box.o,,,
 0x001B9080,WallLeverDL,box.o,,,
 0x001BD1D8,SetWallLeverWithNodePoint,box.o,,,
-0x001BCE80,BoxGeoRestore,box.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001BCE80,BoxGeoRestore,box.o,,,
 0x001BCF50,SetSwitchTriggerFunc,box.o,,,
 0x001BD450,initParentize,box.o,,,
 0x001BCB38,AlignBox,box.o,,,
@@ -2058,7 +2058,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001C53C8,getXZLength,clothAnimation.o,,,
 0x001C2890,DispCloth4D,clothAnimation.o,,,
 0x001C53A8,FSqrtInv,clothAnimation.o,,,
-0x001C5108,GetChainNodeID,clothAnimation.o,staffroll.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/staffroll.c,128
+0x001C5108,GetChainNodeID,clothAnimation.o,,,
 0x001C4FD8,InitChainVelocity,clothAnimation.o,,,
 0x001C52C8,GetChainCollision,clothAnimation.o,,,
 0x001C5678,checkFrontAcross,clothAnimation.o,,,
@@ -2103,7 +2103,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001CACB0,DemoMotionGeo,enemy.o,,,
 0x001CAF78,EnemyGetNSafeParts,enemy.o,,,
 0x001CAFC0,EnemyDeleteParticle,enemy.o,,,
-0x001CA5E8,CheckEnemyHit,enemy.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001CA5E8,CheckEnemyHit,enemy.o,,,
 0x001CA980,EnemyGeo,enemy.o,,,
 0x001CB1E0,SetEnemyWingRatio,enemy.o,,,
 0x001CB108,InitDemoMotionGeo,enemy.o,,,
@@ -2226,7 +2226,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001E52E8,GetParticleEffectData,particleEffect.o,,,
 0x001E5398,GetParticleLoopFlag,particleEffect.o,,,
 0x001E5120,SetParticleEffectActiveSensing,particleEffect.o,,,
-0x001E53C8,ParticleEffects_SetAllGoal,particleEffect.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001E53C8,ParticleEffects_SetAllGoal,particleEffect.o,,,
 0x001E5190,GetParticleEffectPackage,particleEffect.o,,,
 0x001E4FD0,InitParticleEffects,particleEffect.o,,,
 0x001E51A8,DeleteParticleEffectsByPackage,particleEffect.o,,,
@@ -2390,7 +2390,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001F0CF0,StopWindField,windField.o,,,
 0x001F0D00,drawLines,windField.o,,,
 0x001F0718,drawSenpuuki,windField.o,,,
-0x001F0E00,drawSenpuukiUnit,windField.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001F0E00,drawSenpuukiUnit,windField.o,,,
 0x001F0F80,ReinitWindManager,windManager.o,,,
 0x001F0F00,ExecWindManager,windManager.o,,,
 0x001F11B0,GetRegularizedWindSpeed,windManager.o,,,
@@ -2442,7 +2442,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001F6BE8,font_Print,DisplayFont.o,,,
 0x001F7010,font_Init,DisplayFont.o,,,
 0x001F6FE0,font_GetWidth,DisplayFont.o,,,
-0x001F6FE8,font_GetHeight,DisplayFont.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001F6FE8,font_GetHeight,DisplayFont.o,,,
 0x001F6618,font_CheckAlign,DisplayFont.o,,,
 0x001F73E8,dl_Debug,DisplayList.o,,,
 0x001F7610,dl_OpenDma,DisplayList.o,,,
@@ -2488,7 +2488,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x001F8BC8,AdpcmVolumeSet,adpcm_init.o,,,
 0x001F8D68,AdpcmFreeAreaGet,adpcm_init.o,,,
 0x001F8BE0,AdpcmIopBuffAlloc,adpcm_init.o,,,
-0x001F8C58,AdpcmOpenSync,adpcm_init.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x001F8C58,AdpcmOpenSync,adpcm_init.o,,,
 0x001FCF68,ACTSetEnvAllmighty,adpcm_init.o,,,
 0x001FD090,GetSofaPosition,adpcm_init.o,,,
 0x001F92D8,ACTGetEnvironment,adpcm_init.o,,,
@@ -2561,7 +2561,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00203478,cursor_control,way_tool.o,,,
 0x002034F8,actDejaChk,deja.o,,,
 0x00203BC8,actDejaAfterChk,deja.o,,,
-0x00203CE8,actDeja,deja.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00203CE8,actDeja,deja.o,,,
 0x00203A78,actDejaAfter,deja.o,,,
 0x00203D98,actEnemySleep,deja.o,,,
 0x00203658,actDejaDemo,deja.o,,,
@@ -2652,7 +2652,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00206E88,actEndDemo02,end.o,,,
 0x002091B8,actEndDemo01Chk,end.o,,,
 0x00209B58,actEndLogoChk,end.o,,,
-0x00209968,actConte14_12,end.o,Basic.c,/backup/ico/20020116MasterVer1.00EU/ico2/seki/src/Basic.c,449
+0x00209968,actConte14_12,end.o,,,
 0x00208D20,actEndDemo11,end.o,,,
 0x00207340,actConte14_6,end.o,,,
 0x00209938,actEndDemo12Chk,end.o,,,
@@ -2852,14 +2852,14 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0021A718,actSt04lTorch2_2XL,st04l.o,,,
 0x0021ADA0,actSt04lRope1Event,st04l.o,,,
 0x00219A18,actSt04lOri,st04l.o,,,
-0x0021B180,actSt04lTorch2_2Chk,st04l.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0021B180,actSt04lTorch2_2Chk,st04l.o,,,
 0x00219B38,actSt04lOriRopeCutL,st04l.o,,,
 0x00218680,actSt04lMonyou05Chk,st04l.o,,,
 0x0021A118,actSt04lCrest01XL,st04l.o,,,
 0x00216BA0,actSt04lCrest02,st04l.o,,,
 0x0021AB10,actSt04lC1BallMain,st04l.o,,,
 0x0021A238,actSt04lC2BallXL,st04l.o,,,
-0x0021B020,actSt04lMonyou04Event,st04l.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0021B020,actSt04lMonyou04Event,st04l.o,,,
 0x0021AFF0,actSt04lMonyou01Event,st04l.o,,,
 0x002172D8,actSt04lStairChk,st04l.o,,,
 0x00217FB8,actSt04lGondolaChk,st04l.o,,,
@@ -2878,7 +2878,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x002183C8,actSt04lMonyou02Chk,st04l.o,,,
 0x0021ADE0,actSt04lRope4Event,st04l.o,,,
 0x0021B138,actSt04lTorch2_1Chk,st04l.o,,,
-0x0021AF68,actSt04lGondolaCharaChk,st04l.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0021AF68,actSt04lGondolaCharaChk,st04l.o,,,
 0x002169A0,actSt04lC2BallTurn,st04l.o,,,
 0x0021A330,actSt04lTorch1_1,st04l.o,,,
 0x0021ABD8,actSt04lC2BallSwitch,st04l.o,,,
@@ -3085,7 +3085,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x002204D8,actSt05cSolarXL,st05c.o,,,
 0x00220738,actSt05cEne,st05c.o,,,
 0x002206C8,actSt05cDoorDown,st05c.o,,,
-0x00220578,actSt04rDoor,st05c.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00220578,actSt04rDoor,st05c.o,,,
 0x002207B0,actSt05cEnemy1,st05c.o,,,
 0x002200F0,actSt05cDoorDownChk,st05c.o,,,
 0x00220620,actSt04rDoor2,st05c.o,,,
@@ -3214,7 +3214,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x002264A0,actSt08bDoorDownChk,st08b.o,,,
 0x00226008,actSt08bKurenLeft,st08b.o,,,
 0x002268B8,actSt08bDoorEvent,st08b.o,,,
-0x00226E10,actSt09aElv,st09a.o,st01b.c,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/st01b.c,772
+0x00226E10,actSt09aElv,st09a.o,,,
 0x00227068,actSt09aElvUp,st09a.o,,,
 0x00227158,actSt09aIntroChk,st09a.o,,,
 0x002271D8,actSt09aBrgMain,st09a.o,,,
@@ -3265,7 +3265,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x002285E8,actSt10lGondolaSwitch,st10l.o,,,
 0x00228238,actSt10lEneCam2,st10l.o,,,
 0x00227BB0,actSt10lChain,st10l.o,,,
-0x002299E0,actSt10rEne,st10r.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x002299E0,actSt10rEne,st10r.o,,,
 0x00229478,actSt10rFenceDownChk2,st10r.o,,,
 0x00229200,actSt10rFenceDownChk,st10r.o,,,
 0x002295B8,actSt10rFenceUpChk2,st10r.o,,,
@@ -3308,7 +3308,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0022A7A0,actSt13aExitChk,st13a.o,,,
 0x0022A850,actSt13aChainOK,st13a.o,,,
 0x0022A738,actSt13aElevSwitch,st13a.o,,,
-0x0022C918,actSt13bElevMain,st13b.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0022C918,actSt13bElevMain,st13b.o,,,
 0x0022BE78,actSt13bSekizo,st13b.o,,,
 0x0022C4D8,actConte10a,st13b.o,,,
 0x0022C410,actSt13bSekizo2Event,st13b.o,,,
@@ -3333,7 +3333,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0022C650,actConte10b,st13b.o,,,
 0x0022C290,actSt13bConte02Jimaku,st13b.o,,,
 0x0022BC70,actSt13bElevUp,st13b.o,,,
-0x0022C178,actSt13bDoor,st13b.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0022C178,actSt13bDoor,st13b.o,,,
 0x0022C210,actBossTest,st13b.o,,,
 0x0022B8F8,actSt13bMeetAgain,st13b.o,,,
 0x0022B700,actSt13bSekizo2Chk,st13b.o,,,
@@ -3364,7 +3364,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0022CB78,actSt13cBmg1,st13c.o,,,
 0x0022EDD0,actSt13cEnemy,st13c.o,,,
 0x0022E5C8,actSt13cGirlCarryChk,st13c.o,,,
-0x0022F428,actSt13cCageFallEvent,st13c.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0022F428,actSt13cCageFallEvent,st13c.o,,,
 0x0022EE68,actSt13cEnemyNull,st13c.o,,,
 0x0022F158,actSt13cBuki,st13c.o,,,
 0x0022D398,actSt13cCage1stDown,st13c.o,,,
@@ -3423,7 +3423,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00231660,actSt18aIntro,st18a.o,,,
 0x002314B8,actSt18aEnemy1_1,st18a.o,,,
 0x00231CC0,actSt18aEne2Chk,st18a.o,,,
-0x00231C50,actSt18aEneChk,st18a.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00231C50,actSt18aEneChk,st18a.o,,,
 0x002317A0,actSt18aSwitchL,st18a.o,,,
 0x00231270,actSt18aDoorChk,st18a.o,,,
 0x00231868,actSt18aSwitchR,st18a.o,,,
@@ -3461,7 +3461,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00233100,actSt20aFenceDownChk,st20a.o,,,
 0x00233998,actSt20aEnemy3,st20a.o,,,
 0x002336E8,actSt20aExit,st20a.o,,,
-0x00232B58,actSt20aInit,st20a.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00232B58,actSt20aInit,st20a.o,,,
 0x00233230,actSt20aFenceUpChk,st20a.o,,,
 0x00233360,actSt20aFenceDownChk2,st20a.o,,,
 0x002338F0,actSt20aEnemy2,st20a.o,,,
@@ -3541,7 +3541,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00236FD0,stageSE04ewind,stageSEProc.o,,,
 0x00236408,stageSEtaimatsu,stageSEProc.o,,,
 0x00238070,stageSE47anoise,stageSEProc.o,,,
-0x00236A30,stageSE19ataki,stageSEProc.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00236A30,stageSE19ataki,stageSEProc.o,,,
 0x00237D30,stageSE19astrong,stageSEProc.o,,,
 0x002368E8,stageSE10lstrong2,stageSEProc.o,,,
 0x00236DC8,stageSE02atakib,stageSEProc.o,,,
@@ -3549,7 +3549,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00237B18,stageSE18awind,stageSEProc.o,,,
 0x00237410,stageSE08astrong2,stageSEProc.o,,,
 0x00238050,stageSE24ariver,stageSEProc.o,,,
-0x00237EB0,stageSE22astrong,stageSEProc.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00237EB0,stageSE22astrong,stageSEProc.o,,,
 0x00237998,stageSE13cNoise,stageSEProc.o,,,
 0x00236E28,stageSE03tsuiro,stageSEProc.o,,,
 0x00236F70,stageSE04bstrong,stageSEProc.o,,,
@@ -3673,8 +3673,8 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0023CF38,sceGsSetDefDBuff,vobj.o,,,
 0x0023D1D0,sceGsSwapDBuff,vobj.o,,,
 0x0023D230,sceGsSyncV,vobj.o,,,
-0x0023D2C8,sceGsSyncPath,vobj.o,st05c.c,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/st05c.c,524
-0x0023D5E0,sceGsSetDefTexEnv,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0023D2C8,sceGsSyncPath,vobj.o,,,
+0x0023D5E0,sceGsSetDefTexEnv,vobj.o,,,
 0x0023D6F0,sceGsSetDefAlphaEnv,vobj.o,,,
 0x0023D750,sceGsSetDefLoadImage,vobj.o,,,
 0x0023D938,sceGsSetDefStoreImage,vobj.o,,,
@@ -3717,7 +3717,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0023EAF8,sceVu0RotMatrix,vobj.o,,,
 0x0023E7A0,sceVu0ScaleVector,vobj.o,,,
 0x0023E770,sceVu0SubVector,vobj.o,,,
-0x0023E758,sceVu0AddVector,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0023E758,sceVu0AddVector,vobj.o,,,
 0x0023E680,sceVu0InversMatrix,vobj.o,,,
 0x0023E540,sceVu0ApplyMatrix,vobj.o,,,
 0x0023F0D0,sceVu0ScaleVectorXYZ,vobj.o,,,
@@ -3728,7 +3728,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0023EE50,sceVu0DropShadowMatrix,vobj.o,,,
 0x0023FB58,sceDmaSync,vobj.o,,,
 0x0023FA68,sceDmaRecvI,vobj.o,,,
-0x0023FC20,sceDmaWatch,vobj.o,st03t.c,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/st03t.c,1131
+0x0023FC20,sceDmaWatch,vobj.o,,,
 0x0023F8B0,sceDmaRecv,vobj.o,,,
 0x0023F6E0,sceDmaSendN,vobj.o,,,
 0x0023F978,sceDmaRecvN,vobj.o,,,
@@ -3772,7 +3772,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x002407E0,sceTtyInit,vobj.o,,,
 0x002405C0,sceTtyWrite,vobj.o,,,
 0x00240710,sceTtyRead,vobj.o,,,
-0x00240C00,sceSifAddCmdHandler,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00240C00,sceSifAddCmdHandler,vobj.o,,,
 0x00240BD0,sceSifSetCmdBuffer,vobj.o,,,
 0x00240DD0,isceSifSendCmd,vobj.o,,,
 0x002408D0,sceSifGetSreg,vobj.o,,,
@@ -3936,7 +3936,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0024BA98,sceMpegAddStrCallback,vobj.o,,,
 0x0024BA78,sceMpegDemuxPss,vobj.o,,,
 0x0024B588,_id2type,vobj.o,,,
-0x0024B500,_type2id,vobj.o,st13b.c,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/st13b.c,885
+0x0024B500,_type2id,vobj.o,,,
 0x0024B788,sceMpegDemuxPssRing,vobj.o,,,
 0x0024BD50,_PES_packet,vobj.o,,,
 0x0024BCE0,_system_header,vobj.o,,,
@@ -3946,7 +3946,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0024C5B8,sceMpegDelete,vobj.o,,,
 0x0024C8D8,sceMpegDispCenterOffX,vobj.o,,,
 0x0024C710,sceMpegIsEnd,vobj.o,,,
-0x0024C850,_dispatchMpegCbNodata,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0024C850,_dispatchMpegCbNodata,vobj.o,,,
 0x0024C5F8,sceMpegGetPicture,vobj.o,,,
 0x0024C6D8,sceMpegSetDecodeMode,vobj.o,,,
 0x0024C800,_dispatchMpegCallback,vobj.o,,,
@@ -3957,7 +3957,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0024C640,sceMpegGetPictureRAW8,vobj.o,,,
 0x0024CE38,_sceMpegFlush,vobj.o,,,
 0x0024C938,_alalcSetDynamic,vobj.o,,,
-0x0024C8E8,sceMpegDispCenterOffY,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0024C8E8,sceMpegDispCenterOffY,vobj.o,,,
 0x0024C908,sceSetPtm,vobj.o,,,
 0x0024C958,_alalcAlloc,vobj.o,,,
 0x0024C6F0,sceMpegGetDecodeMode,vobj.o,,,
@@ -3988,7 +3988,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x0024D0F0,_sendDataToIPU,vobj.o,,,
 0x0024CEA8,_initSeqAgain,vobj.o,,,
 0x0024DA78,_defStopDMA,vobj.o,,,
-0x0024DA88,_defRestartDMA,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0024DA88,_defRestartDMA,vobj.o,,,
 0x0024F830,_waitBdecOut,vobj.o,,,
 0x00251230,_nextHeader,vobj.o,,,
 0x00251B58,_decPicture,vobj.o,,,
@@ -4026,7 +4026,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00252648,_dispRefImageField,vobj.o,,,
 0x00250A90,_waitIpuIdle,vobj.o,,,
 0x00250FF0,_nextBit,vobj.o,,,
-0x0024FA38,_dualPrimeVector,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x0024FA38,_dualPrimeVector,vobj.o,,,
 0x00251158,_nextStartCode,vobj.o,,,
 0x0024F508,_rix_111,vobj.o,,,
 0x00250B38,_waitIpuIdle64,vobj.o,,,
@@ -4102,7 +4102,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x002570D8,SgQuit,vobj.o,,,
 0x00257378,SgVabOpenFakeBody,vobj.o,,,
 0x00257A48,SgSetSeMasterVol,vobj.o,,,
-0x00257EC0,SgGetBgmStatus,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00257EC0,SgGetBgmStatus,vobj.o,,,
 0x00258D90,SgStPcmBufMode,vobj.o,,,
 0x00257E90,SgGetBgmTempo,vobj.o,,,
 0x00258800,SgStAdpcmInit,vobj.o,,,
@@ -4115,7 +4115,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00258E68,sceDemoStart,vobj.o,,,
 0x00258F60,sceDemoEnd,vobj.o,,,
 0x00258FB0,sinf,vobj.o,,,
-0x002590A0,acosf,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x002590A0,acosf,vobj.o,,,
 0x002591A0,asinf,vobj.o,,,
 0x002592A0,atan2f,vobj.o,,,
 0x002593C8,fmodf,vobj.o,,,
@@ -4209,7 +4209,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00263A68,vsprintf,vobj.o,,,
 0x00263AC0,__swsetup,vobj.o,,,
 0x00263BD0,abort,vobj.o,,,
-0x00263BF0,atof,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x00263BF0,atof,vobj.o,,,
 0x00263E28,_dtoa_r,vobj.o,,,
 0x00264FF8,fflush,vobj.o,,,
 0x002652C8,__sinit,vobj.o,,,
@@ -4243,7 +4243,7 @@ pal_va,name,object_file,source_file,source_path,source_line
 0x00267038,_i2b,vobj.o,,,
 0x00266F78,_lo0bits,vobj.o,,,
 0x00267518,__mcmp,vobj.o,,,
-0x002672A0,_pow5mult,vobj.o,debug.c,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+0x002672A0,_pow5mult,vobj.o,,,
 0x00267710,_ulp,vobj.o,,,
 0x002677A8,_b2d,vobj.o,,,
 0x00266C90,_multadd,vobj.o,,,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Join SRCFILE.TXT source provenance into PAL→USA CSV artifacts.
 
-This script uses the PAL extract's SRCFILE.TXT listing to map USA VAs back to
+This script uses the PAL extract's SRCFILE.TXT listing to map PAL VAs back to
 their originating source file and line number. It then enriches:
 
 - docs/symbols/pal_usa_symbol_map.csv
@@ -32,6 +32,10 @@ def load_csv(path: Path) -> list[dict]:
         return list(csv.DictReader(f))
 
 
+def names_agree(left: str, right: str) -> bool:
+    return re.sub(r"[^a-z0-9]", "", left.lower()) == re.sub(r"[^a-z0-9]", "", right.lower())
+
+
 def write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
     with open(path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
@@ -40,7 +44,7 @@ def write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
 
 
 def parse_srcfile(path: Path) -> dict[int, dict]:
-    """Return {usa_va: {source_file, source_path, source_line, function_name}}."""
+    """Return {pal_va: {source_file, source_path, source_line, function_name}}."""
     lines = path.read_text(errors="ignore").splitlines()
     mapping: dict[int, dict] = {}
 
@@ -87,19 +91,21 @@ def enrich_pal_usa_symbol_map(src_map: dict[int, dict]) -> tuple[list[dict], int
     rows = load_csv(PAL_USA_SYMBOL_MAP)
     hits = 0
     for row in rows:
-        row.setdefault("source_file", "")
-        row.setdefault("source_path", "")
-        row.setdefault("source_line", "")
+        row["source_file"] = ""
+        row["source_path"] = ""
+        row["source_line"] = ""
 
-        usa_va = row.get("usa_va", "")
-        if not usa_va:
+        pal_va = row.get("pal_va", "")
+        if not pal_va:
             continue
         try:
-            va = int(usa_va, 16)
+            va = int(pal_va, 16)
         except ValueError:
             continue
         info = src_map.get(va)
         if not info:
+            continue
+        if not names_agree(row.get("symbol", ""), info["function_name"]):
             continue
         row["source_file"] = info["source_file"]
         row["source_path"] = info["source_path"]
@@ -118,13 +124,15 @@ def enrich_raw_symbols_pal(symbol_map: list[dict]) -> tuple[list[dict], int]:
 
     hits = 0
     for row in raw_rows:
-        row.setdefault("source_file", "")
-        row.setdefault("source_path", "")
-        row.setdefault("source_line", "")
+        row["source_file"] = ""
+        row["source_path"] = ""
+        row["source_line"] = ""
 
         pal_va = row.get("pal_va", "")
         sym = by_pal_va.get(pal_va)
         if not sym:
+            continue
+        if not names_agree(row.get("symbol", ""), sym.get("symbol", "")):
             continue
         if sym.get("source_file"):
             row["source_file"] = sym["source_file"]
@@ -145,27 +153,21 @@ def enrich_main_map_functions(src_map: dict[int, dict]) -> tuple[list[dict], int
 
     hits = 0
     for row in rows:
-        row.setdefault("source_file", "")
-        row.setdefault("source_path", "")
-        row.setdefault("source_line", "")
+        row["source_file"] = ""
+        row["source_path"] = ""
+        row["source_line"] = ""
 
         pal_va = row.get("pal_va", "")
         sym = by_pal_va.get(pal_va)
         if not sym:
             continue
-        usa_va = sym.get("usa_va", "")
-        if not usa_va:
+        if not names_agree(row.get("name", ""), sym.get("symbol", "")):
             continue
-        try:
-            va = int(usa_va, 16)
-        except ValueError:
+        if not sym.get("source_file"):
             continue
-        info = src_map.get(va)
-        if not info:
-            continue
-        row["source_file"] = info["source_file"]
-        row["source_path"] = info["source_path"]
-        row["source_line"] = info["source_line"]
+        row["source_file"] = sym["source_file"]
+        row["source_path"] = sym.get("source_path", "")
+        row["source_line"] = sym.get("source_line", "")
         hits += 1
     return rows, hits
 
@@ -176,7 +178,7 @@ def main() -> int:
         return 1
 
     src_map = parse_srcfile(SRCFILE_TXT)
-    print(f"[SRC] parsed {len(src_map)} USA VAs with source provenance")
+    print(f"[SRC] parsed {len(src_map)} address records with source provenance")
 
     symbol_rows, symbol_hits = enrich_pal_usa_symbol_map(src_map)
     write_csv(

@@ -1,6 +1,6 @@
 symbol,pal_va,usa_va,type,source_file,match_method,confidence,status,notes,source_path,source_line
 _start,0x00100008,0x00100008,func,crt0.s,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,/usr/local/sce/ee/lib/crt0.s,32
-_exit,0x001000B8,0x0013C538,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
+_exit,0x001000B8,0x0013C538,func,crt0.s,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/usr/local/sce/ee/lib/crt0.s,110
 RFU000_FullReset,0x00100100,0x00100100,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,33
 ResetEE,0x00100110,0x00100110,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,34
 SetGsCrt,0x00100120,0x00100120,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,35
@@ -18,10 +18,10 @@ SetVTLBRefillHandler,0x001001D0,0x001001D0,func,klib.s,raw_sha1,1.00,verified,ex
 SetVCommonHandler,0x001001E0,0x001001E0,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,47
 SetVInterruptHandler,0x001001F0,0x001001F0,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,48
 AddIntcHandler,0x00100200,0x00100200,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,51
-AddIntcHandler2,0x00100210,0x00100200,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,51
+AddIntcHandler2,0x00100210,0x00100200,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,52
 RemoveIntcHandler,0x00100220,0x00100220,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,53
 AddDmacHandler,0x00100230,0x00100230,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,54
-AddDmacHandler2,0x00100240,0x00100230,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,54
+AddDmacHandler2,0x00100240,0x00100230,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,55
 RemoveDmacHandler,0x00100250,0x00100250,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,56
 _EnableIntc,0x00100260,0x00100260,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,57
 _DisableIntc,0x00100270,0x00100270,func,klib.s,raw_sha1,1.00,verified,exact; src=prologue,klib.s,58
@@ -259,7 +259,7 @@ CopyMatrix,0x001060F0,0x001AA750,func,,fuzzy,0.66,candidate,fuzzy; sz_diff=28; s
 CopyMatrixUncached,0x00106118,0x001AA750,func,,fuzzy,0.68,candidate,fuzzy; sz_diff=12; src=extracted,,
 AddVectorXYZ,0x00106148,0x00136D50,func,,fuzzy,0.64,candidate,fuzzy; sz_diff=4; src=extracted,,
 SubVectorXYZ,0x00106160,0x0013F9D0,func,,fuzzy,0.73,candidate,fuzzy; sz_diff=44; src=extracted,,
-UnitRotation,0x00106178,0x00106178,func,matrixDrive.c,same_va,0.85,verified,same VA; USA size=52; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/sugipon/src/matrixDrive.c,400
+UnitRotation,0x00106178,0x00106178,func,,same_va,0.85,verified,same VA; USA size=52; src=extracted,,
 FSqrt,0x001061B0,0x001681A8,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=8; src=extracted,,
 VectorLength,0x001061D0,0x001315A8,func,,fuzzy,0.87,candidate,fuzzy; sz_diff=12; src=extracted,,
 VectorLengthSquare,0x001061F8,0x001BFB6C,func,,fuzzy,0.89,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -345,7 +345,7 @@ GetPoolGlobalDrainVector,0x0010B9B8,,func,,unmatched,0.00,unmatched,no match; PA
 InitPoolGeo,0x0010B9C8,,func,,unmatched,0.00,unmatched,no match; PAL size=1820; src=extracted,,
 PoolDL,0x0010CCB8,0x001AA750,func,,fuzzy,0.54,candidate,fuzzy; sz_diff=8; src=extracted,,
 InitLimitedPoolReflactionMesh,0x0010CDB8,0x001BA330,func,,fuzzy,0.79,candidate,fuzzy; sz_diff=4; src=extracted,,
-SetLayoutedPoolReflactionMesh,0x0010CF00,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+SetLayoutedPoolReflactionMesh,0x0010CF00,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 SetLimitedPoolReflactionMesh,0x0010D240,0x00133608,func,,fuzzy,0.89,candidate,fuzzy; sz_diff=16; src=extracted,,
 DispLimitedPoolReflactionMesh,0x0010D698,0x0010D698,func,,same_va,0.85,verified,same VA; USA size=36; src=extracted,,
 PoolGeo,0x0010D780,0x001079DC,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -425,7 +425,7 @@ gif_MakeSprite,0x00110110,0x0014EB28,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0
 gif_MakeSpriteOffset,0x00110290,0x001315A8,func,,fuzzy,0.73,candidate,fuzzy; sz_diff=8; src=extracted,,
 gif_MakeSpriteWithStrip,0x00110428,0x001D0F68,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
 gif_PointOffset,0x00110690,0x00142890,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=8; src=extracted,,
-gif_Line,0x001107B8,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+gif_Line,0x001107B8,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 gif_Sprite,0x00110948,0x00110948,func,,same_va,0.85,verified,same VA; USA size=412; src=extracted,,
 gif_SpriteSensitive,0x00110B48,0x001684E8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 gif_SpriteOffset,0x00110CE8,0x00132930,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -541,7 +541,7 @@ _MakeNormalLightMatrix,0x00119130,0x00132AD4,func,,fuzzy,0.98,candidate,fuzzy; s
 _MakeLightColorMatrix,0x00119200,0x001011B0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 _InitRandom,0x00119238,0x00101AE8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 _GetRandom,0x00119258,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-_GetRandomVector,0x00119270,0x00102870,func,delayFreeManager.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/sugipon/src/delayFreeManager.c,14
+_GetRandomVector,0x00119270,0x00102870,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 _GetRandomVector0,0x00119290,0x001019E0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 _RotTransCurrentMatrix,0x001192A8,0x00106660,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 mc_SetMicroCode,0x00119458,0x00101030,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -553,7 +553,7 @@ pac_MakePacket,0x0011C6D0,0x001A9C48,func,,fuzzy,0.99,candidate,fuzzy; sz_diff=4
 pac_Dump,0x0011C6F0,0x001BB23C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 pac_Init,0x0011C748,0x0024C130,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 pac_DispVu1Memory,0x0011C750,0x00132AD4,func,,fuzzy,0.97,candidate,fuzzy; sz_diff=8; src=extracted,,
-prim_InitFan2D,0x0011C7B8,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+prim_InitFan2D,0x0011C7B8,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 prim_SetFan2D,0x0011CA48,0x00140048,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
 prim_DispFan2D,0x0011CC90,0x0013F9D0,func,,fuzzy,0.91,candidate,fuzzy; sz_diff=20; src=extracted,,
 prim_InitMesh3D,0x0011D388,,func,,unmatched,0.00,unmatched,no match; PAL size=896; src=extracted,,
@@ -733,7 +733,7 @@ Shock_SetMotor,0x0013C220,0x00107DD8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0
 Init_ShockVoiceSet,0x0013C388,0x0013FC00,func,,fuzzy,0.68,candidate,fuzzy; sz_diff=4; src=extracted,,
 Vibration_SetDecodeData,0x0013C3C0,0x00163B40,func,,fuzzy,0.67,candidate,fuzzy; sz_diff=8; src=extracted,,
 Init_ShockRequestBox,0x0013C410,0x001BC130,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
-ShockRequestBox_Clear,0x0013C438,0x001AE8F0,func,debug.c,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+ShockRequestBox_Clear,0x0013C438,0x001AE8F0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 ShockRequestBox_Regst,0x0013C498,0x001010EC,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 ShockRequestBox_Request,0x0013C4B8,0x0013C4B8,func,,same_va,0.85,verified,same VA; USA size=8; src=extracted,,
 ShockRequestBox_DecodeRequest,0x0013C648,,func,,unmatched,0.00,unmatched,no match; PAL size=500; src=extracted,,
@@ -812,7 +812,7 @@ isysGObjActiveLink,0x0013EC40,0x0013EC40,func,,same_va,0.85,verified,same VA; US
 isysGObjActiveDlLink,0x0013EC78,0x0013FE18,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 isysGObjRemoveObjDL,0x0013ED58,0x0013ED58,func,,same_va,0.85,verified,same VA; USA size=8; src=extracted,,
 isysGObjMoveObjDL,0x0013EFA0,0x001010EC,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-isysGObjMoveObjDLHead,0x0013EFE8,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+isysGObjMoveObjDLHead,0x0013EFE8,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 isysGObjLinkObjDL,0x0013F030,0x00105288,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 isysGObjLinkObjDLHead,0x0013F0D0,0x001BA668,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
 isysGObjLinkObjDLAfterGObj,0x0013F0F8,0x00101AE8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -946,7 +946,7 @@ ACTCheckCollis_WAY,0x001497E8,,func,,unmatched,0.00,unmatched,no match; PAL size
 ACTCheckViewCl,0x00149930,,func,,unmatched,0.00,unmatched,no match; PAL size=3288; src=extracted,,
 ACTGameView_FirstSet,0x00149AB0,,func,,unmatched,0.00,unmatched,no match; PAL size=2904; src=extracted,,
 ACTGameView_Add,0x00149B80,,func,,unmatched,0.00,unmatched,no match; PAL size=2696; src=extracted,,
-ACTGameView_Check,0x00149C28,0x00149C28,func,act-game.c,same_va,0.85,verified,same VA; USA size=304; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/src/act-game.c,2872
+ACTGameView_Check,0x00149C28,0x00149C28,func,,same_va,0.85,verified,same VA; USA size=304; src=extracted,,
 ACTGameViewSimple_Check,0x00149C70,,func,,unmatched,0.00,unmatched,no match; PAL size=2456; src=extracted,,
 ACTGame_GetMotOrientFromWeapon,0x00149CB8,,func,,unmatched,0.00,unmatched,no match; PAL size=2384; src=extracted,,
 ACTGame_NoWeapon,0x00149D00,,func,,unmatched,0.00,unmatched,no match; PAL size=2312; src=extracted,,
@@ -975,7 +975,7 @@ ACTItemForceDrop,0x0014A418,0x00102158,func,,fuzzy,1.00,candidate,fuzzy; sz_diff
 ACTCheckCollis_VIEW,0x0014A458,,func,,unmatched,0.00,unmatched,no match; PAL size=432; src=extracted,,
 ACTCheckViewClDetail,0x0014A558,0x00133608,func,,fuzzy,0.73,candidate,fuzzy; sz_diff=4; src=extracted,,
 ACTGame_SetMotionPlaySpeedRatio_Clear,0x0014A6E8,0x00147F68,func,,raw_sha1,1.00,verified,exact; src=prologue,,
-ACTGame_SetMotionPlaySpeedRatio_Exec,0x0014A708,0x00147F88,func,s_init.c,raw_sha1,1.00,verified,exact; src=prologue,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/sound/s_init.c,1507
+ACTGame_SetMotionPlaySpeedRatio_Exec,0x0014A708,0x00147F88,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 ActPara_MakeTbl,0x0014A7D8,,func,,unmatched,0.00,unmatched,no match; PAL size=540; src=extracted,,
 ActPara_InitSystem,0x0014A930,0x0024C130,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=4; src=extracted,,
 ActPara_GetDefTbl,0x0014A970,0x001BC130,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=12; src=extracted,,
@@ -984,7 +984,7 @@ ActPara_DebugOut,0x0014A998,0x001685E0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff
 ACTGetWish_FromPad,0x0014A9A0,0x0016A158,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 motBoyHand50,0x0014C230,0x001010EC,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 motBoyHand100,0x0014C340,,func,,unmatched,0.00,unmatched,no match; PAL size=768; src=extracted,,
-motBoyHand200,0x0014C5F0,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+motBoyHand200,0x0014C5F0,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 hand_heroin,0x0014C8E0,0x00135AD8,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=4; src=extracted,,
 subBoyControl,0x0014D3C8,0x00106750,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 subBoyCollision,0x0014EDF8,,func,,unmatched,0.00,unmatched,no match; PAL size=3924; src=extracted,,
@@ -993,7 +993,7 @@ actBoyWalk,0x00150010,,func,,unmatched,0.00,unmatched,no match; PAL size=1312; s
 actBoyRun,0x00150180,,func,,unmatched,0.00,unmatched,no match; PAL size=944; src=extracted,,
 actBoyAttack,0x001502F0,,func,,unmatched,0.00,unmatched,no match; PAL size=576; src=extracted,,
 actBoyTakeWeaponReady,0x00150510,0x001064B0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-actBoyTakeWeapon,0x00150698,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actBoyTakeWeapon,0x00150698,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actBoyPullupReady,0x00150A80,,func,,unmatched,0.00,unmatched,no match; PAL size=1784; src=extracted,,
 actBoyPullupGo,0x00150CA8,,func,,unmatched,0.00,unmatched,no match; PAL size=1232; src=extracted,,
 actBoyBelift,0x00150E40,,func,,unmatched,0.00,unmatched,no match; PAL size=824; src=extracted,,
@@ -1253,7 +1253,7 @@ afterEnemyBodylift,0x00163F78,0x001684E8,func,,fuzzy,1.00,candidate,fuzzy; sz_di
 MakeCollisionDependGObjList,0x00163FA0,0x0013FC00,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
 GetReflectionElement,0x00164090,0x00100BA8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 DispCollisionPC,0x00164988,,func,,unmatched,0.00,unmatched,no match; PAL size=2476; src=extracted,,
-DrawGObjWallCollision,0x001651F0,0x001651F0,func,commonact.c,same_va,0.85,verified,same VA; USA size=8; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/src/commonact.c,5405
+DrawGObjWallCollision,0x001651F0,0x001651F0,func,,same_va,0.85,verified,same VA; USA size=8; src=extracted,,
 DrawGObjFloorCollision,0x001654A0,0x0010184C,func,,fuzzy,0.58,candidate,fuzzy; sz_diff=124; src=extracted,,
 DBG_VECTOR,0x001656D8,,func,,unmatched,0.00,unmatched,no match; PAL size=2780; src=extracted,,
 GetEdgeOfFloor,0x00165748,,func,,unmatched,0.00,unmatched,no match; PAL size=2668; src=extracted,,
@@ -1268,7 +1268,7 @@ ClipWallFuchiHangWalkStop,0x001663A0,0x001663A0,func,,same_va,0.85,verified,same
 ClipWallField,0x001663C0,,func,,unmatched,0.00,unmatched,no match; PAL size=1240; src=extracted,,
 ClipWallEField,0x001663E0,0x001663E0,func,,same_va,0.85,verified,same VA; USA size=20; src=extracted,,
 ClipWallBoxStop,0x00166400,0x001617E0,func,,raw_sha1,1.00,verified,exact; src=prologue,,
-ClipWallAdjustPos,0x00166420,0x00161800,func,commonact.c,raw_sha1,1.00,verified,exact; src=prologue,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/src/commonact.c,5077
+ClipWallAdjustPos,0x00166420,0x00161800,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 ClipWallE,0x00166440,,func,,unmatched,0.00,unmatched,no match; PAL size=1112; src=extracted,,
 ClipWallCheckCB,0x00166460,,func,,unmatched,0.00,unmatched,no match; PAL size=1080; src=extracted,,
 ClipWallFieldCheckCB,0x00166488,0x00166488,func,,same_va,0.85,verified,same VA; USA size=28; src=extracted,,
@@ -1432,7 +1432,7 @@ scpPlayMotDirSmz,0x00178FE8,,func,,unmatched,0.00,unmatched,no match; PAL size=5
 scpPlayMot,0x00179048,0x0010184C,func,,fuzzy,0.66,candidate,fuzzy; sz_diff=108; src=extracted,,
 scpPlayJump,0x00179130,0x00135AD8,func,,fuzzy,0.65,candidate,fuzzy; sz_diff=0; src=extracted,,
 scpPlayStart,0x00179178,0x0013FE18,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
-scpPlayEnd,0x001791B8,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+scpPlayEnd,0x001791B8,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 scpTrans,0x001791F0,0x00100BA8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 scpTriggerBallTargetMan,0x00179200,0x001024B0,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 scpDoorTypeUpDown,0x001793B0,0x00109488,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -1450,7 +1450,7 @@ scpActivateAllWithKind,0x0017A1E0,,func,,unmatched,0.00,unmatched,no match; PAL 
 scpDisActivateAllWithKind,0x0017A220,,func,,unmatched,0.00,unmatched,no match; PAL size=3888; src=extracted,,
 scpLinkBGAtoLayoutedTarget,0x0017A260,,func,,unmatched,0.00,unmatched,no match; PAL size=3824; src=extracted,,
 scpLinkBGAtoLayoutedTargetSkelton,0x0017A2A0,,func,,unmatched,0.00,unmatched,no match; PAL size=3760; src=extracted,,
-scpLinkBGAtoLayoutedTargetSkeltonWithLocalRotationFlag,0x0017A328,0x0017A328,func,girl_act.c,same_va,0.85,verified,same VA; USA size=52; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/fumi/src/girl_act.c,2548
+scpLinkBGAtoLayoutedTargetSkeltonWithLocalRotationFlag,0x0017A328,0x0017A328,func,,same_va,0.85,verified,same VA; USA size=52; src=extracted,,
 scpLinkBGAtoKindTargetSkeltonWithLocalRotationFlag,0x0017A3C0,,func,,unmatched,0.00,unmatched,no match; PAL size=3472; src=extracted,,
 scpGetWallCollision,0x0017A458,,func,,unmatched,0.00,unmatched,no match; PAL size=3320; src=extracted,,
 scpDoorTypeUp,0x0017A5C0,,func,,unmatched,0.00,unmatched,no match; PAL size=2960; src=extracted,,
@@ -1468,7 +1468,7 @@ scpTransLinear,0x0017AAB0,,func,,unmatched,0.00,unmatched,no match; PAL size=169
 scpRotateLinear,0x0017AB88,,func,,unmatched,0.00,unmatched,no match; PAL size=1480; src=extracted,,
 scpTriggerPosBall,0x0017ACC8,,func,,unmatched,0.00,unmatched,no match; PAL size=1160; src=extracted,,
 scpTriggerBall,0x0017ADB8,,func,,unmatched,0.00,unmatched,no match; PAL size=920; src=extracted,,
-scpTriggerFloorAttr,0x0017AED0,0x00100008,func,crt0.s,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=prologue,/usr/local/sce/ee/lib/crt0.s,32
+scpTriggerFloorAttr,0x0017AED0,0x00100008,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=prologue,,
 scpTriggerWallAttr,0x0017AFC8,0x00174D78,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
 scpTriggerFloorAttrTargetMan,0x0017B0C0,0x0013FE18,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 scpTriggerPosBox,0x0017B238,0x00133608,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -1500,7 +1500,7 @@ scpIsHangChain,0x0017BCE0,0x0010184C,func,,fuzzy,0.76,candidate,fuzzy; sz_diff=5
 scpIsHangChainOptional,0x0017BD00,0x0010184C,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=24; src=extracted,,
 scpBornSpider,0x0017BD40,0x00101720,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
 scpActStatusDeathFall,0x0017BE60,0x001010EC,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-scpSetStreamMotionRootOffset,0x0017BF18,0x001AE8F0,func,debug.c,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+scpSetStreamMotionRootOffset,0x0017BF18,0x001AE8F0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 scpWakeupItemWithBoundary,0x0017BF50,0x00100BA8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 scpCheckReadyAllObjects,0x0017C000,,func,,unmatched,0.00,unmatched,no match; PAL size=460; src=extracted,,
 ScpCallCameraSetTarget,0x0017C020,0x00102340,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=prologue,,
@@ -1558,7 +1558,7 @@ brainDecTargetTimer,0x0017FEF8,0x0026CF30,func,,fuzzy,1.00,candidate,fuzzy; sz_d
 brainSetSpMode,0x0017FF88,0x00106570,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 brainLockGirl,0x0017FF98,0x0010882C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 brainUnlockGirl,0x0017FFA8,0x00103120,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-gif_test,0x00180588,0x00102870,func,delayFreeManager.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/sugipon/src/delayFreeManager.c,14
+gif_test,0x00180588,0x00102870,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 DebugDispBox,0x00180670,0x00140048,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
 DispAxisArrow,0x00181600,0x001BC130,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=12; src=extracted,,
 CameraEdit_DispPinType2,0x00181C10,0x001D0824,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -1638,12 +1638,12 @@ CameraGetOtherObjOffset,0x00189F40,0x0010A78C,func,,raw_sha1,1.00,verified,exact
 InsertCamera_Set,0x0018A028,0x001009E0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 InsertCamera_SetNoraml,0x0018A0B8,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 InsertCamera_Exec,0x0018A150,0x00251CF8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-GetCurrentCameraSet2,0x0018A1C0,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+GetCurrentCameraSet2,0x0018A1C0,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 SetCameraFlag_LwsCutBack,0x0018A1D0,0x00106660,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 SetCameraFlag_GamecamCutBack,0x0018A1E0,0x001019A8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 CameraSetCameraPosition,0x0018A200,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 CameraSetTargetPos,0x0018A258,0x0013C538,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-GetCameraPos,0x0018A260,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+GetCameraPos,0x0018A260,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 GetCameraInfo_tmp,0x0018A280,0x001019A8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 testcamerazoom,0x0018A2D0,0x00101B68,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 SetMonitorCameraInitializeFlag,0x0018A2E0,0x00101AE8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -1670,7 +1670,7 @@ InitPendulum,0x0018DC38,,func,,unmatched,0.00,unmatched,no match; PAL size=1304;
 LockChainGeo,0x0018DD70,,func,,unmatched,0.00,unmatched,no match; PAL size=992; src=extracted,,
 UnLockChainGeo,0x0018DD88,,func,,unmatched,0.00,unmatched,no match; PAL size=968; src=extracted,,
 GetChainHangRange,0x0018DD98,,func,,unmatched,0.00,unmatched,no match; PAL size=952; src=extracted,,
-GetChainLength,0x0018DDA8,0x00186650,func,script.c,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/script.c,1202
+GetChainLength,0x0018DDA8,0x00186650,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
 EnableChainHang,0x0018DDD0,,func,,unmatched,0.00,unmatched,no match; PAL size=896; src=extracted,,
 UnableChainHang,0x0018DDE8,,func,,unmatched,0.00,unmatched,no match; PAL size=872; src=extracted,,
 IsAbleChainHang,0x0018DDF8,,func,,unmatched,0.00,unmatched,no match; PAL size=856; src=extracted,,
@@ -1877,7 +1877,7 @@ backStageProcessInStage,0x0019D878,0x001BFB6C,func,,fuzzy,0.79,candidate,fuzzy; 
 backStageSave,0x0019DCF8,0x001009E0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 backStageLoad,0x0019DDA0,0x0024BDE4,func,,fuzzy,0.84,candidate,fuzzy; sz_diff=4; src=extracted,,
 backStageProcessInit,0x0019DE48,0x001685E0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-backStageDebugTimeZero,0x0019DE60,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+backStageDebugTimeZero,0x0019DE60,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 backStageTsuresariReturn,0x0019DE68,0x00102340,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 InitCharFileManager,0x0019DE70,0x00106660,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 ResetCharFileManager,0x0019DEF0,0x0013D0D0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -1940,7 +1940,7 @@ debug_DispVu1IReg,0x001A6B78,0x0019DD48,func,,op_seq_hash,0.95,verified,struct m
 debug_DispVu1SReg,0x001A6C20,0x001064B0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 debug_DispMatrix,0x001A6CC8,0x00133608,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=12; src=extracted,,
 debug_SetBarDummy,0x001A6D10,0x0013C538,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
-debug_SelectCsvWindowWithLine,0x001A6D18,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+debug_SelectCsvWindowWithLine,0x001A6D18,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 debug_TryToGetStartStage,0x001A6FA0,0x001D0F68,func,,fuzzy,0.87,candidate,fuzzy; sz_diff=8; src=extracted,,
 debugSceOpen,0x001A6FA8,0x00260C80,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
 debugSceClose,0x001A7008,0x0019E1D8,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
@@ -2135,7 +2135,7 @@ SetAttackCheckBoundaryAttribute,0x001B8928,0x0026D288,func,,fuzzy,0.65,candidate
 switchOnSE,0x001B8938,0x00135AD8,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=0; src=extracted,,
 switchReleaseSE,0x001B8940,0x00163B40,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=0; src=extracted,,
 GetFloorLeverGlobalHoldPoint,0x001B8948,0x00163B40,func,,fuzzy,0.72,candidate,fuzzy; sz_diff=8; src=extracted,,
-FloorLeverTriStateGeo,0x001B89C0,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+FloorLeverTriStateGeo,0x001B89C0,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 FloorLeverGeo,0x001B8A38,0x00135AD8,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
 FloorLeverDL,0x001B8CC8,0x0024BDE4,func,,fuzzy,0.81,candidate,fuzzy; sz_diff=12; src=extracted,,
 GetWallLeverGlobalHoldPoint,0x001B8D48,0x0013FD78,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -2156,7 +2156,7 @@ GetBoxGlobalHoldPoint,0x001BCD38,0x001BA330,func,,fuzzy,0.74,candidate,fuzzy; sz
 IsThisBoxTruck,0x001BCD80,0x001A76B8,func,,fuzzy,0.81,candidate,fuzzy; sz_diff=12; src=extracted,,
 ExecBoxMoveStartReaction,0x001BCD90,0x00101720,func,,fuzzy,0.84,candidate,fuzzy; sz_diff=20; src=extracted,,
 ExecBoxMoveEndReaction,0x001BCDF8,0x00135AD8,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
-BoxGeoRestore,0x001BCE80,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+BoxGeoRestore,0x001BCE80,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 BoxExtGeoRestore,0x001BCF28,,func,,unmatched,0.00,unmatched,no match; PAL size=860; src=extracted,,
 BoxMemoryFunc,0x001BCF30,,func,,unmatched,0.00,unmatched,no match; PAL size=852; src=extracted,,
 InitSwitchGeo,0x001BCF38,,func,,unmatched,0.00,unmatched,no match; PAL size=844; src=extracted,,
@@ -2222,7 +2222,7 @@ GetChainNodeGlobalQuaternion,0x001C4F18,,func,,unmatched,0.00,unmatched,no match
 MoveChainExtendedWeight,0x001C4FC0,,func,,unmatched,0.00,unmatched,no match; PAL size=1456; src=extracted,,
 InitChainVelocity,0x001C4FD8,,func,,unmatched,0.00,unmatched,no match; PAL size=1432; src=extracted,,
 DeleteChainExtendedWeight,0x001C50E0,,func,,unmatched,0.00,unmatched,no match; PAL size=1168; src=extracted,,
-GetChainNodeID,0x001C5108,0x001C5108,func,staffroll.c,same_va,0.85,verified,same VA; USA size=24; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/staffroll.c,128
+GetChainNodeID,0x001C5108,0x001C5108,func,,same_va,0.85,verified,same VA; USA size=24; src=extracted,,
 ResetClothAnimation,0x001C5120,0x001C5120,func,,same_va,0.85,verified,same VA; USA size=120; src=extracted,,
 GetChainExWeightGlobalQuaternion,0x001C5200,,func,,unmatched,0.00,unmatched,no match; PAL size=880; src=extracted,,
 GetChainCollision,0x001C52C8,,func,,unmatched,0.00,unmatched,no match; PAL size=680; src=extracted,,
@@ -2256,7 +2256,7 @@ StartQueenAttackEffect,0x001C83E0,0x001D0824,func,,fuzzy,0.68,candidate,fuzzy; s
 ResetGameOverEffect,0x001C8438,0x0013FD78,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
 EffectTool,0x001C9A98,,func,,unmatched,0.00,unmatched,no match; PAL size=1516; src=extracted,,
 EnemyCheckHit,0x001CA3F0,0x001315A8,func,,fuzzy,0.53,candidate,fuzzy; sz_diff=8; src=extracted,,
-CheckEnemyHit,0x001CA5E8,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+CheckEnemyHit,0x001CA5E8,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 InitEnemyGeo,0x001CA7E0,0x001BA668,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
 EnemyGeo,0x001CA980,,func,,unmatched,0.00,unmatched,no match; PAL size=192; src=extracted,,
 DisplayEnemy,0x001CABB8,,func,,unmatched,0.00,unmatched,no match; PAL size=184; src=extracted,,
@@ -2408,7 +2408,7 @@ GetParticleEffectData,0x001E52E8,0x00107DD8,func,,fuzzy,1.00,candidate,fuzzy; sz
 DisableParticleEffectGeometryControl,0x001E5308,0x001019A8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 GetParticleIDWithName,0x001E5328,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 GetParticleLoopFlag,0x001E5398,0x001BC130,func,,fuzzy,0.97,candidate,fuzzy; sz_diff=8; src=extracted,,
-ParticleEffects_SetAllGoal,0x001E53C8,0x001AE8F0,func,debug.c,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+ParticleEffects_SetAllGoal,0x001E53C8,0x001AE8F0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 SetParticleEffectClipEnableFlag,0x001E5438,0x0013FE18,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 DeleteParticleLayout,0x001E5460,0x0013C9D8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 InitParticleLayoutGeo,0x001E5470,0x0013C538,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -2557,7 +2557,7 @@ GetWindVector,0x001F0AF8,0x00101720,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0;
 StopWindField,0x001F0CF0,0x0016A158,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 drawLines,0x001F0D00,0x001085BC,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 drawSenpuukiHane,0x001F0D80,0x00163B40,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=0; src=extracted,,
-drawSenpuukiUnit,0x001F0E00,0x001AE8F0,func,debug.c,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+drawSenpuukiUnit,0x001F0E00,0x001AE8F0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 drawSenpuukiBase,0x001F0E80,,func,,unmatched,0.00,unmatched,no match; PAL size=1220; src=extracted,,
 ExecWindManager,0x001F0F00,0x00176DE0,func,,fuzzy,0.55,candidate,fuzzy; sz_diff=52; src=extracted,,
 ReinitWindManager,0x001F0F80,0x0026AC40,func,,fuzzy,0.74,candidate,fuzzy; sz_diff=12; src=extracted,,
@@ -2610,7 +2610,7 @@ bga_GetZoom,0x001F6610,0x00102644,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; s
 font_CheckAlign,0x001F6618,0x00101B68,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 font_Print,0x001F6BE8,0x0010184C,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=8; src=extracted,,
 font_GetWidth,0x001F6FE0,0x0013C538,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
-font_GetHeight,0x001F6FE8,0x001AE8F0,func,debug.c,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+font_GetHeight,0x001F6FE8,0x001AE8F0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 font_Init,0x001F7010,0x001F7010,func,,same_va,0.85,verified,same VA; USA size=24; src=extracted,,
 dl_Init,0x001F7030,0x00100D5C,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 dl_Clear,0x001F7148,,func,,unmatched,0.00,unmatched,no match; PAL size=224; src=extracted,,
@@ -2649,7 +2649,7 @@ AdpcmInterLeaveVolumeSet,0x001F8B98,0x001019A8,func,,fuzzy,1.00,candidate,fuzzy;
 AdpcmVolumeSet,0x001F8BC8,0x001EB3A8,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
 adpcmPauseRequest,0x001F8BD8,0x0013D0D0,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
 AdpcmIopBuffAlloc,0x001F8BE0,0x0013C538,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-AdpcmOpenSync,0x001F8C58,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+AdpcmOpenSync,0x001F8C58,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 AdpcmFadeCloseAll,0x001F8CF8,0x001D0824,func,,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,,
 AdpcmUseAreaGet,0x001F8D30,0x00133608,func,,fuzzy,0.82,candidate,fuzzy; sz_diff=8; src=extracted,,
 AdpcmFreeAreaGet,0x001F8D68,0x001BC130,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -2731,7 +2731,7 @@ actDejaChk,0x002034F8,0x0010184C,func,,fuzzy,0.79,candidate,fuzzy; sz_diff=40; s
 actDejaDemo,0x00203658,0x00101AE8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actDejaAfter,0x00203A78,0x0010184C,func,,fuzzy,0.75,candidate,fuzzy; sz_diff=36; src=extracted,,
 actDejaAfterChk,0x00203BC8,0x001009E0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-actDeja,0x00203CE8,0x001AE8F0,func,debug.c,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actDeja,0x00203CE8,0x001AE8F0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 actEnemySleep,0x00203D98,0x00107DD8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actE3Title,0x00203DC0,0x001009E0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actE3TitleChk,0x00203FB0,0x00251CF8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -2818,7 +2818,7 @@ actConte14_10_Jimaku,0x002096F0,0x001085BC,func,,fuzzy,1.00,candidate,fuzzy; sz_
 actEndDemo11Chk,0x00209880,0x0010184C,func,,fuzzy,0.66,candidate,fuzzy; sz_diff=108; src=extracted,,
 actConte14_11,0x002098B0,0x0010184C,func,,fuzzy,0.75,candidate,fuzzy; sz_diff=60; src=extracted,,
 actEndDemo12Chk,0x00209938,0x0013FC00,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
-actConte14_12,0x00209968,0x00209968,func,Basic.c,same_va,0.85,verified,same VA; USA size=204; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/seki/src/Basic.c,449
+actConte14_12,0x00209968,0x00209968,func,,same_va,0.85,verified,same VA; USA size=204; src=extracted,,
 actEndDemo13Chk,0x002099F0,0x00107DD8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actStaff1Chk,0x00209A20,0x001064B0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actStaff2Chk,0x00209A48,,func,,unmatched,0.00,unmatched,no match; PAL size=1032; src=extracted,,
@@ -3111,11 +3111,11 @@ actSt04lBrg1WayChk,0x0021AE00,0x001685E0,func,,fuzzy,0.62,candidate,fuzzy; sz_di
 actSt04lBrg2WayChk,0x0021AE48,0x00260C80,func,,fuzzy,0.92,candidate,fuzzy; sz_diff=8; src=extracted,,
 actSt04lTuriEvent,0x0021AEA0,0x001685E0,func,,fuzzy,0.68,candidate,fuzzy; sz_diff=4; src=extracted,,
 actSt04lTuriChk,0x0021AEB0,0x001685E0,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=12; src=extracted,,
-actSt04lGondolaCharaChk,0x0021AF68,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt04lGondolaCharaChk,0x0021AF68,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt04lMonyou01Event,0x0021AFF0,0x001BC130,func,,fuzzy,0.52,candidate,fuzzy; sz_diff=8; src=extracted,,
 actSt04lMonyou02Event,0x0021B000,0x001685E0,func,,fuzzy,0.62,candidate,fuzzy; sz_diff=8; src=extracted,,
 actSt04lMonyou03Event,0x0021B010,0x0021B010,func,,same_va,0.85,verified,same VA; USA size=716; src=extracted,,
-actSt04lMonyou04Event,0x0021B020,0x001AE8F0,func,debug.c,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt04lMonyou04Event,0x0021B020,0x001AE8F0,func,,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt04lMonyou05Event,0x0021B030,0x001BA668,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt04lMonyou06Event,0x0021B040,0x001D0F68,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=4; src=extracted,,
 actSt04lMonyou07Event,0x0021B050,0x00260C80,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -3125,7 +3125,7 @@ actSt04lSwordChk,0x0021B080,,func,,unmatched,0.00,unmatched,no match; PAL size=1
 actSt04lTorch1_1Chk,0x0021B0A8,0x001BC130,func,,fuzzy,0.60,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt04lTorch1_2Chk,0x0021B0F0,0x001D0F68,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=4; src=extracted,,
 actSt04lTorch2_1Chk,0x0021B138,,func,,unmatched,0.00,unmatched,no match; PAL size=152; src=extracted,,
-actSt04lTorch2_2Chk,0x0021B180,0x001AE8F0,func,debug.c,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt04lTorch2_2Chk,0x0021B180,0x001AE8F0,func,,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt04lTorch3_1Chk,0x0021B1C8,0x001009D8,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 actSt04lTorch3_2Chk,0x0021B210,0x0013C538,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt04lTorch2_1XLChk,0x0021B258,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -3248,7 +3248,7 @@ actSt04rDoorChk,0x00220208,,func,,unmatched,0.00,unmatched,no match; PAL size=68
 actSt04rDoor2Chk,0x00220370,0x00220370,func,,same_va,0.85,verified,same VA; USA size=8; src=extracted,,
 actSt05cSolarXL,0x002204D8,0x001D0824,func,,fuzzy,0.58,candidate,fuzzy; sz_diff=4; src=extracted,,
 actSt05cWaterXL,0x00220528,0x00133608,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=12; src=extracted,,
-actSt04rDoor,0x00220578,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt04rDoor,0x00220578,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt04rDoor2,0x00220620,,func,,unmatched,0.00,unmatched,no match; PAL size=856; src=extracted,,
 actSt05cDoorDown,0x002206C8,,func,,unmatched,0.00,unmatched,no match; PAL size=688; src=extracted,,
 actSt05cEne,0x00220738,,func,,unmatched,0.00,unmatched,no match; PAL size=576; src=extracted,,
@@ -3386,7 +3386,7 @@ actSt09aInit,0x00226AF0,0x00226AF0,func,,same_va,0.85,verified,same VA; USA size
 actSt09aElvDown,0x00226B30,0x0013C538,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt09aSekizo,0x00226C20,,func,,unmatched,0.00,unmatched,no match; PAL size=1476; src=extracted,,
 actSt09aBrgDown,0x00226CE8,,func,,unmatched,0.00,unmatched,no match; PAL size=1276; src=extracted,,
-actSt09aElv,0x00226E10,0x00226E10,func,st01b.c,same_va,0.85,verified,same VA; USA size=8; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/st01b.c,772
+actSt09aElv,0x00226E10,0x00226E10,func,,same_va,0.85,verified,same VA; USA size=8; src=extracted,,
 actSt09aIntro,0x00226EA8,,func,,unmatched,0.00,unmatched,no match; PAL size=828; src=extracted,,
 actSt09aBrg,0x00226F20,0x00226F20,func,,same_va,0.85,verified,same VA; USA size=8; src=extracted,,
 actSt09aElvMain,0x00226F98,,func,,unmatched,0.00,unmatched,no match; PAL size=588; src=extracted,,
@@ -3450,7 +3450,7 @@ actSt10rTower,0x002297F0,,func,,unmatched,0.00,unmatched,no match; PAL size=576;
 actSt10rExit,0x00229868,,func,,unmatched,0.00,unmatched,no match; PAL size=456; src=extracted,,
 actSt10rChain,0x002298D0,,func,,unmatched,0.00,unmatched,no match; PAL size=352; src=extracted,,
 actSt10rSekizo,0x00229978,,func,,unmatched,0.00,unmatched,no match; PAL size=184; src=extracted,,
-actSt10rEne,0x002299E0,0x001AE8F0,func,debug.c,fuzzy,0.65,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt10rEne,0x002299E0,0x001AE8F0,func,,fuzzy,0.65,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt10rEnemy1,0x00229A58,,func,,unmatched,0.00,unmatched,no match; PAL size=504; src=extracted,,
 actSt10rEnemy2,0x00229B00,0x0010184C,func,,fuzzy,0.69,candidate,fuzzy; sz_diff=4; src=extracted,,
 actSt10rElv,0x00229B70,,func,,unmatched,0.00,unmatched,no match; PAL size=224; src=extracted,,
@@ -3492,7 +3492,7 @@ actSt13bBossAfter,0x0022BFA8,0x001D0F68,func,,fuzzy,0.87,candidate,fuzzy; sz_dif
 actSt13bStoneGirl,0x0022C040,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13bExit,0x0022C0A8,0x001683A8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13bElev,0x0022C110,0x00260C80,func,,fuzzy,0.92,candidate,fuzzy; sz_diff=8; src=extracted,,
-actSt13bDoor,0x0022C178,0x001AE8F0,func,debug.c,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt13bDoor,0x0022C178,0x001AE8F0,func,,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,,
 actBossTest,0x0022C210,0x00251CF8,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13bConte02Jimaku,0x0022C290,0x00106750,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13bSekizo2Event,0x0022C410,0x001D0F68,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -3503,7 +3503,7 @@ actConte10b,0x0022C650,0x00133608,func,,fuzzy,0.55,candidate,fuzzy; sz_diff=12; 
 actSt13bBossAfterChk,0x0022C718,0x0010184C,func,,fuzzy,0.71,candidate,fuzzy; sz_diff=12; src=extracted,,
 actConte10c,0x0022C7E8,0x001BC130,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13bExitChk,0x0022C8A0,0x00163B40,func,,fuzzy,0.57,candidate,fuzzy; sz_diff=8; src=extracted,,
-actSt13bElevMain,0x0022C918,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt13bElevMain,0x0022C918,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13bElevSwitch,0x0022C948,0x00260C80,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13bDoorMain,0x0022C9A0,0x0010184C,func,,fuzzy,0.57,candidate,fuzzy; sz_diff=52; src=extracted,,
 actSt13bDoorSwitch,0x0022C9D8,,func,,unmatched,0.00,unmatched,no match; PAL size=232; src=extracted,,
@@ -3543,7 +3543,7 @@ actSt13cCageDownMain,0x0022F2B0,,func,,unmatched,0.00,unmatched,no match; PAL si
 actSt13cCageDownSwitch,0x0022F2E8,,func,,unmatched,0.00,unmatched,no match; PAL size=400; src=extracted,,
 actSt13cCage1stDownDemo,0x0022F358,,func,,unmatched,0.00,unmatched,no match; PAL size=288; src=extracted,,
 actSt13cCageFallReadyChk,0x0022F3A8,,func,,unmatched,0.00,unmatched,no match; PAL size=208; src=extracted,,
-actSt13cCageFallEvent,0x0022F428,0x001AE8F0,func,debug.c,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt13cCageFallEvent,0x0022F428,0x001AE8F0,func,,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13cSekizoEvent,0x0022F438,0x001BA668,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt13cSekizoJimakuChk,0x0022F448,0x001D0F68,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=4; src=extracted,,
 actSt13cSekizoJimakuEff,0x0022F4A8,0x0010184C,func,,fuzzy,0.55,candidate,fuzzy; sz_diff=68; src=extracted,,
@@ -3596,7 +3596,7 @@ actSt18aEne2,0x00231A60,0x0016A158,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; 
 actSt18aEnemy2_2,0x00231AD8,0x001BC130,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=12; src=extracted,,
 actSt18aCamera,0x00231B90,0x00231B90,func,,same_va,0.85,verified,same VA; USA size=72; src=extracted,,
 actSt18aIntroChk,0x00231BA0,0x001685E0,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=4; src=extracted,,
-actSt18aEneChk,0x00231C50,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt18aEneChk,0x00231C50,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt18aEne2Chk,0x00231CC0,0x001BC130,func,,fuzzy,0.77,candidate,fuzzy; sz_diff=8; src=extracted,,
 actSt19aOriDown,0x00231D40,0x0021DF18,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
 actSt19aOriUp,0x00231E68,0x001685E0,func,,fuzzy,0.82,candidate,fuzzy; sz_diff=8; src=extracted,,
@@ -3616,7 +3616,7 @@ actSt19aOriSwitch,0x00232948,0x001D0F68,func,,fuzzy,0.92,candidate,fuzzy; sz_dif
 actSt19aChainMain,0x002329E0,0x001D0F68,func,,fuzzy,0.92,candidate,fuzzy; sz_diff=8; src=extracted,,
 actSt19aChainSwitch,0x00232A18,0x001B7F20,func,,fuzzy,0.60,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt19bIntroChk,0x00232AB8,0x00104590,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=prologue,,
-actSt20aInit,0x00232B58,0x001AE8F0,func,debug.c,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+actSt20aInit,0x00232B58,0x001AE8F0,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt20aEnd,0x00232BB0,0x001BA668,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
 actSt20aBridgeDown,0x00232BF8,0x00232BF8,func,,same_va,0.85,verified,same VA; USA size=8; src=extracted,,
 actSt20aGondolaDown,0x00232CE8,0x001683A8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -3708,7 +3708,7 @@ stageSEtaimatsu,0x00236408,,func,,unmatched,0.00,unmatched,no match; PAL size=50
 stageSE04eriver,0x00236598,0x001685E0,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=4; src=extracted,,
 stageSE06ariver,0x00236790,0x00260C80,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
 stageSE10lstrong2,0x002368E8,0x001BA668,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=4; src=extracted,,
-stageSE19ataki,0x00236A30,0x001AE8F0,func,debug.c,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+stageSE19ataki,0x00236A30,0x001AE8F0,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
 stageSE02astrong,0x00236C50,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 stageSE02ataki,0x00236D70,0x001BA668,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=4; src=extracted,,
 stageSE02atakib,0x00236DC8,0x0026B018,func,,fuzzy,0.65,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -3745,7 +3745,7 @@ stageSE19astrong,0x00237D30,0x001685E0,func,,fuzzy,0.97,candidate,fuzzy; sz_diff
 stageSE19arain,0x00237DA8,0x001683A8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 stageSE20astrong,0x00237DD0,0x001BC130,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 stageSE20astrong2,0x00237E50,0x00260C80,func,,fuzzy,0.97,candidate,fuzzy; sz_diff=8; src=extracted,,
-stageSE22astrong,0x00237EB0,0x001AE8F0,func,debug.c,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+stageSE22astrong,0x00237EB0,0x001AE8F0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 stageSE22arain,0x00237F30,0x00101ED0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=prologue,,
 stageSE24astrong,0x00237FC8,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 stageSE24arain,0x00238028,0x001D0F68,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -3841,8 +3841,8 @@ sceGsPutDrawEnv,0x0023CE50,0x001685E0,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=
 sceGsSetDefDBuff,0x0023CF38,0x001685E0,func,,fuzzy,0.92,candidate,fuzzy; sz_diff=8; src=extracted,,
 sceGsSwapDBuff,0x0023D1D0,0x0023D1D0,func,,same_va,0.85,verified,same VA; USA size=116; src=extracted,,
 sceGsSyncV,0x0023D230,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-sceGsSyncPath,0x0023D2C8,0x0023D2C8,func,st05c.c,same_va,0.85,verified,same VA; USA size=24; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/st05c.c,524
-sceGsSetDefTexEnv,0x0023D5E0,0x001AE8F0,func,debug.c,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+sceGsSyncPath,0x0023D2C8,0x0023D2C8,func,,same_va,0.85,verified,same VA; USA size=24; src=extracted,,
+sceGsSetDefTexEnv,0x0023D5E0,0x001AE8F0,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceGsSetDefAlphaEnv,0x0023D6F0,0x00133608,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceGsSetDefLoadImage,0x0023D750,0x0023D750,func,,same_va,0.85,verified,same VA; USA size=240; src=extracted,,
 sceGsSetDefStoreImage,0x0023D938,0x00260C80,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -3863,7 +3863,7 @@ sceVu0InversMatrix,0x0023E680,,func,,unmatched,0.00,unmatched,no match; PAL size
 sceVu0DivVector,0x0023E6F0,,func,,unmatched,0.00,unmatched,no match; PAL size=184; src=extracted,,
 sceVu0DivVectorXYZ,0x0023E710,,func,,unmatched,0.00,unmatched,no match; PAL size=152; src=extracted,,
 sceVu0InterVector,0x0023E730,0x001BC130,func,,fuzzy,0.60,candidate,fuzzy; sz_diff=0; src=extracted,,
-sceVu0AddVector,0x0023E758,0x001AE8F0,func,debug.c,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+sceVu0AddVector,0x0023E758,0x001AE8F0,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceVu0SubVector,0x0023E770,0x001D0F68,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=4; src=extracted,,
 sceVu0MulVector,0x0023E788,0x001064B0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceVu0ScaleVector,0x0023E7A0,0x001044FC,func,,raw_sha1,1.00,verified,exact; src=prologue,,
@@ -3907,7 +3907,7 @@ sceDmaRecv,0x0023F8B0,0x001BA668,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; sr
 sceDmaRecvN,0x0023F978,,func,,unmatched,0.00,unmatched,no match; PAL size=232; src=extracted,,
 sceDmaRecvI,0x0023FA68,0x00100BC0,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 sceDmaSync,0x0023FB58,0x001685E0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=12; src=extracted,,
-sceDmaWatch,0x0023FC20,0x00229E48,func,st03t.c,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/st03t.c,1131
+sceDmaWatch,0x0023FC20,0x00229E48,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
 sceDmaPause,0x0023FCF0,0x00100BA8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceDmaRestart,0x0023FD10,0x00133608,func,,fuzzy,0.58,candidate,fuzzy; sz_diff=4; src=extracted,,
 sceVif1PkInit,0x0023FD30,0x001BC130,func,,fuzzy,0.59,candidate,fuzzy; sz_diff=16; src=extracted,,
@@ -3947,7 +3947,7 @@ sceSifInitCmd,0x00240918,0x001D0F68,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4;
 sceSifExitCmd,0x00240B98,0x001BA668,func,,fuzzy,0.78,candidate,fuzzy; sz_diff=4; src=extracted,,
 sceSifSetCmdBuffer,0x00240BD0,0x00240BD0,func,,same_va,0.85,verified,same VA; USA size=120; src=extracted,,
 sceSifSetSysCmdBuffer,0x00240BE8,0x001685E0,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
-sceSifAddCmdHandler,0x00240C00,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+sceSifAddCmdHandler,0x00240C00,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceSifRemoveCmdHandler,0x00240C30,0x00260C80,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceSifSendCmd,0x00240D90,0x001BC130,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
 isceSifSendCmd,0x00240DD0,0x001D0F68,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -4100,7 +4100,7 @@ sceMcSetFileInfo,0x0024AFE0,,func,,unmatched,0.00,unmatched,no match; PAL size=5
 sceMcRename,0x0024B1B8,0x001019A8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceMcUnformat,0x0024B320,,func,,unmatched,0.00,unmatched,no match; PAL size=920; src=extracted,,
 sceMcGetEntSpace,0x0024B3E8,0x0024B3E8,func,,same_va,0.85,verified,same VA; USA size=8; src=extracted,,
-_type2id,0x0024B500,0x0024B500,func,st13b.c,same_va,0.85,verified,same VA; USA size=576; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/script/src/st13b.c,885
+_type2id,0x0024B500,0x0024B500,func,,same_va,0.85,verified,same VA; USA size=576; src=extracted,,
 _id2type,0x0024B588,,func,,unmatched,0.00,unmatched,no match; PAL size=304; src=extracted,,
 sceMpegDemuxPssRing,0x0024B788,0x0013FC00,func,,fuzzy,0.84,candidate,fuzzy; sz_diff=16; src=extracted,,
 sceMpegDemuxPss,0x0024BA78,0x0010184C,func,,fuzzy,0.79,candidate,fuzzy; sz_diff=44; src=extracted,,
@@ -4123,14 +4123,14 @@ sceMpegReset,0x0024C730,0x00251CF8,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; 
 sceMpegClearRefBuff,0x0024C770,0x00100A68,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 sceMpegAddCallback,0x0024C7D8,0x00260BA0,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=0; src=extracted,,
 _dispatchMpegCallback,0x0024C800,0x00260C80,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
-_dispatchMpegCbNodata,0x0024C850,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+_dispatchMpegCbNodata,0x0024C850,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceMpegSetDefaultPtsGap,0x0024C878,0x00260C80,func,,fuzzy,0.92,candidate,fuzzy; sz_diff=8; src=extracted,,
 sceMpegResetDefaultPtsGap,0x0024C890,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceMpegSetImageBuff,0x0024C8A0,0x00233DE8,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
 sceMpegDispWidth,0x0024C8B8,0x001BC130,func,,fuzzy,0.57,candidate,fuzzy; sz_diff=8; src=extracted,,
 sceMpegDispHeight,0x0024C8C8,0x001685E0,func,,fuzzy,0.62,candidate,fuzzy; sz_diff=8; src=extracted,,
 sceMpegDispCenterOffX,0x0024C8D8,0x001685E0,func,,fuzzy,0.67,candidate,fuzzy; sz_diff=8; src=extracted,,
-sceMpegDispCenterOffY,0x0024C8E8,0x001AE8F0,func,debug.c,fuzzy,0.70,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+sceMpegDispCenterOffY,0x0024C8E8,0x001AE8F0,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceSetBrokenLink,0x0024C8F8,0x001BA668,func,,fuzzy,0.75,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceSetPtm,0x0024C908,0x001D0F68,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=4; src=extracted,,
 _alalcInit,0x0024C920,0x001683A8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
@@ -4156,7 +4156,7 @@ _unknown_extension,0x0024DA48,0x0013FE18,func,,fuzzy,0.70,candidate,fuzzy; sz_di
 _pictureSpatialScalableExtension,0x0024DA58,0x001BC130,func,,fuzzy,0.77,candidate,fuzzy; sz_diff=8; src=extracted,,
 _pictureTemporalScalableExtension,0x0024DA68,0x001685E0,func,,fuzzy,0.82,candidate,fuzzy; sz_diff=8; src=extracted,,
 _defStopDMA,0x0024DA78,0x001685E0,func,,fuzzy,0.87,candidate,fuzzy; sz_diff=8; src=extracted,,
-_defRestartDMA,0x0024DA88,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+_defRestartDMA,0x0024DA88,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 _getAllRefs,0x0024DDD8,0x001D0F68,func,,fuzzy,0.88,candidate,fuzzy; sz_diff=4; src=extracted,,
 _getRef0,0x0024E488,0x00209CC8,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
 _rix_000,0x0024EA38,0x001D0F68,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -4180,7 +4180,7 @@ _copyRefImage,0x0024F7A8,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0;
 _ipuSetMPEG1,0x0024F808,0x001BC130,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=4; src=extracted,,
 _waitBdecOut,0x0024F830,0x00260BA0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 _dmVector,0x0024FA18,0x001685E0,func,,fuzzy,0.82,candidate,fuzzy; sz_diff=8; src=extracted,,
-_dualPrimeVector,0x0024FA38,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+_dualPrimeVector,0x0024FA38,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 _mbAddressIncrement,0x0024FBC0,,func,,unmatched,0.00,unmatched,no match; PAL size=176; src=extracted,,
 _pictureData0,0x0024FCD0,0x001685E0,func,,fuzzy,0.78,candidate,fuzzy; sz_diff=4; src=extracted,,
 _motionVectors,0x002507A0,0x0010184C,func,,fuzzy,0.54,candidate,fuzzy; sz_diff=20; src=extracted,,
@@ -4250,7 +4250,7 @@ SgBgmPlay,0x00257AD0,0x001BC130,func,,fuzzy,0.85,candidate,fuzzy; sz_diff=12; sr
 SgBgmStop,0x00257B78,0x001BFB6C,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=0; src=extracted,,
 SgSetBgmTempo,0x00257DE8,0x001D0F68,func,,fuzzy,0.93,candidate,fuzzy; sz_diff=4; src=extracted,,
 SgGetBgmTempo,0x00257E90,0x00260C80,func,,fuzzy,0.97,candidate,fuzzy; sz_diff=8; src=extracted,,
-SgGetBgmStatus,0x00257EC0,0x001AE8F0,func,debug.c,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+SgGetBgmStatus,0x00257EC0,0x001AE8F0,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=0; src=extracted,,
 SgGetBgmChStatus,0x00257F48,0x001BC130,func,,fuzzy,0.83,candidate,fuzzy; sz_diff=4; src=extracted,,
 SgSetBgmPanpot,0x00257FF8,0x0023E298,func,,op_seq_hash,0.95,verified,struct match; sz_diff=0; src=prologue,,
 SgSePlay,0x002580D8,0x0010184C,func,,fuzzy,0.77,candidate,fuzzy; sz_diff=40; src=extracted,,
@@ -4283,7 +4283,7 @@ SgStPcmBufMode,0x00258D90,0x0013C958,func,,fuzzy,0.95,candidate,fuzzy; sz_diff=1
 sceDemoStart,0x00258E68,0x001BA668,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 sceDemoEnd,0x00258F60,0x00251CF8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 sinf,0x00258FB0,0x0016A158,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
-acosf,0x002590A0,0x001AE8F0,func,debug.c,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+acosf,0x002590A0,0x001AE8F0,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 asinf,0x002591A0,0x00251CF8,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 atan2f,0x002592A0,0x001D0F68,func,,fuzzy,0.97,candidate,fuzzy; sz_diff=8; src=extracted,,
 fmodf,0x002593C8,0x00133608,func,,fuzzy,0.70,candidate,fuzzy; sz_diff=12; src=extracted,,
@@ -4377,7 +4377,7 @@ __sccl,0x00263960,0x0010184C,func,,fuzzy,0.69,candidate,fuzzy; sz_diff=60; src=e
 vsprintf,0x00263A68,0x00104E5C,func,,fuzzy,1.00,candidate,fuzzy; sz_diff=0; src=extracted,,
 __swsetup,0x00263AC0,0x0010184C,func,,fuzzy,0.79,candidate,fuzzy; sz_diff=44; src=extracted,,
 abort,0x00263BD0,0x001685E0,func,,fuzzy,0.87,candidate,fuzzy; sz_diff=8; src=extracted,,
-atof,0x00263BF0,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+atof,0x00263BF0,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 _dtoa_r,0x00263E28,0x0013C958,func,,fuzzy,0.98,candidate,fuzzy; sz_diff=4; src=extracted,,
 fflush,0x00264FF8,0x00100108,func,,raw_sha1,1.00,verified,exact; src=prologue,,
 __sfmoreglue,0x00265158,0x00136D50,func,,fuzzy,0.99,candidate,fuzzy; sz_diff=4; src=extracted,,
@@ -4409,7 +4409,7 @@ _hi0bits,0x00266EF0,0x001D0F68,func,,fuzzy,0.97,candidate,fuzzy; sz_diff=8; src=
 _lo0bits,0x00266F78,0x0010184C,func,,fuzzy,0.87,candidate,fuzzy; sz_diff=52; src=extracted,,
 _i2b,0x00267038,0x00163B40,func,,fuzzy,0.77,candidate,fuzzy; sz_diff=8; src=extracted,,
 _multiply,0x00267070,0x0013FE18,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
-_pow5mult,0x002672A0,0x001AE8F0,func,debug.c,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,/backup/ico/20020116MasterVer1.00EU/ico2/common/src/debug.c,1562
+_pow5mult,0x002672A0,0x001AE8F0,func,,fuzzy,0.90,candidate,fuzzy; sz_diff=0; src=extracted,,
 _lshift,0x002673A0,0x00133608,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=12; src=extracted,,
 __mcmp,0x00267518,0x00135AD8,func,,fuzzy,0.80,candidate,fuzzy; sz_diff=0; src=extracted,,
 __mdiff,0x00267580,0x001685E0,func,,fuzzy,0.92,candidate,fuzzy; sz_diff=8; src=extracted,,
