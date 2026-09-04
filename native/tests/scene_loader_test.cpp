@@ -13,7 +13,17 @@ int main() {
     assert(loader.initialize(runtime));
     assert(loader.isInitialized());
 
-    SceneGObjDescriptor* desc = loader.descriptor(3);
+    const VerifiedSceneDescriptorRecord verifiedRecords[] = {
+        {1, 0x00153478},
+    };
+    assert(loader.applyVerifiedDescriptorRecords(verifiedRecords, 1));
+    assert(!loader.applyVerifiedDescriptorRecords(nullptr, 1));
+    const VerifiedSceneDescriptorRecord invalidRecord[] = {
+        {kInvalidSceneDescriptorIndex, 0},
+    };
+    assert(!loader.applyVerifiedDescriptorRecords(invalidRecord, 1));
+
+    SceneGObjDescriptor* desc = loader.descriptor(1);
     assert(desc != nullptr);
     desc->listId = 2;
     desc->hasInitFn = true;
@@ -31,7 +41,7 @@ int main() {
     SceneEntryRecord* record = loader.entry(0);
     assert(record != nullptr);
     record->sceneId = 7;
-    record->descriptorIndex = 3;
+    record->descriptorIndex = 1;
     SceneEntryRecord* earlierListRecord = loader.entry(1);
     assert(earlierListRecord != nullptr);
     earlierListRecord->sceneId = 7;
@@ -45,7 +55,8 @@ int main() {
     record->userData = 0x1234;
 
     // Rev.112: entry+0x24 wins; entry+0x40 supplies the wrapper's t0 value.
-    desc->processCallback_40 = 0x00123456;
+    /* +0x40 came from a verified static descriptor record above. */
+    assert(desc->processCallback_40 == 0x00153478);
     record->processCallback_24 = 0x00654321;
     record->processArgument_40 = 5;
     const SceneProcessRegistrationSpec entryRegistration =
@@ -58,7 +69,7 @@ int main() {
     record->processArgument_40 = 0;
     const SceneProcessRegistrationSpec fallbackRegistration =
         KanbanSceneLoader::selectProcessRegistration(*record, *desc);
-    assert(fallbackRegistration.callback == 0x00123456);
+    assert(fallbackRegistration.callback == 0x00153478);
     assert(fallbackRegistration.wrapperT0 == 0x1800);
     assert(!fallbackRegistration.usesEntryOverride);
 
@@ -80,7 +91,7 @@ int main() {
     assert(gobj != nullptr);
     assert(gobj->sort_key == 42);
     assert(gobj->user_data == 0x1234);
-    assert(gobj->state_15c == 3);
+    assert(gobj->state_15c == 1);
     assert(initCalls == 1);
 
     // Host-only bridge: this validates GObj list order reaches GIF commands;

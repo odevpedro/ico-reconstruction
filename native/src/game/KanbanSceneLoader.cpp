@@ -17,6 +17,7 @@ bool KanbanSceneLoader::initialize(IsysGObj& runtime) {
         m_descriptors[i].listId = 0;
         m_descriptors[i].hasInitFn = false;
         m_descriptors[i].initFn = {};
+        m_descriptors[i].processCallback_40 = 0;
     }
 
     for (auto& record : m_entries) {
@@ -70,6 +71,25 @@ const SceneEntryRecord* KanbanSceneLoader::entry(std::size_t index) const {
         return nullptr;
     }
     return &m_entries[index];
+}
+
+bool KanbanSceneLoader::applyVerifiedDescriptorRecords(
+    const VerifiedSceneDescriptorRecord* records,
+    std::size_t count) {
+    if (!m_initialized || (records == nullptr && count != 0)) {
+        return false;
+    }
+
+    for (std::size_t i = 0; i < count; ++i) {
+        if (records[i].descriptorIndex >= m_descriptors.size()) {
+            return false;
+        }
+    }
+    for (std::size_t i = 0; i < count; ++i) {
+        m_descriptors[records[i].descriptorIndex].processCallback_40 =
+            records[i].processCallback_40;
+    }
+    return true;
 }
 
 bool KanbanSceneLoader::requestScene(u32 sceneId) {

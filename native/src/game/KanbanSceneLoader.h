@@ -42,6 +42,16 @@ struct SceneProcessRegistrationSpec {
     u32 wrapperT0 = 0x1800;
     bool usesEntryOverride = false;
 };
+
+/*
+ * Verified static descriptor datum exported from the USA ELF. This is only
+ * the raw descriptor +0x40 field consumed by selectProcessRegistration(); it
+ * is neither a room assignment nor a decoded model/resource record.
+ */
+struct VerifiedSceneDescriptorRecord {
+    u16 descriptorIndex = kInvalidSceneDescriptorIndex;
+    ico_ptr32 processCallback_40 = 0;
+};
 /*
  * Host-only layout for exercising the scene → GIF path. It is not extracted
  * ICO geometry, materials, or a claim about original visual placement.
@@ -65,6 +75,10 @@ public:
     const SceneGObjDescriptor* descriptor(std::size_t index) const;
     SceneEntryRecord* entry(std::size_t index);
     const SceneEntryRecord* entry(std::size_t index) const;
+
+    /* Applies a bounded set of verified raw descriptor fields. */
+    bool applyVerifiedDescriptorRecords(const VerifiedSceneDescriptorRecord* records,
+                                        std::size_t count);
 
     bool requestScene(u32 sceneId);
     void clearRequests();

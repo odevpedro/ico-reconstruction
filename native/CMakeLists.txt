@@ -13,6 +13,7 @@ option(ICO_ENABLE_OPENGL "Enable OpenGL rendering backend (requires GL + X11)" O
 
 set(ICO_ENGINE_SOURCES
     src/game/KanbanSceneLoader.cpp
+    src/game/GirlBrainSemantic.cpp
     src/engine/GObj.cpp
     src/engine/GObjPool.cpp
     src/engine/ProcessNodePool.cpp
@@ -123,6 +124,9 @@ target_link_libraries(gif_packet_test PRIVATE ico_engine_core)
 add_executable(scene_loader_test tests/scene_loader_test.cpp)
 target_link_libraries(scene_loader_test PRIVATE ico_engine_core)
 
+add_executable(girlbrain_semantic_test tests/girlbrain_semantic_test.cpp)
+target_link_libraries(girlbrain_semantic_test PRIVATE ico_engine_core)
+
 add_executable(world_state_slot_test tests/world_state_slot_test.cpp)
 target_link_libraries(world_state_slot_test PRIVATE ico_engine_core)
 
@@ -141,6 +145,7 @@ add_test(NAME gif_command COMMAND gif_command_test)
 add_test(NAME gif_executor COMMAND gif_executor_test)
 add_test(NAME gif_packet COMMAND gif_packet_test)
 add_test(NAME scene_loader COMMAND scene_loader_test)
+add_test(NAME girlbrain_semantic COMMAND girlbrain_semantic_test)
 add_test(NAME world_state_slot COMMAND world_state_slot_test)
 
 if(ICO_ENABLE_OPENGL)
