@@ -49,7 +49,7 @@ def load_rows(path: Path) -> list[dict]:
 
 
 def load_reliable_seeds() -> dict[int, int]:
-    seeds = {}
+    seeds: dict[int, int] = {}
     for row in load_rows(ROOT / "docs" / "symbols" / "pal_usa_symbol_map.csv"):
         if row["status"] != "verified" or row["match_method"] not in RELIABLE_METHODS:
             continue
@@ -59,16 +59,46 @@ def load_reliable_seeds() -> dict[int, int]:
     return seeds
 
 
+def load_high_range_anchors(existing: dict[int, int]) -> dict[int, int]:
+    """Load derived anchors for candidate generation, never seed promotion.
+
+    These rows have an op-sequence-and-size match inside a HIGH-confidence
+    object range. They are weaker than direct fingerprints because the object
+    offset is derived, so callers must treat every result as candidate evidence.
+    """
+    high_objects = {
+        row["object_file"]
+        for row in load_rows(OUT / "pal_usa_object_range_candidates.csv")
+        if row["confidence"] == "HIGH" and int(row["functions_mapped"]) >= 2
+    }
+    derived: dict[int, int] = {}
+    for row in load_rows(OUT / "pal_usa_function_map_candidates.csv"):
+        if row["object_file"] not in high_objects or row["status"] != "MATCH":
+            continue
+        pal_va = int(row["pal_va"], 16)
+        if pal_va not in existing:
+            derived[pal_va] = int(row["usa_va"], 16)
+    return derived
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--object", action="append", dest="objects",
                         help="MAIN.MAP object to inspect; repeatable")
+    parser.add_argument("--include-high-range-anchors", action="store_true",
+                        help="use derived HIGH-range matches for candidate generation only")
     args = parser.parse_args()
     targets = set(args.objects or ["girl_act.o", "end.o", "GifPacket.o"])
 
     pal_text_va, pal_text = elf_text(PAL_ELF)
     usa_text_va, usa_text = elf_text(USA_ELF)
     seeds = load_reliable_seeds()
+    direct_seed_count = len(seeds)
+    derived_anchor_count = 0
+    if args.include_high_range_anchors:
+        derived = load_high_range_anchors(seeds)
+        derived_anchor_count = len(derived)
+        seeds.update(derived)
     functions = load_rows(OUT / "main_map_functions.csv")
     objects = {row["object_file"]: row for row in load_rows(OUT / "main_map_objects.csv")}
     with (ROOT / "docs" / "symbols" / "usa_fingerprints.json").open() as handle:
@@ -120,18 +150,22 @@ def main() -> int:
                 "usa_candidates": len(candidates),
             })
 
-    csv_path = OUT / "call_signature_candidates.csv"
+    suffix = "_with_high_range_anchors" if args.include_high_range_anchors else ""
+    csv_path = OUT / f"call_signature_candidates{suffix}.csv"
     with csv_path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows_out[0]) if rows_out else
                                 ["object_file", "name", "pal_va", "resolved_calls", "usa_candidates"])
         writer.writeheader()
         writer.writerows(rows_out)
 
-    report_path = OUT / "call_signature_recovery.md"
+    report_path = OUT / f"call_signature_recovery{suffix}.md"
     with report_path.open("w") as handle:
         handle.write("# Call-signature recovery candidates\n\n")
         handle.write("This report is candidate evidence only. No row is a PAL→USA seed.\n\n")
-        handle.write(f"Reliable PAL→USA callee seeds available: {len(seeds)}\n\n")
+        handle.write(f"Direct reliable PAL→USA callee seeds available: {direct_seed_count}\n")
+        if args.include_high_range_anchors:
+            handle.write(f"Derived HIGH-range anchors for candidate generation: {derived_anchor_count}\n")
+        handle.write(f"Call targets available to this run: {len(seeds)}\n\n")
         for obj_name in sorted(targets):
             object_rows = [row for row in rows_out if row["object_file"] == obj_name]
             supported = [row for row in object_rows if row["resolved_calls"] >= 2]
