@@ -4,6 +4,8 @@
 
 #include <cassert>
 #include <cstdio>
+#include <string>
+#include <vector>
 
 int main() {
     IsysGObj runtime;
@@ -94,6 +96,19 @@ int main() {
     assert(gobj->state_15c == 1);
     assert(initCalls == 1);
 
+    const std::vector<StaticSceneDebugItem> debugItems = loader.staticSceneDebugItems();
+    assert(debugItems.size() == 2);
+    /* Primary list order is preserved even though the list-2 GObj was allocated first. */
+    assert(debugItems[0].descriptorIndex == 4);
+    assert(debugItems[0].listId == 1);
+    assert(debugItems[0].sortKey == 1);
+    assert(debugItems[0].gobjType == 0);
+    assert(debugItems[1].descriptorIndex == 1);
+    assert(debugItems[1].listId == 2);
+    assert(debugItems[1].sortKey == 42);
+    assert(debugItems[1].label ==
+           "scene=7 descriptor=1 gobj.type=0 list=2 sort=42 handle=1");
+
     // Host-only bridge: this validates GObj list order reaches GIF commands;
     // it does not claim a game model, texture, or scene placement.
     auto backend = ico::engine::createRenderBackend();
@@ -122,6 +137,22 @@ int main() {
 
     bridge.endPacket();
     assert(bridge.commandBuffer().commandCount() == 0);
+
+    bridge.startPacketPri(0);
+    std::vector<std::string> emittedLabels;
+    const StaticSceneDebugViewStyle debugStyle{5.0f, 6.0f, 8.0f, 10.0f, 1, 3.0f};
+    assert(loader.renderStaticSceneDebugView(
+               bridge, debugStyle,
+               [&emittedLabels](const StaticSceneDebugItem& item, float x, float y) {
+                   emittedLabels.push_back(item.label + " @" + std::to_string(x) + "," +
+                                           std::to_string(y));
+               }) == 2);
+    assert(bridge.commandBuffer().commandCount() == 2);
+    assert(emittedLabels[0].find("descriptor=4") != std::string::npos);
+    assert(emittedLabels[0].find("@5.000000,19.000000") != std::string::npos);
+    assert(emittedLabels[1].find("descriptor=1") != std::string::npos);
+    assert(emittedLabels[1].find("@5.000000,32.000000") != std::string::npos);
+    bridge.endPacket();
     backend->shutdown();
     loader.clearRequests();
     assert(loader.pendingRequestCount() == 0);

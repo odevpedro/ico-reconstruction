@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
+#include <utility>
 
 bool KanbanSceneLoader::initialize(IsysGObj& runtime) {
     m_runtime = &runtime;
@@ -12,6 +14,7 @@ bool KanbanSceneLoader::initialize(IsysGObj& runtime) {
     m_requests.clear();
 
     m_sceneGObjs.clear();
+    m_sceneGObjSources.clear();
     for (std::size_t i = 0; i < m_descriptors.size(); ++i) {
         m_descriptors[i].descriptorIndex = static_cast<u16>(i);
         m_descriptors[i].listId = 0;
@@ -38,6 +41,7 @@ void KanbanSceneLoader::shutdown() {
     m_runtime = nullptr;
     m_initialized = false;
     m_sceneGObjs.clear();
+    m_sceneGObjSources.clear();
     m_currentSceneId = 0;
 }
 
@@ -126,6 +130,7 @@ std::size_t KanbanSceneLoader::initSceneGObj(u32 sceneId) {
 
     std::size_t created = 0;
     m_sceneGObjs.clear();
+    m_sceneGObjSources.clear();
     for (const SceneEntryRecord& record : m_entries) {
         if (!record.enabled || record.sceneId != sceneId ||
             record.descriptorIndex >= m_descriptors.size()) {
@@ -138,7 +143,9 @@ std::size_t KanbanSceneLoader::initSceneGObj(u32 sceneId) {
             continue;
         }
 
-        m_sceneGObjs.push_back(m_runtime->pool().handleOf(*gobj));
+        const ico::engine::GObjHandle handle = m_runtime->pool().handleOf(*gobj);
+        m_sceneGObjs.push_back(handle);
+        m_sceneGObjSources.push_back({handle, record.descriptorIndex, sceneId});
         ++created;
         if (desc.hasInitFn && desc.initFn) {
             desc.initFn(*gobj, desc);
@@ -216,4 +223,67 @@ std::size_t KanbanSceneLoader::renderSyntheticScene(
         }
     }
     return emitted;
+}
+
+std::vector<StaticSceneDebugItem> KanbanSceneLoader::staticSceneDebugItems() const {
+    std::vector<StaticSceneDebugItem> items;
+    if (!m_initialized || m_runtime == nullptr) {
+        return items;
+    }
+
+    for (u8 listId = 0; listId < ico::engine::kPrimaryListCount; ++listId) {
+        const ico::engine::GObj* gobj = m_runtime->head(listId);
+        while (gobj != nullptr) {
+            const ico::engine::GObjHandle handle = m_runtime->pool().handleOf(*gobj);
+            const auto source = std::find_if(
+                m_sceneGObjSources.begin(), m_sceneGObjSources.end(),
+                [handle](const SceneGObjSource& candidate) {
+                    return candidate.handle == handle;
+                });
+            if (source != m_sceneGObjSources.end()) {
+                StaticSceneDebugItem item{};
+                item.sceneId = source->sceneId;
+                item.descriptorIndex = source->descriptorIndex;
+                item.gobjType = gobj->type;
+                item.listId = gobj->list_id;
+                item.sortKey = gobj->sort_key;
+                item.handle = handle;
+                char label[128]{};
+                std::snprintf(label, sizeof(label),
+                              "scene=%u descriptor=%u gobj.type=%u list=%u sort=%u handle=%u",
+                              item.sceneId, item.descriptorIndex, item.gobjType,
+                              item.listId, item.sortKey, item.handle);
+                item.label = label;
+                items.push_back(std::move(item));
+            }
+            gobj = m_runtime->pool().get(gobj->next);
+        }
+    }
+    return items;
+}
+
+std::size_t KanbanSceneLoader::renderStaticSceneDebugView(
+    ico::engine::GifPacketBridge& bridge,
+    const StaticSceneDebugViewStyle& style,
+    const StaticSceneDebugLabelSink& labelSink) const {
+    if (!bridge.checkOpen() || style.columns == 0 || style.cellWidth <= 0.0f ||
+        style.cellHeight <= 0.0f || style.listGap < 0.0f) {
+        return 0;
+    }
+
+    const std::vector<StaticSceneDebugItem> items = staticSceneDebugItems();
+    std::array<std::size_t, ico::engine::kPrimaryListCount> listCounts{};
+    for (const StaticSceneDebugItem& item : items) {
+        const std::size_t indexInList = listCounts[item.listId]++;
+        const float x = style.originX + static_cast<float>(indexInList % style.columns) *
+            style.cellWidth;
+        const float y = style.originY + static_cast<float>(item.listId) *
+            (style.cellHeight + style.listGap) +
+            static_cast<float>(indexInList / style.columns) * style.cellHeight;
+        bridge.makeSpriteNoTexture(x, y, style.cellWidth, style.cellHeight);
+        if (labelSink) {
+            labelSink(item, x, y);
+        }
+    }
+    return items.size();
 }

@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <string>
 #include <vector>
 namespace ico::engine {
 class GifPacketBridge;
@@ -64,6 +65,35 @@ struct SyntheticSceneRenderStyle {
     u32 columns = 16;
 };
 
+/*
+ * Host debug metadata for the GObjs created by the currently selected scene.
+ * gobjType is the raw verified GObj+0x0C value, not a recovered game-facing
+ * entity classification. label is supplied to a host overlay; the GIF bridge
+ * intentionally has no text rasterizer yet.
+ */
+struct StaticSceneDebugItem {
+    u32 sceneId = 0;
+    u16 descriptorIndex = kInvalidSceneDescriptorIndex;
+    u32 gobjType = 0;
+    u8 listId = 0;
+    u32 sortKey = 0;
+    ico::engine::GObjHandle handle = ico::engine::kNullGObjHandle;
+    std::string label;
+};
+
+struct StaticSceneDebugViewStyle {
+    float originX = 0.0f;
+    float originY = 0.0f;
+    float cellWidth = 16.0f;
+    float cellHeight = 16.0f;
+    u32 columns = 16;
+    float listGap = 4.0f;
+};
+
+using StaticSceneDebugLabelSink = std::function<void(const StaticSceneDebugItem&,
+                                                      float x,
+                                                      float y)>;
+
 
 class KanbanSceneLoader {
 public:
@@ -91,6 +121,12 @@ public:
        The caller owns the GIF packet lifecycle. */
     std::size_t renderSyntheticScene(ico::engine::GifPacketBridge& bridge,
                                      const SyntheticSceneRenderStyle& style = {}) const;
+    /* Structural debug view: placeholders use GIF, labels go to the host sink. */
+    std::vector<StaticSceneDebugItem> staticSceneDebugItems() const;
+    std::size_t renderStaticSceneDebugView(
+        ico::engine::GifPacketBridge& bridge,
+        const StaticSceneDebugViewStyle& style = {},
+        const StaticSceneDebugLabelSink& labelSink = {}) const;
 
     /* Returns raw PS2 values; it intentionally does not invoke host callbacks. */
     static SceneProcessRegistrationSpec selectProcessRegistration(
@@ -106,4 +142,10 @@ private:
     std::array<SceneEntryRecord, kSceneEntryCount> m_entries{};
     std::vector<u32> m_requests;
     std::vector<ico::engine::GObjHandle> m_sceneGObjs;
+    struct SceneGObjSource {
+        ico::engine::GObjHandle handle;
+        u16 descriptorIndex;
+        u32 sceneId;
+    };
+    std::vector<SceneGObjSource> m_sceneGObjSources;
 };
