@@ -2,7 +2,7 @@ name: ICO USA SCUS_971.13 — verified symbols
 sha1: a4d8fc1948fb2da2395f3863a94a3b93de55de14
 options:
   basename: SCUS_971.13
-  target_path: /home/peter/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf
+  target_path: /home/hoper/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf
   base_path: /tmp/ico-verified-symbols
   asm_path: asm
   asset_path: assets
@@ -26,7 +26,7 @@ segments:
     vram: 0x00100000
     subalign: null
     subsegments:
-      # ---  (392 symbols) ---
+      # ---  (405 symbols) ---
       # range: 0x1108-0x1667A0
       - [0x1108, asm, Emergency_DestroyAllThread]
       - [0x19D8, asm, funcCommonJumpDircorrect]
@@ -74,6 +74,7 @@ segments:
       - [0x6BB8, asm, MatrixDrive_GetTurnYAngleXZ]
       - [0x6C98, asm, MatrixDrive_GetTurnYEAngleXZ]
       - [0x6D88, asm, MatrixDrive_GetTurnZAngleXY]
+      - [0x7178, asm, UnitRotation]
       - [0x7740, asm, dispPlane]
       - [0x7E38, asm, GetOrientOfCliffOfGObj]
       - [0x8268, asm, la_load_game_memory_card_check]
@@ -151,6 +152,8 @@ segments:
       - [0x43A68, asm, soundReverbDepthGet]
       - [0x44650, asm, sndBgmReadyNextStage]
       - [0x48F68, asm, ACTGame_SetMotionPlaySpeedRatio_Clear]
+      - [0x48F88, asm, ACTGame_SetMotionPlaySpeedRatio_Exec]
+      - [0x4AC28, asm, ACTGameView_Check]
       - [0x4AF18, asm, _ACTCharStatus_Init]
       - [0x4B178, asm, ACTGame_SendSoundMail]
       - [0x4B980, asm, ActPara_StatusToFlag]
@@ -178,7 +181,9 @@ segments:
       - [0x60648, asm, actEnemyBodylift]
       - [0x623B0, asm, MakeExitAttributeIndex]
       - [0x627E0, asm, ClipWallBoxStop]
+      - [0x62800, asm, ClipWallAdjustPos]
       - [0x629A8, asm, ChangeFieldCollisionDebugMode]
+      - [0x661F0, asm, DrawGObjWallCollision]
       - [0x673A0, asm, ClipWallFuchiHangWalkStop]
       - [0x673E0, asm, ClipWallEField]
       - [0x67488, asm, ClipWallFieldCheckCB]
@@ -189,6 +194,7 @@ segments:
       - [0x75D78, asm, scpTriggerWallAttr]
       - [0x78F18, asm, nearest_waypoint]
       - [0x79928, asm, get_wp_nearest_bridge_side_bridge]
+      - [0x7B328, asm, scpLinkBGAtoLayoutedTargetSkeltonWithLocalRotationFlag]
       - [0x7B910, asm, scpIsTorchLightOn]
       - [0x7E7F0, asm, debug_CameraEditor]
       - [0x7EA98, asm, CameraEdit_reset_pin]
@@ -197,6 +203,7 @@ segments:
       - [0x80CF8, asm, brainInitGirlSet]
       - [0x839D0, asm, CameraEdit_DispBoxType2]
       - [0x86280, asm, _CameraEdit_BOX]
+      - [0x87650, asm, GetChainLength]
       - [0x89BB8, asm, MakeCameraMatrix]
       - [0x8A600, asm, IsEnableCallEnemy]
       - [0x8AB88, asm, _InterGV]
@@ -242,6 +249,7 @@ segments:
       - [0xC21C0, asm, GetEnemyDefLife]
       - [0xC4C38, asm, SetGirlClothDispSwitch]
       - [0xC4C90, asm, GirlForceFieldGeo]
+      - [0xC6108, asm, GetChainNodeID]
       - [0xC6120, asm, ResetClothAnimation]
       - [0xC6988, asm, CheckCarryableItem]
       - [0xC6A20, asm, ReviveAllCarryableItems]
@@ -281,6 +289,7 @@ segments:
       - [0x105FA8, asm, actSt04dDoor2DownChk]
       - [0x106548, asm, actSt04eWaterMain]
       - [0x106AD8, asm, actE3GateJimaku]
+      - [0x10A968, asm, actConte14_12]
       - [0x10AC30, asm, actSt04lC3BallMain]
       - [0x10ACC8, asm, actSt06aShutterSwitch]
       - [0x10B0A0, asm, actSt04lOri2Event]
@@ -350,6 +359,7 @@ segments:
       - [0x126C60, asm, actSt08bKurenSwitch]
       - [0x127AF0, asm, actSt09aInit]
       - [0x127D08, asm, AllocPObj]
+      - [0x127E10, asm, actSt09aElv]
       - [0x127F20, asm, actSt09aBrg]
       - [0x1282E0, asm, actSt10lFloorLeft]
       - [0x128AD8, asm, actSt10lChainMove]
@@ -358,6 +368,7 @@ segments:
       - [0x12A340, asm, actSt10rFenceUpChk]
       - [0x12A588, asm, sceVu0ClipAll]
       - [0x12AC98, asm, actSt10rExitChk]
+      - [0x12AE48, asm, sceDmaWatch]
       - [0x12C508, asm, actSt13bSekizoChk]
       - [0x12CD58, asm, actSt13bElevUpChk]
       - [0x12CFE8, asm, sceLseek]
@@ -385,6 +396,7 @@ segments:
       - [0x13B478, asm, copy2area]
       - [0x13BEA0, asm, viBufRestartDMA]
       - [0x13E1D0, asm, sceGsSwapDBuff]
+      - [0x13E2C8, asm, sceGsSyncPath]
       - [0x13E750, asm, sceGsSetDefLoadImage]
       - [0x13F298, asm, SgSetBgmPanpot]
       - [0x13F570, asm, sceVu0MulMatrix]
@@ -403,6 +415,7 @@ segments:
       - [0x1495C0, asm, sceCdStRead]
       - [0x14A2A0, asm, scePadInfoAct]
       - [0x14C3E8, asm, sceMcGetEntSpace]
+      - [0x14C500, asm, _type2id]
       - [0x14CB90, asm, _pack_header]
       - [0x14DE38, asm, _sceMpegFlush]
       - [0x14E120, asm, _Bfree]
@@ -420,22 +433,9 @@ segments:
       - [0x160BC0, asm, strcat]
       - [0x160F44, asm, strlen]
       - [0x166798, asm, _malloc_trim_r]
-      # --- Basic.c (1 symbols) ---
-      # range: 0x10A968-0x10A970
-      - [0x10A968, asm, actConte14_12]
-      # --- act-game.c (1 symbols) ---
-      # range: 0x4AC28-0x4AC30
-      - [0x4AC28, asm, ACTGameView_Check]
-      # --- commonact.c (2 symbols) ---
-      # range: 0x62800-0x661F8
-      - [0x62800, asm, ClipWallAdjustPos]
-      - [0x661F0, asm, DrawGObjWallCollision]
       # --- crt0.s (1 symbols) ---
       # range: 0x1008-0x1010
       - [0x1008, asm, _start]
-      # --- girl_act.c (1 symbols) ---
-      # range: 0x7B328-0x7B330
-      - [0x7B328, asm, scpLinkBGAtoLayoutedTargetSkeltonWithLocalRotationFlag]
       # --- klib.s (135 symbols) ---
       # range: 0x1100-0x1988
       - [0x1100, asm, RFU000_FullReset]
@@ -576,30 +576,6 @@ segments:
       # --- main.c (1 symbols) ---
       # range: 0x2C80-0x2C88
       - [0x2C80, asm, Main]
-      # --- matrixDrive.c (1 symbols) ---
-      # range: 0x7178-0x7180
-      - [0x7178, asm, UnitRotation]
-      # --- s_init.c (1 symbols) ---
-      # range: 0x48F88-0x48F90
-      - [0x48F88, asm, ACTGame_SetMotionPlaySpeedRatio_Exec]
-      # --- script.c (1 symbols) ---
-      # range: 0x87650-0x87658
-      - [0x87650, asm, GetChainLength]
-      # --- st01b.c (1 symbols) ---
-      # range: 0x127E10-0x127E18
-      - [0x127E10, asm, actSt09aElv]
-      # --- st03t.c (1 symbols) ---
-      # range: 0x12AE48-0x12AE50
-      - [0x12AE48, asm, sceDmaWatch]
-      # --- st05c.c (1 symbols) ---
-      # range: 0x13E2C8-0x13E2D0
-      - [0x13E2C8, asm, sceGsSyncPath]
-      # --- st13b.c (1 symbols) ---
-      # range: 0x14C500-0x14C508
-      - [0x14C500, asm, _type2id]
-      # --- staffroll.c (1 symbols) ---
-      # range: 0xC6108-0xC6110
-      - [0xC6108, asm, GetChainNodeID]
   - [0x189BD0, databin, .vutext]
   - [0x18FD00, databin, .data]
   - [0x44E380, databin, .rodata]
