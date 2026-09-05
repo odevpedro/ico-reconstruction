@@ -52,27 +52,49 @@ A compelling scene is not technical evidence.
 - `native-port` consumes that ABI through a contiguous GObj pool, ProcessNode
   pool, priority-ordered registration, attached-process dispatch, ordered
   lists, removal/reuse, invariant checks, mock callbacks, CTest coverage
-  (6 tests), type-slot dispatch (`dispatchTypeSlots` for type slots 19-27),
-  and combined `dispatchAll()` = `dispatchActiveLists` + `dispatchTypeSlots`.
+  (17 tests), type-slot dispatch (`dispatchTypeSlots` for type slots 19-27),
+  combined `dispatchAll()` = `dispatchActiveLists` + `dispatchTypeSlots`,
+  a `RenderBackend` abstraction, TM2 texture loading, a GIF command-buffer
+  model, a GIF executor, an OpenGL backend, and a game-loop ->
+  KanbanSceneLoader -> GifPacketBridge seam (`game_loop_scene_test`).
   This is an engine-core prototype, not a playable port.
+
+## Current runtime baseline (Rev.125)
+
+- Runtime captures (instrumented PCSX2 fork, `ico-logpoints` branch) observe a
+  **world_state == scene_id 1:1 mapping**, recorded at `0x001AF948`.
+- The most recent extended capture reached **36 distinct world_states**
+  (max `0x33`); values `0x15-0x1F` and `0x28-0x2D, 0x32-0x33` are newer than
+  the earlier Rev.105 set (which peaked at `0x14`). No victory/credits state
+  is asserted — the user had not finished the game in that capture.
+- `ios_om_create_dl` shows **22 distinct BSS DL-slot addresses**, each with a
+  strong (>73%) dominant world_state; the mapping is **scene-dependent** (some
+  assignments differ from the older Rev.105 session). Slot heads incl.
+  `0x0067A1B8`->0x1B, `0x0067B638`->0x1C, `0x00679A08`->0x17,
+  `0x00679C98`->0x1E, `0x00680FE8`->0x0C.
+- The fork probe table is prepared for 25 source-side probes covering the
+  isysGObj callbacks, halfword writer sites, world-state load/init_fn/reset,
+  a sampled VBlank counter, and 7 GirlBrain/Yorda callbacks
+  (`girlBrainRunawaySearchPoint`/`MoveByWay` = escape/"tired-run" path).
+  These are ready for a finish-session rebuild and capture.
 
 ## Current engine priority
 
-The `iosOmCreateDL` slot dispatch and type-based routing are implemented and
-tested. The next step is evaluating how to bridge the display-list model to a
-rendering abstraction for the native port.
-
-Do not move to real gameplay logic, assets, or BOY/AI until the rendering
-entry point is established and the GObj/ProcessNode dispatch pipeline is
-reliable end-to-end.
+The `iosOmCreateDL` slot dispatch, type-based routing, rendering pipeline,
+and the game-loop -> scene-loader -> GIF bridge are implemented and tested
+(17/17 CTest including the new `game_loop_scene` target). Next up is capturing
+the **finish/credits session** with the 25-probe binary to observe endgame
+world-states beyond `0x33` and the GirlBrain escape-path activity.
 
 ## Sources to prefer
 
-1. `research/elf/rev109-isysgobj-abi-consolidation.md`
-2. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
-3. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
-4. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
-5. Byte-exact sources under `src/core/asm/`
+1. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+2. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
+3. `research/elf/rev109-isysgobj-abi-consolidation.md`
+4. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+5. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+6. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+7. Byte-exact sources under `src/core/asm/`
 
 When an older note conflicts with Rev.109 on the four list tables, use
 Rev.109. When prose conflicts with raw instructions, use the instructions.
