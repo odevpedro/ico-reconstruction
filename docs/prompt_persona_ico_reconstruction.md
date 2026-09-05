@@ -85,18 +85,22 @@ A compelling scene is not technical evidence.
 
 The `iosOmCreateDL` slot dispatch, type-based routing, rendering pipeline, the
 game-loop -> scene-loader -> GIF bridge, and the `WorldStateLoader` per-room
-semantic bridge are implemented and tested (18/18 CTest). Next up is a new
-runtime session to observe the per-room `init_fn` targets (the `jalr` at
-`0x001AF96C`) so the native dispatch table can be bound to real room setup
-functions beyond the currently injected mocks.
+semantic bridge are implemented and tested, as are the two hot-gap scene
+factories: `GObjFactory` (CreateGObj / CreateGObj_v, `0x240D40`/`0x240EA0`)
+and `GObjEntityAllocator` (AllocGObjEntity, `0x19F310`) — full suite is
+**20/20 CTest**. Next up is a new runtime session to observe the per-room
+`init_fn` targets (the `jalr` at `0x001AF96C`) so the native dispatch table
+can be bound to real room setup functions beyond the currently injected
+mocks.
 
 ## Sources to prefer
 
-1. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
-2. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
-3. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
-4. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
-5. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
+1. `research/elf/rev133-hotgap-semantic-bridges.md`
+2. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
+3. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
+4. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
+5. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+6. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
 6. `research/elf/rev109-isysgobj-abi-consolidation.md`
 7. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
 8. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`

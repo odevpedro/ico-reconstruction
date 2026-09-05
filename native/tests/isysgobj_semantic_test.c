@@ -2,6 +2,22 @@
 
 #include <assert.h>
 
+static ico_ptr32 s_sister_args[6];
+static int s_sister_calls;
+
+static ico_ptr32 capture_proc_add(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2,
+                                  ico_ptr32 a3, ico_ptr32 t0, ico_ptr32 t1)
+{
+    s_sister_args[0] = a0;
+    s_sister_args[1] = a1;
+    s_sister_args[2] = a2;
+    s_sister_args[3] = a3;
+    s_sister_args[4] = t0;
+    s_sister_args[5] = t1;
+    ++s_sister_calls;
+    return 0x7;
+}
+
 int main(void)
 {
     IcoGObj storage[8];
@@ -42,7 +58,8 @@ int main(void)
     assert(relative->self == 0);
     assert(pool.kind_heads.entries[5] == second->self);
     assert(pool.primary_heads.entries[2] == second->self);
-    return 0;
+
+    /* processPoll / processNeedsRemoval direct paths */
     {
         IcoProcessNode process = {0};
         process.active = 0x22;
@@ -51,4 +68,84 @@ int main(void)
         assert(ico_semantic_processPoll(0) == 0);
         assert(!ico_semantic_processNeedsRemoval(0));
     }
+
+    /* isysGObjProcRemoveUnlink: relink of neighbours and parent head/tail
+       repair for head, middle and tail removal. */
+    {
+        IcoGObj *parent = ico_semantic_isysGObjAdd(&pool, 0x6000, 1, 5);
+        IcoProcessNode proc[3];
+        IcoProcessNodeSemanticPool ppool = {0};
+        int i;
+
+        for (i = 0; i < 3; ++i) {
+            proc[i].self = (ico_ptr32)(i + 1);
+            proc[i].parent = parent->self;
+        }
+        proc[0].next = 2;
+        proc[0].prev = 0;
+        proc[1].next = 3;
+        proc[1].prev = 1;
+        proc[2].next = 0;
+        proc[2].prev = 2;
+        ppool.slots = proc;
+        ppool.capacity = 3;
+        parent->process_head = 1;
+        parent->process_tail = 3;
+
+        /* middle */
+        assert(ico_semantic_isysGObjProcRemoveUnlink(&pool, &ppool,
+                                                     &proc[1]) == 1);
+        assert(proc[0].next == 3);
+        assert(proc[2].prev == 1);
+        assert(parent->process_head == 1);
+        assert(parent->process_tail == 3);
+
+        /* head */
+        assert(ico_semantic_isysGObjProcRemoveUnlink(&pool, &ppool,
+                                                     &proc[0]) == 1);
+        assert(parent->process_head == 3);
+        assert(proc[2].prev == 0);
+
+        /* the unlink does NOT clear the node's own fields */
+        assert(proc[0].self == 1);
+        assert(proc[0].next == 3);
+
+        /* tail */
+        assert(ico_semantic_isysGObjProcRemoveUnlink(&pool, &ppool,
+                                                     &proc[2]) == 1);
+        assert(parent->process_head == 0);
+        assert(parent->process_tail == 0);
+
+        assert(ico_semantic_isysGObjProcRemoveUnlink(&pool, &ppool,
+                                                     0) == 0);
+    }
+
+    /* sister_callback_reg: argument shuffle and the fixed t1 constant. */
+    {
+        ico_ptr32 r;
+
+        s_sister_calls = 0;
+        r = ico_semantic_sisterCallbackReg(capture_proc_add, 0xAA, 0xBB,
+                                           0xCC, 0xDD);
+        assert(r == 0x7);
+        assert(s_sister_calls == 1);
+        assert(s_sister_args[0] == 0xAA);
+        assert(s_sister_args[1] == 0xAA);
+        assert(s_sister_args[2] == 0xBB);
+        assert(s_sister_args[3] == 0xCC);       /* 0xCC & 0xff */
+        assert(s_sister_args[4] == 0xDD);
+        assert(s_sister_args[5] == 0x1800);
+
+        /* a2 is masked to a byte before forwarding */
+        s_sister_calls = 0;
+        (void)ico_semantic_sisterCallbackReg(capture_proc_add, 1, 2, 0x1FF,
+                                             4);
+        assert(s_sister_calls == 1);
+        assert(s_sister_args[3] == 0xFF);
+
+        /* a null hook short-circuits the forward */
+        assert(ico_semantic_sisterCallbackReg(0, 1, 2, 3, 4) == 0);
+    }
+
+    return 0;
 }

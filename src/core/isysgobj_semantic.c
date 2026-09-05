@@ -739,3 +739,85 @@ int ico_semantic_processNeedsRemoval(const IcoProcessNode *process)
 {
     return ico_semantic_processPoll(process) == 0x22;
 }
+
+static IcoProcessNode *process_from_handle(
+    IcoProcessNodeSemanticPool *pool, ico_ptr32 handle)
+{
+    if (pool == NULL || pool->slots == NULL ||
+        handle == 0 || handle > pool->capacity) {
+        return NULL;
+    }
+    return &pool->slots[handle - 1u];
+}
+
+/*
+ * Semantic reconstruction of isysGObjProcRemoveUnlink (0x0013F638, 0x80 B).
+ * Probable original source: gobj.c (process teardown helper called by
+ * isysGObjProcRemove at 0x0013F6B8).
+ * Ground truth: src/core/asm/isysGObjProcRemoveUnlink.s.
+ * Confirmed byte semantics:
+ *   process == NULL -> assert path (DebugPrint 0x557B48 via 0x1A6E28);
+ *   prev = process->prev (+0x0C), next = process->next (+0x08);
+ *   if (prev) prev->next = next;  if (next) next->prev = prev;
+ *   parent = process->parent (+0x04);
+ *   if (parent->process_head == process) parent->process_head = next;
+ *   if (parent->process_tail == process) parent->process_tail = prev.
+ * The unlink deliberately does NOT clear process->next/process->prev/self;
+ * the caller releases the node afterwards. Inferred: host handles replace
+ * the original EE pointers; the NULL path is a documented early-out instead
+ * of the assert trip.
+ */
+int ico_semantic_isysGObjProcRemoveUnlink(IcoGObjSemanticPool *pool,
+                                          IcoProcessNodeSemanticPool *proc_pool,
+                                          IcoProcessNode *process)
+{
+    IcoProcessNode *prev;
+    IcoProcessNode *next;
+    IcoGObj *parent;
+
+    if (process == NULL) {
+        return 0;
+    }
+
+    prev = process_from_handle(proc_pool, process->prev);
+    next = process_from_handle(proc_pool, process->next);
+    parent = (pool != NULL) ? gobj_from_handle(pool, process->parent) : NULL;
+
+    if (prev != NULL) {
+        prev->next = process->next;
+    }
+    if (next != NULL) {
+        next->prev = process->prev;
+    }
+
+    if (parent != NULL && parent->self != 0) {
+        if (parent->process_head == process->self) {
+            parent->process_head = process->next;
+        }
+        if (parent->process_tail == process->self) {
+            parent->process_tail = process->prev;
+        }
+    }
+
+    return 1;
+}
+
+/*
+ * Semantic reconstruction of sister_callback_reg (0x0013F778, 0x30 B).
+ * Probable original source: gobj.c.
+ * Ground truth: src/core/asm/sister_callback_reg.s.
+ * Confirmed byte semantics: forwards to isysGObjProcAdd_ (0x0013F3F0) as
+ *   isysGObjProcAdd_(a0, a0, a1, a2 & 0xff, a3, 0x1800)
+ * with t1 fixed to the constant 0x1800. isysGObjProcAdd_ has no host
+ * semantic yet, so the actual registration is delegated to the hook; this
+ * function only reproduces the confirmed argument shuffle and fixed t1.
+ */
+ico_ptr32 ico_semantic_sisterCallbackReg(IcoSemanticProcAddFn proc_add,
+                                         ico_ptr32 a0, ico_ptr32 a1,
+                                         ico_ptr32 a2, ico_ptr32 a3)
+{
+    if (proc_add == NULL) {
+        return 0;
+    }
+    return proc_add(a0, a0, a1, a2 & 0xff, a3, 0x1800);
+}

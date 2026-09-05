@@ -157,6 +157,14 @@ typedef struct IcoGObjSemanticPool {
     u32 kind_table_disabled;   /* mirrors gp-0x6730: high when table is off */
 } IcoGObjSemanticPool;
 
+/* Process-node storage for the host semantic model. Handles are slot+1,
+ * matching IcoGObjSemanticPool; a ProcessNode's parent (+0x04), next (+0x08)
+ * and prev (+0x0C) are handles into the corresponding pool. */
+typedef struct IcoProcessNodeSemanticPool {
+    IcoProcessNode *slots;
+    u32 capacity;
+} IcoProcessNodeSemanticPool;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -206,6 +214,34 @@ void ico_semantic_isysGObjLinkCameraDL(IcoGObjSemanticPool *pool,
                                        u8 type_id, u32 sort_key,
                                        u32 type_bits);
 void ico_semantic_isysGObjActiveLink(void);
+
+/*
+ * isysGObjProcRemoveUnlink (0x0013F638, 0x80 bytes):
+ * unlinks a ProcessNode from its parent GObj's process list. Confirmed byte
+ * semantics: reads node->prev (+0x0C) / node->next (+0x08), relinks the
+ * neighbors, then fixes parent->process_head (+0x2C) / parent->process_tail
+ * (+0x30) when they point at the removed node. The original NULL path tripped
+ * the assert hoist (DebugPrint 0x557B48); the host model returns 0. The
+ * function itself does NOT clear node->next/prev/self — the caller
+ * (isysGObjProcRemove, 0x0013F6B8) releases the node afterwards.
+ */
+int ico_semantic_isysGObjProcRemoveUnlink(IcoGObjSemanticPool *pool,
+                                          IcoProcessNodeSemanticPool *proc_pool,
+                                          IcoProcessNode *process);
+
+/*
+ * sister_callback_reg (0x0013F778, 0x30 bytes): thin forwarding shim into
+ * isysGObjProcAdd_ (0x0013F3F0). Confirmed argument mapping:
+ *   proc_add(a0, a0, a1, a2 & 0xff, a3, 0x1800)
+ * t1 is a fixed constant (0x1800); isysGObjProcAdd_ has no host semantic
+ * yet, so the call is delegated to the caller-supplied hook.
+ */
+typedef ico_ptr32 (*IcoSemanticProcAddFn)(ico_ptr32 a0, ico_ptr32 a1,
+                                          ico_ptr32 a2, ico_ptr32 a3,
+                                          ico_ptr32 t0, ico_ptr32 t1);
+ico_ptr32 ico_semantic_sisterCallbackReg(IcoSemanticProcAddFn proc_add,
+                                         ico_ptr32 a0, ico_ptr32 a1,
+                                         ico_ptr32 a2, ico_ptr32 a3);
 
 #ifdef __cplusplus
 }
