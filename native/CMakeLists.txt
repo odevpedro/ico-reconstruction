@@ -124,6 +124,23 @@ target_link_libraries(gif_packet_test PRIVATE ico_engine_core)
 add_executable(scene_loader_test tests/scene_loader_test.cpp)
 target_link_libraries(scene_loader_test PRIVATE ico_engine_core)
 
+add_executable(game_loop_scene_test tests/game_loop_scene_test.cpp
+    src/runtime/Logger.cpp
+    src/runtime/GameLoop.cpp
+    src/runtime/IcoRuntime.cpp
+    src/platform/Platform.cpp
+    src/platform/Input.cpp
+    src/platform/FileSystem.cpp
+    src/platform/Timing.cpp
+    src/platform/AudioStub.cpp
+    src/platform/RenderStub.cpp
+    src/platform/SifRpcStub.cpp
+    src/platform/IopStub.cpp
+    src/ps2/Ps2Memory.cpp
+)
+target_include_directories(game_loop_scene_test PRIVATE src)
+target_link_libraries(game_loop_scene_test PRIVATE ico_engine_core)
+
 add_executable(girlbrain_semantic_test tests/girlbrain_semantic_test.cpp)
 target_link_libraries(girlbrain_semantic_test PRIVATE ico_engine_core)
 
@@ -145,6 +162,7 @@ add_test(NAME gif_command COMMAND gif_command_test)
 add_test(NAME gif_executor COMMAND gif_executor_test)
 add_test(NAME gif_packet COMMAND gif_packet_test)
 add_test(NAME scene_loader COMMAND scene_loader_test)
+add_test(NAME game_loop_scene COMMAND game_loop_scene_test)
 add_test(NAME girlbrain_semantic COMMAND girlbrain_semantic_test)
 add_test(NAME world_state_slot COMMAND world_state_slot_test)
 
