@@ -39,7 +39,7 @@
 | 0x17 | 30,763 | 0x1F | 27,879 | 0x2D | 528 |
 | 0x18 | 3,726 | 0x28 | 221 | 0x32 | 837 |
 | 0x19 | 10,845 | 0x29 | 204 | 0x33 | 2,519 |
-| 0x1A | 415,550 | | | 0x28–0x33 | "final cutscene / endgame" block |
+| 0x1A | 415,550 | | | 0x28–0x33 | "most-advanced phase observed" block |
 | 0x1B | 240,254 | | | | |
 | 0x1C | 55,895 | | | | |
 
@@ -60,7 +60,7 @@ appears as `world_state_raw`. Distribution matches:
 | 0x1C | 1,354 | **final block** |
 | 0x1E | 1,111 | **final block** |
 | 0x1D | 3,168 | **final block / most loads** |
-| 0x33 | 114 | **endgame** |
+| 0x33 | 114 | **most-advanced phase observed** |
 | 0x15–0x1B, 0x1F | 39–782 each | final block |
 
 `world_state_load` fires each time the value at gp−0x6F60 changes; `initSceneGObj`
@@ -78,7 +78,9 @@ The 243-transition path shows the game being played through to the end:
 ```
 
 - The `0x1B ↔ 0x1C ↔ 0x1D ↔ 0x1E` loop is the late-game area traffic (switching rooms),
-  with `0x33` (endgame) appearing 3 times late and `0x1F` as the last observed value.
+  with `0x33` (most advanced phase observed here, not yet the credits/victory screen —
+  the user had not finished the game in this capture) appearing 3 times late and `0x1F`
+  as the last observed value.
 - `0x28–0x2D` appear only at the start transition path (0x01 → 0x29 → 0x2A → 0x2B →
   0x2D → 0x28 → 0x03): these are most plausibly **boot/attract-mode states**, not rooms.
 
@@ -94,6 +96,47 @@ The 243-transition path shows the game being played through to the end:
 The `0x0083068C` value is the same single dominant slot the whole capture (unchanged
 from earlier Rev.104/105 sessions belonging to the same `_iosOmMain` distribution —
 this capture does not re-measure the per-slot address histogram beyond that field).
+
+## 5b. `ios_om_create_dl` per-DL-slot → world_state map (22 slots)
+
+Consolidated from the full capture. Each BSS slot address (a1) has a strong 1:1
+correlation to a dominant world_state, confirming and extending the Rev.105 pattern
+("each new world_state has a unique DL slot"):
+
+| DL slot (a1) | n | dominant ws | share | note |
+|--------------|----|------------|-------|------|
+| `0x006782f8` (B) | 34,178 | 0x0F | 73.4% | Rev.105 slot B — still 0x0F dominant |
+| `0x00678aa8` (NEW-4) | 29,315 | **0x1A** | 88.5% | now 0x1A, was 0x11-only in Rev.105 |
+| `0x0067cab8` (NEW-6) | 16,973 | **0x1D** | 86.8% | was 0x14-only in Rev.105 |
+| `0x0067a1b8` (**NEW**) | 15,822 | **0x1B** | 94.6% | **unmapped in Rev.105** |
+| `0x00678d38` (C) | 9,500 | 0x16 | 95.5% | |
+| `0x006794e8` (F) | 8,610 | 0x0A | 98.0% | |
+| `0x00679258` (E) | 3,473 | 0x08 | 100% | |
+| `0x0067b638` (**NEW**) | 3,427 | **0x1C** | 100% | **unmapped in Rev.105** |
+| `0x0067c598` (NEW-3) | 2,863 | 0x13 | 100% | |
+| `0x00678fc8` (D) | 2,230 | 0x10 | 88.6% | |
+| `0x00678818` (NEW-1) | 1,991 | 0x0D | 88.8% | |
+| `0x00679a08` (**NEW**) | 1,896 | **0x17** | 100% | **unmapped in Rev.105** |
+| `0x0067ee98` (NEW-2) | 1,617 | 0x0B | 100% | |
+| `0x00679778` (G) | 1,545 | 0x01 | 99.5% | boot state |
+| `0x00679c98` (**NEW**) | 1,292 | **0x1E** | 100% | **unmapped in Rev.105** |
+| `0x00679f28` (NEW-5) | 1,245 | 0x12 | 100% | |
+| `0x0067c308` (I) | 809 | 0x04 | 100% | |
+| `0x00680fe8` (**NEW**) | 767 | **0x0C** | 100% | **unmapped in Rev.105** |
+| `0x00677dd8` (A) | 294 | **0x33** | 50.0% | slot A is most-active in the deepest phase here |
+| `0x0067e458` (J) | 29 | 0x2D | 100% | boot block |
+| `0x0067a968` (H) | 10 | 0x28 | 100% | boot block |
+
+**Confirmed extensions over Rev.105:**
+- 5 new DL slots discovered: `0x0067A1B8` (0x1B), `0x0067B638` (0x1C),
+  `0x00679A08` (0x17), `0x00679C98` (0x1E), `0x00680FE8` (0x0C).
+- **Revised Rev.105 assignment:** `0x00678AA8` is NOT 0x11-only — in this final-stage
+  capture it is 0x1A-dominant. `0x0067CAB8` is NOT 0x14-only — now 0x1D-dominant.
+  These rows slide as the game progresses; the mapping is scene-dependent, not fixed.
+- Slot A `0x00677DD8` (Rev.105 "0.2%" minor) shows 0x33 dominance here — the deepest
+  phase reached (not yet the victory screen in this capture).
+- `a2` (mask) distribution: `0x00630000` (42,736), plus low index values 0x1A/0x1D/
+  0x26/0x36/0x1E/0x21/0x2E/0x20/0x44 — consistent with per-type dispatch values.
 
 ## 6. GirlBrain (Yorda) — probes prepared for next session
 
@@ -122,8 +165,17 @@ post-session rebuild.
 - world_state == scene_id (1:1), evidenced by identical numeric sets in `world_state_raw`
   and `init_scene_gobj.a0`.
 - `ws=0x1A` is the busiest state in the whole capture (415K ios_om_main events).
-- The `0x1B…0x1E / 0x33` block is the final-stage signature; `0x1F` is the last state seen.
-- Single dominant dispatch slot `0x0083068C` throughout, consistent with earlier sessions.
+- The `0x1B…0x1E / 0x33` block is the deepest-phase signature reached in this capture;
+  `0x1F` is the last state seen. The user had **not yet finished the game**, so the
+  victory/credits states (if separate values) may appear above 0x33 on the next session.
+- `ios_om_create_dl` spans **22 distinct BSS slot addresses**, 21 of them with a dominant
+  world_state at ≥73% share. 5 slots are new to this capture. The slot→ws mapping is
+  **scene-dependent** (two Rev.105 assignments moved as the game reached the finale).
+- `isys_gobj_proc_add`: add/remove split is balanced (252,000 vs 219,102); wrapper `t0`
+  values cluster on types 0x13–0x18 (84000–127521 each), i.e. the type-slot range that
+  `_iosOmMain` dispatch pass 2 uses.
+- `halfword_second_caller_entry` concentrates on ws 0x09/0x0A/0x19/0x1D (mid+final areas),
+  confirming the rasterizer stays hot in the late game.
 - The fork table is prepared (source) with 25 probes including 7 GirlBrain callbacks;
   documented in Rev.124.
 
@@ -139,15 +191,21 @@ post-session rebuild.
 - The per-room init_fn table reached via the `0x001AF96C` jalr may now be populated on
   the next session, giving init_fn identity per world_state (0x15–0x33).
 - `vblank_counter` sampling (also next session) can prove the frame-beat rate in the
-  endgame sections.
+  deepest sections.
+- **Next-session finish:** since the user will reach the ending, the credits/victory
+  sequence may introduce **world_states above 0x33** (or reuse 0x28–0x2D). The new
+  `world_state_load` / `world_state_room_init_fn` probes will capture whatever appears.
 
 ## 10. What is unknown / discarded
 
 - **Unknown:** exact room names / gameplay semantics for ws 0x15–0x33 (no naming claims).
 - **Unknown:** whether `0x0083068C` is a stable BSS slot head or a per-room value;
   histogram beyond the single field is not available in this capture.
-- **Discarded:** any claim that ws 0x28–0x2D are "endgame": the sequence order places them
+- **Discarded:** any claim that ws 0x28–0x2D are "ending": the sequence order places them
   at boot, not at the end.
+- **Discarded:** any claim that ws 0x33 or 0x1F is the victory/credits state — the user
+  had not finished the game in this capture. The credits block is expected to appear as
+  **new** values on the finish session.
 - **Discarded:** inferring the tired-run pose from disassembly alone; runtime probe hits
   are required first.
 
@@ -158,9 +216,26 @@ post-session rebuild.
    `world_state_vblank_reset`, and `vblank_counter` in a fresh capture.
 3. Correlate `girl_brain_runaway_*` hits against ws 0x15–0x33 and the tired-run moment.
 
+## 11b. Finish-session watchlist (user plans to roll credits)
+
+Targets to check on the session where the game is beaten:
+
+| Target | What to look for |
+|--------|------------------|
+| new world_state above 0x33 | credits / victory screen if it uses a distinct value |
+| world_state `0x28–0x2D` reuse | if the credits reuse the boot/attract block |
+| `world_state_load` burst at the end | rapid transitions before/at credits |
+| `girl_brain_runaway_*` last hits | which ws the Yorda escape stops at |
+| slot A `0x00677DD8` | whether endgame slot keeps 0x33 dominance past the ending |
+
+If new world_states appear, they immediately extend the confirmed table; the
+`world_state_room_init_fn` probe will give their init_fn identity.
+
 ## 12. Conservative verdict
 
-The capture documents the final-stage world-state range (36 states, max 0x33) and the
-1:1 world_state↔scene_id mapping — both confirmed by event counts. No gameplay semantics
-are claimed. The Yorda escape-path probes are ready but unvalidated until the next
-rebuild/session.
+The capture documents the deepest-phase world-state range reached so far (36 states,
+max 0x33) and the 1:1 world_state↔scene_id mapping — both confirmed by event counts.
+No gameplay semantics are claimed, and no victory/credits state is asserted because the
+user had not finished the game. The Yorda escape-path probes are ready but unvalidated
+until the next rebuild/session; the finish session is expected to reveal any states
+beyond 0x33.
