@@ -1,5 +1,4 @@
 	.text
-	.p2align 3
 	.globl	boyAI_sub_1446E0_2
 	.ent	boyAI_sub_1446E0_2
 boyAI_sub_1446E0_2:
@@ -11,59 +10,6 @@ boyAI_sub_1446E0_2:
 	.set	noat
 	jr	$31
 	sw	$3,4($6)
-	addiu	$29,$29,-0x60
-	lui	$3,0x6b
-	sd	$20,0x40($29)
-	lui	$2,0x5d
-	sd	$19,0x30($29)
-	addiu	$20,$2,0x49e0
-	sd	$18,0x20($29)
-	lui	$19,0x55
-	sd	$17,0x10($29)
-	addiu	$18,$0,0x3c
-	sd	$16,0($29)
-	addiu	$17,$0,0x2f
-	sd	$31,0x50($29)
-	addiu	$16,$3,-0x6750
-loc_00144720:
-	lw	$2,0x30($16)
-	beql	$2,$0,loc_00144754
-	addiu	$17,$17,-1
-	lw	$6,0x38($16)
-	beql	$18,$0,loc_00144738
-	break	0,7
-loc_00144738:
-	lh	$5,0x10($16)
-	subu	$6,$6,$20
-	divu	$0,$6,$18
-	mflo	$6
-	jal	0x001a6e28
-	addiu	$4,$19,0x7e78
-	addiu	$17,$17,-1
-loc_00144754:
-	bgez	$17,loc_00144720
-	addiu	$16,$16,0x40
-	break	
-	ld	$31,0x50($29)
-	ld	$20,0x40($29)
-	ld	$19,0x30($29)
-	ld	$18,0x20($29)
-	ld	$17,0x10($29)
-	ld	$16,0($29)
-	jr	$31
-	addiu	$29,$29,0x60
-	addiu	$29,$29,-0x30
-	sd	$17,0x10($29)
-	sd	$16,0($29)
-	move	$17,$5
-	move	$16,$4
-	sd	$31,0x20($29)
-	move	$5,$16
-	jal	0x00143948
-	addiu	$4,$0,1
-	move	$5,$16
-	jal	0x00143948
-	addiu	$4,$0,2
 	.set	macro
 	.set	reorder
 	.end	boyAI_sub_1446E0_2

@@ -1,5 +1,4 @@
 	.text
-	.p2align 3
 	.globl	rope_hC
 	.ent	rope_hC
 rope_hC:
@@ -65,22 +64,6 @@ loc_001d3be0:
 	ld	$16,0($29)
 	jr	$31
 	addiu	$29,$29,0x40
-	addiu	$29,$29,-0x80
-	sd	$17,0x40($29)
-	sd	$31,0x70($29)
-	move	$17,$4
-	sd	$19,0x60($29)
-	sd	$18,0x50($29)
-	sd	$16,0x30($29)
-	lw	$3,0x15c($17)
-	lw	$16,0x800($3)
-	lw	$2,4($16)
-	xori	$2,$2,1
-	.word	0x14400004
-	move	$4,$29
-	addiu	$2,$0,2
-	.word	0x1000003d
-	sw	$2,0x48($16)
 	.set	macro
 	.set	reorder
 	.end	rope_hC

@@ -1,5 +1,4 @@
 	.text
-	.p2align 3
 	.globl	girlBrain_sub_16F964
 	.ent	girlBrain_sub_16F964
 girlBrain_sub_16F964:
@@ -26,93 +25,6 @@ girlBrain_sub_16F964:
 	lwc1	$f20,0x180($29)
 	jr	$31
 	addiu	$29,$29,0x1a0
-	addiu	$29,$29,-0x200
-	lwc1	$f0,0($6)
-	sd	$18,0x1c0($29)
-	sd	$31,0x1f0($29)
-	move	$18,$5
-	sd	$20,0x1e0($29)
-	sd	$19,0x1d0($29)
-	sd	$16,0x1a0($29)
-	sd	$17,0x1b0($29)
-	lw	$17,0x164($4)
-	lwc1	$f2,8($6)
-	lwc1	$f1,4($6)
-	lw	$3,0x394($17)
-	swc1	$f0,0($29)
-	swc1	$f1,4($29)
-	beqz	$3,loc_0016fa00
-	swc1	$f2,8($29)
-	addiu	$2,$0,1
-	.word	0x10620043
-	move	$2,$0
-	.word	0x1000008b
-	ld	$31,0x1f0($29)
-loc_0016fa00:
-	addiu	$16,$29,0x10
-	move	$5,$4
-	move	$4,$16
-	jal	0x0010a498
-	addiu	$19,$17,0x350
-	move	$20,$0
-	lwc1	$f0,0x14($29)
-	move	$5,$16
-	mtc1	$0,$f1
-	move	$4,$19
-	sub.s	$f0,$f0,$f1
-	jal	0x00177ca0
-	swc1	$f0,0x14($29)
-	move	$16,$2
-	bnez	$16,loc_0016fa50
-	move	$4,$18
-	jal	0x00243b60
-	addiu	$5,$17,0x3a0
-	b	loc_0016fa84
-	lw	$2,0x378($17)
-loc_0016fa50:
-	jal	0x00243b60
-	addiu	$5,$17,0x3a0
-	lui	$2,0x28
-	addiu	$3,$2,0x2ac0
-	lw	$2,0x5850($3)
-	beql	$2,$16,loc_0016fa84
-	lw	$2,0x378($17)
-	beql	$2,$0,loc_0016fa80
-	sw	$16,0x5850($3)
-	lw	$2,0x3b4($17)
-	slti	$20,$2,1
-	sw	$16,0x5850($3)
-loc_0016fa80:
-	lw	$2,0x378($17)
-loc_0016fa84:
-	.word	0x1440001a
-	addiu	$16,$29,0x20
-	lui	$1,0x4120
-	mtc1	$1,$f0
-	move	$4,$16
-	addiu	$5,$29,0x10
-	jal	0x00243b60
-	swc1	$f0,0x70($16)
-	addiu	$4,$29,0x30
-	jal	0x00243b60
-	move	$5,$29
-	jal	0x001683c8
-	move	$4,$16
-	lw	$2,0xa8($29)
-	bnez	$2,loc_0016fadc
-	move	$3,$0
-	jal	0x00168448
-	move	$4,$16
-	lw	$2,0xa8($29)
-	beqz	$2,loc_0016fadc
-	addiu	$3,$0,1
-	move	$3,$0
-loc_0016fadc:
-	.word	0x10600004
-	addiu	$2,$0,1
-	move	$4,$19
-	jal	0x00178930
-	sw	$2,0x394($17)
 	.set	macro
 	.set	reorder
 	.end	girlBrain_sub_16F964

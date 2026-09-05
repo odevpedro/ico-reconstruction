@@ -1,5 +1,4 @@
 	.text
-	.p2align 3
 	.globl	enemy1_hB
 	.ent	enemy1_hB
 enemy1_hB:
@@ -157,8 +156,6 @@ loc_001ce5d8:
 	lwc1	$f20,0x60($29)
 	jr	$31
 	addiu	$29,$29,0x70
-	addiu	$29,$29,-0x30
-	sd	$17,0x10($29)
 	.set	macro
 	.set	reorder
 	.end	enemy1_hB

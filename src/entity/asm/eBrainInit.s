@@ -1,5 +1,4 @@
 	.text
-	.p2align 3
 	.globl	eBrainInit
 	.ent	eBrainInit
 eBrainInit:
@@ -27,9 +26,6 @@ loc_001918c8:
 	nop	
 	jr	$31
 	nop	
-	nop	
-	addiu	$29,$29,-0x10
-	addiu	$2,$0,4
 	.set	macro
 	.set	reorder
 	.end	eBrainInit

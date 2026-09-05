@@ -43,7 +43,7 @@ ASM_OUTPUT_DIRS = {
 TARGET_FUNCTIONS = [
     ("enemy1_init",   0x164440, 0x460, "entity"),
     ("enemy1_hC",     0x1CE220, 0x1A0, "entity"),
-    ("enemy1_hB",     0x1CE3C0, 0x240, "entity"),
+    ("enemy1_hB",     0x1CE3C0, 0x238, "entity"),
     ("boy_init",       0x153478, 0xEC, "entity"),
     ("boy_hC",         0x1C1A98, 0x1B0, "entity"),
     ("synchronizeMotionOutputOriginForGirl", 0x1C1C48, 0x190, "entity"),
@@ -56,7 +56,7 @@ TARGET_FUNCTIONS = [
     ("avoidInsideOfWall", 0x1D2650, 0xE8, "entity"),
     ("sub_1D2738",    0x1D2738, 0x68, "entity"),
     ("barrel_hC",     0x1D27A8, 0x18C, "entity"),
-    ("rope_hC",       0x1D3B28, 0x108, "cloth"),
+    ("rope_hC",       0x1D3B28, 0xC8, "cloth"),
     ("ItemGeo",       0x1D3A30, 0xE0, "cloth"),
     ("fn_1D3BF0",     0x1D3BF0, 0x140, "cloth"),
     ("ReviveAllCarryableItems", 0x1D3DD8, 0xF8, "cloth"),
@@ -64,7 +64,7 @@ TARGET_FUNCTIONS = [
     ("woodbox0_hB",   0x1C0538, 0x98, "entity"),
     ("woodbox0_hA",   0x1C05D0, 0x60, "entity"),
     ("bird_hC",       0x197240, 0x200, "entity"),
-    ("attackch62_hC", 0x1BBE50, 0x100, "entity"),
+    ("attackch62_hC", 0x1BBE50, 0x50, "entity"),
     ("execBombGeo",   0x1D37C8, 0x60, "cloth"),
     ("clothSubForceApply", 0x1D3F78, 0x80, "cloth"),
     # GirlBrain AI functions (from verified Ghidra symbols at 0x0016xxxx)
@@ -92,7 +92,7 @@ TARGET_FUNCTIONS = [
     ("girlBrain_sub_16DC58",0x16DC58, 0x184, "entity"),
     ("girlBrain_sub_16DADC",0x16DADC, 0x180, "entity"),
     # Batch-scored GirlBrain sub-functions (all 100% byte-exact)
-    ("girlBrain_sub_16F964",0x16F964, 0x18C, "entity"),
+    ("girlBrain_sub_16F964",0x16F964, 0x44, "entity"),
     ("girlBrain_sub_16DF28",0x16DF28, 0x180, "entity"),
     ("girlBrain_sub_16D6D4",0x16D6D4, 0x17C, "entity"),
     ("girlBrain_sub_16DC60",0x16DC60, 0x17C, "entity"),
@@ -272,7 +272,7 @@ TARGET_FUNCTIONS = [
     ("boyAI_sub_14D1F0",0x14D1F0, 0xD4, "entity"),
     ("boyAI_sub_14FFC8",0x14FFC8, 0xD4, "entity"),
     ("boyAI_sub_1507C8",0x1507C8, 0xD4, "entity"),
-    ("boyAI_sub_1446E0",0x1446E0, 0xD0, "entity"),
+    ("boyAI_sub_1446E0",0x1446E0, 0x08, "entity"),
     ("boyAI_sub_145F98",0x145F98, 0xD0, "entity"),
     ("boyAI_sub_15660C",0x15660C, 0xD0, "entity"),
     ("boyAI_sub_15BE90",0x15BE90, 0xD0, "entity"),
@@ -525,7 +525,7 @@ TARGET_FUNCTIONS = [
     # eBrainProcess (0x190B30) and eBrainGetTargetGeneratorFromLabel (0x190D70)
     # are .word-only .s files.
     ("eBrainGetTarget",0x190F30, 0x9C0, "entity"),
-    ("eBrainInit",0x1918A8, 0x50, "entity"),
+    ("eBrainInit",0x1918A8, 0x44, "entity"),
     ("eBrainStatusSet",0x1918F0, 0xB0, "entity"),
     ("eBrainSendMes",0x1919A0, 0xD0, "entity"),
     ("eBrainGetTargetGeneratorFromLabelStage",0x191B70, 0x1B0, "entity"),
@@ -553,7 +553,7 @@ TARGET_FUNCTIONS = [
     ("queen_hA",         0x19A9A0, 0x80, "entity"),
     # BOSS_CTRL callbacks
     ("bossctrl_hA",      0x198000, 0x110, "entity"),
-    ("bossctrl_hB",      0x197FC8, 0x40, "entity"),
+    ("bossctrl_hB",      0x197FC8, 0x34, "entity"),
     # BIRD remaining callbacks
     ("bird_hA",          0x197080, 0x60, "entity"),
     ("bird_hB",          0x197078, 0x10, "entity"),
@@ -580,8 +580,8 @@ TARGET_FUNCTIONS = [
     ("seffect_hA",   0x1EF988, 0x08, "entity"),
     ("seffect_hB",   0x1EF980, 0x08, "entity"),
     ("seffect_hC",   0x1EF8E8, 0x0094, "entity"),
-    ("lightbit_hA",  0x1F0550, 0x00B4, "entity"),
-    ("lightbit_hB",  0x1F0540, 0x00C4, "entity"),
+    ("lightbit_hA",  0x1F0550, 0x14, "entity"),
+    ("lightbit_hB",  0x1F0540, 0x24, "entity"),
     ("lightbit_hC",  0x1F0568, 0x009C, "entity"),
     ("tree_hA",      0x1F1508, 0x0198, "entity"),
     ("tree_hB",      0x1F1330, 0x01D8, "entity"),
