@@ -25,6 +25,7 @@ set(ICO_ENGINE_SOURCES
     src/engine/GifCommandBuffer.cpp
     src/engine/GifCommandExecutor.cpp
     src/engine/GifPacket.cpp
+    src/engine/WorldStateLoader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/core/isysgobj_semantic.c
 )
 
@@ -147,6 +148,9 @@ target_link_libraries(girlbrain_semantic_test PRIVATE ico_engine_core)
 add_executable(world_state_slot_test tests/world_state_slot_test.cpp)
 target_link_libraries(world_state_slot_test PRIVATE ico_engine_core)
 
+add_executable(world_state_loader_test tests/world_state_loader_test.cpp)
+target_link_libraries(world_state_loader_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
@@ -165,6 +169,7 @@ add_test(NAME scene_loader COMMAND scene_loader_test)
 add_test(NAME game_loop_scene COMMAND game_loop_scene_test)
 add_test(NAME girlbrain_semantic COMMAND girlbrain_semantic_test)
 add_test(NAME world_state_slot COMMAND world_state_slot_test)
+add_test(NAME world_state_loader COMMAND world_state_loader_test)
 
 if(ICO_ENABLE_OPENGL)
     add_executable(opengl_backend_test tests/opengl_backend_test.cpp)

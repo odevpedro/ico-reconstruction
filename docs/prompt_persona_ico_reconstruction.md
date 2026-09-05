@@ -59,42 +59,51 @@ A compelling scene is not technical evidence.
   KanbanSceneLoader -> GifPacketBridge seam (`game_loop_scene_test`).
   This is an engine-core prototype, not a playable port.
 
-## Current runtime baseline (Rev.125)
+## Current runtime baseline (Rev.126)
 
 - Runtime captures (instrumented PCSX2 fork, `ico-logpoints` branch) observe a
   **world_state == scene_id 1:1 mapping**, recorded at `0x001AF948`.
-- The most recent extended capture reached **36 distinct world_states**
-  (max `0x33`); values `0x15-0x1F` and `0x28-0x2D, 0x32-0x33` are newer than
-  the earlier Rev.105 set (which peaked at `0x14`). No victory/credits state
-  is asserted — the user had not finished the game in that capture.
-- `ios_om_create_dl` shows **22 distinct BSS DL-slot addresses**, each with a
-  strong (>73%) dominant world_state; the mapping is **scene-dependent** (some
-  assignments differ from the older Rev.105 session). Slot heads incl.
-  `0x0067A1B8`->0x1B, `0x0067B638`->0x1C, `0x00679A08`->0x17,
-  `0x00679C98`->0x1E, `0x00680FE8`->0x0C.
+- The finish/credits capture reached **58 distinct world_states** (max `0x3D`)
+  and **completed the game**: the credits cascade ends by returning to the boot
+  state `0x01`. Values `0x15-0x1F`, `0x28-0x33`, and `0x16-0x3D` were used
+  across two extended sessions.
+- `ios_om_create_dl` shows **20+ distinct BSS DL-slot addresses**, each with a
+  strong (>87%) dominant world_state; the mapping is scene-dependent.
+- `world_state_load` (0x001AF948, byte-exact, 0x80 B) dispatches per-room init
+  via the table at `0x5F2FB8` (stride 0x194, init_fn at +0x154), then runs
+  `MakeCollisionDependGObjList` + scene-apply, clears the room-load flags at
+  `0x274ED4/8`, and tail-jumps to the shared epilogue `0x13D3F8`. `DispIcoMisc`
+  (0x1AF9C8, 0x1C8 B) is a separate function, also byte-exact.
 - The fork probe table is prepared for 25 source-side probes covering the
   isysGObj callbacks, halfword writer sites, world-state load/init_fn/reset,
   a sampled VBlank counter, and 7 GirlBrain/Yorda callbacks
   (`girlBrainRunawaySearchPoint`/`MoveByWay` = escape/"tired-run" path).
-  These are ready for a finish-session rebuild and capture.
+  Next step is capturing the per-world_state `jalr` targets at `0x001AF96C` to
+  populate the native `WorldStateLoader` dispatch table.
 
 ## Current engine priority
 
-The `iosOmCreateDL` slot dispatch, type-based routing, rendering pipeline,
-and the game-loop -> scene-loader -> GIF bridge are implemented and tested
-(17/17 CTest including the new `game_loop_scene` target). Next up is capturing
-the **finish/credits session** with the 25-probe binary to observe endgame
-world-states beyond `0x33` and the GirlBrain escape-path activity.
+The `iosOmCreateDL` slot dispatch, type-based routing, rendering pipeline, the
+game-loop -> scene-loader -> GIF bridge, and the `WorldStateLoader` per-room
+semantic bridge are implemented and tested (18/18 CTest). Next up is a new
+runtime session to observe the per-room `init_fn` targets (the `jalr` at
+`0x001AF96C`) so the native dispatch table can be bound to real room setup
+functions beyond the currently injected mocks.
 
 ## Sources to prefer
 
-1. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
-2. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
-3. `research/elf/rev109-isysgobj-abi-consolidation.md`
-4. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
-5. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
-6. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
-7. Byte-exact sources under `src/core/asm/`
+1. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
+2. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
+3. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
+4. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+5. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
+6. `research/elf/rev109-isysgobj-abi-consolidation.md`
+7. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+8. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+9. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+10. Byte-exact sources under `src/core/asm/`
 
-When an older note conflicts with Rev.109 on the four list tables, use
-Rev.109. When prose conflicts with raw instructions, use the instructions.
+When an older note conflicts with Rev.131 on the `world_state_load` boundary
+(0x80 vs the earlier 0x248), use Rev.131. When an older note conflicts with
+Rev.109 on the four list tables, use Rev.109. When prose conflicts with raw
+instructions, use the instructions.

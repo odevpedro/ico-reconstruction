@@ -1,7 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
-> Última atualização: 2026-09-05 (Rev.130: 687 of 709 .s byte-exact verificados; os 5 hot-path gaps fechados byte-exact)
+> Última atualização: 2026-09-05 (Rev.131: 688 of 710 .s byte-exact verificados; boundary de world_state_load corrigido + DispIcoMisc + native WorldStateLoader)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -10,7 +10,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 85 |
+| Completed | 86 |
 | In Progress | 1 |
 | Pending | 1 |
 
@@ -985,7 +985,8 @@ Call graph analysis
 | rev.127 | 2026-09-05 | SQUAD-ARCH | **Reconciliation step 1: splat ground-truth + collision audit.** `reconcile.py --step splat` regenerated from the 592 verified symbol rows → 542 unique VAs in `splat/SCUS_971.13.verified-symbols.yaml` (adds UnitRotation, ACTGame_*_Exec, ClipWallAdjustPos, etc.). Collision audit of `pal_usa_function_map_candidates.csv`: the 1413 MATCH rows carry 259 duplicate `usa_va` values (e.g. 5 geometryManager symbols → 0x00102C04) — object-range mapping is NOT safe to promote to ground truth without curation. PAL symbols stay candidate/pref, not ground truth. Notas: research/pal-usa/rev127-reconciliation-step1-splat-ground-truth-and-collision-audit.md, docs/symbols/. |
 | rev.128 | 2026-09-05 | SQUAD-ARCH | **Byte-exact gap #1: `sister_callback_reg` (0x13F778).** Fixed-priority (0x1800) specialization of `isysGObjProcAdd_Wrapper` (0x13F7A8). 48B incl. trailing nop. CRITICAL: extracted ELFs are **little-endian** (LSB) — capstone must use `CS_MODE_LITTLE_ENDIAN` (as `asm_source_score.py` does), big-endian mode reads garbage. `.s` at src/core/asm/sister_callback_reg.s verifies 100%. Correção Rev.052: `li t1,0x1800` é `addiu`; função é 48B não 44B. Nota: research/elf/rev128-sister-callback-reg-byte-exact.md. |
 | rev.129 | 2026-09-05 | SQUAD-ARCH | **Byte-exact gap #2: `CreateGObj` factories.** `CreateGObj` (0x240D40, 0x160B) + `CreateGObj_v` (0x240EA0, 0x128B). Scene-object factory: isysGObjAdd → GObj words (+0x04=1,+0x164=0,+0x16C=1) → registry 0x712CC0 → 3× sister_callback_reg (types 0x16/0x17/0x18) → 0x13F130 → conditional 0x13F7A8. PAL reconciliation false positives (`sceSifSendCmd`/`isceSifSendCmd` at internal offsets, vobj.o = IOP/SIF) confirm 259-VA collision audit. `.s` both verify 100%. Notas: research/elf/rev129-create-gobj-factories-byte-exact.md. |
-| rev.130 | 2026-09-05 | SQUAD-ARCH | **Byte-exact gaps #3/#4/#5 all closed.** `AllocGObjEntity` (0x19F310, 0x1D0B) = factory chain allocator (0x850/template 0x2F23F0, slot-index table 0x35 @ +0x810); `world_state_load` (0x1AF948, 0x248B) = per-room dispatch via table 0x5F2FB8 stride 0x194 @ +0x154 (jalr init_fn); `isysGObjProcRemoveUnlink` (0x13F638, 0x80B) = ProcessNode priority-list unlink (+0x08/+0x0C next/prev, head/tail +0x2C/+0x30). Correção Rev.099: `isysGObjKindTableAdd` é 0xE0 (224B), não 0xDC (delay slot omitido); `.s` existente verifica 100% a 0xE0. Callees do CreateGObj (0x13F130=isysGObjLinkObjDL, 0x13E648=isysGObjKindTableAdd) NÃO eram gaps. Pipeline 612/612, 0 failures. **687/709 .s byte-exact (96.9%).** Nota: research/elf/rev130-hot-gaps-3-4-5-byte-exact.md. |
+| rev.130 | 2026-09-05 | SQUAD-ARCH | **Byte-exact gaps #3/#4/#5 all closed.** `AllocGObjEntity` (0x19F310, 0x1D0B) = factory chain allocator (0x850/template 0x2F23F0, slot-index table 0x35 @ +0x810); `world_state_load` (0x1AF948, 0x80B) = per-room dispatch via table 0x5F2FB8 stride 0x194 @ +0x154 (jalr init_fn); `isysGObjProcRemoveUnlink` (0x13F638, 0x80B) = ProcessNode priority-list unlink (+0x08/+0x0C next/prev, head/tail +0x2C/+0x30). Correção Rev.099: `isysGObjKindTableAdd` é 0xE0 (224B), não 0xDC (delay slot omitido); `.s` existente verifica 100% a 0xE0. Callees do CreateGObj (0x13F130=isysGObjLinkObjDL, 0x13E648=isysGObjKindTableAdd) NÃO eram gaps. Pipeline 612/612, 0 failures. **687/709 .s byte-exact (96.9%).** Nota: research/elf/rev130-hot-gaps-3-4-5-byte-exact.md. |
+| rev.131 | 2026-09-05 | SQUAD-ARCH | **`world_state_load` boundary correction + `DispIcoMisc` + native bridge.** O bloco 0x248 da Rev.130 mergeava duas funções: `world_state_load` (0x1AF948, 0x80B, tail-jump `j 0x13d3f8`) + `DispIcoMisc` (0x1AF9C8, 0x1C8B, nomeada pelo mapa Ghidra/PAL; os 0x98 do scanner NÃO são fronteira real). Ambos `.s` byte-exact 100%. Falsos positivos PAL: 0x1AFB58=`la_save_game_memory_card_check` é offset interno, não função. Native: `WorldStateLoader` (semântico do dispatch per-room) + `world_state_loader_test`; CTest 18/18. **688/710 .s byte-exact (96.9%).** Notas: research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md. |
 
 ---
 

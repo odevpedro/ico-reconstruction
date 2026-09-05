@@ -244,6 +244,7 @@ At the current stage, the most important validated research notes are:
 
 ```txt
 research/elf/rev109-isysgobj-abi-consolidation.md  (canonical 32-bit GObj/ProcessNode ABI; four 8-entry head/tail tables; 32-bit mask-loop distinction; semantic C bridge)
+research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md  (CANONICAL BOUNDARY of world_state_load=0x80 + DispIcoMisc=0x1C8 split; byte-exact .s; native WorldStateLoader semantic bridge + CTest)
 research/elf/rev130-hot-gaps-3-4-5-byte-exact.md  (all 5 hot-path gaps closed byte-exact: sister_callback_reg, CreateGObj, AllocGObjEntity, world_state_load, isysGObjProcRemoveUnlink; allocator contract + world_state dispatch table 0x5F2FB8)
 research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md       (full isysGObj* lifecycle: init→alloc→add→dispatch→remove; ios/thread.c=thread creation; 36 byte-exact .s sources)
 research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md  (isysGObjProcAdd_=488B central registration; _iosOmMain=17 slots matching runtime data; initSceneGObj=2088B connects descriptor table to isysGObj*)
@@ -395,7 +396,7 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.130 — 690 of 709 .s verified byte-exact)
+### Byte-exact reconstruction status (Rev.131 — 690 of 710 .s verified byte-exact)
 
 > **CORRECTION (Rev.130).** The Rev.116f count of 684/701 has been superseded.
 > Six hot-path gaps were reconstructed byte-exact since Rev.116f and now the
@@ -404,12 +405,19 @@ are kept as byte-exact `.s` even without Ghidra symbol verification.
 > isysGObjProcRemoveUnlink). All counts below were re-verified against the USA ELF
 > (`.local/extracted/SCUS_971.13.elf`) with the exact `assemble_and_verify`
 > method (size = assembled length, target VA).
+>
+> **CORRECTION (Rev.131).** `world_state_load.s` (Rev.130, size 0x248) actually
+> merged two functions. It was re-split into `world_state_load.s` (0x1AF948,
+> 0x80, ends in the shared tail-jump `j 0x13d3f8`) plus a new
+> `DispIcoMisc.s` (0x1AF9C8, 0x1C8, named by the Ghidra/PAL map). On-disk total
+> is now **710 `.s` files** (entity 658, cloth 6, core 46). Both split `.s`
+> verify 100% via `assemble_and_verify`.
 
 | Step | Count | Method |
 |------|-------|--------|
 | Pipeline functions | 612 | `asm_source_score.py --all --no-save` → 612/612 byte-exact (0 failures) |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 75 | byte-exact via `assemble_and_verify` at target VA |
-| **Total byte-exact `.s`** | **687** / 709 (96.9%) | verified against USA ELF |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 76 | byte-exact via `assemble_and_verify` at target VA |
+| **Total byte-exact `.s`** | **688** / 710 (96.9%) | verified against USA ELF |
 
 Not byte-exact / not verified (17 of 701, stable across Rev.106→116):
 
@@ -434,7 +442,7 @@ toolchain limitation), so they sit outside the automated scoring pipeline.
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
-Files in `src/entity/asm/` (658), `src/cloth/asm/` (6), `src/core/asm/` (45).
+Files in `src/entity/asm/` (658), `src/cloth/asm/` (6), `src/core/asm/` (46).
 
 ### Verified facts (Rev.038-099)
 
@@ -718,20 +726,22 @@ the next priority merely because the capture is running. The capture is the
 primary source of new evidence; native-port work follows the validated
 reconstruction it enables. The user may explicitly request an exception.
 
-### Current score status (Rev.130 — 687 of 709 .s verified byte-exact)
+### Current score status (Rev.131 — 688 of 710 .s verified byte-exact)
 
-See the "Byte-exact reconstruction status (Rev.130)" section above for the
-authoritative counts. Summary: **687 of 709 `.s` verified byte-exact against
+See the "Byte-exact reconstruction status (Rev.131)" section above for the
+authoritative counts. Summary: **688 of 710 `.s` verified byte-exact against
 the USA ELF** (96.9%). The earlier "1224" figure (Rev.106f) did not match the
-709 `.s` on disk and has been corrected. Six hot-gap `.s` were added by
+`.s` on disk and has been corrected. Six hot-gap `.s` were added by
 Rev.128-130: sister_callback_reg, CreateGObj, CreateGObj_v, AllocGObjEntity,
-world_state_load, isysGObjProcRemoveUnlink — all verify 100%.
+world_state_load, isysGObjProcRemoveUnlink. Rev.131 re-split world_state_load
+(correct boundary 0x80) and added `DispIcoMisc` (0x1AF9C8, 0x1C8) — all
+verify 100%.
 
 | Step | Count | Method |
 |------|-------|--------|
 | Pipeline functions | 612 | `asm_source_score.py --all` |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 75 | `assemble_and_verify` at target VA |
-| **Total .s files** | **687 / 709** | verified byte-exact |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 76 | `assemble_and_verify` at target VA |
+| **Total .s files** | **688 / 710** | verified byte-exact |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
@@ -840,6 +850,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 41. ~~**Native engine: rendering pipeline** — TM2 texture loading (PSMCT32/CT24/CT16/PSMT8/PSMT4, CLUT, GS page swizzle), GIF command buffer (tag parsing, state tracking, quad accumulation), GIF executor (bridges command buffer to RenderBackend), OpenGL backend (GLX windowing, GL 3.3 core/fallback, batch renderer, FBO, shaders, test mode). 47 new tests across 4 files. All 10 test targets pass. Fixed PSMT4 nibble order.~~ **DONE (2026-08-26)**
 42. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model, then begin scene loading integration.
 43. ~~**Rev.128-130: close all 5 hot-path byte-exact gaps** — `sister_callback_reg` (0x13F778), `CreateGObj`/`CreateGObj_v` (0x240D40/0x240EA0), `AllocGObjEntity` (0x19F310), `world_state_load` (0x1AF948), `isysGObjProcRemoveUnlink` (0x13F638); corrected Rev.099 size of `isysGObjKindTableAdd` (0xDC→0xE0); 687/709 `.s` byte-exact.~~ **DONE (2026-09-05)**
+44. ~~**Rev.131: `world_state_load` boundary correction** (0x248 merged two functions → `world_state_load` 0x80 + `DispIcoMisc` 0x1C8, both byte-exact) — plus native `WorldStateLoader` semantic bridge with `world_state_loader_test` CTest; 688/710 `.s` byte-exact.~~ **DONE (2026-09-05)**
 
 ---
 

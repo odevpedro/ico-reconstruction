@@ -22,8 +22,22 @@
 | Function | VA | Size | Previous doc | Verified |
 |----------|-----|------|--------------|----------|
 | `AllocGObjEntity` | 0x19F310 | 0x1D0 | — | **100%** |
-| `world_state_load` | 0x1AF948 | 0x248 | probe addr only | **100%** |
+| `world_state_load` | 0x1AF948 | **0x80** | probe addr only | **100%** |
 | `isysGObjProcRemoveUnlink` | 0x13F638 | 0x80 | — | **100%** |
+
+> **CORRECTION (Rev.131).** The size `0x248` listed here when Rev.130 was first
+> written was **wrong**: it merged two functions. The byte block that starts at
+> `0x1AF948` and runs to `0x1AFB8F` actually contains:
+> - `world_state_load` (0x1AF948–0x1AF9C7, **0x80 bytes**) — terminates with the
+>   shared-epilogue tail-jump `j 0x13d3f8` (+ delay `addiu $sp,$sp,0xb0`);
+> - `DispIcoMisc` (0x1AF9C8–0x1AFB8F, **0x1C8 bytes**) — a distinct function
+>   with its own `$sp,-0x90` prologue and `jr $ra` epilogue, named by the
+>   Ghidra/PAL symbol map (research/ghidra-exploration-2026-05-21.md:1541).
+> The `0x1AF9C8` fingerprint of size 0x98 in `docs/symbols/usa_fingerprints.json`
+> is the reconciliation scanner's first-scan cut, NOT a real function start here.
+> Rev.131 re-split the ground truth and saved two byte-exact `.s`:
+> `src/core/asm/world_state_load.s` (0x80) and `src/core/asm/DispIcoMisc.s`
+> (0x1C8), both verified 100% by `assemble_and_verify`.
 
 All three generated/verified via `generate_asm_source` + `assemble_and_verify`.
 Branch labels are the pipeline's `loc_<va>` form; absolute jal/j targets emitted
@@ -42,23 +56,26 @@ as `.word` encodings where the assembler requires it.
   sentinels (cached slot reuse); sets `alloc+0x8C` from the same template.
 - Restores stack; returns allocated block in `v0`.
 
-## 3. `world_state_load` (0x1AF948, 0x248 bytes) — real dispatcher shape
+## 3. `world_state_load` (0x1AF948, 0x80 bytes) — real dispatcher shape
+
+> Boundary correction (Rev.131): the function is 0x80 bytes, not the 0x248 of
+> the first scan. `DispIcoMisc` (0x1AF9C8) immediately follows; see the table
+> note above.
 
 - Frame 0xB0; reads world_state from `gp-0x6F60`, immediately does
   `mult $v1,$v1,$a0` with `$a0=0x194` (stride 0x194) indexing table `0x5F2FB8`
   at offset **+0x154** → if nonzero, `jalr` (per-state init function for the
   new room).
-- Then `0x166028` (barrel/rope init) and `0x1AE3E8` (scene apply).
-- Clears state at `0x274EC0+0x14/+0x18` and jumps to a shared tail `0x13D3F8`.
-- The `0x240`-size documentation was **short by the trailing delay slot** (the
-  `jr $ra` is at 0x1AFB84; delay `addiu $sp,$sp,0x90` at 0x1AFB88; next function
-  at 0x1AFB90). Actual size 0x248. This matches the meaning of "world_state_load"
-  probe: it observes the per-room transition dispatch point.
+- Then `0x166028` (`MakeCollisionDependGObjList`) and `0x1AE3E8` (scene apply).
+- Clears state at `0x274EC0+0x14/+0x18` and tail-jumps to the shared epilogue
+  `0x13D3F8` (`iosThreadDestroy`) with delay `addiu $sp,$sp,0xb0`.
+- Boundary: the function's own `jr $ra` is implicit at `0x13D3F8` (shared tail);
+  the `0x1AFB84` `jr $ra` seen in the first scan belongs to `DispIcoMisc`.
 
-**Notable:** `world_state_load` does **not** (at this boundary) contain the
-world_state transitions enumerated in Rev.125/126 runtime sessions — those come
-from the caller (kanban/scene loader), consistent with the state table being a
-per-room head/entry pointer set before this call.
+**Notable:** `world_state_load` does **not** contain the world_state transitions
+enumerated in Rev.125/126 runtime sessions — those come from the caller
+(kanban/scene loader), consistent with the state table being a per-room
+head/entry pointer set before this call.
 
 ## 4. `isysGObjProcRemoveUnlink` (0x13F638, 0x80 bytes)
 
@@ -82,12 +99,16 @@ already verified 100% at its documented size.
 ## 6. Confirmed / probable / unknown
 
 **Confirmed:**
-- 3 new byte-exact `.s` files; all 100% via `assemble_and_verify`.
+- 3 hot-path functions now have byte-exact `.s` (world_state_load 0x80 re-split in
+  Rev.131); `world_state_load`, `AllocGObjEntity`, `isysGObjProcRemoveUnlink` all
+  100% via `assemble_and_verify`.
 - `world_state_load` dispatches per-room init via table 0x5F2FB8 stride 0x194, +0x154.
 - `AllocGObjEntity` matches Rev.113's allocator contract (0x850/template 0x2F23F0).
 - `isysGObjProcRemoveUnlink` matches Rev.099 process-node list layout.
 - `isysGObjKindTableAdd` actual size 0xE0 (corrected from Rev.099's 0xDC);
   existing `.s` is byte-exact at 0xE0.
+- `DispIcoMisc` (0x1AF9C8) is a distinct function immediately after
+  `world_state_load`; named by the Ghidra/PAL symbol map (Rev.131).
 
 **Probable:**
 - `world_state_load` is the per-room dispatch head; the state-transition sequence
