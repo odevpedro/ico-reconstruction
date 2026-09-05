@@ -1,7 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
-> Última atualização: 2026-09-03 (Rev.116f: 684 of 701 .s byte-exact verificados — a cifra "1224" da Rev.106f não corresponde aos .s no disco e foi corrigida)
+> Última atualização: 2026-09-05 (Rev.130: 687 of 709 .s byte-exact verificados; os 5 hot-path gaps fechados byte-exact)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -10,7 +10,7 @@
 
 | Category | Count |
 |----------|-------|
-| Completed | 81 |
+| Completed | 85 |
 | In Progress | 1 |
 | Pending | 1 |
 
@@ -982,6 +982,10 @@ Call graph analysis
 | rev.124 | 2026-09-05 | SQUAD-RUNTIME | **Prepare 25-probe source table + game-loop scene bridge.** Probe table grew from 14 to 25 entries in the fork: `halfword_fast_path` (0x166dfc), `world_state_room_init_fn` (0x1af96c, jalr target = init_fn per room), `world_state_vblank_reset` (0x1af9b8), sampled `vblank_counter` read (0x274ec0) appended to every fprintf event, and 7 GirlBrain/Yorda callbacks (girl_brain_clear_target 0x16ac10, position_update 0x16bca0, sub_girl_brain_pulled_up 0x16ced0, hide_make_hide_point 0x16e910, hide_goal_turn 0x16eb68, runaway_search_point 0x16f410 sampler, runaway_move_by_way 0x16f9a8). #23 dispatch_point (0x167020) discarded — superseded by Rev.097 (_Clip = clipping, real dispatch slots covered by ios_om_create_dl). Native #42: game_loop→requestScene/execute (initSceneGObj)→renderStaticSceneDebugView→GifPacketBridge wired with CTest target (17/17 tests). Notas: research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md, research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md. |
 | rev.125 | 2026-09-05 | SQUAD-RUNTIME | **Extended final-stage session analysis (pre-finish).** 36 world_states (19 new vs Rev.105), max 0x33; world_state==scene_id 1:1 confirmed; ws=0x1A dominant (415K ios_om_main); final block 0x1B↔0x1C↔0x1D↔0x1E + 0x33; single dominant dispatch slot 0x0083068C (99%); 22 ios_om_create_dl slots mapped to dominant ws (5 new: 0x67A1B8→0x1B, 0x67B638→0x1C, 0x679A08→0x17, 0x679C98→0x1E, 0x680FE8→0x0C; corrected 0x678AA8→0x1A, 0x67CAB8→0x1D; slot A 0x677DD8→0x33). isys_gobj_proc_add: add/remove 252K/219K, wrappers t0 clustered 0x13-0x18. Fork rebuilt with 25 probes (binary mtime 2026-09-05 14:30), gate --check passes; rebuild does not disturb the running session (old binary stays mapped). Persona prompt synced (docs/prompt_persona_ico_reconstruction.md). |
 | rev.126 | 2026-09-05 | SQUAD-RUNTIME | **FINISH SESSION — game beaten.** 3,650,258 events (2.4GB). 58 distinct world_states (22 new), max 0x3D; credits cascade 0x2E→0x25→0x2F→0x36→0x30→0x35→0x34→0x2F→0x2C→0x24→0x37→0x31→0x38→0x3A→0x3B→0x3C→0x27→0x3D then **return to boot 0x01**. Rev.125 upper bound (0x33) superseded. Gaps never visited: 0x02, 0x26, 0x39. Nota: research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md. Next: validate 25-probe binary in a new session to map init_fn per ws 0x20-0x3D and confirm 0x01 loop-back code path. |
+| rev.127 | 2026-09-05 | SQUAD-ARCH | **Reconciliation step 1: splat ground-truth + collision audit.** `reconcile.py --step splat` regenerated from the 592 verified symbol rows → 542 unique VAs in `splat/SCUS_971.13.verified-symbols.yaml` (adds UnitRotation, ACTGame_*_Exec, ClipWallAdjustPos, etc.). Collision audit of `pal_usa_function_map_candidates.csv`: the 1413 MATCH rows carry 259 duplicate `usa_va` values (e.g. 5 geometryManager symbols → 0x00102C04) — object-range mapping is NOT safe to promote to ground truth without curation. PAL symbols stay candidate/pref, not ground truth. Notas: research/pal-usa/rev127-reconciliation-step1-splat-ground-truth-and-collision-audit.md, docs/symbols/. |
+| rev.128 | 2026-09-05 | SQUAD-ARCH | **Byte-exact gap #1: `sister_callback_reg` (0x13F778).** Fixed-priority (0x1800) specialization of `isysGObjProcAdd_Wrapper` (0x13F7A8). 48B incl. trailing nop. CRITICAL: extracted ELFs are **little-endian** (LSB) — capstone must use `CS_MODE_LITTLE_ENDIAN` (as `asm_source_score.py` does), big-endian mode reads garbage. `.s` at src/core/asm/sister_callback_reg.s verifies 100%. Correção Rev.052: `li t1,0x1800` é `addiu`; função é 48B não 44B. Nota: research/elf/rev128-sister-callback-reg-byte-exact.md. |
+| rev.129 | 2026-09-05 | SQUAD-ARCH | **Byte-exact gap #2: `CreateGObj` factories.** `CreateGObj` (0x240D40, 0x160B) + `CreateGObj_v` (0x240EA0, 0x128B). Scene-object factory: isysGObjAdd → GObj words (+0x04=1,+0x164=0,+0x16C=1) → registry 0x712CC0 → 3× sister_callback_reg (types 0x16/0x17/0x18) → 0x13F130 → conditional 0x13F7A8. PAL reconciliation false positives (`sceSifSendCmd`/`isceSifSendCmd` at internal offsets, vobj.o = IOP/SIF) confirm 259-VA collision audit. `.s` both verify 100%. Notas: research/elf/rev129-create-gobj-factories-byte-exact.md. |
+| rev.130 | 2026-09-05 | SQUAD-ARCH | **Byte-exact gaps #3/#4/#5 all closed.** `AllocGObjEntity` (0x19F310, 0x1D0B) = factory chain allocator (0x850/template 0x2F23F0, slot-index table 0x35 @ +0x810); `world_state_load` (0x1AF948, 0x248B) = per-room dispatch via table 0x5F2FB8 stride 0x194 @ +0x154 (jalr init_fn); `isysGObjProcRemoveUnlink` (0x13F638, 0x80B) = ProcessNode priority-list unlink (+0x08/+0x0C next/prev, head/tail +0x2C/+0x30). Correção Rev.099: `isysGObjKindTableAdd` é 0xE0 (224B), não 0xDC (delay slot omitido); `.s` existente verifica 100% a 0xE0. Callees do CreateGObj (0x13F130=isysGObjLinkObjDL, 0x13E648=isysGObjKindTableAdd) NÃO eram gaps. Pipeline 612/612, 0 failures. **687/709 .s byte-exact (96.9%).** Nota: research/elf/rev130-hot-gaps-3-4-5-byte-exact.md. |
 
 ---
 

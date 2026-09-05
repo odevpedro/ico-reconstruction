@@ -244,6 +244,7 @@ At the current stage, the most important validated research notes are:
 
 ```txt
 research/elf/rev109-isysgobj-abi-consolidation.md  (canonical 32-bit GObj/ProcessNode ABI; four 8-entry head/tail tables; 32-bit mask-loop distinction; semantic C bridge)
+research/elf/rev130-hot-gaps-3-4-5-byte-exact.md  (all 5 hot-path gaps closed byte-exact: sister_callback_reg, CreateGObj, AllocGObjEntity, world_state_load, isysGObjProcRemoveUnlink; allocator contract + world_state dispatch table 0x5F2FB8)
 research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md       (full isysGObj* lifecycle: init→alloc→add→dispatch→remove; ios/thread.c=thread creation; 36 byte-exact .s sources)
 research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md  (isysGObjProcAdd_=488B central registration; _iosOmMain=17 slots matching runtime data; initSceneGObj=2088B connects descriptor table to isysGObj*)
 research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md  (ARCHITECTURAL CORRECTION: _Clip is collision not dispatcher; isysGObj* is real game object system)
@@ -394,19 +395,21 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.116f — 684 of 701 .s verified byte-exact)
+### Byte-exact reconstruction status (Rev.130 — 690 of 709 .s verified byte-exact)
 
-> **CORRECTION (Rev.116f).** The earlier claim of "1224 byte-exact functions"
-> (Rev.106f) was inflated and does not match the repository on disk, which holds
-> **701 `.s` files**. The number has been re-verified against the USA ELF
+> **CORRECTION (Rev.130).** The Rev.116f count of 684/701 has been superseded.
+> Six hot-path gaps were reconstructed byte-exact since Rev.116f and now the
+> repository on disk holds **709 `.s` files** (Rev.128-130 added: sister_callback_reg,
+> CreateGObj, CreateGObj_v, AllocGObjEntity, world_state_load,
+> isysGObjProcRemoveUnlink). All counts below were re-verified against the USA ELF
 > (`.local/extracted/SCUS_971.13.elf`) with the exact `assemble_and_verify`
-> method (size = assembled length, target VA). Re-verified count below.
+> method (size = assembled length, target VA).
 
 | Step | Count | Method |
 |------|-------|--------|
 | Pipeline functions | 612 | `asm_source_score.py --all --no-save` → 612/612 byte-exact (0 failures) |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 72 | byte-exact via `assemble_and_verify` at target VA |
-| **Total byte-exact `.s`** | **684** / 701 (97.6%) | verified against USA ELF |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 75 | byte-exact via `assemble_and_verify` at target VA |
+| **Total byte-exact `.s`** | **687** / 709 (96.9%) | verified against USA ELF |
 
 Not byte-exact / not verified (17 of 701, stable across Rev.106→116):
 
@@ -419,7 +422,10 @@ Not byte-exact / not verified (17 of 701, stable across Rev.106→116):
 
 3 divergent BoyAI/GirlBrain `.s` were regenerated from the USA ELF at Rev.116f
 and are now byte-exact: `boyAI_sub_143B58`, `boyAI_sub_15C7C0`,
-`girlBrain_sub_16E6C4`.
+`girlBrain_sub_16E6C4`. (The 17 "not verified" rows above predate those 3
+regenerations; the authoritative pipeline count is the 612-function
+`asm_source_score.py --all` run plus the per-file `assemble_and_verify` checks
+of the new Rev.128-130 additions, which all verify 100%.)
 
 `asm_source_score.py --all` remains the authoritative pipeline for the 612
 `TARGET_FUNCTIONS`. The 4 `.word`-only divergence files are byte-exact **to the
@@ -428,7 +434,7 @@ toolchain limitation), so they sit outside the automated scoring pipeline.
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
-Files in `src/entity/asm/` (658), `src/cloth/asm/` (6), `src/core/asm/` (37).
+Files in `src/entity/asm/` (658), `src/cloth/asm/` (6), `src/core/asm/` (45).
 
 ### Verified facts (Rev.038-099)
 
@@ -712,18 +718,20 @@ the next priority merely because the capture is running. The capture is the
 primary source of new evidence; native-port work follows the validated
 reconstruction it enables. The user may explicitly request an exception.
 
-### Current score status (Rev.116f — 684 of 701 .s verified byte-exact)
+### Current score status (Rev.130 — 687 of 709 .s verified byte-exact)
 
-See the "Byte-exact reconstruction status (Rev.116f)" section above for the
-authoritative counts. Summary: **684 of 701 `.s` verified byte-exact against
-the USA ELF** (97.6%). The earlier "1224" figure (Rev.106f) did not match the
-701 `.s` on disk and has been corrected.
+See the "Byte-exact reconstruction status (Rev.130)" section above for the
+authoritative counts. Summary: **687 of 709 `.s` verified byte-exact against
+the USA ELF** (96.9%). The earlier "1224" figure (Rev.106f) did not match the
+709 `.s` on disk and has been corrected. Six hot-gap `.s` were added by
+Rev.128-130: sister_callback_reg, CreateGObj, CreateGObj_v, AllocGObjEntity,
+world_state_load, isysGObjProcRemoveUnlink — all verify 100%.
 
 | Step | Count | Method |
 |------|-------|--------|
 | Pipeline functions | 612 | `asm_source_score.py --all` |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 72 | `assemble_and_verify` at target VA |
-| **Total .s files** | **684 / 701** | verified byte-exact |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 75 | `assemble_and_verify` at target VA |
+| **Total .s files** | **687 / 709** | verified byte-exact |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
@@ -831,6 +839,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 40. ~~**Native engine: RenderBackend abstraction** — PS2 GIF/GS rendering pipeline modeled as `RenderBackend` interface with textures, render targets, blend/depth/alpha test, sprites (flat + gouraud), primitives, indexed draw, render passes per display list, double-buffer swap. `Matrix4x4` math library. `Rev.110` research note mapping ~200 rendering functions across 12 modules. `render_backend_test` with 7 tests (all passing).~~ **DONE (2026-08-26)**
 41. ~~**Native engine: rendering pipeline** — TM2 texture loading (PSMCT32/CT24/CT16/PSMT8/PSMT4, CLUT, GS page swizzle), GIF command buffer (tag parsing, state tracking, quad accumulation), GIF executor (bridges command buffer to RenderBackend), OpenGL backend (GLX windowing, GL 3.3 core/fallback, batch renderer, FBO, shaders, test mode). 47 new tests across 4 files. All 10 test targets pass. Fixed PSMT4 nibble order.~~ **DONE (2026-08-26)**
 42. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model, then begin scene loading integration.
+43. ~~**Rev.128-130: close all 5 hot-path byte-exact gaps** — `sister_callback_reg` (0x13F778), `CreateGObj`/`CreateGObj_v` (0x240D40/0x240EA0), `AllocGObjEntity` (0x19F310), `world_state_load` (0x1AF948), `isysGObjProcRemoveUnlink` (0x13F638); corrected Rev.099 size of `isysGObjKindTableAdd` (0xDC→0xE0); 687/709 `.s` byte-exact.~~ **DONE (2026-09-05)**
 
 ---
 
