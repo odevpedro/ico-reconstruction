@@ -16,12 +16,12 @@ GObjFactory g_factory;
 
 struct ProcAddCapture {
     int count = 0;
-    ico_ptr32 a0[8];
-    ico_ptr32 a1[8];
-    ico_ptr32 a2[8];
-    ico_ptr32 a3[8];
-    ico_ptr32 t0[8];
-    ico_ptr32 t1[8];
+    ico_ptr32 a0[16];
+    ico_ptr32 a1[16];
+    ico_ptr32 a2[16];
+    ico_ptr32 a3[16];
+    ico_ptr32 t0[16];
+    ico_ptr32 t1[16];
 };
 ProcAddCapture g_cap;
 
@@ -198,8 +198,8 @@ int main() {
     assert(gv2->dl_sort_key == 0x44);
     assert(g_wrapCount == wrapsAfterV);   /* trigger zero: no wrap */
 
-    /* Twelve sisters registered in total (3 per object x 4 objects). */
-    assert(g_cap.count == 12);
+    /* Fifteen sisters registered in total (3 per object x 5 objects). */
+    assert(g_cap.count == 15);
 
     /* --- Shutdown makes the factory inert --- */
     g_factory.shutdown();

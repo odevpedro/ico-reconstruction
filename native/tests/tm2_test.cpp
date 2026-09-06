@@ -379,8 +379,11 @@ static void test_parse_v4_multi() {
 
     Tm2Texture tex{};
     assert(Tm2Converter::convertImage(file.images[1], tex));
-    // byte begins 0x11: even pixel -> index 1 (10,0,0)
-    assert(tex.rgbaData[0] == 10);
+    // byte begins 0x11: even pixel -> index 1; CLUT R = c*10 + b = 11 for b=1
+    assert(tex.rgbaData[0] == 11);
+    assert(tex.rgbaData[1] == 0);
+    assert(tex.rgbaData[2] == 0);
+    assert(tex.rgbaData[3] == 255);
 
     std::fprintf(stderr, "parse v4 multi: OK\n");
 }

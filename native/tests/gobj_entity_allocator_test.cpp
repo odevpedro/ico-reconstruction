@@ -161,7 +161,7 @@ int main() {
     std::memset(templ, 0xA5, sizeof(templ));
     store32(templ + 0x8C, g_eeListBase);
     store32(templ + 0x820, 0);                 /* flag cleared */
-    store32(templ + 0x810, 0);                 /* placeholder, overwritten */
+    store32(templ + 0x810, kSlotTableEe);       /* overwritten to slot-table addr */
 
     GObjEntityAllocator alloc;
     assert(alloc.initialize(heapAllocHook, translateHook, debugPrintHook,
