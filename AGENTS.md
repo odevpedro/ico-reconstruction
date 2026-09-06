@@ -396,7 +396,7 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.131 — 690 of 710 .s verified byte-exact)
+### Byte-exact reconstruction status (Rev.131 — 688 of 710 .s verified byte-exact)
 
 > **CORRECTION (Rev.130).** The Rev.116f count of 684/701 has been superseded.
 > Six hot-path gaps were reconstructed byte-exact since Rev.116f and now the
@@ -851,6 +851,8 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 42. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model, then begin scene loading integration.
 43. ~~**Rev.128-130: close all 5 hot-path byte-exact gaps** — `sister_callback_reg` (0x13F778), `CreateGObj`/`CreateGObj_v` (0x240D40/0x240EA0), `AllocGObjEntity` (0x19F310), `world_state_load` (0x1AF948), `isysGObjProcRemoveUnlink` (0x13F638); corrected Rev.099 size of `isysGObjKindTableAdd` (0xDC→0xE0); 687/709 `.s` byte-exact.~~ **DONE (2026-09-05)**
 44. ~~**Rev.131: `world_state_load` boundary correction** (0x248 merged two functions → `world_state_load` 0x80 + `DispIcoMisc` 0x1C8, both byte-exact) — plus native `WorldStateLoader` semantic bridge with `world_state_loader_test` CTest; 688/710 `.s` byte-exact.~~ **DONE (2026-09-05)**
+45. ~~**Rev.134: `moveImage`/CopyTexture plumbing** — `RenderBackend::copyTexture`, `RenderCmd.copy`, executor bridge, no-op stub overrides, `test_move_image_guards`; 20/20 CTest.~~ **DONE (2026-09-05)**
+46. ~~**Rev.135 (native-port, P1): first visible milestone** — `ICO_ENABLE_OPENGL` default ON; `ico_native` opens a real GLX 640x448 window and renders 3 animated quads at 60 fps through the semantic GIF pipeline (GifPacketBridge→executor→OpenGLBackend); screenshot evidence in `research/native/ico-native-first-window-2026-09-05.png`. Fixed two rendering-blocking GL bugs: `glCreateShader` vs `glCreateProgram`, and GL context current to the GLX window (not the X window) for `glXSwapBuffers`. 21/21 CTest.~~ **DONE (2026-09-05)**
 
 ---
 

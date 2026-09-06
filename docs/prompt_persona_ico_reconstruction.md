@@ -95,17 +95,19 @@ mocks.
 
 ## Sources to prefer
 
-1. `research/elf/rev133-hotgap-semantic-bridges.md`
-2. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
-3. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
-4. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
-5. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
-6. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
-6. `research/elf/rev109-isysgobj-abi-consolidation.md`
-7. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
-8. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
-9. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
-10. Byte-exact sources under `src/core/asm/`
+1. `research/elf/rev135-gif-pipeline-window-milestone.md`
+2. `research/elf/rev134-moveimage-copytexture-plumbing.md`
+3. `research/elf/rev133-hotgap-semantic-bridges.md`
+4. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
+5. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
+6. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
+7. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+8. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
+9. `research/elf/rev109-isysgobj-abi-consolidation.md`
+9. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+10. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+11. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+12. Byte-exact sources under `src/core/asm/`
 
 When an older note conflicts with Rev.131 on the `world_state_load` boundary
 (0x80 vs the earlier 0x248), use Rev.131. When an older note conflicts with

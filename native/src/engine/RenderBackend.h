@@ -190,6 +190,9 @@ struct RenderCmd {
             u8 corners[4][4]; // per-corner RGBA (gouraud)
         } spriteGouraud;
         struct {
+            float srcX, srcY, dstX, dstY, w, h;
+        } copy;
+        struct {
             float x0, y0, x1, y1;
             u8 r, g, b, a;
             u8 gouraud;
@@ -297,6 +300,11 @@ public:
                                    float u0, float v0, float u1, float v1,
                                    TextureHandle texture,
                                    const u8 cornerColors[4][4]) = 0;
+
+    // VRAM region move (GS TRXDIR=2, matching GifPacket.moveImage).
+    // Copies the w*h rect from (srcX, srcY) to (dstX, dstY) within VRAM.
+    virtual void copyTexture(float srcX, float srcY, float dstX, float dstY,
+                             float w, float h) = 0;
 
     // Render pass management (matching display list dispatch)
     virtual void beginPass(RenderList list) = 0;

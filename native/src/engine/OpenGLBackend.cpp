@@ -114,6 +114,7 @@ static void* getGLProcAddress(const char* name) {
 }
 
 typedef void (*PFN_GLSHADERSOURCE)(GLuint, GLsizei, const GLchar**, const GLint*);
+typedef GLuint (*PFN_GLCREATESHADER)(GLenum);
 typedef void (*PFN_GLCOMPILESHADER)(GLuint);
 typedef void (*PFN_GLGETSHADERIV)(GLuint, GLenum, GLint*);
 typedef void (*PFN_GLGETSHADERINFOLOG)(GLuint, GLsizei, GLsizei*, GLchar*);
@@ -177,6 +178,7 @@ typedef void (*PFN_GLDELETERENDERBUFFERS)(GLsizei, const GLuint*);
 
 static PFN_GLSHADERSOURCE p_glShaderSource = nullptr;
 static PFN_GLCOMPILESHADER p_glCompileShader = nullptr;
+static PFN_GLCREATESHADER p_glCreateShader = nullptr;
 static PFN_GLGETSHADERIV p_glGetShaderiv = nullptr;
 static PFN_GLGETSHADERINFOLOG p_glGetShaderInfoLog = nullptr;
 static PFN_GLCREATEPROGRAM p_glCreateProgram = nullptr;
@@ -238,6 +240,7 @@ static PFN_GLDELETERENDERBUFFERS p_glDeleteRenderbuffers = nullptr;
 static bool loadGLFunctions() {
     LOAD_GL_FUNC(p_glShaderSource,             PFN_GLSHADERSOURCE,             "glShaderSource");
     LOAD_GL_FUNC(p_glCompileShader,            PFN_GLCOMPILESHADER,            "glCompileShader");
+    LOAD_GL_FUNC(p_glCreateShader,             PFN_GLCREATESHADER,             "glCreateShader");
     LOAD_GL_FUNC(p_glGetShaderiv,              PFN_GLGETSHADERIV,              "glGetShaderiv");
     LOAD_GL_FUNC(p_glGetShaderInfoLog,         PFN_GLGETSHADERINFOLOG,         "glGetShaderInfoLog");
     LOAD_GL_FUNC(p_glCreateProgram,            PFN_GLCREATEPROGRAM,            "glCreateProgram");
@@ -357,7 +360,7 @@ static GLuint compileShaderProgram(const GLchar* vertSrc, const GLchar* fragSrc,
                                    bool isGL33) {
     GLuint vert = 0;
     {
-        GLuint s = p_glCreateProgram();
+        GLuint s = p_glCreateShader(GL_VERTEX_SHADER);
         p_glShaderSource(s, 1, &vertSrc, nullptr);
         p_glCompileShader(s);
         GLint ok = 0;
@@ -374,7 +377,7 @@ static GLuint compileShaderProgram(const GLchar* vertSrc, const GLchar* fragSrc,
 
     GLuint frag = 0;
     {
-        GLuint s = p_glCreateProgram();
+        GLuint s = p_glCreateShader(GL_FRAGMENT_SHADER);
         p_glShaderSource(s, 1, &fragSrc, nullptr);
         p_glCompileShader(s);
         GLint ok = 0;
@@ -567,12 +570,21 @@ bool OpenGLBackend::initialize(u32 width, u32 height) {
 
     I.glxWindow = glXCreateWindow(I.display, I.fbConfig, I.window, nullptr);
 
+    // Render into the double-buffered GLX window, then flip with
+    // glXSwapBuffers (present). The context is bound to the X window only
+    // during creation; all drawing happens through the GLX window drawable.
+    if (I.glxWindow) {
+        glXMakeCurrent(I.display, I.glxWindow, I.glxContext);
+    }
+
     p_glEnable(GL_DEPTH_TEST);
     p_glDepthFunc(GL_LEQUAL);
     p_glDepthMask(GL_TRUE);
     p_glEnable(GL_BLEND);
     p_glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    p_glEnable(GL_ALPHA_TEST);
+    if (!I.isGL33) {
+        p_glEnable(GL_ALPHA_TEST);
+    }
     p_glEnable(GL_SCISSOR_TEST);
     p_glViewport(0, 0, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
     p_glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -1311,6 +1323,16 @@ void OpenGLBackend::drawSpriteGouraud(float x, float y, float w, float h,
     I.batchIndices.push_back(base + 3);
 
     (void)texture;
+}
+
+void OpenGLBackend::copyTexture(float srcX, float srcY, float dstX, float dstY,
+                                float w, float h) {
+    /* Rev.134: the GifPacket.moveImage command boundary is modeled, but the
+       OpenGL backend has no VRAM-buffer binding for a source buffer (the
+       simplified GifPacket moveImage signature carries no SBP/SBW/SPSM), so a
+       real blit would be speculative. No-op until a runtime stream identifies
+       the actual source destination buffers. */
+    (void)srcX; (void)srcY; (void)dstX; (void)dstY; (void)w; (void)h;
 }
 
 void OpenGLBackend::beginPass(RenderList list) {

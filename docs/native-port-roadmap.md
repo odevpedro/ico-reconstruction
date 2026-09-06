@@ -1,8 +1,8 @@
 # Native PC Port Roadmap
 
-**Date:** 2026-08-25  
+**Date:** 2026-09-05 (updated; originally 2026-08-25)  
 **Objective:** Define the technical transition from verified reverse engineering to a native PC port of ICO  
-**Status:** Foundation phase — reverse engineering complete for core systems, port not yet started  
+**Status:** Milestone P1 done (Rev.135) — `ico_native` opens a real GLX window and renders frames through the semantic GIF pipeline; port now has first observable evidence  
 
 ---
 
@@ -20,7 +20,7 @@ The current reverse engineering work is the **foundation** for this port. Byte-e
 
 | Asset | Count | Status |
 |-------|-------|--------|
-| Byte-exact .s functions | 1.224 | Verified, not portable |
+| Byte-exact .s functions | 688 / 710 | Verified, not portable (earlier "1.224" count superseded) |
 | Entity work area struct | ~0x0680 bytes | Partially reconstructed |
 | GObj struct | 0x174 bytes | Documented (Rev.098-099) |
 | Descriptor table | 68 entries | Mapped |
@@ -33,13 +33,13 @@ The current reverse engineering work is the **foundation** for this port. Byte-e
 
 | System | Status | Gap |
 |--------|--------|-----|
-| Rendering | Not started | PS2 GS → modern GPU |
+| Rendering | OpenGL window + GIF pipeline (Rev.135) | Real scene/textures (P2) |
 | Audio | Not started | SPU2/IOP → native audio |
 | Input | Not started | scePad → SDL |
 | Filesystem | Not started | CDVD → host FS |
-| Memory allocators | Not started | PS2 heap → native |
-| Timing | Not started | vblank → game loop |
-| Math library | Not started | VU0 → SSE/NEON |
+| Memory allocators | Partial | PS2 heap → native |
+| Timing | Partial (16 ms pacing) | vblank → game loop |
+| Math library | Matrix4x4 | VU0 → SSE/NEON |
 | Game logic | 28% decompiled | .s only, not C |
 
 ---
@@ -82,7 +82,9 @@ These structures define the **API surface** of the game logic. A port can implem
 
 ### Byte-exact .s assembly
 
-1.224 functions are verified as byte-exact PS2 MIPS assembly. This is:
+688 of 710 functions are verified as byte-exact PS2 MIPS assembly (612-pipeline +
+76 other `.s`; the earlier "1.224" figure was a corrupted count and is
+superseded — see AGENTS.md Rev.117/Rev.131). This is:
 - **Valuable** as documentation of exact behavior
 - **Valuable** as ground truth for C reimplementation
 - **Not portable** — PS2 MIPS cannot compile on x86/ARM

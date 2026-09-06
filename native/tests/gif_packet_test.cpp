@@ -72,6 +72,13 @@ public:
     void drawSpriteGouraud(float, float, float, float,
                            float, float, float, float,
                            TextureHandle, const u8[4][4]) override {}
+    void copyTexture(float srcX, float srcY, float dstX, float dstY,
+                     float w, float h) override {
+        m_copyCalls++;
+        m_lastCopySrcX = srcX; m_lastCopySrcY = srcY;
+        m_lastCopyDstX = dstX; m_lastCopyDstY = dstY;
+        m_lastCopyW = w; m_lastCopyH = h;
+    }
 
     void beginPass(RenderList) override {}
     void endPass() override {}
@@ -114,6 +121,11 @@ public:
     float m_lastSpriteU0 = 0, m_lastSpriteV0 = 0, m_lastSpriteU1 = 0, m_lastSpriteV1 = 0;
     TextureHandle m_lastSpriteTex = kNullTexture;
     u8 m_lastSpriteR = 0, m_lastSpriteA = 0;
+
+    u32 m_copyCalls = 0;
+    float m_lastCopySrcX = 0, m_lastCopySrcY = 0;
+    float m_lastCopyDstX = 0, m_lastCopyDstY = 0;
+    float m_lastCopyW = 0, m_lastCopyH = 0;
 };
 
 static void test_packet_lifecycle() {
@@ -300,6 +312,46 @@ static void test_geometry_mapping() {
 
     const RenderCmd& copyCmd = bridge.commandBuffer().command(5);
     assert(copyCmd.type == RenderCommand::CopyTexture);
+    assert(copyCmd.copy.srcX == 0.0f);
+    assert(copyCmd.copy.srcY == 0.0f);
+    assert(copyCmd.copy.dstX == 32.0f);
+    assert(copyCmd.copy.dstY == 32.0f);
+    assert(copyCmd.copy.w == 64.0f);
+    assert(copyCmd.copy.h == 64.0f);
+}
+
+static void test_move_image_guards() {
+    TestBackend backend;
+    backend.initialize(640, 448);
+    GifPacketBridge bridge(backend);
+    bridge.init(640, 448);
+
+    /* moveImage with packet closed is a no-op */
+    bridge.moveImage(1.0f, 1.0f, 2.0f, 2.0f, 16.0f, 16.0f);
+    assert(bridge.commandBuffer().commandCount() == 0);
+
+    bridge.startPacketPri(0);
+
+    /* degenerate (w or h <= 0) moves are dropped */
+    bridge.moveImage(1.0f, 1.0f, 2.0f, 2.0f, 0.0f, 16.0f);
+    bridge.moveImage(1.0f, 1.0f, 2.0f, 2.0f, 16.0f, -1.0f);
+    assert(bridge.commandBuffer().commandCount() == 0);
+
+    /* a valid move is emitted exactly once with full copy geometry */
+    bridge.moveImage(4.0f, 8.0f, 12.0f, 16.0f, 32.0f, 64.0f);
+    assert(bridge.commandBuffer().commandCount() == 1);
+    const RenderCmd& c = bridge.commandBuffer().command(0);
+    assert(c.type == RenderCommand::CopyTexture);
+    assert(c.copy.srcX == 4.0f && c.copy.srcY == 8.0f);
+    assert(c.copy.dstX == 12.0f && c.copy.dstY == 16.0f);
+    assert(c.copy.w == 32.0f && c.copy.h == 64.0f);
+
+    /* flush() forwards the copy to the backend with the recorded geometry */
+    bridge.flush();
+    assert(backend.m_copyCalls == 1);
+    assert(backend.m_lastCopySrcX == 4.0f && backend.m_lastCopySrcY == 8.0f);
+    assert(backend.m_lastCopyDstX == 12.0f && backend.m_lastCopyDstY == 16.0f);
+    assert(backend.m_lastCopyW == 32.0f && backend.m_lastCopyH == 64.0f);
 }
 
 static void test_flush_executes() {
@@ -358,6 +410,7 @@ int main() {
     test_state_mapping();
     test_set_gs_reg_expanded();
     test_geometry_mapping();
+    test_move_image_guards();
     test_flush_executes();
     test_flush_empty_is_noop();
     test_screen_check();

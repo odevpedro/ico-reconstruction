@@ -78,6 +78,9 @@ public:
                            TextureHandle texture,
                            const u8 cornerColors[4][4]) override;
 
+    void copyTexture(float srcX, float srcY, float dstX, float dstY,
+                     float w, float h) override;
+
     void beginPass(RenderList list) override;
     void endPass() override;
 

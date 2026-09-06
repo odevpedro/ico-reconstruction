@@ -229,7 +229,33 @@ These notes describe structural evidence only. They do not assign definitive gam
 │   ├── iso-index/                # Metadata-only ISO9660/BIN/CUE indexer
 │   ├── README.md                 # Script and tooling conventions
 │   └── verify-local-copy/        # Metadata-only local input verifier
+├── native/                        # PC port prototype (branch native-port; not playable yet)
+│   ├── CMakeLists.txt            # CMake ≥3.14; lib ico_engine_core + 20 test targets + ico_native
+│   ├── src/                      # engine/ (GObj, GIF/GS model, TM2, OpenGL, factories), game/, runtime/, platform/ (stubs), ps2/
+│   ├── tests/                    # assert-based unit tests (20 registered; 21 with ICO_ENABLE_OPENGL=ON)
+│   └── README.md                 # "ICO Native Runtime Prototype" — not a playable port
 ```
+
+## Native Port (branch `native-port`)
+
+A native PC port prototype lives on the `native-port` branch (C++17/C11, CMake),
+separate from the decompilation ground truth on `master`. Current stage: a
+**semantic-bridge test harness**, not a playable port — details in
+[`native/README.md`](native/README.md) and
+[`docs/native-port-roadmap.md`](docs/native-port-roadmap.md).
+
+Verified status (build clean, `ctest` 20/20, `2026-09-05`):
+
+- **Builds from scratch:** `cmake -S native -B build && cmake --build build && cd build && ctest`.
+- **What works:** semantic GObj/ProcessNode pools, the `isysGObj*` registrations,
+  dispatch, kind-table and slot dispatch, `CreateGObj`/`CreateGObj_v`/
+  `AllocGObjEntity` factories, the world-state loader, GIF tag/command/executor
+  model, TM2 textpipeline, and a `game_loop_scene_test` that drives a synthetic
+  sprite through the scene loader.
+- **What does not work yet:** `ico_native` opens no window, reads no input and
+  renders nothing (`main.cpp` boots the runtime and ticks 3 frames). The OpenGL
+  backend compiles but is opt-in (`ICO_ENABLE_OPENGL=ON`). Audio, input and
+  filesystem are stubs; cloth/physics and most AI are not ported.
 
 ## What This Project Is Not
 
@@ -246,7 +272,8 @@ Any future tooling should require contributors to provide their own legally obta
 
 ## Local Setup
 
-There is currently no buildable source tree and no runtime to execute.
+The reverse-engineering sources need no build step; the PC port prototype has a
+CMake build tree under [`native/`](native/) (see the Native Port section above).
 
 To work with the repository locally:
 

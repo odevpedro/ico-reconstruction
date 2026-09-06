@@ -258,15 +258,21 @@ public:
         m_triangleCount += 2;
     }
 
-    void drawSpriteGouraud(float x, float y, float w, float h,
+void drawSpriteGouraud(float x, float y, float w, float h,
                            float u0, float v0, float u1, float v1,
                            TextureHandle texture,
                            const u8 cornerColors[4][4]) override {
         (void)x; (void)y; (void)w; (void)h;
         (void)u0; (void)v0; (void)u1; (void)v1;
         (void)texture; (void)cornerColors;
-        ++m_drawCallCount;
-        m_triangleCount += 2;
+    }
+
+    void copyTexture(float srcX, float srcY, float dstX, float dstY,
+                     float w, float h) override {
+        /* Rev.134: the stub backend has no VRAM buffers to move; the command
+           boundary is modeled, the copy itself is a no-op until a backend
+           binds source/dest VRAM buffers. */
+        (void)srcX; (void)srcY; (void)dstX; (void)dstY; (void)w; (void)h;
     }
 
     void beginPass(RenderList list) override { (void)list; }

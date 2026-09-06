@@ -333,12 +333,18 @@ void GifPacketBridge::pointOffset(float x, float y, u8 r, u8 g, u8 b, u8 a) {
     emitPoint(x, y, r, g, b, a);
 }
 
-void GifPacketBridge::moveImage(float /* srcX */, float /* srcY */, float /* dstX */, float /* dstY */,
+void GifPacketBridge::moveImage(float srcX, float srcY, float dstX, float dstY,
                                 float w, float h) {
     if (!m_packetOpen || w <= 0.0f || h <= 0.0f) return;
 
     RenderCmd cmd{};
     cmd.type = RenderCommand::CopyTexture;
+    cmd.copy.srcX = srcX;
+    cmd.copy.srcY = srcY;
+    cmd.copy.dstX = dstX;
+    cmd.copy.dstY = dstY;
+    cmd.copy.w = w;
+    cmd.copy.h = h;
     m_buffer.commands().push_back(cmd);
 }
 

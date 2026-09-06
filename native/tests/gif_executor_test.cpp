@@ -81,6 +81,13 @@ public:
         std::memcpy(m_lastGouraudCorners, corners, sizeof(m_lastGouraudCorners));
         (void)u0; (void)v0; (void)u1; (void)v1;
     }
+    void copyTexture(float srcX, float srcY, float dstX, float dstY,
+                     float w, float h) override {
+        m_copyCalls++;
+        m_lastCopySrcX = srcX; m_lastCopySrcY = srcY;
+        m_lastCopyDstX = dstX; m_lastCopyDstY = dstY;
+        m_lastCopyW = w; m_lastCopyH = h;
+    }
 
     void beginPass(RenderList l) override { m_passCalls++; m_lastPassList = l; }
     void endPass() override { m_endPassCalls++; }
@@ -126,6 +133,11 @@ public:
     float m_lastGouraudX = 0, m_lastGouraudY = 0, m_lastGouraudW = 0, m_lastGouraudH = 0;
     TextureHandle m_lastGouraudTex = kNullTexture;
     u8 m_lastGouraudCorners[4][4]{};
+
+    u32 m_copyCalls = 0;
+    float m_lastCopySrcX = 0, m_lastCopySrcY = 0;
+    float m_lastCopyDstX = 0, m_lastCopyDstY = 0;
+    float m_lastCopyW = 0, m_lastCopyH = 0;
 
     u32 m_passCalls = 0;
     RenderList m_lastPassList = RenderList::Opaque;
@@ -268,8 +280,19 @@ static void test_executor_bridge_geometry_commands() {
 
     RenderCmd copyCmd{};
     copyCmd.type = RenderCommand::CopyTexture;
+    copyCmd.copy.srcX = 10.0f;
+    copyCmd.copy.srcY = 20.0f;
+    copyCmd.copy.dstX = 30.0f;
+    copyCmd.copy.dstY = 40.0f;
+    copyCmd.copy.w = 50.0f;
+    copyCmd.copy.h = 60.0f;
     exec.executeCommand(copyCmd);
     assert(backend.m_drawPrimCalls == 3);
+    /* the copy is forwarded to the backend with full geometry, no draw side effects */
+    assert(backend.m_copyCalls == 1);
+    assert(backend.m_lastCopySrcX == 10.0f && backend.m_lastCopySrcY == 20.0f);
+    assert(backend.m_lastCopyDstX == 30.0f && backend.m_lastCopyDstY == 40.0f);
+    assert(backend.m_lastCopyW == 50.0f && backend.m_lastCopyH == 60.0f);
 }
 
 static void test_executor_empty() {

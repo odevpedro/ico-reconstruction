@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(ICO_ENABLE_OPENGL "Enable OpenGL rendering backend (requires GL + X11)" OFF)
+option(ICO_ENABLE_OPENGL "Enable OpenGL rendering backend (requires GL + X11); ON makes the portable backend part of ico_native so a window opens on startup" ON)
 
 set(ICO_ENGINE_SOURCES
     src/game/KanbanSceneLoader.cpp

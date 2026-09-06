@@ -185,6 +185,9 @@ void GifCommandExecutor::executeCommand(const RenderCmd& cmd) {
             break;
         }
         case RenderCommand::CopyTexture:
+            m_backend.copyTexture(cmd.copy.srcX, cmd.copy.srcY,
+                                  cmd.copy.dstX, cmd.copy.dstY,
+                                  cmd.copy.w, cmd.copy.h);
             break;
         case RenderCommand::BeginPass:
             m_backend.beginPass(cmd.pass.list);
