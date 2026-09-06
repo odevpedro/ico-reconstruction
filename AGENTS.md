@@ -964,6 +964,34 @@ Do not rewrite history.
 
 If a previous note is wrong, create a new correction note or clearly mark the contradiction in the current revision.
 
+## Commit message discipline
+
+Every commit that closes a revision must carry a **detailed body**, not only a
+subject. The body is part of the auditable evidence chain: it must survive
+independently of the research notes and let a future agent (or reviewer)
+reconstruct what changed and why.
+
+Minimum structure:
+
+```txt
+core: Rev.XXX — short headline summary [TRILHA: PORT]
+
+- Bullet per concrete change (fix, addition, removal), each with the
+  function/file/tool name and, when applicable, byte sizes or VAs
+- State the ROOT CAUSE of any bug fixed (e.g. "phantom inflation = regex
+  bug, not ee-gcc"), especially when a previous revision's count changed
+- Name each affected artifact explicitly (e.g. "9 pipeline files re-
+  aligned", "12 .s truncated & byte-exact verified")
+- Include the verification evidence (e.g. "asm_source_score --all:
+  612/612 direct PASS", "21/21 CTest")
+```
+
+Do not commit with an empty or one-line-only message. If a commit was pushed
+with a thin message, do NOT silently amend history: either write a follow-up
+commit documenting the details, or ask the user before force-pushing an
+amend of a pushed commit (rewriting public history requires explicit
+consent).
+
 ## Verify-before-reconstruct (avoid redoing resolved work)
 
 Before writing ANY new reconstruction code (semantic C/C++, native bridge,
