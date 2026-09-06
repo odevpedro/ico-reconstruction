@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-05 (updated; originally 2026-08-25)  
 **Objective:** Define the technical transition from verified reverse engineering to a native PC port of ICO  
-**Status:** Milestone P1 done (Rev.135) — `ico_native` opens a real GLX window and renders frames through the semantic GIF pipeline; port now has first observable evidence  
+**Status:** Milestone P1 done (Rev.135) — `ico_native` opens a real GLX window and renders frames through the semantic GIF pipeline; port now has first observable evidence. P2 layer 1 done (Rev.136) — DATA.DF container TOC decoded (172 entries, verified via icon.sys PS2D magic)  
 
 ---
 
@@ -36,7 +36,7 @@ The current reverse engineering work is the **foundation** for this port. Byte-e
 | Rendering | OpenGL window + GIF pipeline (Rev.135) | Real scene/textures (P2) |
 | Audio | Not started | SPU2/IOP → native audio |
 | Input | Not started | scePad → SDL |
-| Filesystem | Not started | CDVD → host FS |
+| Filesystem | DATA.DF TOC decoded (Rev.136) | CDVD → host FS; `STG*.DF` inner archive |
 | Memory allocators | Partial | PS2 heap → native |
 | Timing | Partial (16 ms pacing) | vblank → game loop |
 | Math library | Matrix4x4 | VU0 → SSE/NEON |
