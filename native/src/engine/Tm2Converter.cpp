@@ -92,7 +92,7 @@ void Tm2Converter::convertPSMT4(const u8* src, u32 width, u32 height,
 
     for (u32 i = 0; i < numPixels; ++i) {
         const u32 byteIdx = i / 2;
-        const u8 nibble = (i & 1) ? (src[byteIdx] & 0x0F) : (src[byteIdx] >> 4);
+        const u8 nibble = (i & 1) ? (src[byteIdx] >> 4) : (src[byteIdx] & 0x0F);
         if (nibble < (rgbaClut.size() / 4)) {
             std::memcpy(&out[i * 4], &rgbaClut[nibble * 4], 4);
         } else {

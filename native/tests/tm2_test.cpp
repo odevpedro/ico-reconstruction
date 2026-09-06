@@ -192,12 +192,12 @@ static void test_convert_psmt4() {
     std::vector<u8> out;
     Tm2Converter::convertPSMT4(src.data(), w, h, clut, out);
     assert(out.size() == w * h * 4);
-    assert(out[0] == 0);
-    assert(out[1] == 100);
+    assert(out[0] == 100);
+    assert(out[1] == 0);
     assert(out[2] == 0);
     assert(out[3] == 255);
-    assert(out[4] == 100);
-    assert(out[5] == 0);
+    assert(out[4] == 0);
+    assert(out[5] == 100);
     assert(out[6] == 0);
     assert(out[7] == 255);
 
@@ -276,6 +276,142 @@ static void test_convert_image_psmct32() {
     std::fprintf(stderr, "convert image psmct32: OK\n");
 }
 
+// Builds a synthetic TIM2 v4 file (16 B header + picture blocks).
+// v4 picture block: 48 B header, then pixels, then CLUT.
+static std::vector<u8> makeV4File(u32 numImages) {
+    std::vector<u8> buf;
+    buf.reserve(16 + numImages * (48 + 65536 + 256));
+
+    Tm2FileHeader fh{};
+    fh.magic[0] = 'T'; fh.magic[1] = 'I'; fh.magic[2] = 'M'; fh.magic[3] = '2';
+    fh.version = 4;
+    fh.numImages = static_cast<u16>(numImages);
+    buf.insert(buf.end(), reinterpret_cast<const u8*>(&fh),
+               reinterpret_cast<const u8*>(&fh) + 16);
+
+    for (u32 b = 0; b < numImages; ++b) {
+        const u32 w = 4, h = 2;
+        const u32 imgSize = w * h / 2;          // 4-bit: 1 byte per 2 px
+        const u32 clutSize = 16 * 4;            // RGBA32, 16 entries
+        const u32 hdrSize = 48;
+        const u32 blockTotal = hdrSize + imgSize + clutSize;
+
+        Tm2PictureBlockV4 block{};
+        block.blockTotal = blockTotal;
+        block.clutSize = clutSize;
+        block.imgSize = imgSize;
+        block.hdrSize = static_cast<u16>(hdrSize);
+        block.clutColors = 16;
+        block.mipmapCount = 0;
+        block.clutType = 0x02;                  // RGBA8888
+        block.imgType = 0x00;
+        block.imageWidth = static_cast<u16>(w);
+        block.imageHeight = static_cast<u16>(h);
+        block.gsTex0 = 0x14ull << 20;           // PSM PSMT4
+
+        buf.insert(buf.end(), reinterpret_cast<const u8*>(&block),
+                   reinterpret_cast<const u8*>(&block) + sizeof(Tm2PictureBlockV4));
+
+        // pixels: 2 px per byte; low nibble = even pixel (verified on real ICO v4)
+        const u8 pixelByte = static_cast<u8>(0x10 + b * 0x01);  // index1|index0
+        for (u32 i = 0; i < imgSize; ++i) {
+            buf.push_back(static_cast<u8>(pixelByte + i));
+        }
+
+        // CLUT: 16 RGBA32 entries
+        for (u32 c = 0; c < 16; ++c) {
+            buf.push_back(static_cast<u8>(c * 10 + b));
+            buf.push_back(0);
+            buf.push_back(0);
+            buf.push_back(255);
+        }
+    }
+    return buf;
+}
+
+static void test_parse_v4_single() {
+    std::vector<u8> buf = makeV4File(1);
+
+    Tm2File file{};
+    assert(Tm2Parser::parse(buf.data(), static_cast<u32>(buf.size()), file));
+    assert(file.header.version == 4);
+    assert(file.header.imageCount() == 1);
+    assert(Tm2Parser::firstPictureOffset(file.header) == 16);
+
+    const Tm2Image& img = file.images[0];
+    assert(img.header.width() == 4);
+    assert(img.header.height() == 2);
+    assert(img.blockTotal == 48 + 4 + 64);
+    assert(img.pixelData != nullptr);
+    assert(img.pixelDataSize == 4);
+    assert(img.clut.data != nullptr);
+    assert(img.clut.numEntries == 16);
+    assert(img.clut.format == Tm2ClutFormat::RGBA32);
+    assert(static_cast<u32>(img.pixelData - buf.data()) == 16 + 48);
+
+    Tm2Texture tex{};
+    assert(Tm2Converter::convertImage(img, tex));
+    assert(tex.rgbaData.size() == 4 * 2 * 4);
+    // pixel 0 (even) = low nibble of byte 0 = 0x00 -> clut[0] -> (0,0,0)
+    assert(tex.rgbaData[0] == 0);
+    assert(tex.rgbaData[1] == 0);
+    assert(tex.rgbaData[2] == 0);
+    // pixel 1 (odd) = high nibble of byte 0 = 0x01 -> clut[1] -> (10,0,0)
+    assert(tex.rgbaData[4] == 10);
+    assert(tex.rgbaData[7] == 255);
+
+    std::fprintf(stderr, "parse v4 single: OK\n");
+}
+
+static void test_parse_v4_multi() {
+    std::vector<u8> buf = makeV4File(2);
+
+    Tm2File file{};
+    assert(Tm2Parser::parse(buf.data(), static_cast<u32>(buf.size()), file));
+    assert(file.header.imageCount() == 2);
+    assert(file.images.size() == 2);
+
+    const u32 expectedBlock = 48 + 4 + 64;
+    assert((file.images[0].blockTotal) == expectedBlock);
+    assert((file.images[1].blockTotal) == expectedBlock);
+    assert(static_cast<u32>(file.images[1].pixelData - buf.data())
+           == 16 + expectedBlock + 48);
+
+    Tm2Texture tex{};
+    assert(Tm2Converter::convertImage(file.images[1], tex));
+    // byte begins 0x11: even pixel -> index 1 (10,0,0)
+    assert(tex.rgbaData[0] == 10);
+
+    std::fprintf(stderr, "parse v4 multi: OK\n");
+}
+
+static void test_v4_nibble_low_first() {
+    // Even pixel reads the LOW nibble (PS2/OpenKh convention).
+    // src byte 0x10 => even pixel = index 0, odd pixel = index 1.
+    const u32 w = 4, h = 1;
+    std::vector<u8> src = {0x10, 0x32};
+    Tm2Clut clut{};
+    std::vector<u8> clutData = {
+        100, 0, 0, 255,
+        0, 100, 0, 255,
+        0, 0, 100, 255,
+        100, 100, 100, 255,
+    };
+    clut.data = clutData.data();
+    clut.numEntries = 4;
+    clut.format = Tm2ClutFormat::RGBA32;
+
+    std::vector<u8> out;
+    Tm2Converter::convertPSMT4(src.data(), w, h, clut, out);
+    // pixel0 = index0 (red), pixel1 = index1 (green), pixel2 = index2 (blue), pixel3 = index3 (gray)
+    assert(out[0] == 100 && out[1] == 0 && out[2] == 0);
+    assert(out[4] == 0 && out[5] == 100 && out[6] == 0);
+    assert(out[8] == 0 && out[9] == 0 && out[10] == 100);
+    assert(out[12] == 100 && out[13] == 100 && out[14] == 100);
+
+    std::fprintf(stderr, "v4 nibble low-first: OK\n");
+}
+
 static void test_deswizzle_roundtrip_psmct32() {
     const u32 w = 32, h = 32;
     std::vector<u8> linear(w * h * 4);
@@ -348,6 +484,9 @@ int main() {
     test_convert_clut32();
     test_convert_clut16();
     test_convert_image_psmct32();
+    test_parse_v4_single();
+    test_parse_v4_multi();
+    test_v4_nibble_low_first();
     // TODO: fix GS page layout constants (current impl uses 128x128 pages / 32x32 blocks,
     // actual PS2 PSMCT32 is 64x32 pages / 8x2 blocks)
     // test_deswizzle_roundtrip_psmct32();
