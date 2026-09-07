@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/SceneAssetStore.h"
 #include "game/IsysGObj.h"
 
 #include <array>
@@ -114,6 +115,19 @@ public:
     void clearRequests();
     std::size_t pendingRequestCount() const;
 
+    /*
+     * Binds the host-side asset composition for a scene. This is the native
+     * seam where the semantic loader acquires the real room geometry: after
+     * execute()/initSceneGObj() creates the GObjs for a requested scene, the
+     * bound mesh list is what the renderer should draw for that scene.
+     * Returns false when store has no entry for sceneId.
+     */
+    bool bindSceneAssets(const ico::engine::SceneAssetStore& store, u32 sceneId);
+    bool hasBoundAssets(u32 sceneId) const;
+    std::size_t boundAssetCount(u32 sceneId) const;
+    const ico::engine::SceneAssetEntry* boundAsset(u32 sceneId,
+                                                   std::size_t index) const;
+
     bool execute();
     std::size_t initSceneGObj(u32 sceneId);
     std::size_t hotInitSceneObjects(u32 sceneId) const;
@@ -148,4 +162,10 @@ private:
         u32 sceneId;
     };
     std::vector<SceneGObjSource> m_sceneGObjSources;
+
+    struct SceneAssetBinding {
+        u32 sceneId;
+        std::vector<ico::engine::SceneAssetEntry> assets;
+    };
+    std::vector<SceneAssetBinding> m_assetBindings;
 };

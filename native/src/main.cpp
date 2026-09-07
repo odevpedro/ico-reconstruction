@@ -1,14 +1,26 @@
+#ifdef ICO_HAS_OPENGL
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
+#undef None
+#undef Bool
+#undef True
+#undef False
+#undef Status
+#undef Always
+#undef Never
+
 #include "runtime/IcoRuntime.h"
 #include "runtime/Logger.h"
 #include <cstdio>
 
-#ifdef ICO_HAS_OPENGL
 #include "engine/GifPacket.h"
 #include "engine/OpenGLBackend.h"
 #include "engine/Ps2oMesh.h"
 #include "engine/RenderBackend.h"
+#include "engine/SceneAssetStore.h"
 #include "engine/Tm2Converter.h"
 #include "engine/Tm2Format.h"
+#include "game/KanbanSceneLoader.h"
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -17,91 +29,190 @@
 #include <fstream>
 #include <thread>
 #include <vector>
+#else
+#include "runtime/IcoRuntime.h"
+#include "runtime/Logger.h"
+#include <cstdio>
 #endif
 
 namespace {
 
 #ifdef ICO_HAS_OPENGL
-int runMeshDemo(const char* p2oPath, u32 frames, const char* shotPath, bool uvTest, bool matTest, const char* tm2Path) {
+
+struct ScenePiece {
+    ico::engine::Ps2oMesh mesh;
+    std::string name;
+    std::vector<ico::engine::TextureHandle> texByMat;
+};
+
+// Pre-computed per-texture draw geometry. All triangles that share a texture
+// handle are concatenated into one vertex/index block so the render loop can
+// emit a single drawIndexed per texture (one state bind per flush) instead of
+// re-deriving per-mesh/per-material vectors every frame.
+struct TextureBatch {
+    ico::engine::TextureHandle texture;
+    std::vector<ico::engine::RenderVertex> vertices;
+    std::vector<uint32_t> indices;
+};
+
+// Loads a TM2 into a texture handle (no-op on kNullTexture result).
+ico::engine::TextureHandle loadTm2Tex(ico::engine::OpenGLBackend& backend,
+                                      const std::string& path) {
+    using namespace ico::engine;
+    std::ifstream f(path, std::ios::binary);
+    if (!f) return kNullTexture;
+    f.seekg(0, std::ios::end);
+    const std::streamoff sz = f.tellg();
+    f.seekg(0, std::ios::beg);
+    if (sz <= 0) return kNullTexture;
+    std::vector<u8> buf(static_cast<size_t>(sz));
+    f.read(reinterpret_cast<char*>(buf.data()), sz);
+    Tm2File file{};
+    if (!Tm2Parser::parse(buf.data(), static_cast<u32>(buf.size()), file) || file.images.empty())
+        return kNullTexture;
+    Tm2Texture tex{};
+    if (!Tm2Converter::convertImage(file.images[0], tex) || tex.rgbaData.empty())
+        return kNullTexture;
+    TextureDesc desc{};
+    desc.width = tex.width; desc.height = tex.height;
+    desc.format = TextureFormat::PSMCT32;
+    desc.data = tex.rgbaData.data(); desc.dataSize = static_cast<u32>(tex.rgbaData.size());
+    desc.generateMipmaps = false;
+    TextureHandle h = backend.createTexture(desc);
+    std::fprintf(stderr, "main: loaded TM2 %s (%ux%u)\n", path.c_str(), tex.width, tex.height);
+    return h;
+}
+
+// Per-piece scene render: draws every piece every frame, binding the texture
+// that the piece's material name table maps to material index f.
+int runSceneDemo(const std::vector<std::string>& piecePaths,
+                 const std::string& texDir,
+                 u32 frames, const char* shotPath, bool uvTest,
+                 float camAngleRad, bool fitMacro) {
     using namespace ico::engine;
 
-    Ps2oMesh mesh;
-    if (!loadPs2oMeshFromFile(p2oPath, mesh)) {
-        std::fprintf(stderr, "main: failed to load PS2O mesh %s\n", p2oPath);
+    // Load all pieces.
+    std::vector<ScenePiece> pieces;
+    for (const auto& path : piecePaths) {
+        ScenePiece sp;
+        sp.name = path;
+        if (!loadPs2oMeshFromFile(path.c_str(), sp.mesh)) {
+            std::fprintf(stderr, "main: failed to load PS2O mesh %s\n", path.c_str());
+            continue;
+        }
+        uint32_t maxMat = 0;
+        for (auto m : sp.mesh.triMaterials) if (m > maxMat) maxMat = m;
+        sp.texByMat.assign(maxMat + 1, kNullTexture);
+        std::fprintf(stderr, "main: piece %s: %u verts, %u tris, %u submeshes, "
+                             "%u material names, fmax=%u\n",
+                     path.c_str(),
+                     static_cast<uint32_t>(sp.mesh.vertexCount),
+                     static_cast<uint32_t>(sp.mesh.triangles.size() / 3),
+                     sp.mesh.subMeshCount,
+                     static_cast<uint32_t>(sp.mesh.materialNames.size()), maxMat);
+        for (size_t i = 0; i < sp.mesh.materialNames.size(); ++i) {
+            std::fprintf(stderr, "main:   material[%zu] -> %s.tm2\n",
+                         i, sp.mesh.materialNames[i].c_str());
+        }
+        pieces.push_back(std::move(sp));
+    }
+    if (pieces.empty()) {
+        std::fprintf(stderr, "main: no pieces loaded\n");
         return 1;
     }
 
-    const uint32_t nv = mesh.vertexCount;
-    const uint32_t triCount = static_cast<uint32_t>(mesh.triangles.size() / 3);
-    const uint32_t uvCount = static_cast<uint32_t>(mesh.uvs.size() / 2);
-    const uint32_t matCount = static_cast<uint32_t>(mesh.triMaterials.size());
-    std::fprintf(stderr, "main: PS2O %s: %u verts, %u triangles, %u quads, "
-                         "%u submeshes, %u uvs, %u triMaterials\n",
-                 p2oPath, nv, triCount,
-                 static_cast<uint32_t>(mesh.quadRecords.size() / 8),
-                 mesh.subMeshCount, uvCount, matCount);
-
-    // Bounding box of triangle-referenced vertices (the decoded room piece).
+    // Camera fit target. Default orbits the room piece (p1). With --fit-macro
+    // the camera centers the union bbox of ALL loaded pieces, so the whole
+    // stage (p2 backdrop included) is framed from afar.
+    const ScenePiece* fitPiece = nullptr;
+    if (!fitMacro) {
+        fitPiece = &pieces.front();
+        for (const auto& sp : pieces) {
+            if (sp.name.find("170_st00a_p1") != std::string::npos ||
+                sp.name.find("_p1.") != std::string::npos) {
+                fitPiece = &sp;
+                break;
+            }
+        }
+    }
     float minX = 1e30f, maxX = -1e30f;
     float minY = 1e30f, maxY = -1e30f;
     float minZ = 1e30f, maxZ = -1e30f;
-    for (uint32_t i = 0; i < mesh.triangles.size(); ++i) {
-        const uint32_t vi = mesh.triangles[i];
-        const float x = mesh.positions[vi * 3 + 0];
-        const float y = mesh.positions[vi * 3 + 1];
-        const float z = mesh.positions[vi * 3 + 2];
-        minX = std::min(minX, x); maxX = std::max(maxX, x);
-        minY = std::min(minY, y); maxY = std::max(maxY, y);
-        minZ = std::min(minZ, z); maxZ = std::max(maxZ, z);
+    if (fitMacro) {
+        for (const auto& sp : pieces) {
+            const auto& m = sp.mesh;
+            for (uint32_t i = 0; i < m.triangles.size(); ++i) {
+                const uint32_t vi = m.triangles[i];
+                minX = std::min(minX, m.positions[vi * 3 + 0]);
+                maxX = std::max(maxX, m.positions[vi * 3 + 0]);
+                minY = std::min(minY, m.positions[vi * 3 + 1]);
+                maxY = std::max(maxY, m.positions[vi * 3 + 1]);
+                minZ = std::min(minZ, m.positions[vi * 3 + 2]);
+                maxZ = std::max(maxZ, m.positions[vi * 3 + 2]);
+            }
+        }
+    } else {
+        const auto& fitMesh = fitPiece->mesh;
+        for (uint32_t i = 0; i < fitMesh.triangles.size(); ++i) {
+            const uint32_t vi = fitMesh.triangles[i];
+            minX = std::min(minX, fitMesh.positions[vi * 3 + 0]);
+            maxX = std::max(maxX, fitMesh.positions[vi * 3 + 0]);
+            minY = std::min(minY, fitMesh.positions[vi * 3 + 1]);
+            maxY = std::max(maxY, fitMesh.positions[vi * 3 + 1]);
+            minZ = std::min(minZ, fitMesh.positions[vi * 3 + 2]);
+            maxZ = std::max(maxZ, fitMesh.positions[vi * 3 + 2]);
+        }
     }
     const float cx = (minX + maxX) * 0.5f;
     const float cy = (minY + maxY) * 0.5f;
     const float cz = (minZ + maxZ) * 0.5f;
     const float extent = std::max({maxX - minX, maxY - minY, maxZ - minZ, 1.0f});
-    const float dist = extent * 1.1f;
+    const float dist = extent * 1.15f;
+    std::fprintf(stderr, "main: camera fit %s: cx=%g cy=%g cz=%g extent=%g dist=%g\n",
+                 fitMacro ? "macro(union)" : "p1(room)",
+                 cx, cy, cz, extent, dist);
 
     OpenGLBackend backend;
     if (!backend.initialize(kPs2ScreenWidth, kPs2ScreenHeight)) {
         std::fprintf(stderr, "main: OpenGL backend failed to initialize\n");
         return 1;
     }
-
     const Matrix4x4 proj = Matrix4x4::perspective(70.0f, 640.0f / 448.0f, 1.0f, dist * 10.0f);
+    (void)proj;
     backend.setViewport(0, 0, kPs2ScreenWidth, kPs2ScreenHeight);
     backend.setDepthTest(GSDepthTest::Less, true);
 
-    // Load TM2 texture if provided.
-    TextureHandle texHandle = kNullTexture;
-    u32 texW = 0, texH = 0;
-    if (tm2Path && *tm2Path) {
-        std::ifstream f(tm2Path, std::ios::binary);
-        if (f) {
-            f.seekg(0, std::ios::end);
-            const std::streamoff sz = f.tellg();
-            f.seekg(0, std::ios::beg);
-            std::vector<u8> buf(static_cast<size_t>(sz));
-            f.read(reinterpret_cast<char*>(buf.data()), sz);
-            Tm2File file{};
-            if (Tm2Parser::parse(buf.data(), static_cast<u32>(buf.size()), file) && !file.images.empty()) {
-                Tm2Texture tex{};
-                if (Tm2Converter::convertImage(file.images[0], tex) && !tex.rgbaData.empty()) {
-                    TextureDesc desc{};
-                    desc.width = tex.width; desc.height = tex.height;
-                    desc.format = TextureFormat::PSMCT32;
-                    desc.data = tex.rgbaData.data(); desc.dataSize = static_cast<u32>(tex.rgbaData.size());
-                    desc.generateMipmaps = false;
-                    texHandle = backend.createTexture(desc);
-                    texW = tex.width; texH = tex.height;
-                    std::fprintf(stderr, "main: loaded TM2 %s (%ux%u)\n", tm2Path, texW, texH);
-                }
+    // Texture cache keyed by material name (shared across pieces).
+    std::vector<std::pair<std::string, TextureHandle>> texCache;
+    auto texForName = [&](const std::string& name) -> TextureHandle {
+        for (const auto& kv : texCache) if (kv.first == name) return kv.second;
+        std::string path = texDir.empty() ? (name + ".tm2") : (texDir + "/" + name + ".tm2");
+        TextureHandle h = loadTm2Tex(backend, path);
+        texCache.emplace_back(name, h);
+        if (h == kNullTexture)
+            std::fprintf(stderr, "main: missing texture %s\n", path.c_str());
+        return h;
+    };
+
+    // Resolve per-piece, per-material textures from the piece's name table.
+    // Pieces with no explicit material names (e.g. the 0str decorative
+    // structures) default every material slot to the stage texture st0_a.
+    for (auto& sp : pieces) {
+        const size_t matCount = sp.texByMat.size();
+        if (sp.mesh.materialNames.empty()) {
+            if (matCount > 0) {
+                const TextureHandle stage = texForName("st0_a");
+                for (size_t f = 0; f < matCount; ++f) sp.texByMat[f] = stage;
             }
+            continue;
         }
-        if (texHandle == kNullTexture) {
-            std::fprintf(stderr, "main: failed to load TM2 %s\n", tm2Path);
+        for (size_t f = 0; f < sp.mesh.materialNames.size() && f < matCount; ++f) {
+            sp.texByMat[f] = texForName(sp.mesh.materialNames[f]);
         }
     }
 
-    // UV-validation checkerboard (see --uv-test).
+    // UV-validation checkerboard (see --uv-test). Created before the geometry
+    // pre-pass so untextured materials can be tinted with it when enabled.
     TextureHandle checkerTex = kNullTexture;
     if (uvTest) {
         const int cw = 64, ch = 64;
@@ -130,61 +241,153 @@ int runMeshDemo(const char* p2oPath, u32 frames, const char* shotPath, bool uvTe
         std::fprintf(stderr, "main: UV-validation checkerboard texture %ux%u enabled\n", cw, ch);
     }
 
+    // Build a single concatenated vertex/index block per texture. Entries are
+    // ordered so that repeated binds of the same texture are adjacent, and
+    // texture-identical primitives across pieces/footprints share one block.
+    using namespace ico::engine;
+    auto buildBatches = [&](TextureHandle fallbackTex) -> std::vector<TextureBatch> {
+        std::vector<TextureBatch> batch;
+        for (const auto& sp : pieces) {
+            const auto& mesh = sp.mesh;
+            if (mesh.triangles.empty()) continue;
+            const uint32_t triCount = static_cast<uint32_t>(mesh.triangles.size() / 3);
+
+            int maxMat = 0;
+            for (auto m : mesh.triMaterials) if (m > maxMat) maxMat = m;
+
+            for (int f = 0; f <= maxMat; ++f) {
+                // Collect triangles of this material on this piece.
+                std::vector<uint32_t> matTris;
+                for (uint32_t t = 0; t < triCount; ++t)
+                    if ((int)mesh.triMaterials[t] == f) matTris.push_back(t);
+                if (matTris.empty()) continue;
+
+                TextureHandle tex = (f < (int)sp.texByMat.size())
+                    ? sp.texByMat[f] : kNullTexture;
+                if (tex == kNullTexture && fallbackTex != kNullTexture) tex = fallbackTex;
+
+                // Find or create a batch for this texture.
+                TextureBatch* tb = nullptr;
+                for (auto& b : batch) if (b.texture == tex) { tb = &b; break; }
+                if (tb == nullptr) {
+                    batch.push_back(TextureBatch{});
+                    tb = &batch.back();
+                    tb->texture = tex;
+                }
+
+                const uint32_t baseVert = static_cast<uint32_t>(tb->vertices.size());
+                // Backend drawIndexed consumes quads of 4 vertices ([A,B,C,C]
+                // degenerates to two triangles); emit 4 verts per source tri.
+                for (uint32_t gi = 0; gi < matTris.size(); ++gi) {
+                    uint32_t t = matTris[gi];
+                    const bool hasTexUV = mesh.triVertUVs.size() >= (t * 6 + 2);
+                    RenderVertex v[3]{};
+                    for (int s = 0; s < 3; ++s) {
+                        const uint32_t vi = mesh.triangles[t * 3 + s];
+                        v[s].x = mesh.positions[vi * 3 + 0];
+                        v[s].y = mesh.positions[vi * 3 + 1];
+                        v[s].z = mesh.positions[vi * 3 + 2];
+                        if (hasTexUV) {
+                            v[s].u = mesh.triVertUVs[t * 6 + s * 2 + 0];
+                            v[s].v = mesh.triVertUVs[t * 6 + s * 2 + 1];
+                        }
+                        v[s].r = 255; v[s].g = 255; v[s].b = 255; v[s].a = 255;
+                    }
+                    tb->vertices.push_back(v[0]);
+                    tb->vertices.push_back(v[1]);
+                    tb->vertices.push_back(v[2]);
+                    tb->vertices.push_back(v[2]); // degenerate 4th
+                    const uint32_t bv = baseVert + gi * 4;
+                    tb->indices.push_back(bv + 0);
+                    tb->indices.push_back(bv + 1);
+                    tb->indices.push_back(bv + 2);
+                    tb->indices.push_back(bv + 3);
+                }
+            }
+        }
+        return batch;
+    };
+
+    // Checkerboard is applied only when --uv-test is set; otherwise the loop
+    // assigns kNullTexture for untextured batches (white).
+    const std::vector<TextureBatch> textureBatches = buildBatches(
+        uvTest ? checkerTex : kNullTexture);
+
     const auto frameTime = std::chrono::milliseconds(16);
     std::vector<uint8_t> tmpFrame(kPs2ScreenWidth * kPs2ScreenHeight * 3);
+
+    // Interactive camera state (zoom/orbit via keyboard + mouse wheel).
+    float curDist = dist;
+    float curAngle = (camAngleRad > 0.0f) ? camAngleRad : 0.0f;
+
+    auto pollCameraInput = [&]() {
+        void* dispV = backend.getNativeDisplay();
+        const unsigned long winU = backend.getNativeWindow();
+        if (!dispV || !winU) return;
+        ::Display* d = static_cast<::Display*>(dispV);
+        ::Window w = static_cast<::Window>(winU);
+        while (::XPending(d) > 0) {
+            XEvent ev;
+            ::XNextEvent(d, &ev);
+            if (ev.type == KeyPress) {
+                const ::KeySym ks = ::XLookupKeysym(&ev.xkey, 0);
+                if (ks == XK_plus || ks == XK_equal || ks == XK_KP_Add ||
+                    ks == XK_z || ks == XK_Z || ks == XK_Page_Up) {
+                    curDist *= 0.90f;
+                } else if (ks == XK_minus || ks == XK_underscore || ks == XK_KP_Subtract ||
+                           ks == XK_x || ks == XK_X || ks == XK_Page_Down) {
+                    curDist /= 0.90f;
+                } else if (ks == XK_Left) {
+                    curAngle += 0.06f;
+                } else if (ks == XK_Right) {
+                    curAngle -= 0.06f;
+                } else if (ks == XK_q || ks == XK_Q || ks == XK_Escape) {
+                    exit(0);
+                }
+                std::fprintf(stderr, "main: cam dist=%.1f ang=%.2f rad\n", curDist, curAngle);
+            } else if (ev.type == ButtonPress) {
+                if (ev.xbutton.button == Button4) {          // wheel up = zoom in
+                    curDist *= 0.90f;
+                } else if (ev.xbutton.button == Button5) {   // wheel down = zoom out
+                    curDist /= 0.90f;
+                }
+                std::fprintf(stderr, "main: cam dist=%.1f ang=%.2f rad\n", curDist, curAngle);
+            }
+        }
+    };
+    std::fprintf(stderr, "main: controls: Z/+/wheel-up zoom-in, X/-/wheel-down zoom-out, arrows orbit, Q/Esc quit\n");
+
     for (u32 f = 0; frames == 0 || f < frames; ++f) {
         backend.beginFrame();
         backend.clear(10, 12, 18, 255);
 
-        const float ang = 2.0f * std::fmod(static_cast<float>(f) / 300.0f, 1.0f);
-        const float eyeX = cx + dist * std::cos(ang);
-        const float eyeZ = cz + dist * std::sin(ang);
-        const float eye[3] = { eyeX, cy + dist * 0.15f, eyeZ };
+        pollCameraInput();
+
+        const float ang = curAngle;
+        const float eyeX = cx + curDist * std::cos(ang);
+        const float eyeZ = cz + curDist * std::sin(ang);
+        const float eye[3] = { eyeX, cy + curDist * 0.15f, eyeZ };
+        const Matrix4x4 proj2 = Matrix4x4::perspective(70.0f, 640.0f / 448.0f,
+                                                       curDist * 0.01f,
+                                                       curDist * 10.0f);
         const float tgt[3] = { cx, cy, cz };
         const float up[3] = { 0.0f, 1.0f, 0.0f };
         const Matrix4x4 view = Matrix4x4::lookAt(eye, tgt, up);
         const Matrix4x4 model = Matrix4x4::identity();
-        backend.setMatrices(proj, view, model);
+        backend.setMatrices(proj2, view, model);
 
-        for (uint32_t t = 0; t < triCount; ++t) {
-            const uint32_t i0 = mesh.triangles[t * 3 + 0];
-            const uint32_t i1 = mesh.triangles[t * 3 + 1];
-            const uint32_t i2 = mesh.triangles[t * 3 + 2];
-
-            // Use UVs from triVertUVs if available; otherwise fallback to mesh.uvs.
-            const bool hasTexUV = mesh.triVertUVs.size() >= (t * 6 + 2);
-            RenderVertex v[4] = {};
-            for (int s = 0; s < 3; ++s) {
-                const uint32_t vi = mesh.triangles[t * 3 + s];
-                v[s].x = mesh.positions[vi * 3 + 0];
-                v[s].y = mesh.positions[vi * 3 + 1];
-                v[s].z = mesh.positions[vi * 3 + 2];
-                if (hasTexUV) {
-                    v[s].u = mesh.triVertUVs[t * 6 + s * 2 + 0];
-                    v[s].v = mesh.triVertUVs[t * 6 + s * 2 + 1];
-                } else if (uvCount > 0 && vi * 2 + 1 < mesh.uvs.size()) {
-                    v[s].u = mesh.uvs[vi * 2 + 0];
-                    v[s].v = mesh.uvs[vi * 2 + 1];
-                }
-            }
-            v[3] = v[2];
-
-            TextureHandle useTex = kNullTexture;
-            if (texHandle != kNullTexture) useTex = texHandle;
-            else if (uvTest) useTex = checkerTex;
-
-            u8 r = 255, g = 255, b = 255;
-            if (!hasTexUV && !texHandle) {
-                const float yAvg = (mesh.positions[i0 * 3 + 1] +
-                                     mesh.positions[i1 * 3 + 1] +
-                                     mesh.positions[i2 * 3 + 1]) / 3.0f;
-                const float k = (yAvg - minY) / std::max(maxY - minY, 1e-6f);
-                r = static_cast<u8>(60 + 160 * k);
-                g = static_cast<u8>(60 + 120 * (1.0f - k));
-                b = static_cast<u8>(120 + 60 * k);
-            }
-            backend.drawPrimitive(GSPrimitive::Triangle, RenderList::Opaque,
-                                  v, 4, useTex, r, g, b, 255);
+        // Single draw per pre-computed per-texture block: one state bind +
+        // one flush per texture instead of per-mesh/per-material vectors.
+        for (const auto& tb : textureBatches) {
+            if (tb.indices.empty()) continue;
+            TextureHandle tex = (tb.texture != kNullTexture) ? tb.texture
+                                : (uvTest ? checkerTex : kNullTexture);
+            backend.bindTexture(tex, 0);
+            backend.drawIndexed(GSPrimitive::Triangle, RenderList::Opaque,
+                                tb.indices.data(),
+                                static_cast<uint32_t>(tb.indices.size()),
+                                tb.vertices.data(), 0,
+                                tb.texture, 255, 255, 255, 255);
         }
 
         backend.endFrame();
@@ -192,7 +395,6 @@ int runMeshDemo(const char* p2oPath, u32 frames, const char* shotPath, bool uvTe
         std::this_thread::sleep_for(frameTime);
     }
 
-    // Capture a proof-of-render frame (PPM) if requested.
     if (shotPath != nullptr && backend.captureFrameRGB(tmpFrame.data(), kPs2ScreenWidth, kPs2ScreenHeight)) {
         std::FILE* pf = std::fopen(shotPath, "wb");
         if (pf) {
@@ -204,9 +406,14 @@ int runMeshDemo(const char* p2oPath, u32 frames, const char* shotPath, bool uvTe
     }
 
     if (checkerTex != kNullTexture) backend.destroyTexture(checkerTex);
-    if (texHandle != kNullTexture) backend.destroyTexture(texHandle);
+    for (const auto& kv : texCache)
+        if (kv.second != kNullTexture) backend.destroyTexture(kv.second);
     backend.shutdown();
     return 0;
+}
+
+int runMeshDemo(const char* p2oPath, u32 frames, const char* shotPath, bool uvTest, bool matTest, const char* tm2Path) {
+    return runSceneDemo({ p2oPath }, tm2Path ? std::string(tm2Path) : std::string(), frames, shotPath, uvTest, -1.0f, false);
 }
 
 int runOpenGLDemo(int argc, char* argv[]) {
@@ -216,8 +423,12 @@ int runOpenGLDemo(int argc, char* argv[]) {
     const char* tm2Path = nullptr;
     const char* p2oPath = nullptr;
     const char* shotPath = nullptr;
+    const char* sceneDir = nullptr;
+    const char* texDir = nullptr;
     bool uvTest = false;
     bool matTest = false;
+    bool fitMacro = false;
+    float camAngleRad = -1.0f;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
             frames = static_cast<u32>(std::atoi(argv[i + 1]));
@@ -227,11 +438,126 @@ int runOpenGLDemo(int argc, char* argv[]) {
             p2oPath = argv[i + 1];
         } else if (std::strcmp(argv[i], "--shot") == 0 && i + 1 < argc) {
             shotPath = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--scene") == 0 && i + 1 < argc) {
+            sceneDir = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--tex-dir") == 0 && i + 1 < argc) {
+            texDir = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--cam-angle") == 0 && i + 1 < argc) {
+            camAngleRad = static_cast<float>(std::atof(argv[i + 1])) * 3.14159265f / 180.0f;
         } else if (std::strcmp(argv[i], "--uv-test") == 0) {
             uvTest = true;
         } else if (std::strcmp(argv[i], "--mat-test") == 0) {
             matTest = true;
+        } else if (std::strcmp(argv[i], "--fit-macro") == 0) {
+            fitMacro = true;
         }
+    }
+
+    // Multi-piece scene mode: --scene DIR loads every *.p2o in DIR and
+    // renders all of them together, each with its own per-material textures
+    // resolved by name from the piece's material table. When a scene manifest
+    // (stgst00a.manifest) is present next to the pieces, the mesh list is
+    // taken from it via SceneAssetStore instead of the baked-in kOrder below,
+    // so the composition is data-driven like the semantic loader expects.
+    if (sceneDir != nullptr) {
+        std::vector<std::string> pieces;
+        const char* sceneCandidates[] = {
+            "assets/scene/pieces/", "../native/assets/scene/pieces/", nullptr
+        };
+        std::string dir = sceneDir;
+        if (std::strchr(sceneDir, '/') == nullptr) {
+            for (int c = 0; sceneCandidates[c] != nullptr; ++c) {
+                std::ifstream f(std::string(sceneCandidates[c]) + "169_door.p2o");
+                if (f.good()) { dir = sceneCandidates[c]; break; }
+            }
+        } else if (!dir.empty() && dir.back() != '/') {
+            dir += '/';
+        }
+        std::string path = dir + "169_door.p2o";
+        std::ifstream test(path);
+        if (!test.good()) {
+            std::fprintf(stderr, "main: --scene dir '%s' has no 169_door.p2o\n", dir.c_str());
+            return 1;
+        }
+
+        // Data-driven composition (KanbanSceneLoader seam): prefer the manifest.
+        ico::engine::SceneAssetStore store;
+        const char* manifestCandidates[] = {
+            "assets/scene/stgst00a.manifest",
+            "native/assets/scene/stgst00a.manifest",
+            "../native/assets/scene/stgst00a.manifest",
+            nullptr
+        };
+        std::string manifestPath;
+        for (int c = 0; manifestCandidates[c] != nullptr; ++c) {
+            std::ifstream f(manifestCandidates[c]);
+            if (f.good()) { manifestPath = manifestCandidates[c]; break; }
+        }
+        if (!manifestPath.empty() && store.parse(manifestPath.c_str())) {
+            const u32 exhibitionScene = 0x0Fu;
+            const std::size_t count = store.sceneAssetCount(exhibitionScene);
+            std::fprintf(stderr, "main: scene composition from manifest %s "
+                                 "(scene 0x0F, %zu pieces)\n",
+                         manifestPath.c_str(), count);
+            for (std::size_t i = 0; i < count; ++i) {
+                const ico::engine::SceneAssetEntry* entry =
+                    store.sceneAsset(exhibitionScene, i);
+                if (entry != nullptr) {
+                    std::ifstream f(entry->meshPath.c_str());
+                    if (f.good()) pieces.push_back(entry->meshPath);
+                }
+            }
+            if (pieces.empty()) {
+                std::fprintf(stderr, "main: manifest resolved 0 pieces; aborting\n");
+                return 1;
+            }
+        } else {
+            // Deterministic order: door, p1, p2, torches, windows, bridge.
+            static const char* kOrder[] = {
+            "169_door.p2o", "170_st00a_p1.p2o", "171_st00a_p2.p2o",
+            "172_st00a_torch1_add.p2o", "173_st00a_torch2_add.p2o",
+            "174_st00a_torch3_add.p2o", "175_st00a_window_flare.p2o",
+            "176_st00a_window_glow.p2o", "179_08_00_brdg.p2o",
+            // 0str decorative structures are already in world space; each pair
+            // (even/odd) is byte-identical, keep the first of each pair.
+            "128_0str01_s2.p2o", "130_0str02_s2.p2o", "132_0str03_s2.p2o",
+            "134_0str04_s2.p2o", "136_0str05_s2.p2o", "138_0str06_s2.p2o",
+            "141_0str07_s2.p2o", "144_0str08_s2.p2o", "147_0str09_s2.p2o",
+            "149_0str10_s2.p2o", "151_0str11_s2.p2o", "153_0str12_s2.p2o",
+            "155_0str13_s2.p2o", "157_0str14_s2.p2o", "160_0str15_s2.p2o",
+            "163_0str16_s2.p2o",
+            "140_0str06_s2_sd.p2o", "146_0str08_s2_sd.p2o",
+            "162_0str15_s2_sd.p2o",
+            nullptr
+        };
+        for (int c = 0; kOrder[c] != nullptr; ++c) {
+            std::string fp = dir + kOrder[c];
+            std::ifstream f(fp.c_str());
+            if (f.good()) pieces.push_back(fp);
+        }
+        }
+        const std::string td = texDir ? texDir : ((dir + "texture/"));
+        // Normalize: if pieces were taken from "<dir>pieces/", textures sit in
+        // a sibling "<dir>texture/" rather than "<dir>pieces/texture/".
+        std::string texDirResolved = td;
+        {
+            std::string alt = td;
+            const std::string pc("pieces/");
+            const size_t pos = alt.rfind(pc);
+            if (pos != std::string::npos) {
+                alt.replace(pos, pc.size(), "");
+                std::ifstream t(alt + "st0_a.tm2");
+                if (t.good()) texDirResolved = alt;
+            }
+            std::ifstream t(texDirResolved + "st0_a.tm2");
+            if (!t.good()) {
+                std::fprintf(stderr, "main: --scene texture dir '%s' has no st0_a.tm2\n",
+                             texDirResolved.c_str());
+                return 1;
+            }
+        }
+        return runSceneDemo(pieces, texDirResolved, frames, shotPath, uvTest,
+                            camAngleRad, fitMacro);
     }
 
     // Auto-discover .p2o mesh in native/assets/ if not provided.
@@ -240,6 +566,7 @@ int runOpenGLDemo(int argc, char* argv[]) {
             "../native/assets/170_st00a_p1.p2o",
             "native/assets/170_st00a_p1.p2o",
             "assets/170_st00a_p1.p2o",
+            "assets/scene/pieces/170_st00a_p1.p2o",
             nullptr
         };
         for (int c = 0; candidates[c] != nullptr; ++c) {

@@ -1,5 +1,6 @@
 #include "engine/Ps2oMesh.h"
 
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -18,29 +19,123 @@ inline uint16_t rd16(const uint8_t* p) {
     return static_cast<uint16_t>(p[0]) | (static_cast<uint16_t>(p[1]) << 8);
 }
 
+// Extracts the ordered material texture names embedded in a PS2O file.
+// The material-name table is a series of records (stride 0x90 in p1) of the
+// form "<prefix><name>\0[\...path...]" where <prefix> is `?` (0x3F) or `>`
+// (0x3E), or the name may sit on a NUL boundary (subsequent torch records).
+// Two variants occur:
+//   1) path-style  — "...\texture\name\0"  (p1/p2/brdg/door/windows)
+//   2) name-only   — "?name\0<zeros>"      (torches)
+// Unified rule (validated against the byte-level tables on all 9 st00a
+// pieces): for each printable-ASCII run, take the trailing word
+// [a-z0-9_]{4,40} containing at least one letter (digits may lead), and
+// accept it iff (a) the run contains a backslash (path-style tail), or
+// (b) the word is immediately preceded by `?`/`>` inside the run, or (c) the
+// word starts the run on a NUL boundary of the file (name-only torch
+// records, where the *preceding* byte is NUL). Words that only match the
+// suffix pattern but sit inside binary floats (preceding byte != NUL) are
+// rejected. Dedup preserving file order == material index f order.
+void extractMaterialNames(const uint8_t* data, size_t size,
+                          std::vector<std::string>& out) {
+    out.clear();
+    std::vector<std::string> names;
+    size_t i = 0;
+    while (i < size) {
+        if (data[i] < 0x20 || data[i] > 0x7e) { ++i; continue; }
+        size_t j = i;
+        while (j < size && data[j] >= 0x20 && data[j] <= 0x7e) ++j;
+        std::string run(reinterpret_cast<const char*>(data + i), j - i);
+        std::string last;
+        bool accept = false;
+        if (run.find('\\') != std::string::npos) {
+            // Path-style: the component after the last backslash names texture.
+            last = run.substr(run.rfind('\\') + 1);
+            accept = true;
+        } else {
+            // Name-only: find a [?|>]word or word on a NUL-preceded boundary.
+            const size_t rl = run.size();
+            size_t k = 0;
+            while (k < rl) {
+                const bool letter = (run[k] >= 'a' && run[k] <= 'z');
+                const bool digit = (run[k] >= '0' && run[k] <= '9');
+                if (!letter && !digit) { ++k; continue; }
+                size_t k2 = k + 1;
+                while (k2 < rl) {
+                    const char c2 = run[k2];
+                    const bool od = (c2 >= '0' && c2 <= '9');
+                    const bool ou = (c2 == '_');
+                    const bool ol = (c2 >= 'a' && c2 <= 'z');
+                    if (!(od || ou || ol)) break;
+                    ++k2;
+                }
+                if (k2 == rl) {
+                    // Word runs to the end of the printable run => followed by
+                    // a terminator (<0x20, normally NUL) in the file.
+                    const bool pref = (k == 0) ? (i == 0 || data[i - 1] == 0x00)
+                                               : (run[k - 1] == '?' || run[k - 1] == '>');
+                    if (pref) { last = run.substr(k); accept = true; }
+                }
+                k = k2;
+            }
+        }
+        if (accept) {
+            bool ok = last.size() >= 4 && last.size() <= 40;
+            bool hasLetter = false;
+            for (char c : last) {
+                const bool d = (c >= '0' && c <= '9');
+                const bool u = (c == '_');
+                const bool l = (c >= 'a' && c <= 'z');
+                if (!(d || u || l)) { ok = false; break; }
+                if (l) hasLetter = true;
+            }
+            if (ok && hasLetter) {
+                // Reject truncated aliases from the OBJH submesh dispatch
+                // table: a candidate that is a suffix (>=4 chars) of an
+                // already-accepted material name is a copy/alias fragment
+                // (e.g. "uchi2" tail of "wall_fuchi2" in p1's OBJH region).
+                bool isAlias = false;
+                for (const auto& n : names) {
+                    if (n.size() >= 4 && last.size() >= 4 &&
+                        n.size() > last.size() &&
+                        n.compare(n.size() - last.size(), last.size(), last) == 0) {
+                        isAlias = true;
+                        break;
+                    }
+                }
+                if (!isAlias) {
+                    bool dup = false;
+                    for (const auto& n : names) if (n == last) { dup = true; break; }
+                    if (!dup) names.push_back(last);
+                }
+            }
+        }
+        i = j;
+    }
+    out = std::move(names);
+}
+
 // Per-material UV base offset, discovered in Rev.143 follow-up.
-// UV index for the k-th vertex within a strip of material f = k + offset[f].
-// Computed automatically by minimizing UV edge spread per material.
+// The UV array has dense interleaving (not grouped by material
+// in blocks). UV index = base + k where base is the material-specific
+// base offset and k is the triangle vertex index (0..2).
+// The base offsets are found by sampling and minimizing UV edge
+// spread per material group.
 void computeMaterialUVOffsets(const std::vector<uint16_t>& materials,
                               const std::vector<float>& uvs,
                               const std::vector<uint32_t>& triangles,
                               const std::vector<uint16_t>& triMaterials,
                               std::vector<float>& triVertUVs) {
-    // Group triangles by material to find best offset per material.
-    // For each material, sample strips and find the UV base that
-    // minimizes the mean edge spread of UV coordinates.
-    const int kSampleTris = 50;
-    const int kSearchStep = 4;
-
     // Find unique materials
     int maxMat = 0;
     for (auto m : triMaterials) if (m > maxMat) maxMat = m;
     maxMat++;
 
-    std::vector<int> bestOffset(maxMat + 1, 0);
+    std::vector<int> bestOffset(maxMat, 0);
 
-    for (int f = 0; f <= maxMat; ++f) {
-        // Collect triangles with this material
+    // For each material, find the best UV base offset by minimizing
+    // mean edge spread of sampled triangles.
+    for (int f = 0; f < maxMat; ++f) {
+        // Collect triangle indices with this material
         std::vector<int> matTris;
         for (size_t t = 0; t < triMaterials.size(); ++t) {
             if (triMaterials[t] == (uint16_t)f) matTris.push_back((int)t);
@@ -50,25 +145,28 @@ void computeMaterialUVOffsets(const std::vector<uint16_t>& materials,
         float bestSpread = std::numeric_limits<float>::max();
         int bestOff = 0;
 
-        for (int off = 0; off < (int)uvs.size() / 2; off += kSearchStep) {
+        // Search all possible offsets
+        int maxOff = std::min((int)uvs.size() / 2 - 3, 20000);
+        for (int off = 0; off < maxOff; ++off) {
             float totSpread = 0.0f;
             int cnt = 0;
-            int sampleLimit = std::min((int)matTris.size(), kSampleTris);
+            // Sample up to 200 triangles for this material
+            int sampleLimit = std::min((int)matTris.size(), 200);
             for (int si = 0; si < sampleLimit; ++si) {
                 int t = matTris[si];
                 const uint32_t* tri = &triangles[t * 3];
+                float spd[3];
                 for (int k = 0; k < 3; ++k) {
                     int idx = off + k;
-                    if (idx * 2 + 1 >= (int)uvs.size()) break;
-                    // Get UV for this vertex
+                    if (idx * 2 + 1 >= (int)uvs.size()) { spd[k] = 0; continue; }
                     float u0 = uvs[idx * 2];
                     float v0 = uvs[idx * 2 + 1];
                     int next = off + ((k + 1) % 3);
-                    if (next * 2 + 1 >= (int)uvs.size()) break;
+                    if (next * 2 + 1 >= (int)uvs.size()) { spd[k] = 0; continue; }
                     float u1 = uvs[next * 2];
                     float v1 = uvs[next * 2 + 1];
-                    float spd = std::hypot(u0 - u1, v0 - v1);
-                    totSpread += spd;
+                    spd[k] = std::hypot(u0 - u1, v0 - v1);
+                    totSpread += spd[k];
                     cnt++;
                 }
             }
@@ -80,11 +178,11 @@ void computeMaterialUVOffsets(const std::vector<uint16_t>& materials,
         bestOffset[f] = bestOff;
     }
 
-    // Now compute triVertUVs for every triangle vertex using the offsets
+    // Build triVertUVs using the best offsets per material
     triVertUVs.resize(triangles.size() * 2);
     for (size_t t = 0; t < triMaterials.size(); ++t) {
         int f = triMaterials[t];
-        int off = (f <= maxMat) ? bestOffset[f] : 0;
+        int off = (f < maxMat) ? bestOffset[f] : 0;
         const uint32_t* tri = &triangles[t * 3];
         for (int k = 0; k < 3; ++k) {
             int idx = off + k;
@@ -229,6 +327,8 @@ bool loadPs2oMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh) {
     computeMaterialUVOffsets(mesh.triMaterials, mesh.uvs,
                              mesh.triangles, mesh.triMaterials,
                              mesh.triVertUVs);
+
+    extractMaterialNames(data, size, mesh.materialNames);
 
     mesh.valid = true;
     return true;

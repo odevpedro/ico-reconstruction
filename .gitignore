@@ -30,6 +30,15 @@ reports/
 tmp/
 temp/
 
+# Extracted game assets (proprietary: never track/commit)
+*.p2o
+*.tm2
+native/native/
+
+# Local build trees (never track generated artifacts)
+build/
+Testing/
+
 # Emulator/debugger state
 sstates/
 memcards/

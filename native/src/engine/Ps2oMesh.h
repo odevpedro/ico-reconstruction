@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace ico::engine {
@@ -49,6 +50,12 @@ struct Ps2oMesh {
     // Secondary face records (kept raw for p2 quad/fan semantics, not yet
     // populated by the spine-a decode).
     std::vector<uint16_t> quadRecords;
+    // Ordered material texture names, one per material index `f`. Extracted
+    // from the embedded material-name table (`name\0...\texture\<name>\0`
+    // records whose last path component names the TM2 file). Empty when the
+    // file carries no path-style material strings (e.g. 0str structures).
+    // Index access: texture for `f` = materialNames[f] when f < size.
+    std::vector<std::string> materialNames;
     uint32_t subMeshCount = 0;
     uint32_t vertexCount = 0;
     bool valid = false;

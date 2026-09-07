@@ -112,6 +112,70 @@ std::size_t KanbanSceneLoader::pendingRequestCount() const {
     return m_requests.size();
 }
 
+bool KanbanSceneLoader::bindSceneAssets(const ico::engine::SceneAssetStore& store,
+                                        u32 sceneId) {
+    if (!m_initialized || !store.isInitialized()) {
+        return false;
+    }
+
+    const std::size_t count = store.sceneAssetCount(sceneId);
+    if (count == 0 && !store.hasScene(sceneId)) {
+        return false;
+    }
+
+    for (SceneAssetBinding& binding : m_assetBindings) {
+        if (binding.sceneId == sceneId) {
+            binding.assets.clear();
+            for (std::size_t i = 0; i < count; ++i) {
+                const ico::engine::SceneAssetEntry* entry = store.sceneAsset(sceneId, i);
+                if (entry != nullptr) {
+                    binding.assets.push_back(*entry);
+                }
+            }
+            return true;
+        }
+    }
+
+    SceneAssetBinding binding;
+    binding.sceneId = sceneId;
+    for (std::size_t i = 0; i < count; ++i) {
+        const ico::engine::SceneAssetEntry* entry = store.sceneAsset(sceneId, i);
+        if (entry != nullptr) {
+            binding.assets.push_back(*entry);
+        }
+    }
+    m_assetBindings.push_back(std::move(binding));
+    return true;
+}
+
+bool KanbanSceneLoader::hasBoundAssets(u32 sceneId) const {
+    for (const SceneAssetBinding& binding : m_assetBindings) {
+        if (binding.sceneId == sceneId) {
+            return !binding.assets.empty();
+        }
+    }
+    return false;
+}
+
+std::size_t KanbanSceneLoader::boundAssetCount(u32 sceneId) const {
+    for (const SceneAssetBinding& binding : m_assetBindings) {
+        if (binding.sceneId == sceneId) {
+            return binding.assets.size();
+        }
+    }
+    return 0;
+}
+
+const ico::engine::SceneAssetEntry* KanbanSceneLoader::boundAsset(
+    u32 sceneId, std::size_t index) const {
+    for (const SceneAssetBinding& binding : m_assetBindings) {
+        if (binding.sceneId == sceneId) {
+            return (index < binding.assets.size()) ? &binding.assets[index] : nullptr;
+        }
+    }
+    return nullptr;
+}
+
 bool KanbanSceneLoader::execute() {
     if (!m_initialized || m_runtime == nullptr || m_requests.empty()) {
         return false;

@@ -21,7 +21,7 @@
 
 namespace ico::engine {
 
-static constexpr u32 kMaxBatchVertices = 65536;
+static constexpr u32 kMaxBatchVertices = 1048576;
 static constexpr u32 kVertsPerQuad = 6;
 static constexpr u32 kMaxQuads = kMaxBatchVertices / kVertsPerQuad;
 
@@ -732,6 +732,14 @@ void OpenGLBackend::shutdown() {
 }
 
 bool OpenGLBackend::isInitialized() const { return m_impl->initialized; }
+
+void* OpenGLBackend::getNativeDisplay() const {
+    return m_impl->initialized ? static_cast<void*>(m_impl->display) : nullptr;
+}
+
+unsigned long OpenGLBackend::getNativeWindow() const {
+    return m_impl->initialized ? static_cast<unsigned long>(m_impl->window) : 0UL;
+}
 
 void OpenGLBackend::beginFrame() {
     auto& I = *m_impl;

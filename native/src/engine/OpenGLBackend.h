@@ -91,6 +91,11 @@ public:
     u32 getWidth() const override;
     u32 getHeight() const override;
 
+    // Native X11 handles used to poll input in the scene demo. Returns
+    // nullptr/0 when the GLX context is not available (headless test mode).
+    void* getNativeDisplay() const;
+    unsigned long getNativeWindow() const;
+
     class Impl;
 
 private:
