@@ -1,0 +1,458 @@
+[
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/game/KanbanSceneLoader.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/game/KanbanSceneLoader.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/game/KanbanSceneLoader.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/game/KanbanSceneLoader.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/game/GirlBrainSemantic.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/game/GirlBrainSemantic.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/game/GirlBrainSemantic.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/game/GirlBrainSemantic.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/GObj.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GObj.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GObj.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/GObj.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/GObjPool.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GObjPool.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GObjPool.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/GObjPool.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/ProcessNodePool.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/ProcessNodePool.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/ProcessNodePool.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/ProcessNodePool.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/IsysGObjRuntime.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/IsysGObjRuntime.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/IsysGObjRuntime.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/IsysGObjRuntime.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/RenderBackend.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/RenderBackend.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/RenderBackend.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/RenderBackend.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/Tm2Format.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/Tm2Format.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/Tm2Format.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/Tm2Format.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/Tm2Converter.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/Tm2Converter.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/Tm2Converter.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/Tm2Converter.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/GifTag.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GifTag.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GifTag.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/GifTag.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/GifCommandBuffer.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GifCommandBuffer.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GifCommandBuffer.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/GifCommandBuffer.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/GifCommandExecutor.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GifCommandExecutor.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GifCommandExecutor.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/GifCommandExecutor.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/GifPacket.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GifPacket.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GifPacket.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/GifPacket.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/WorldStateLoader.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/WorldStateLoader.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/WorldStateLoader.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/WorldStateLoader.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/GObjFactory.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GObjFactory.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GObjFactory.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/GObjFactory.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/GObjEntityAllocator.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GObjEntityAllocator.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/GObjEntityAllocator.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/GObjEntityAllocator.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/cc -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=gnu11 -o CMakeFiles/ico_engine_core.dir/home/hoper/Documentos/repos/ico-reconstruction/src/core/isysgobj_semantic.c.o -c /home/hoper/Documentos/repos/ico-reconstruction/src/core/isysgobj_semantic.c",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/src/core/isysgobj_semantic.c",
+  "output": "CMakeFiles/ico_engine_core.dir/home/hoper/Documentos/repos/ico-reconstruction/src/core/isysgobj_semantic.c.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_engine_core.dir/src/engine/OpenGLBackend.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/OpenGLBackend.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/engine/OpenGLBackend.cpp",
+  "output": "CMakeFiles/ico_engine_core.dir/src/engine/OpenGLBackend.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/main.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/main.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/main.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/runtime/IcoRuntime.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/IcoRuntime.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/IcoRuntime.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/runtime/IcoRuntime.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/runtime/GameLoop.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/GameLoop.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/GameLoop.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/runtime/GameLoop.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/runtime/Logger.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/Logger.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/Logger.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/runtime/Logger.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/platform/Platform.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Platform.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Platform.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/platform/Platform.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/platform/Input.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Input.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Input.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/platform/Input.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/platform/FileSystem.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/FileSystem.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/FileSystem.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/platform/FileSystem.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/platform/Timing.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Timing.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Timing.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/platform/Timing.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/platform/AudioStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/AudioStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/AudioStub.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/platform/AudioStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/platform/RenderStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/RenderStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/RenderStub.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/platform/RenderStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/platform/SifRpcStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/SifRpcStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/SifRpcStub.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/platform/SifRpcStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/platform/IopStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/IopStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/IopStub.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/platform/IopStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/ico_native.dir/src/ps2/Ps2Memory.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/ps2/Ps2Memory.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/ps2/Ps2Memory.cpp",
+  "output": "CMakeFiles/ico_native.dir/src/ps2/Ps2Memory.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/tests/smoke_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/smoke_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/smoke_test.cpp",
+  "output": "CMakeFiles/smoke_test.dir/tests/smoke_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/runtime/Logger.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/Logger.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/Logger.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/runtime/Logger.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/runtime/GameLoop.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/GameLoop.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/GameLoop.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/runtime/GameLoop.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/runtime/IcoRuntime.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/IcoRuntime.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/IcoRuntime.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/runtime/IcoRuntime.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/platform/Platform.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Platform.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Platform.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/platform/Platform.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/platform/Input.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Input.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Input.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/platform/Input.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/platform/FileSystem.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/FileSystem.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/FileSystem.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/platform/FileSystem.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/platform/Timing.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Timing.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Timing.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/platform/Timing.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/platform/AudioStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/AudioStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/AudioStub.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/platform/AudioStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/platform/RenderStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/RenderStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/RenderStub.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/platform/RenderStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/platform/SifRpcStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/SifRpcStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/SifRpcStub.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/platform/SifRpcStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/platform/IopStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/IopStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/IopStub.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/platform/IopStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/smoke_test.dir/src/ps2/Ps2Memory.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/ps2/Ps2Memory.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/ps2/Ps2Memory.cpp",
+  "output": "CMakeFiles/smoke_test.dir/src/ps2/Ps2Memory.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/gobj_pool_test.dir/tests/gobj_pool_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/gobj_pool_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/gobj_pool_test.cpp",
+  "output": "CMakeFiles/gobj_pool_test.dir/tests/gobj_pool_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/isysgobj_runtime_test.dir/tests/isysgobj_runtime_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/isysgobj_runtime_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/isysgobj_runtime_test.cpp",
+  "output": "CMakeFiles/isysgobj_runtime_test.dir/tests/isysgobj_runtime_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/cc -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=gnu11 -o CMakeFiles/isysgobj_semantic_test.dir/tests/isysgobj_semantic_test.c.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/isysgobj_semantic_test.c",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/isysgobj_semantic_test.c",
+  "output": "CMakeFiles/isysgobj_semantic_test.dir/tests/isysgobj_semantic_test.c.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/isysgobj_semantic_runtime_test.dir/tests/isysgobj_semantic_runtime_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/isysgobj_semantic_runtime_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/isysgobj_semantic_runtime_test.cpp",
+  "output": "CMakeFiles/isysgobj_semantic_runtime_test.dir/tests/isysgobj_semantic_runtime_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/process_node_pool_test.dir/tests/process_node_pool_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/process_node_pool_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/process_node_pool_test.cpp",
+  "output": "CMakeFiles/process_node_pool_test.dir/tests/process_node_pool_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/isysgobj_process_test.dir/tests/isysgobj_process_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/isysgobj_process_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/isysgobj_process_test.cpp",
+  "output": "CMakeFiles/isysgobj_process_test.dir/tests/isysgobj_process_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/slot_dispatch_test.dir/tests/slot_dispatch_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/slot_dispatch_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/slot_dispatch_test.cpp",
+  "output": "CMakeFiles/slot_dispatch_test.dir/tests/slot_dispatch_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/render_backend_test.dir/tests/render_backend_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/render_backend_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/render_backend_test.cpp",
+  "output": "CMakeFiles/render_backend_test.dir/tests/render_backend_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/tm2_test.dir/tests/tm2_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/tm2_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/tm2_test.cpp",
+  "output": "CMakeFiles/tm2_test.dir/tests/tm2_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/gif_command_test.dir/tests/gif_command_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/gif_command_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/gif_command_test.cpp",
+  "output": "CMakeFiles/gif_command_test.dir/tests/gif_command_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/gif_executor_test.dir/tests/gif_executor_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/gif_executor_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/gif_executor_test.cpp",
+  "output": "CMakeFiles/gif_executor_test.dir/tests/gif_executor_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/gif_packet_test.dir/tests/gif_packet_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/gif_packet_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/gif_packet_test.cpp",
+  "output": "CMakeFiles/gif_packet_test.dir/tests/gif_packet_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/scene_loader_test.dir/tests/scene_loader_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/scene_loader_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/scene_loader_test.cpp",
+  "output": "CMakeFiles/scene_loader_test.dir/tests/scene_loader_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/tests/game_loop_scene_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/game_loop_scene_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/game_loop_scene_test.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/tests/game_loop_scene_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/runtime/Logger.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/Logger.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/Logger.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/runtime/Logger.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/runtime/GameLoop.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/GameLoop.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/GameLoop.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/runtime/GameLoop.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/runtime/IcoRuntime.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/IcoRuntime.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/runtime/IcoRuntime.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/runtime/IcoRuntime.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/platform/Platform.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Platform.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Platform.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/platform/Platform.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/platform/Input.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Input.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Input.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/platform/Input.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/platform/FileSystem.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/FileSystem.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/FileSystem.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/platform/FileSystem.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/platform/Timing.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Timing.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/Timing.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/platform/Timing.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/platform/AudioStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/AudioStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/AudioStub.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/platform/AudioStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/platform/RenderStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/RenderStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/RenderStub.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/platform/RenderStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/platform/SifRpcStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/SifRpcStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/SifRpcStub.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/platform/SifRpcStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/platform/IopStub.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/IopStub.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/platform/IopStub.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/platform/IopStub.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/game_loop_scene_test.dir/src/ps2/Ps2Memory.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/src/ps2/Ps2Memory.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/src/ps2/Ps2Memory.cpp",
+  "output": "CMakeFiles/game_loop_scene_test.dir/src/ps2/Ps2Memory.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/girlbrain_semantic_test.dir/tests/girlbrain_semantic_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/girlbrain_semantic_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/girlbrain_semantic_test.cpp",
+  "output": "CMakeFiles/girlbrain_semantic_test.dir/tests/girlbrain_semantic_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/world_state_slot_test.dir/tests/world_state_slot_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/world_state_slot_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/world_state_slot_test.cpp",
+  "output": "CMakeFiles/world_state_slot_test.dir/tests/world_state_slot_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/world_state_loader_test.dir/tests/world_state_loader_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/world_state_loader_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/world_state_loader_test.cpp",
+  "output": "CMakeFiles/world_state_loader_test.dir/tests/world_state_loader_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/gobj_factory_test.dir/tests/gobj_factory_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/gobj_factory_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/gobj_factory_test.cpp",
+  "output": "CMakeFiles/gobj_factory_test.dir/tests/gobj_factory_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/gobj_entity_allocator_test.dir/tests/gobj_entity_allocator_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/gobj_entity_allocator_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/gobj_entity_allocator_test.cpp",
+  "output": "CMakeFiles/gobj_entity_allocator_test.dir/tests/gobj_entity_allocator_test.cpp.o"
+},
+{
+  "directory": "/home/hoper/Documentos/repos/ico-reconstruction/native/build-check",
+  "command": "/usr/bin/c++ -DICO_HAS_OPENGL=1 -I/home/hoper/Documentos/repos/ico-reconstruction/native/src -I/home/hoper/Documentos/repos/ico-reconstruction/native/../src -g -std=c++17 -o CMakeFiles/opengl_backend_test.dir/tests/opengl_backend_test.cpp.o -c /home/hoper/Documentos/repos/ico-reconstruction/native/tests/opengl_backend_test.cpp",
+  "file": "/home/hoper/Documentos/repos/ico-reconstruction/native/tests/opengl_backend_test.cpp",
+  "output": "CMakeFiles/opengl_backend_test.dir/tests/opengl_backend_test.cpp.o"
+}
+]

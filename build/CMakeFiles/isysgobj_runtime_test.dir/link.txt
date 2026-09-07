@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/isysgobj_runtime_test.dir/tests/isysgobj_runtime_test.cpp.o -o isysgobj_runtime_test  libico_engine_core.a /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libX11.so -ldl 

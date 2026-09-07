@@ -302,6 +302,7 @@ Before doing new analysis, read these files in this order if they exist:
 30. `research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md`
 31. `research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md`
 32. `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
+33. `research/elf/rev142-p2o-vertex-layout-and-face-record-structure.md` (native-port, P1: PS2O geometry decode)
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -853,6 +854,26 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 44. ~~**Rev.131: `world_state_load` boundary correction** (0x248 merged two functions → `world_state_load` 0x80 + `DispIcoMisc` 0x1C8, both byte-exact) — plus native `WorldStateLoader` semantic bridge with `world_state_loader_test` CTest; 688/710 `.s` byte-exact.~~ **DONE (2026-09-05)**
 45. ~~**Rev.134: `moveImage`/CopyTexture plumbing** — `RenderBackend::copyTexture`, `RenderCmd.copy`, executor bridge, no-op stub overrides, `test_move_image_guards`; 20/20 CTest.~~ **DONE (2026-09-05)**
 46. ~~**Rev.135 (native-port, P1): first visible milestone** — `ICO_ENABLE_OPENGL` default ON; `ico_native` opens a real GLX 640x448 window and renders 3 animated quads at 60 fps through the semantic GIF pipeline (GifPacketBridge→executor→OpenGLBackend); screenshot evidence in `research/native/ico-native-first-window-2026-09-05.png`. Fixed two rendering-blocking GL bugs: `glCreateShader` vs `glCreateProgram`, and GL context current to the GLX window (not the X window) for `glXSwapBuffers`. 21/21 CTest.~~ **DONE (2026-09-05)**
+47. ~~**Rev.142: PS2O (`.p2o`) geometry decode** — vertex positions = 4 floats LE `(x,y,z,1.0)` from +0x20 (16 B/vertex, Y-up, floor at Y≈0); face data = 16 B records `[c,t,0,a,1,b,0,0]` in strips framed by `0xFFFF` at the `c` position; **global parsing rule now CLOSED** (detect `0xFFFF` at `c`, then consume 16 B records while valid — NOT fixed stride): 27 strips / 76 non-degenerate triangles recovered from full p2 scan into `/tmp/st00a_p2_faces.obj`; two strip types (0x00 = long triangle strips a==b, 0x01 = short quads/fans a≠b); `OBJH`/`null` tags + [offset,count] stream table in minimal object; `+0x1c` field and multi-submesh delimitation (p1 count=3) still open. TYPE 0x01 SEMANTICS is the next step for the static-mesh milestone (asset → geometry → render).~~ **DONE (2026-09-06)**
+48. **Rev.143 (native-port, P1 — texturized room render):** `ico_native` auto-loads `.p2o` mesh (`170_st00a_p1.p2o`: 13,877 verts, 15,161 triangles, 3 submeshes, 13,070 UVs, 15,161 material indices) and `.tm2` texture (`st0_a.tm2` 256×256) from `native/assets/`. TM2 texture pipeline integrated into `runMeshDemo`: UV mapping via `triVertUVs`, texture binding through `OpenGLBackend`. Material index per strip (`f` = u16[7]) confirmed. Material↔TM2 by name (7 materials). Extraction of `.p2o`/`.tm2` from PAL `.DF` containers via `dfdatas_unpack.py`. `run_native_demo.sh` for one-command demo. 21/22 CTest (only `opengl_backend_test` segfaults due to headless context). 95% pass rate.~~ **DONE (2026-09-06)**
+49. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model, then begin scene loading integration through `KanbanSceneLoader`. Next: replace per-triangle draw calls with batch rendering for performance.
+
+---
+
+### Native runtime rendering status (2026-09-06)
+
+| Component | Status | Detail |
+|-----------|--------|--------|
+| `ico_native` | ✅ Working | GLX 640×448, GL 3.3 core, 60fps |
+| PS2O mesh decode | ✅ Working | 13,877 verts, 15,161 tris, 3 submeshes |
+| TM2 texture loading | ✅ Working | `Tm2Parser` → `Tm2Converter` → `OpenGLBackend` |
+| UV mapping | ✅ Working | `triVertUVs` from material-specific offset |
+| Material indices | ✅ Working | `f` = u16[7] per strip, 7 materials |
+| Auto-load | ✅ Working | `--p2o` defaults to `native/assets/170_st00a_p1.p2o` |
+| Infinite loop | ✅ Working | `--frames 0` runs continuously |
+| CTest | ✅ 21/22 | Only `opengl_backend_test` segfaults (headless) |
+| Extraction pipeline | ✅ Working | `dfdatas_unpack.py` on PAL ISO → `.p2o` + `.tm2` |
+| Demo runner | ✅ Working | `run_native_demo.sh` |
 
 ---
 

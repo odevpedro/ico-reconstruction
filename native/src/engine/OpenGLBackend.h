@@ -81,6 +81,10 @@ public:
     void copyTexture(float srcX, float srcY, float dstX, float dstY,
                      float w, float h) override;
 
+    // Reads back the current backbuffer (RGBA8, bottom-up) into a
+    // width*height*4 buffer. Returns false if the GL context is unavailable.
+    bool captureFrameRGB(u8* outRgb, u32 w, u32 h) const;
+
     void beginPass(RenderList list) override;
     void endPass() override;
 

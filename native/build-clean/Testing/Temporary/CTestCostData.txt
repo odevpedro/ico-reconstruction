@@ -1,0 +1,22 @@
+smoke 1 0.0169569
+gobj_pool 1 0.00157259
+isysgobj_runtime 1 0.00144685
+isysgobj_semantic 1 0.000946412
+isysgobj_semantic_runtime 1 0.00137069
+process_node_pool 1 0.00128437
+isysgobj_process 1 0.00136106
+slot_dispatch 1 0.00176856
+render_backend 1 0.001389
+tm2 1 0.0013907
+gif_command 1 0.00171639
+gif_executor 1 0.00146414
+gif_packet 1 0.00147968
+scene_loader 1 0.00211669
+game_loop_scene 1 0.00166706
+girlbrain_semantic 1 0.00124229
+world_state_slot 1 0.00170997
+world_state_loader 1 0.000945389
+gobj_factory 1 0.00143114
+gobj_entity_allocator 1 0.000881924
+opengl_backend 1 0.00464291
+---

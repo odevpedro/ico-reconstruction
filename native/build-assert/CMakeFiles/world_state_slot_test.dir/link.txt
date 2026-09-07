@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/world_state_slot_test.dir/tests/world_state_slot_test.cpp.o -o world_state_slot_test  libico_engine_core.a /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libX11.so -ldl 

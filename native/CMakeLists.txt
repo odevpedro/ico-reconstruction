@@ -28,6 +28,7 @@ set(ICO_ENGINE_SOURCES
     src/engine/WorldStateLoader.cpp
     src/engine/GObjFactory.cpp
     src/engine/GObjEntityAllocator.cpp
+    src/engine/Ps2oMesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/core/isysgobj_semantic.c
 )
 
@@ -153,6 +154,9 @@ target_link_libraries(world_state_slot_test PRIVATE ico_engine_core)
 add_executable(world_state_loader_test tests/world_state_loader_test.cpp)
 target_link_libraries(world_state_loader_test PRIVATE ico_engine_core)
 
+add_executable(ps2o_mesh_test tests/ps2o_mesh_test.cpp)
+target_link_libraries(ps2o_mesh_test PRIVATE ico_engine_core)
+
 add_executable(gobj_factory_test tests/gobj_factory_test.cpp)
 target_link_libraries(gobj_factory_test PRIVATE ico_engine_core)
 
@@ -180,6 +184,7 @@ add_test(NAME world_state_slot COMMAND world_state_slot_test)
 add_test(NAME world_state_loader COMMAND world_state_loader_test)
 add_test(NAME gobj_factory COMMAND gobj_factory_test)
 add_test(NAME gobj_entity_allocator COMMAND gobj_entity_allocator_test)
+add_test(NAME ps2o_mesh COMMAND ps2o_mesh_test)
 
 if(ICO_ENABLE_OPENGL)
     add_executable(opengl_backend_test tests/opengl_backend_test.cpp)

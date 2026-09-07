@@ -1,0 +1,387 @@
+Start testing: Sep 06 11:40 -03
+----------------------------------------------------------
+1/21 Testing: smoke
+1/21 Test: smoke
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/smoke_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"smoke" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+ICO Native Runtime Smoke Test
+[INFO] [runtime] Initializing ICO Native Runtime...
+[INFO] [ps2] PS2 memory initialized: 32505856 bytes at 0x00100000
+[INFO] [fs] FileSystem stub initialized: base='.'
+[INFO] [sif] SIF RPC stub initialized
+[INFO] [iop] IOP stub initialized
+[INFO] [input] Input stub initialized
+[INFO] [audio] Audio stub initialized
+[INFO] [render] Render stub initialized: 640x480
+[INFO] [timing] Timing initialized: target=60 FPS
+[INFO] [gameloop] GameLoop initialized (target=60 FPS)
+[INFO] [runtime] ICO Native Runtime initialized successfully
+[INFO] [gameloop] GameLoop started (maxFrames=3)
+[INFO] [smoke] [frame 1] tick
+[INFO] [smoke] [frame 2] tick
+[INFO] [smoke] [frame 3] tick
+[INFO] [gameloop] GameLoop ended at frame 3
+[INFO] [runtime] Shutting down ICO Native Runtime...
+[INFO] [gameloop] GameLoop shutdown
+[INFO] [timing] Timing shutdown
+[INFO] [render] Render stub shutdown
+[INFO] [audio] Audio stub shutdown
+[INFO] [input] Input stub shutdown
+[INFO] [iop] IOP stub shutdown
+[INFO] [sif] SIF RPC stub shutdown
+[INFO] [fs] FileSystem stub shutdown
+[INFO] [ps2] PS2 memory shutdown
+[INFO] [runtime] ICO Native Runtime shutdown complete
+[shutdown] clean exit
+All tests passed.
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"smoke" end time: Sep 06 11:40 -03
+"smoke" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/21 Testing: gobj_pool
+2/21 Test: gobj_pool
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/gobj_pool_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"gobj_pool" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gobj_pool" end time: Sep 06 11:40 -03
+"gobj_pool" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/21 Testing: isysgobj_runtime
+3/21 Test: isysgobj_runtime
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/isysgobj_runtime_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"isysgobj_runtime" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"isysgobj_runtime" end time: Sep 06 11:40 -03
+"isysgobj_runtime" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/21 Testing: isysgobj_semantic
+4/21 Test: isysgobj_semantic
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/isysgobj_semantic_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"isysgobj_semantic" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"isysgobj_semantic" end time: Sep 06 11:40 -03
+"isysgobj_semantic" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/21 Testing: isysgobj_semantic_runtime
+5/21 Test: isysgobj_semantic_runtime
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/isysgobj_semantic_runtime_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"isysgobj_semantic_runtime" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"isysgobj_semantic_runtime" end time: Sep 06 11:40 -03
+"isysgobj_semantic_runtime" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/21 Testing: process_node_pool
+6/21 Test: process_node_pool
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/process_node_pool_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"process_node_pool" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"process_node_pool" end time: Sep 06 11:40 -03
+"process_node_pool" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/21 Testing: isysgobj_process
+7/21 Test: isysgobj_process
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/isysgobj_process_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"isysgobj_process" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"isysgobj_process" end time: Sep 06 11:40 -03
+"isysgobj_process" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/21 Testing: slot_dispatch
+8/21 Test: slot_dispatch
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/slot_dispatch_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"slot_dispatch" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"slot_dispatch" end time: Sep 06 11:40 -03
+"slot_dispatch" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/21 Testing: render_backend
+9/21 Test: render_backend
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/render_backend_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"render_backend" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+[render] RenderBackend (stub) initialized: 640x448
+[render] RenderBackend (stub) shutdown
+[render] RenderBackend (stub) initialized: 640x448
+[render] Frame: 2 draw calls, 3 triangles
+[render] RenderBackend (stub) shutdown
+[render] RenderBackend (stub) initialized: 640x448
+[render] RenderBackend (stub) shutdown
+[render] RenderBackend (stub) initialized: 640x448
+[render] RenderBackend (stub) shutdown
+[render] RenderBackend (stub) initialized: 640x448
+[render] RenderBackend (stub) shutdown
+render_backend_test: all passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"render_backend" end time: Sep 06 11:40 -03
+"render_backend" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/21 Testing: tm2
+10/21 Test: tm2
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/tm2_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"tm2" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+struct sizes: OK
+file header valid: OK
+image header clut: OK
+parse minimal: OK
+parse invalid magic: OK
+parse truncated: OK
+convert psmct32: OK
+convert psmct16: OK
+convert psmt8: OK
+convert psmt4: OK
+convert clut32: OK
+convert clut16: OK
+convert image psmct32: OK
+parse v4 single: OK
+parse v4 multi: OK
+v4 nibble low-first: OK
+
+All TM2 tests passed.
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"tm2" end time: Sep 06 11:40 -03
+"tm2" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/21 Testing: gif_command
+11/21 Test: gif_command
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/gif_command_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"gif_command" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+gif_command_test: all passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gif_command" end time: Sep 06 11:40 -03
+"gif_command" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/21 Testing: gif_executor
+12/21 Test: gif_executor
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/gif_executor_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"gif_executor" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+gif_executor_test: all passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gif_executor" end time: Sep 06 11:40 -03
+"gif_executor" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/21 Testing: gif_packet
+13/21 Test: gif_packet
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/gif_packet_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"gif_packet" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+gif_packet_test: all passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gif_packet" end time: Sep 06 11:40 -03
+"gif_packet" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/21 Testing: scene_loader
+14/21 Test: scene_loader
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/scene_loader_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"scene_loader" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+[render] RenderBackend (stub) shutdown
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"scene_loader" end time: Sep 06 11:40 -03
+"scene_loader" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/21 Testing: game_loop_scene
+15/21 Test: game_loop_scene
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/game_loop_scene_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"game_loop_scene" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+[ERROR] [gameloop] Cannot run: not initialized
+[render] RenderBackend (stub) shutdown
+game_loop_scene_test: all passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"game_loop_scene" end time: Sep 06 11:40 -03
+"game_loop_scene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/21 Testing: girlbrain_semantic
+16/21 Test: girlbrain_semantic
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/girlbrain_semantic_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"girlbrain_semantic" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"girlbrain_semantic" end time: Sep 06 11:40 -03
+"girlbrain_semantic" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/21 Testing: world_state_slot
+17/21 Test: world_state_slot
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/world_state_slot_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"world_state_slot" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+world_state_slot_test: all passed (36 bindings, 20 slots, 20 share groups)
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"world_state_slot" end time: Sep 06 11:40 -03
+"world_state_slot" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/21 Testing: world_state_loader
+18/21 Test: world_state_loader
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/world_state_loader_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"world_state_loader" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"world_state_loader" end time: Sep 06 11:40 -03
+"world_state_loader" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/21 Testing: gobj_factory
+19/21 Test: gobj_factory
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/gobj_factory_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"gobj_factory" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gobj_factory" end time: Sep 06 11:40 -03
+"gobj_factory" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/21 Testing: gobj_entity_allocator
+20/21 Test: gobj_entity_allocator
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/gobj_entity_allocator_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"gobj_entity_allocator" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gobj_entity_allocator" end time: Sep 06 11:40 -03
+"gobj_entity_allocator" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/21 Testing: opengl_backend
+21/21 Test: opengl_backend
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/native/build-clean/opengl_backend_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/native/build-clean
+"opengl_backend" start time: Sep 06 11:40 -03
+Output:
+----------------------------------------------------------
+opengl_backend_test: all passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"opengl_backend" end time: Sep 06 11:41 -03
+"opengl_backend" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 06 11:41 -03

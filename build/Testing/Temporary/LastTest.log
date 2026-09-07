@@ -1,0 +1,19 @@
+Start testing: Sep 06 14:22 -03
+----------------------------------------------------------
+21/22 Testing: ps2o_mesh
+21/22 Test: ps2o_mesh
+Command: "/home/hoper/Documentos/repos/ico-reconstruction/build/ps2o_mesh_test"
+Directory: /home/hoper/Documentos/repos/ico-reconstruction/build
+"ps2o_mesh" start time: Sep 06 14:22 -03
+Output:
+----------------------------------------------------------
+ps2o_mesh_test: OK (4 verts, 2 tris)
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"ps2o_mesh" end time: Sep 06 14:22 -03
+"ps2o_mesh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 06 14:22 -03

@@ -66,6 +66,7 @@ struct OpenGLBackend::Impl {
     Matrix4x4 modelMat = Matrix4x4::identity();
 
     TextureHandle boundTexture = kNullTexture;
+    GLuint whiteTexture = 0;
     GSBlendMode currentBlendMode = GSBlendMode::None;
     GSDepthTest currentDepthTest = GSDepthTest::Less;
     bool depthWrite = true;
@@ -143,6 +144,7 @@ typedef void (*PFN_GLBINDVERTEXARRAY)(GLuint);
 typedef void (*PFN_GLDELETEVERTEXARRAYS)(GLsizei, const GLuint*);
 typedef void (*PFN_GLDRAWELEMENTS)(GLenum, GLsizei, GLenum, const void*);
 typedef void (*PFN_GLDRAWARRAYS)(GLenum, GLint, GLsizei);
+typedef void (*PFN_GLREADPIXELS)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*);
 typedef void (*PFN_GLACTIVETEXTURE)(GLenum);
 typedef void (*PFN_GLGENTEXTURES)(GLsizei, GLuint*);
 typedef void (*PFN_GLBINDTEXTURE)(GLenum, GLuint);
@@ -206,6 +208,7 @@ static PFN_GLBINDVERTEXARRAY p_glBindVertexArray = nullptr;
 static PFN_GLDELETEVERTEXARRAYS p_glDeleteVertexArrays = nullptr;
 static PFN_GLDRAWELEMENTS p_glDrawElements = nullptr;
 static PFN_GLDRAWARRAYS p_glDrawArrays = nullptr;
+static PFN_GLREADPIXELS p_glReadPixels = nullptr;
 static PFN_GLACTIVETEXTURE p_glActiveTexture = nullptr;
 static PFN_GLGENTEXTURES p_glGenTextures = nullptr;
 static PFN_GLBINDTEXTURE p_glBindTexture = nullptr;
@@ -268,6 +271,7 @@ static bool loadGLFunctions() {
     LOAD_GL_FUNC(p_glDeleteVertexArrays,       PFN_GLDELETEVERTEXARRAYS,       "glDeleteVertexArrays");
     LOAD_GL_FUNC(p_glDrawElements,             PFN_GLDRAWELEMENTS,             "glDrawElements");
     LOAD_GL_FUNC(p_glDrawArrays,               PFN_GLDRAWARRAYS,               "glDrawArrays");
+    LOAD_GL_FUNC(p_glReadPixels,               PFN_GLREADPIXELS,               "glReadPixels");
     LOAD_GL_FUNC(p_glActiveTexture,            PFN_GLACTIVETEXTURE,            "glActiveTexture");
     LOAD_GL_FUNC(p_glGenTextures,              PFN_GLGENTEXTURES,              "glGenTextures");
     LOAD_GL_FUNC(p_glBindTexture,              PFN_GLBINDTEXTURE,              "glBindTexture");
@@ -647,6 +651,18 @@ bool OpenGLBackend::initialize(u32 width, u32 height) {
 
     I.initialized = true;
     I.batchVertexCount = 0;
+
+    // Built-in 1x1 white texture: used for untextured (solid color) draws so
+    // the fragment shader's "texColor * vColor" yields exactly vColor.
+    p_glGenTextures(1, &I.whiteTexture);
+    p_glBindTexture(GL_TEXTURE_2D, I.whiteTexture);
+    p_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    p_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    const u8 onePx[4] = { 255, 255, 255, 255 };
+    p_glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0,
+                   GL_RGBA, GL_UNSIGNED_BYTE, onePx);
+    p_glBindTexture(GL_TEXTURE_2D, 0);
+
     I.currentBlendMode = GSBlendMode::None;
     I.currentDepthTest = GSDepthTest::Less;
     I.depthWrite = true;
@@ -685,6 +701,9 @@ void OpenGLBackend::shutdown() {
     I.textureProgram = 0;
     I.solidProgram = 0;
     I.currentProgram = 0;
+
+    if (I.whiteTexture) p_glDeleteTextures(1, &I.whiteTexture);
+    I.whiteTexture = 0;
 
     p_glDeleteBuffers(1, &I.batchVBO);
     p_glDeleteBuffers(1, &I.batchEBO);
@@ -739,6 +758,26 @@ void OpenGLBackend::present() {
     }
     std::fprintf(stderr, "[render] Frame: %u draw calls, %u triangles\n",
                   I.drawCallCount, I.triangleCount);
+}
+
+bool OpenGLBackend::captureFrameRGB(u8* out, u32 w, u32 h) const {
+    auto& I = *m_impl;
+    if (!I.display || !I.initialized || !p_glReadPixels) return false;
+    p_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    std::vector<uint8_t> rgba(w * h * 4);
+    p_glReadPixels(0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h),
+                   GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+    // Flip vertically (GL origin bottom-left -> image top-left).
+    for (u32 y = 0; y < h; ++y) {
+        const u8* src = rgba.data() + (y * w) * 4;
+        u8* dst = out + ((h - 1 - y) * w) * 3;
+        for (u32 x = 0; x < w; ++x) {
+            dst[x * 3 + 0] = src[x * 4 + 0];
+            dst[x * 3 + 1] = src[x * 4 + 1];
+            dst[x * 3 + 2] = src[x * 4 + 2];
+        }
+    }
+    return true;
 }
 
 void OpenGLBackend::clear(u8 r, u8 g, u8 b, u8 a) {
@@ -1113,28 +1152,50 @@ void OpenGLBackend::drawPrimitive(GSPrimitive primitive, RenderList list,
         I.currentList = list;
     }
 
+    if (texture != kNullTexture) {
+        bindTexture(texture, 0);
+    } else {
+        flushBatch();
+        I.boundTexture = kNullTexture;
+        if (p_glActiveTexture) {
+            p_glActiveTexture(GL_TEXTURE0);
+        }
+        p_glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
     (void)primitive;
 
-    for (u32 i = 0; i < count; ++i) {
-        if (I.batchVertexCount >= kMaxBatchVertices) {
+    // The batch EBO is a static quad pattern (i,i+1,i+2, i,i+2,i+3 per group
+    // of 4 vertices), so generic triangle draws are fed as [A,B,C,C] groups.
+    const u32 groupCount = count / 4;
+    for (u32 group = 0; group < groupCount; ++group) {
+        if (I.batchVertexCount + 4 > kMaxBatchVertices) {
             flushBatch();
-            I.drawCallCount++;
-            I.triangleCount += I.batchVertexCount / 3;
         }
-        BatchVertex bv{};
-        bv.x = vertices[i].x;
-        bv.y = vertices[i].y;
-        bv.z = vertices[i].z;
-        bv.nx = vertices[i].nx;
-        bv.ny = vertices[i].ny;
-        bv.nz = vertices[i].nz;
-        bv.u = vertices[i].u;
-        bv.v = vertices[i].v;
-        bv.r = r;
-        bv.g = g;
-        bv.b = b;
-        bv.a = a;
-        I.batchVertices[I.batchVertexCount++] = bv;
+        const u32 base = I.batchVertexCount;
+        for (u32 k = 0; k < 4; ++k) {
+            const u32 i = group * 4 + k;
+            BatchVertex bv{};
+            bv.x = vertices[i].x;
+            bv.y = vertices[i].y;
+            bv.z = vertices[i].z;
+            bv.nx = vertices[i].nx;
+            bv.ny = vertices[i].ny;
+            bv.nz = vertices[i].nz;
+            bv.u = vertices[i].u;
+            bv.v = vertices[i].v;
+            bv.r = r;
+            bv.g = g;
+            bv.b = b;
+            bv.a = a;
+            I.batchVertices[I.batchVertexCount++] = bv;
+        }
+        I.batchIndices.push_back(base + 0);
+        I.batchIndices.push_back(base + 1);
+        I.batchIndices.push_back(base + 2);
+        I.batchIndices.push_back(base + 0);
+        I.batchIndices.push_back(base + 2);
+        I.batchIndices.push_back(base + 3);
     }
 
     (void)texture;
@@ -1155,27 +1216,38 @@ void OpenGLBackend::drawIndexed(GSPrimitive primitive, RenderList list,
 
     (void)primitive;
 
-    for (u32 i = 0; i < indexCount; ++i) {
-        u32 vi = indices[i] + vertexOffset;
-        if (I.batchVertexCount >= kMaxBatchVertices) {
+    // Same [A,B,C,C] quad-group contract as drawPrimitive: the static quad
+    // EBO renders (base+0,base+1,base+2, base+0,base+2,base+3) per 4 vertices.
+    const u32 groupCount = indexCount / 4;
+    for (u32 group = 0; group < groupCount; ++group) {
+        if (I.batchVertexCount + 4 > kMaxBatchVertices) {
             flushBatch();
-            I.drawCallCount++;
-            I.triangleCount += I.batchVertexCount / 3;
         }
-        BatchVertex bv{};
-        bv.x = vertices[vi].x;
-        bv.y = vertices[vi].y;
-        bv.z = vertices[vi].z;
-        bv.nx = vertices[vi].nx;
-        bv.ny = vertices[vi].ny;
-        bv.nz = vertices[vi].nz;
-        bv.u = vertices[vi].u;
-        bv.v = vertices[vi].v;
-        bv.r = r;
-        bv.g = g;
-        bv.b = b;
-        bv.a = a;
-        I.batchVertices[I.batchVertexCount++] = bv;
+        const u32 base = I.batchVertexCount;
+        for (u32 k = 0; k < 4; ++k) {
+            const u32 i = group * 4 + k;
+            u32 vi = indices[i] + vertexOffset;
+            BatchVertex bv{};
+            bv.x = vertices[vi].x;
+            bv.y = vertices[vi].y;
+            bv.z = vertices[vi].z;
+            bv.nx = vertices[vi].nx;
+            bv.ny = vertices[vi].ny;
+            bv.nz = vertices[vi].nz;
+            bv.u = vertices[vi].u;
+            bv.v = vertices[vi].v;
+            bv.r = r;
+            bv.g = g;
+            bv.b = b;
+            bv.a = a;
+            I.batchVertices[I.batchVertexCount++] = bv;
+        }
+        I.batchIndices.push_back(base + 0);
+        I.batchIndices.push_back(base + 1);
+        I.batchIndices.push_back(base + 2);
+        I.batchIndices.push_back(base + 0);
+        I.batchIndices.push_back(base + 2);
+        I.batchIndices.push_back(base + 3);
     }
 
     (void)texture;
@@ -1378,6 +1450,9 @@ void OpenGLBackend::flushBatch() {
                        I.batchVertices);
 
     u32 indexCount = static_cast<u32>(I.batchIndices.size());
+    if (I.whiteTexture && I.boundTexture == kNullTexture) {
+        p_glBindTexture(GL_TEXTURE_2D, I.whiteTexture);
+    }
     p_glDrawElements(GL_TRIANGLES,
                       static_cast<GLsizei>(indexCount),
                       GL_UNSIGNED_INT, nullptr);
