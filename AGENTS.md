@@ -914,6 +914,8 @@ A secondary but high-impact front is **External Symbol Reconciliation (PAL→USA
 - Matching PAL→USA byte-a-byto **aguarda o ELF PAL** (obter ISO PAL do usuário)
 - Quando completo: nomes de função, source_file, e agrupamento por módulo original disponíveis para toda a base de código
 
+**Caveat: `pal_usa_symbol_map.csv` rows with `status=candidate` are fuzzy matches, NOT ground truth.** Rev.145 documented a concrete false-positive case: of the 38 `GifPacket.o` symbols, only `gif_Sprite` (0x00110948) is byte-verified same-VA; the 36 "candidate" rows pointed to unrelated USA functions (e.g. `gif_EndPacket`→0x13F9D0 = `_iosOmMain`) and were flipped to `rejected`. The GifPacket.o module IS present in USA at ~0x10FD40-0x112A30 (GIF buffer 0x4C7710), but only `gif_Sprite`'s boundary is byte-verified. Treat any `candidate` with `sz_diff>0` or conflicting verified targets as suspicious; verify boundaries with `assemble_and_verify` before reconstructing `.s`. Nota: research/elf/rev145-gifpacket-reconciliation-false-positives.md.
+
 ---
 
 ## Persistent PCSX2 gameplay sessions (validated 2026-08-25)
