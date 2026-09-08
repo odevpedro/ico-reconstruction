@@ -18,10 +18,13 @@
 #include "engine/OpenGLBackend.h"
 #include "engine/Ps2oMesh.h"
 #include "engine/RenderBackend.h"
+#include "engine/ClipBridge.h"
+#include "engine/IsysGObjRuntime.h"
 #include "engine/SceneAssetStore.h"
 #include "engine/Tm2Converter.h"
 #include "engine/Tm2Format.h"
 #include "game/KanbanSceneLoader.h"
+#include "game/PlayerController.h"
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -448,12 +451,49 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     float curAngle = (camAngleRad > 0.0f) ? camAngleRad : 0.0f;
 
     // Input wiring: platform Input class fed from the X11 event pump. The
-    // key state then drives a real world-space placeholder marker (WASD/D-
-    // pad move it in the room's XZ plane, shown as a red floor quad) so the
-    // native runtime consumes genuine keyboard input from a single source.
+    // key state then drives a real world-space player controller (WASD moves
+    // it in the room's XZ plane, resolved through the ClipBridge built from
+    // the room mesh) so the native runtime consumes genuine keyboard input
+    // from a single source.
     Input input;
     input.initialize();
-    float markerX = cx, markerZ = cz, markerY = cy;
+
+    // Collision ground truth for the walkable room: the fit piece (p1). The
+    // ClipBridge rasterizes the triangle soup into a heightfield + wall
+    // occupancy grid; PlayerController resolves input moves against it.
+    const ScenePiece* roomPiece = fitPiece != nullptr ? fitPiece : &pieces.front();
+    ClipBridge clip;
+    if (!clip.buildFromMesh(roomPiece->mesh.positions.data(),
+                            roomPiece->mesh.vertexCount,
+                            roomPiece->mesh.triangles.data(),
+                            static_cast<u32>(roomPiece->mesh.triangles.size() / 3))) {
+        std::fprintf(stderr, "main: ClipBridge failed to build from %s\n",
+                     roomPiece->name.c_str());
+        return 1;
+    }
+    std::fprintf(stderr, "main: ClipBridge %s grid=%ux%u blocked=%u\n",
+                 roomPiece->name.c_str(), clip.gridWidth(), clip.gridHeight(),
+                 clip.blockedCellCount());
+
+    IsysGObjRuntime gobjRuntime;
+    if (!gobjRuntime.initialize(0x40, 0x40)) {
+        std::fprintf(stderr, "main: gobj runtime failed to initialize\n");
+        return 1;
+    }
+    ico::game::PlayerController player;
+    if (!player.initialize(gobjRuntime, clip, 1u)) {
+        std::fprintf(stderr, "main: PlayerController failed to initialize\n");
+        return 1;
+    }
+    bool playerSpawned = player.spawn(cx, cz, player.halfExtent());
+    std::fprintf(stderr, "main: player spawn at (%g,%g) -> %s pos=(%g,%g,%g)\n",
+                 cx, cz, playerSpawned ? "ok" : "failed",
+                 player.x(), player.y(), player.z());
+    if (!playerSpawned) {
+        player.shutdown();
+        std::fprintf(stderr, "main: no walkable spawn point; aborting\n");
+        return 1;
+    }
 
     auto feedKey = [&](XKeyEvent& xk, bool down) {
         const ::KeySym ks = ::XLookupKeysym(&xk, 0);
@@ -470,7 +510,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         }
     };
 
-    auto pollCameraInput = [&]() {
+    auto pollDebugCameraInput = [&]() {
         void* dispV = backend.getNativeDisplay();
         const unsigned long winU = backend.getNativeWindow();
         if (!dispV || !winU) return;
@@ -509,7 +549,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         }
     };
     std::fprintf(stderr, "main: controls: Z/+/wheel-up zoom-in, X/-/wheel-down zoom-out, arrows orbit, Q/Esc quit\n");
-    std::fprintf(stderr, "main: WASD/arrows move the placeholder marker (red floor quad)\n");
+    std::fprintf(stderr, "main: WASD moves the player (collision-constrained)\n");
 
     for (u32 f = 0; frames == 0 || f < frames; ++f) {
         backend.beginFrame();
@@ -518,16 +558,21 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         // Top-of-frame key snapshot must precede the X11 pump so edge
         // queries compare against last frame's state (see input_test).
         input.update();
-        pollCameraInput();
+        pollDebugCameraInput();
 
-        // Move the placeholder marker in the room's XZ plane (world units
-        // per frame; PS2 units are cm-scale, so 25 animated tatami-like grid
-        // is a comfortable walk pace relative to the ~200+ unit room).
+        // Player move vector from WASD (world units per frame; PS2 units are
+        // cm-scale, so 25 units/frame is a comfortable walk pace relative to
+        // the ~200+ unit room). Y is handled by the ClipBridge snap; the
+        // PlayerController process consumes the vector this frame.
         const float step = 25.0f;
-        if (input.isKeyDown(KeyW)) markerZ += step;
-        if (input.isKeyDown(KeyS)) markerZ -= step;
-        if (input.isKeyDown(KeyA)) markerX -= step;
-        if (input.isKeyDown(KeyD)) markerX += step;
+        float moveDx = 0.0f, moveDz = 0.0f;
+        if (input.isKeyDown(KeyW)) moveDz += step;
+        if (input.isKeyDown(KeyS)) moveDz -= step;
+        if (input.isKeyDown(KeyA)) moveDx -= step;
+        if (input.isKeyDown(KeyD)) moveDx += step;
+        if (moveDx != 0.0f || moveDz != 0.0f) player.setMove(moveDx, moveDz);
+        player.update();
+        const float markerX = player.x(), markerY = player.y(), markerZ = player.z();
 
         const float ang = curAngle;
         const float eyeX = cx + curDist * std::cos(ang);
@@ -574,21 +619,55 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
             }
         }
 
-        // Placeholder marker: a red floor quad in world space driven by the
-        // wired keyboard input (WASD). It doubles as an input self-test — a
-        // live red square proves isKeyDown state flows from X11 → Input.
-        // drawPrimitive consumes groups of 4 vertices ([A,B,C,C] degenerates
-        // to two triangles), so a plain 4-corner quad is one call.
+        // Player placeholder: a solid-box avatar standing on the walkable
+        // surface (markerY = floor height snapped by ClipBridge). drawIndexed
+        // consumes groups of 4 indices ([A,B,C,C] degenerates to two
+        // triangles), so each of the 12 box triangles is emitted as a quad
+        // group with the 4th index duplicated.
         {
-            const float s = 30.0f; // half-size in world units
-            RenderVertex mq[4]{};
-            mq[0].y = mq[1].y = mq[2].y = mq[3].y = markerY;
-            mq[0].x = markerX - s; mq[0].z = markerZ - s;
-            mq[1].x = markerX + s; mq[1].z = markerZ - s;
-            mq[2].x = markerX + s; mq[2].z = markerZ + s;
-            mq[3].x = markerX - s; mq[3].z = markerZ + s;
-            backend.drawPrimitive(GSPrimitive::Triangle, RenderList::Opaque,
-                                  mq, 4, kNullTexture, 255, 30, 30, 255);
+            const float s = 20.0f; // half-size in world units
+            const float bx = markerX, by = markerY, bz = markerZ;
+            // Unit cube corners; scaled and translated into world space.
+            const float x0 = bx - s, x1 = bx + s;
+            const float y0 = by,       y1 = by + 2.0f * s;
+            const float z0 = bz - s, z1 = bz + s;
+            RenderVertex box[8]{};
+            const float zyx[8][3] = {
+                {x0, y0, z0}, {x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0},
+                {x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1},
+            };
+            for (int i = 0; i < 8; ++i) {
+                box[i].x = zyx[i][0];
+                box[i].y = zyx[i][1];
+                box[i].z = zyx[i][2];
+                box[i].r = 255; box[i].g = 100; box[i].b = 100; box[i].a = 255;
+            }
+            static const int faces[6][4] = {
+                {0, 1, 2, 3},  // -z
+                {5, 4, 7, 6},  // +z
+                {4, 0, 3, 7},  // -x
+                {1, 5, 6, 2},  // +x
+                {3, 2, 6, 7},  // +y
+                {4, 5, 1, 0},  // -y
+            };
+            uint32_t boxIdx[36]{};
+            uint32_t n = 0;
+            for (int f = 0; f < 6; ++f) {
+                const int a = faces[f][0], b = faces[f][1];
+                const int c = faces[f][2], d = faces[f][3];
+                // two triangles -> two quad groups, each [A,B,C,C]
+                boxIdx[n++] = static_cast<uint32_t>(a);
+                boxIdx[n++] = static_cast<uint32_t>(b);
+                boxIdx[n++] = static_cast<uint32_t>(c);
+                boxIdx[n++] = static_cast<uint32_t>(c);
+                boxIdx[n++] = static_cast<uint32_t>(a);
+                boxIdx[n++] = static_cast<uint32_t>(c);
+                boxIdx[n++] = static_cast<uint32_t>(d);
+                boxIdx[n++] = static_cast<uint32_t>(d);
+            }
+            backend.drawIndexed(GSPrimitive::Triangle, RenderList::Opaque,
+                                boxIdx, n, box, 0,
+                                kNullTexture, 255, 100, 100, 255);
         }
 
         backend.endFrame();
@@ -609,6 +688,9 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     if (checkerTex != kNullTexture) backend.destroyTexture(checkerTex);
     for (const auto& kv : texCache)
         if (kv.second != kNullTexture) backend.destroyTexture(kv.second);
+    player.shutdown();
+    gobjRuntime.shutdown();
+    clip.shutdown();
     backend.shutdown();
     return 0;
 }

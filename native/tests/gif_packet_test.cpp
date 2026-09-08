@@ -55,9 +55,18 @@ public:
 
     void setMatrices(const Matrix4x4&, const Matrix4x4&, const Matrix4x4&) override {}
 
-    void drawPrimitive(GSPrimitive p, RenderList l, const RenderVertex*, u32 c,
-                       TextureHandle, u8, u8, u8, u8) override {
+void drawPrimitive(GSPrimitive p, RenderList l, const RenderVertex*, u32 c,
+                       TextureHandle t, u8 r, u8 g, u8 b, u8 a) override {
         m_drawPrimCalls++; m_lastPrim = p; m_lastList = l; m_lastPrimCount = c;
+    }
+    void drawStrips(RenderList l, const RenderVertex*, u32 vertexCount,
+                    const u32* firsts, const u32* counts, u32 stripCount,
+                    TextureHandle t, u8 r, u8 g, u8 b, u8 a) override {
+        m_stripCalls++;
+        m_lastList = l;
+        m_lastStripCount = (int)stripCount;
+        (void)vertexCount; (void)firsts; (void)counts;
+        (void)t; (void)r; (void)g; (void)b; (void)a;
     }
     void drawIndexed(GSPrimitive, RenderList, const u32*, u32,
                      const RenderVertex*, u32, TextureHandle, u8, u8, u8, u8) override {}
@@ -112,6 +121,8 @@ public:
     RenderTargetHandle m_nextRT = kNullRenderTarget;
 
     u32 m_drawPrimCalls = 0;
+    u32 m_stripCalls = 0;
+    int m_lastStripCount = 0;
     GSPrimitive m_lastPrim = GSPrimitive::Point;
     RenderList m_lastList = RenderList::Opaque;
     u32 m_lastPrimCount = 0;

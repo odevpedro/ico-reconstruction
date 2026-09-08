@@ -14,6 +14,8 @@ option(ICO_ENABLE_OPENGL "Enable OpenGL rendering backend (requires GL + X11); O
 set(ICO_ENGINE_SOURCES
     src/game/KanbanSceneLoader.cpp
     src/game/GirlBrainSemantic.cpp
+    src/game/PlayerController.cpp
+    src/engine/ClipBridge.cpp
     src/engine/GObj.cpp
     src/engine/GObjPool.cpp
     src/engine/ProcessNodePool.cpp
@@ -174,6 +176,12 @@ target_link_libraries(gobj_factory_test PRIVATE ico_engine_core)
 add_executable(gobj_entity_allocator_test tests/gobj_entity_allocator_test.cpp)
 target_link_libraries(gobj_entity_allocator_test PRIVATE ico_engine_core)
 
+add_executable(clip_bridge_test tests/clip_bridge_test.cpp)
+target_link_libraries(clip_bridge_test PRIVATE ico_engine_core)
+
+add_executable(player_controller_test tests/player_controller_test.cpp)
+target_link_libraries(player_controller_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
@@ -195,6 +203,8 @@ add_test(NAME world_state_slot COMMAND world_state_slot_test)
 add_test(NAME world_state_loader COMMAND world_state_loader_test)
 add_test(NAME gobj_factory COMMAND gobj_factory_test)
 add_test(NAME gobj_entity_allocator COMMAND gobj_entity_allocator_test)
+add_test(NAME clip_bridge COMMAND clip_bridge_test)
+add_test(NAME player_controller COMMAND player_controller_test)
 add_test(NAME input COMMAND input_test)
 add_test(NAME ps2o_mesh COMMAND ps2o_mesh_test)
 add_test(NAME scene_asset_store COMMAND scene_asset_store_test)

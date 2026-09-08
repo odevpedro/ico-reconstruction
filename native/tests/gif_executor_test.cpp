@@ -62,6 +62,14 @@ public:
         m_lastPrimR = r; m_lastPrimG = g; m_lastPrimB = b; m_lastPrimA = a;
         (void)v;
     }
+    void drawStrips(RenderList l, const RenderVertex*, u32 vertexCount,
+                    const u32* firsts, const u32* counts, u32 stripCount,
+                    TextureHandle, u8, u8, u8, u8) override {
+        m_stripCalls++;
+        m_lastList = l;
+        m_lastStripCount = (int)stripCount;
+        (void)vertexCount; (void)firsts; (void)counts;
+    }
     void drawIndexed(GSPrimitive, RenderList, const u32*, u32,
                      const RenderVertex*, u32, TextureHandle, u8, u8, u8, u8) override {}
     void drawSprite(float x, float y, float w, float h,
@@ -117,6 +125,8 @@ public:
     u32 m_matrixCalls = 0;
 
     u32 m_drawPrimCalls = 0;
+    u32 m_stripCalls = 0;
+    int m_lastStripCount = 0;
     GSPrimitive m_lastPrim = GSPrimitive::Point;
     RenderList m_lastList = RenderList::Opaque;
     u32 m_lastPrimCount = 0;

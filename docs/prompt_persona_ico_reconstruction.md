@@ -57,6 +57,12 @@ A compelling scene is not technical evidence.
   a `RenderBackend` abstraction, TM2 texture loading, a GIF command-buffer
   model, a GIF executor, an OpenGL backend, and a game-loop ->
   KanbanSceneLoader -> GifPacketBridge seam (`game_loop_scene_test`).
+- Rev.149 (2026-09-07): the first visible character appears. `ClipBridge`
+  (semantic collision bridge over a real decoded PS2O room mesh) resolves
+  the actual p1 floor with a 7x7 per-cell heightfield and scores walls against
+  the local walk band (sub-floor slabs no longer block); `PlayerController`
+  walks through the GObj process-dispatch seam with WASD, without losing floor
+  or tunneling walls. Demo: `./build/ico_native --p2o assets/170_st00a_p1.p2o`.
   This is an engine-core prototype, not a playable port.
 
 ## Current runtime baseline (Rev.126)
@@ -87,11 +93,13 @@ The `iosOmCreateDL` slot dispatch, type-based routing, rendering pipeline, the
 game-loop -> scene-loader -> GIF bridge, and the `WorldStateLoader` per-room
 semantic bridge are implemented and tested, as are the two hot-gap scene
 factories: `GObjFactory` (CreateGObj / CreateGObj_v, `0x240D40`/`0x240EA0`)
-and `GObjEntityAllocator` (AllocGObjEntity, `0x19F310`) — full suite is
-**20/20 CTest**. Next up is a new runtime session to observe the per-room
-`init_fn` targets (the `jalr` at `0x001AF96C`) so the native dispatch table
-can be bound to real room setup functions beyond the currently injected
-mocks.
+and `GObjEntityAllocator` (AllocGObjEntity, `0x19F310`), plus the
+`ClipBridge` collision bridge and `PlayerController` walkable character
+(Rev.149) — full suite is **25/25 CTest**. Next up is a new runtime session
+to observe the per-room `init_fn` targets (the `jalr` at `0x001AF96C`) so the
+native dispatch table can be bound to real room setup functions beyond the
+currently injected mocks, and then wiring real `boy.c` logic (Fase C) onto the
+player's GObj process callback.
 
 ## Sources to prefer
 
