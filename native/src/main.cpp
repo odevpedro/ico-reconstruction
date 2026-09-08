@@ -24,7 +24,7 @@
 #include "engine/Tm2Converter.h"
 #include "engine/Tm2Format.h"
 #include "game/KanbanSceneLoader.h"
-#include "game/PlayerController.h"
+#include "game/BoyController.h"
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -460,7 +460,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
 
     // Collision ground truth for the walkable room: the fit piece (p1). The
     // ClipBridge rasterizes the triangle soup into a heightfield + wall
-    // occupancy grid; PlayerController resolves input moves against it.
+    // occupancy grid; BoyController resolves input moves against it.
     const ScenePiece* roomPiece = fitPiece != nullptr ? fitPiece : &pieces.front();
     ClipBridge clip;
     if (!clip.buildFromMesh(roomPiece->mesh.positions.data(),
@@ -480,9 +480,9 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         std::fprintf(stderr, "main: gobj runtime failed to initialize\n");
         return 1;
     }
-    ico::game::PlayerController player;
+    ico::game::BoyController player;
     if (!player.initialize(gobjRuntime, clip, 1u)) {
-        std::fprintf(stderr, "main: PlayerController failed to initialize\n");
+        std::fprintf(stderr, "main: BoyController failed to initialize\n");
         return 1;
     }
     bool playerSpawned = player.spawn(cx, cz, player.halfExtent());
@@ -563,7 +563,9 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         // Player move vector from WASD (world units per frame; PS2 units are
         // cm-scale, so 25 units/frame is a comfortable walk pace relative to
         // the ~200+ unit room). Y is handled by the ClipBridge snap; the
-        // PlayerController process consumes the vector this frame.
+        // BoyController process consumes the vector this frame. The vector is
+        // the Phase A input feeding the boy_hB speed-tier discriminator
+        // (single key < kRunThreshold → walk 15.0, W+D diagonal → run 30.0).
         const float step = 25.0f;
         float moveDx = 0.0f, moveDz = 0.0f;
         if (input.isKeyDown(KeyW)) moveDz += step;

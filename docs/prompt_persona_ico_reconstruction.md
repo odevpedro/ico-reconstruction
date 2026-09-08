@@ -64,6 +64,17 @@ A compelling scene is not technical evidence.
   walks through the GObj process-dispatch seam with WASD, without losing floor
   or tunneling walls. Demo: `./build/ico_native --p2o assets/170_st00a_p1.p2o`.
   This is an engine-core prototype, not a playable port.
+- Rev.150 (2026-09-08): Fase C of the input/collision/BOY report — the
+  placeholder becomes a semantic port of the real PS2 BOY handlers.
+  `BoyController` (replaces `PlayerController`) mirrors `boy_hA/hB/hC`
+  (src/entity/boy.c): hB speed tiers **walk 15.0 / run 30.0** selected by the
+  `sub_14A0D8` discriminator (bit 36 of ICO flags at +0x17C), damped velocity
+  approach `vel += (target-vel)*0.7` matching the `(speed-sep)*damping` solver
+  algebra, hA two-path active/idle, hC work-area defaults
+  (config 20, range 300, flagMask 0x80808080), and the world_state **== 0x27**
+  interaction gate (<20.0 proximity, id, !busy). Input vector still comes from
+  Phase A (WASD; single key walks, W+D diagonal runs). Demo stable on the real
+  p1 mesh; suite **25/25 CTest**.
 
 ## Current runtime baseline (Rev.126)
 
@@ -94,12 +105,13 @@ game-loop -> scene-loader -> GIF bridge, and the `WorldStateLoader` per-room
 semantic bridge are implemented and tested, as are the two hot-gap scene
 factories: `GObjFactory` (CreateGObj / CreateGObj_v, `0x240D40`/`0x240EA0`)
 and `GObjEntityAllocator` (AllocGObjEntity, `0x19F310`), plus the
-`ClipBridge` collision bridge and `PlayerController` walkable character
-(Rev.149) — full suite is **25/25 CTest**. Next up is a new runtime session
-to observe the per-room `init_fn` targets (the `jalr` at `0x001AF96C`) so the
-native dispatch table can be bound to real room setup functions beyond the
-currently injected mocks, and then wiring real `boy.c` logic (Fase C) onto the
-player's GObj process callback.
+`ClipBridge` collision bridge and the `BoyController` semantic BOY state
+machine (Rev.150, ports `boy_hA/hB/hC`; 25/25 CTest). Next up is a new
+runtime session to observe the per-room `init_fn` targets (the `jalr` at
+`0x001AF96C`) so the native dispatch table can be bound to real room setup
+functions beyond the currently injected mocks, and a PCSX2 capture with
+probes on `boy_hA/hB/hC` (`0x1C1A98/0x1C1DD8/0x1C1F58`) to compare the native
+state machine against a real gameplay state sequence.
 
 ## Sources to prefer
 

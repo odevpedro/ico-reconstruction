@@ -1,5 +1,6 @@
-#include "game/PlayerController.h"
+#include "game/BoyController.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <limits>
@@ -11,13 +12,13 @@ using ico::engine::IsysGObjRuntime;
 using ico::engine::ProcessNode;
 }  // namespace
 
-PlayerController::~PlayerController() {
+BoyController::~BoyController() {
     shutdown();
 }
 
-bool PlayerController::initialize(ico::engine::IsysGObjRuntime& runtime,
-                                  const ico::engine::ClipBridge& bridge,
-                                  u8 listId) {
+bool BoyController::initialize(ico::engine::IsysGObjRuntime& runtime,
+                               const ico::engine::ClipBridge& bridge,
+                               u8 listId) {
     shutdown();
     if (listId >= ico::engine::kPrimaryListCount) {
         return false;
@@ -37,9 +38,8 @@ bool PlayerController::initialize(ico::engine::IsysGObjRuntime& runtime,
     gobj = g;
 
     // Register the char's own update process (typeMask 1, priority 0). The
-    // callback is invoked by the runtime dispatcher on each update() pass —
-    // this is the Phase A seam through which real BoyBrain logic will later
-    // run (Phase C).
+    // callback is the Phase A/C seam: it runs the boy_hA/hB semantic state
+    // machine inside the isysGObj dispatch.
     auto* proc = runtime.registerProcess(
         *gobj, 1u, 0u,
         [this](ico::engine::GObj& g, ico::engine::ProcessNode&) {
@@ -55,7 +55,7 @@ bool PlayerController::initialize(ico::engine::IsysGObjRuntime& runtime,
     return true;
 }
 
-void PlayerController::shutdown() {
+void BoyController::shutdown() {
     if (gobj != nullptr && runtime != nullptr) {
         runtime->remove(*gobj);
     }
@@ -63,9 +63,10 @@ void PlayerController::shutdown() {
     runtime = nullptr;
     bridge = nullptr;
     moveDx = moveDz = 0.0f;
+    velX = velZ = 0.0f;
 }
 
-bool PlayerController::spawn(float x, float z, float halfExtent) {
+bool BoyController::spawn(float x, float z, float halfExtent) {
     if (bridge == nullptr) {
         return false;
     }
@@ -123,22 +124,74 @@ bool PlayerController::spawn(float x, float z, float halfExtent) {
     return false;
 }
 
-void PlayerController::setMove(f32 dx, f32 dz) {
+void BoyController::setMove(f32 dx, f32 dz) {
     moveDx = dx;
     moveDz = dz;
 }
 
-void PlayerController::onProcessDispatch(ico::engine::GObj& g) {
+void BoyController::onProcessDispatch(ico::engine::GObj& g) {
     (void)g;
     if (bridge == nullptr) {
-        moveDx = moveDz = 0.0f;
         return;
     }
-    bridge->move(x_, y_, z_, moveDx, moveDz, halfExtent_, stepHeight_);
+
+    // hB: request a speed tier from the input magnitude. The original picks
+    // walk(15)/run(30) via sub_14A0D8 (walk/run discriminators); the native
+    // input layer has no analog throttle yet, so the tier follows the
+    // requested delta magnitude (kRunThreshold = run).
+    const float reqMag = std::hypot(moveDx, moveDz);
+    const bool wantsMove = reqMag > 0.0001f;
+    const float speed = (!wantsMove)
+        ? 0.0f
+        : (reqMag >= kRunThreshold ? kRunSpeed : kWalkSpeed);
+
+    // Desired unit direction times tier speed = target velocity.
+    float targetVx = 0.0f, targetVz = 0.0f;
+    if (wantsMove) {
+        targetVx = (moveDx / reqMag) * speed;
+        targetVz = (moveDz / reqMag) * speed;
+    }
+
+    // hB: damped approach used by the PS2 solver (0x1034B8:
+    // f20=separation; f12=(speed-sep)*damping; factor 0.7). Blend current
+    // velocity toward the target so the character accelerates/decelerates.
+    velX += (targetVx - velX) * kDamping;
+    velZ += (targetVz - velZ) * kDamping;
+
+    // Resolve the integrated velocity through the clip bridge (the native
+    // sweep of `_Clip`), axis-separated, snapping to the floor.
+    const float hx = velX, hz = velZ;
+    const bool progressed = bridge->move(x_, y_, z_, hx, hz,
+                                         halfExtent_, stepHeight_);
+
+    // hA: two-path controller. Moving input (or residual velocity)  → Path A
+    // (active: anim+physics). Otherwise → Path B (transform-only idle). The
+    // native has no animation system yet, so Path A merely advances the work
+    // state; both paths converge below, exactly as in the PS2 hA.
+    const bool wantsActive = wantsMove || std::hypot(velX, velZ) > 0.0001f;
+    if (wantsActive) {
+        state_.active = 1;
+        ++state_.animTime;
+    } else {
+        state_.active = 0;
+    }
+
+    // Convergence: interaction gate (hA). Only in gameplay world_state, when
+    // the proximity sensor is inside the 20.0 interaction radius and the
+    // scene object carries an interaction id and is not busy, is the contact
+    // handler fired.
+    if (worldState_ == kWorldStateGameplay &&
+        distanceSensor_ < kInteractionRange && interactionId_ != 0 &&
+        !busy_ && interactionCb_ != nullptr) {
+        interactionCb_(interactionId_, interactionCtx_);
+    }
+
+    // A dispatch consumed the pending move (successfully or blocked).
     moveDx = moveDz = 0.0f;
+    (void)progressed;
 }
 
-void PlayerController::update() {
+void BoyController::update() {
     if (runtime == nullptr || gobj == nullptr) {
         return;
     }
