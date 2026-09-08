@@ -962,8 +962,8 @@ def insn_to_asm(insn: dict, branch_labels: dict,
         word = int.from_bytes(bytes.fromhex(insn["bytes"]), "little")
         return f"\t.word\t0x{word:08x}"
 
-    # R5900-specific: bbit032, bbit031, bbit030 and other bit test ops
-    if mnem.startswith("bbit0"):
+    # R5900-specific: bbit032, bbit132, bbit031, bbit131 and other bit test ops
+    if mnem.startswith("bbit0") or mnem.startswith("bbit1"):
         word = int.from_bytes(bytes.fromhex(insn["bytes"]), "little")
         return f"\t.word\t0x{word:08x}"
 
