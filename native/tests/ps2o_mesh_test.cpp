@@ -96,6 +96,17 @@ int main() {
     assert(mesh.triangles[5] == 3);
     assert(mesh.positions.size() == 12); // 4 verts x 3 floats
 
+    // Strip topology preservation (Rev.147): the single 0xFFFF-framed frame
+    // primitive decodes to one Ps2oStrip with spine [0,1,2,3]; N spine verts
+    // => N-2 = 2 triangles, matching the flat triangle list above.
+    assert(mesh.strips.size() == 1);
+    assert(mesh.strips[0].spine.size() == 4);
+    assert(mesh.strips[0].spine[0] == 0);
+    assert(mesh.strips[0].spine[1] == 1);
+    assert(mesh.strips[0].spine[2] == 2);
+    assert(mesh.strips[0].spine[3] == 3);
+    assert(mesh.strips[0].uvs.empty()); // no UV array in this fixture
+
     // Position round-trip.
     assert(mesh.positions[0 * 3 + 0] == 0.0f);
     assert(mesh.positions[1 * 3 + 1] == 0.0f);

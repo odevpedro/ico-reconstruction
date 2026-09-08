@@ -290,6 +290,20 @@ public:
                              TextureHandle texture = kNullTexture,
                              u8 r = 255, u8 g = 255, u8 b = 255, u8 a = 255) = 0;
 
+    // Triangle-strip batching (matching gif_DrawStripF / gif_DrawStripG, GIF
+    // prim 0xD). `vertices` is the concatenated spine stream of `stripCount`
+    // strips; strip i occupies vertices [firsts[i], firsts[i]+counts[i]).
+    // Each strip of N spine verts renders N-2 triangles sharing edges, with
+    // no indexed duplication and no [A,B,C,C] degenerate expansion. Drawn as
+    // one glMultiDrawArrays(GL_TRIANGLE_STRIP, ...) per call, so a caller
+    // groups all strips of one texture into a single draw.
+    virtual void drawStrips(RenderList list, const RenderVertex* vertices,
+                            u32 vertexCount,
+                            const u32* firsts, const u32* counts,
+                            u32 stripCount,
+                            TextureHandle texture = kNullTexture,
+                            u8 r = 255, u8 g = 255, u8 b = 255, u8 a = 255) = 0;
+
     // Sprite drawing (matching gif_DrawSprite / gif_DrawGouraudSprite)
     virtual void drawSprite(float x, float y, float w, float h,
                             float u0, float v0, float u1, float v1,

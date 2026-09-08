@@ -39,6 +39,11 @@ void Input::update() {
     std::memcpy(m_prevKeys, m_keys, sizeof(m_keys));
 }
 
+void Input::setKeyState(u32 key, bool down) {
+    if (key >= 256) return;
+    m_keys[key] = down;
+}
+
 bool Input::isKeyDown(u32 key) const {
     if (key >= 256) return false;
     return m_keys[key];

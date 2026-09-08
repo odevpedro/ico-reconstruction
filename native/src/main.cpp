@@ -13,6 +13,7 @@
 #include "runtime/Logger.h"
 #include <cstdio>
 
+#include "platform/Input.h"
 #include "engine/GifPacket.h"
 #include "engine/OpenGLBackend.h"
 #include "engine/Ps2oMesh.h"
@@ -53,6 +54,23 @@ struct TextureBatch {
     ico::engine::TextureHandle texture;
     std::vector<ico::engine::RenderVertex> vertices;
     std::vector<uint32_t> indices;
+    uint32_t sourceTriangles = 0; // real PS2O triangles merged into this block
+};
+
+// Strip-semantics batch (native counterpart of gif_DrawStripF/G, GIF prim
+// 0xD). Each PS2O frame primitive (Ps2oStrip) keeps its spine; N spine verts
+// form N-2 triangles sharing edges. Concatenated into one vertex stream per
+// texture with per-strip [firsts[i], counts[i]) spans so the whole texture
+// renders via a single glMultiDrawArrays(GL_TRIANGLE_STRIP, ...) call,
+// eliminating the [A,B,C,C] indexed duplication of TextureBatch (which draws
+// 2 GPU triangles per source triangle, half degenerate).
+struct StripBatch {
+    ico::engine::TextureHandle texture;
+    std::vector<ico::engine::RenderVertex> vertices; // concatenated spines
+    std::vector<uint32_t> firsts;   // per-strip start index into vertices
+    std::vector<uint32_t> counts;   // per-strip spine vertex count
+    uint32_t sourceTriangles = 0;   // sum over strips of (count-2)
+    uint32_t sourceStrips = 0;      // number of strips merged into this block
 };
 
 // Loads a TM2 into a texture handle (no-op on kNullTexture result).
@@ -276,6 +294,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                 }
 
                 const uint32_t baseVert = static_cast<uint32_t>(tb->vertices.size());
+                tb->sourceTriangles += static_cast<uint32_t>(matTris.size());
                 // Backend drawIndexed consumes quads of 4 vertices ([A,B,C,C]
                 // degenerates to two triangles); emit 4 verts per source tri.
                 for (uint32_t gi = 0; gi < matTris.size(); ++gi) {
@@ -308,10 +327,118 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         return batch;
     };
 
+    // Strip-semantics batch builder: reconstruct per-texture strip blocks
+    // from the preserved Ps2oStrip topology. Each strip contributes N spine
+    // verts explicitly (UV = k + offset[material] per spine position), and
+    // the plane between the current and next strip uses the same N keeps
+    // N-2 triangles. When no piece has strips (fallback file), this returns
+    // an empty vector and the flat TextureBatch path below is used.
+    auto buildStripBatches = [&](TextureHandle fallbackTex) -> std::vector<StripBatch> {
+        std::vector<StripBatch> batch;
+        for (const auto& sp : pieces) {
+            const auto& mesh = sp.mesh;
+            if (mesh.strips.empty()) continue;
+            for (const auto& strip : mesh.strips) {
+                const uint32_t n = static_cast<uint32_t>(strip.spine.size());
+                if (n < 3) continue;
+
+                TextureHandle tex = (strip.material < sp.texByMat.size())
+                    ? sp.texByMat[strip.material] : kNullTexture;
+                if (tex == kNullTexture && fallbackTex != kNullTexture) tex = fallbackTex;
+
+                StripBatch* sb = nullptr;
+                for (auto& b : batch) if (b.texture == tex) { sb = &b; break; }
+                if (sb == nullptr) {
+                    batch.push_back(StripBatch{});
+                    sb = &batch.back();
+                    sb->texture = tex;
+                }
+
+                const uint32_t baseVert = static_cast<uint32_t>(sb->vertices.size());
+                const bool hasStripUV = strip.uvs.size() >= n * 2;
+                for (uint32_t k = 0; k < n; ++k) {
+                    const uint32_t vi = strip.spine[k];
+                    RenderVertex v{};
+                    v.x = mesh.positions[vi * 3 + 0];
+                    v.y = mesh.positions[vi * 3 + 1];
+                    v.z = mesh.positions[vi * 3 + 2];
+                    if (hasStripUV) {
+                        v.u = strip.uvs[k * 2 + 0];
+                        v.v = strip.uvs[k * 2 + 1];
+                    }
+                    v.r = 255; v.g = 255; v.b = 255; v.a = 255;
+                    sb->vertices.push_back(v);
+                }
+                sb->firsts.push_back(baseVert);
+                sb->counts.push_back(n);
+                sb->sourceTriangles += n - 2;
+                sb->sourceStrips++;
+            }
+        }
+        return batch;
+    };
+
     // Checkerboard is applied only when --uv-test is set; otherwise the loop
     // assigns kNullTexture for untextured batches (white).
     const std::vector<TextureBatch> textureBatches = buildBatches(
         uvTest ? checkerTex : kNullTexture);
+    const std::vector<StripBatch> stripBatches = buildStripBatches(
+        uvTest ? checkerTex : kNullTexture);
+    const bool useStrips = !stripBatches.empty();
+
+    // Batch instrumentation: per-texture source triangles vs emitted
+    // [A,B,C,C] quad-group geometry. backend.drawIndexed consumes groups of
+    // 4 indices as 2 triangles (real + (A,C,C) degenerate), so emitted
+    // triangle count = 2 * sourceTriangles while the GPU only rasterizes
+    // sourceTriangles of them. This resolves whether the earlier per-triangle
+    // duplication is real or an artifact of the quad-group contract. When the
+    // mesh preserves strip topology, the StripBatch report shows the strip
+    // path instead (N spine verts -> N-2 triangles, no duplication).
+    if (useStrips) {
+        uint32_t totalSrc = 0, totalVerts = 0, totalStrips = 0;
+        std::fprintf(stderr, "main: strip batch report (per texture):\n");
+        for (const auto& sb : stripBatches) {
+            const uint32_t verts = static_cast<uint32_t>(sb.vertices.size());
+            std::fprintf(stderr,
+                "main:   tex=%llu strips=%-6u srcTris=%-6u verts=%-6u "
+                "verts/srcTri=%.2f (strip: N spine verts -> N-2 tris)\n",
+                static_cast<unsigned long long>(sb.texture), sb.sourceStrips,
+                sb.sourceTriangles, verts,
+                sb.sourceTriangles ? (float)verts / (float)sb.sourceTriangles : 0.0f);
+            totalSrc += sb.sourceTriangles;
+            totalVerts += verts;
+            totalStrips += sb.sourceStrips;
+        }
+        std::fprintf(stderr,
+            "main:   TOTAL strips=%u srcTris=%u verts=%u | "
+            "verts/srcTri=%.2f (GPU tris = srcTris, degenerates = strip cosets)\n",
+            totalStrips, totalSrc, totalVerts,
+            totalSrc ? (float)totalVerts / (float)totalSrc : 0.0f);
+    } else {
+        uint32_t totalSrc = 0, totalVerts = 0, totalIdx = 0;
+        std::fprintf(stderr, "main: batch report (per texture):\n");
+        for (const auto& tb : textureBatches) {
+            const uint32_t verts = static_cast<uint32_t>(tb.vertices.size());
+            const uint32_t idx = static_cast<uint32_t>(tb.indices.size());
+            const uint32_t quadGroups = idx / 4;
+            const uint32_t emittedTris = quadGroups * 2;
+            std::fprintf(stderr,
+                "main:   tex=%llu srcTris=%-6u verts=%-6u idx=%-6u "
+                "quadGroups=%-6u emittedTris=%-6u (real=%u degenerate=%u)\n",
+                static_cast<unsigned long long>(tb.texture), tb.sourceTriangles,
+                verts, idx, quadGroups, emittedTris, tb.sourceTriangles,
+                emittedTris - tb.sourceTriangles);
+            totalSrc += tb.sourceTriangles;
+            totalVerts += verts;
+            totalIdx += idx;
+        }
+        std::fprintf(stderr,
+            "main:   TOTAL srcTris=%u verts=%u idx=%u | verts/srcTri=%.2f "
+            "idx/srcTri=%.2f (ideal indexed=3 verts+3 idx/tri)\n",
+            totalSrc, totalVerts, totalIdx,
+            totalSrc ? (float)totalVerts / (float)totalSrc : 0.0f,
+            totalSrc ? (float)totalIdx / (float)totalSrc : 0.0f);
+    }
 
     const auto frameTime = std::chrono::milliseconds(16);
     std::vector<uint8_t> tmpFrame(kPs2ScreenWidth * kPs2ScreenHeight * 3);
@@ -319,6 +446,29 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     // Interactive camera state (zoom/orbit via keyboard + mouse wheel).
     float curDist = dist;
     float curAngle = (camAngleRad > 0.0f) ? camAngleRad : 0.0f;
+
+    // Input wiring: platform Input class fed from the X11 event pump. The
+    // key state then drives a real world-space placeholder marker (WASD/D-
+    // pad move it in the room's XZ plane, shown as a red floor quad) so the
+    // native runtime consumes genuine keyboard input from a single source.
+    Input input;
+    input.initialize();
+    float markerX = cx, markerZ = cz, markerY = cy;
+
+    auto feedKey = [&](XKeyEvent& xk, bool down) {
+        const ::KeySym ks = ::XLookupKeysym(&xk, 0);
+        switch (ks) {
+            case XK_w:
+            case XK_W:  input.setKeyState(KeyW, down); break;
+            case XK_a:
+            case XK_A:  input.setKeyState(KeyA, down); break;
+            case XK_s:
+            case XK_S:  input.setKeyState(KeyS, down); break;
+            case XK_d:
+            case XK_D:  input.setKeyState(KeyD, down); break;
+            default: break;
+        }
+    };
 
     auto pollCameraInput = [&]() {
         void* dispV = backend.getNativeDisplay();
@@ -330,6 +480,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
             XEvent ev;
             ::XNextEvent(d, &ev);
             if (ev.type == KeyPress) {
+                feedKey(ev.xkey, true);
                 const ::KeySym ks = ::XLookupKeysym(&ev.xkey, 0);
                 if (ks == XK_plus || ks == XK_equal || ks == XK_KP_Add ||
                     ks == XK_z || ks == XK_Z || ks == XK_Page_Up) {
@@ -345,6 +496,8 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                     exit(0);
                 }
                 std::fprintf(stderr, "main: cam dist=%.1f ang=%.2f rad\n", curDist, curAngle);
+            } else if (ev.type == KeyRelease) {
+                feedKey(ev.xkey, false);
             } else if (ev.type == ButtonPress) {
                 if (ev.xbutton.button == Button4) {          // wheel up = zoom in
                     curDist *= 0.90f;
@@ -356,12 +509,25 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         }
     };
     std::fprintf(stderr, "main: controls: Z/+/wheel-up zoom-in, X/-/wheel-down zoom-out, arrows orbit, Q/Esc quit\n");
+    std::fprintf(stderr, "main: WASD/arrows move the placeholder marker (red floor quad)\n");
 
     for (u32 f = 0; frames == 0 || f < frames; ++f) {
         backend.beginFrame();
         backend.clear(10, 12, 18, 255);
 
+        // Top-of-frame key snapshot must precede the X11 pump so edge
+        // queries compare against last frame's state (see input_test).
+        input.update();
         pollCameraInput();
+
+        // Move the placeholder marker in the room's XZ plane (world units
+        // per frame; PS2 units are cm-scale, so 25 animated tatami-like grid
+        // is a comfortable walk pace relative to the ~200+ unit room).
+        const float step = 25.0f;
+        if (input.isKeyDown(KeyW)) markerZ += step;
+        if (input.isKeyDown(KeyS)) markerZ -= step;
+        if (input.isKeyDown(KeyA)) markerX -= step;
+        if (input.isKeyDown(KeyD)) markerX += step;
 
         const float ang = curAngle;
         const float eyeX = cx + curDist * std::cos(ang);
@@ -378,16 +544,51 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
 
         // Single draw per pre-computed per-texture block: one state bind +
         // one flush per texture instead of per-mesh/per-material vectors.
-        for (const auto& tb : textureBatches) {
-            if (tb.indices.empty()) continue;
-            TextureHandle tex = (tb.texture != kNullTexture) ? tb.texture
-                                : (uvTest ? checkerTex : kNullTexture);
-            backend.bindTexture(tex, 0);
-            backend.drawIndexed(GSPrimitive::Triangle, RenderList::Opaque,
-                                tb.indices.data(),
-                                static_cast<uint32_t>(tb.indices.size()),
-                                tb.vertices.data(), 0,
-                                tb.texture, 255, 255, 255, 255);
+        if (useStrips) {
+            // Strip-semantics path: the PS2O geometry renders through
+            // glMultiDrawArrays(GL_TRIANGLE_STRIP) — N spine verts per strip
+            // become N-2 triangles with no indexed duplication.
+            for (const auto& sb : stripBatches) {
+                if (sb.sourceStrips == 0) continue;
+                TextureHandle tex = (sb.texture != kNullTexture) ? sb.texture
+                                    : (uvTest ? checkerTex : kNullTexture);
+                backend.bindTexture(tex, 0);
+                backend.drawStrips(RenderList::Opaque,
+                                   sb.vertices.data(),
+                                   static_cast<uint32_t>(sb.vertices.size()),
+                                   sb.firsts.data(), sb.counts.data(),
+                                   static_cast<uint32_t>(sb.counts.size()),
+                                   sb.texture, 255, 255, 255, 255);
+            }
+        } else {
+            for (const auto& tb : textureBatches) {
+                if (tb.indices.empty()) continue;
+                TextureHandle tex = (tb.texture != kNullTexture) ? tb.texture
+                                    : (uvTest ? checkerTex : kNullTexture);
+                backend.bindTexture(tex, 0);
+                backend.drawIndexed(GSPrimitive::Triangle, RenderList::Opaque,
+                                    tb.indices.data(),
+                                    static_cast<uint32_t>(tb.indices.size()),
+                                    tb.vertices.data(), 0,
+                                    tb.texture, 255, 255, 255, 255);
+            }
+        }
+
+        // Placeholder marker: a red floor quad in world space driven by the
+        // wired keyboard input (WASD). It doubles as an input self-test — a
+        // live red square proves isKeyDown state flows from X11 → Input.
+        // drawPrimitive consumes groups of 4 vertices ([A,B,C,C] degenerates
+        // to two triangles), so a plain 4-corner quad is one call.
+        {
+            const float s = 30.0f; // half-size in world units
+            RenderVertex mq[4]{};
+            mq[0].y = mq[1].y = mq[2].y = mq[3].y = markerY;
+            mq[0].x = markerX - s; mq[0].z = markerZ - s;
+            mq[1].x = markerX + s; mq[1].z = markerZ - s;
+            mq[2].x = markerX + s; mq[2].z = markerZ + s;
+            mq[3].x = markerX - s; mq[3].z = markerZ + s;
+            backend.drawPrimitive(GSPrimitive::Triangle, RenderList::Opaque,
+                                  mq, 4, kNullTexture, 255, 30, 30, 255);
         }
 
         backend.endFrame();

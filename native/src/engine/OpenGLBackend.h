@@ -68,6 +68,13 @@ public:
                      TextureHandle texture,
                      u8 r, u8 g, u8 b, u8 a) override;
 
+    void drawStrips(RenderList list, const RenderVertex* vertices,
+                    u32 vertexCount,
+                    const u32* firsts, const u32* counts,
+                    u32 stripCount,
+                    TextureHandle texture,
+                    u8 r, u8 g, u8 b, u8 a) override;
+
     void drawSprite(float x, float y, float w, float h,
                     float u0, float v0, float u1, float v1,
                     TextureHandle texture,

@@ -155,6 +155,13 @@ target_link_libraries(world_state_slot_test PRIVATE ico_engine_core)
 add_executable(world_state_loader_test tests/world_state_loader_test.cpp)
 target_link_libraries(world_state_loader_test PRIVATE ico_engine_core)
 
+add_executable(input_test tests/input_test.cpp
+    src/runtime/Logger.cpp
+    src/platform/Input.cpp
+)
+target_include_directories(input_test PRIVATE src)
+target_link_libraries(input_test PRIVATE ico_engine_core)
+
 add_executable(ps2o_mesh_test tests/ps2o_mesh_test.cpp)
 target_link_libraries(ps2o_mesh_test PRIVATE ico_engine_core)
 
@@ -188,6 +195,7 @@ add_test(NAME world_state_slot COMMAND world_state_slot_test)
 add_test(NAME world_state_loader COMMAND world_state_loader_test)
 add_test(NAME gobj_factory COMMAND gobj_factory_test)
 add_test(NAME gobj_entity_allocator COMMAND gobj_entity_allocator_test)
+add_test(NAME input COMMAND input_test)
 add_test(NAME ps2o_mesh COMMAND ps2o_mesh_test)
 add_test(NAME scene_asset_store COMMAND scene_asset_store_test)
 

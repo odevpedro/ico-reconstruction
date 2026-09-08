@@ -84,7 +84,9 @@ struct OpenGLBackend::Impl {
     RenderTargetHandle currentRT = kNullRenderTarget;
 
     u32 drawCallCount = 0;
-    u32 triangleCount = 0;
+    u32 triangleCount = 0;           // triangles sent to GL (indexCount/3)
+    u32 degenerateTriangleCount = 0; // zero-area second tris from [A,B,C,C] quads
+    u32 realTriangleCount = 0;       // triangleCount - degenerateTriangleCount
 };
 
 typedef GLXContext (*PFNGLXCREATECONTEXTATTRIBSARBPROC)(::Display*, ::GLXFBConfig, GLXContext, int, const int*);
@@ -144,6 +146,7 @@ typedef void (*PFN_GLBINDVERTEXARRAY)(GLuint);
 typedef void (*PFN_GLDELETEVERTEXARRAYS)(GLsizei, const GLuint*);
 typedef void (*PFN_GLDRAWELEMENTS)(GLenum, GLsizei, GLenum, const void*);
 typedef void (*PFN_GLDRAWARRAYS)(GLenum, GLint, GLsizei);
+typedef void (*PFN_GLMULTIDRAWARRAYS)(GLenum, const GLint*, const GLsizei*, GLsizei);
 typedef void (*PFN_GLREADPIXELS)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*);
 typedef void (*PFN_GLACTIVETEXTURE)(GLenum);
 typedef void (*PFN_GLGENTEXTURES)(GLsizei, GLuint*);
@@ -208,6 +211,7 @@ static PFN_GLBINDVERTEXARRAY p_glBindVertexArray = nullptr;
 static PFN_GLDELETEVERTEXARRAYS p_glDeleteVertexArrays = nullptr;
 static PFN_GLDRAWELEMENTS p_glDrawElements = nullptr;
 static PFN_GLDRAWARRAYS p_glDrawArrays = nullptr;
+static PFN_GLMULTIDRAWARRAYS p_glMultiDrawArrays = nullptr;
 static PFN_GLREADPIXELS p_glReadPixels = nullptr;
 static PFN_GLACTIVETEXTURE p_glActiveTexture = nullptr;
 static PFN_GLGENTEXTURES p_glGenTextures = nullptr;
@@ -271,6 +275,7 @@ static bool loadGLFunctions() {
     LOAD_GL_FUNC(p_glDeleteVertexArrays,       PFN_GLDELETEVERTEXARRAYS,       "glDeleteVertexArrays");
     LOAD_GL_FUNC(p_glDrawElements,             PFN_GLDRAWELEMENTS,             "glDrawElements");
     LOAD_GL_FUNC(p_glDrawArrays,               PFN_GLDRAWARRAYS,               "glDrawArrays");
+    LOAD_GL_FUNC(p_glMultiDrawArrays,          PFN_GLMULTIDRAWARRAYS,          "glMultiDrawArrays");
     LOAD_GL_FUNC(p_glReadPixels,               PFN_GLREADPIXELS,               "glReadPixels");
     LOAD_GL_FUNC(p_glActiveTexture,            PFN_GLACTIVETEXTURE,            "glActiveTexture");
     LOAD_GL_FUNC(p_glGenTextures,              PFN_GLGENTEXTURES,              "glGenTextures");
@@ -747,6 +752,8 @@ void OpenGLBackend::beginFrame() {
     I.batchVertexCount = 0;
     I.drawCallCount = 0;
     I.triangleCount = 0;
+    I.degenerateTriangleCount = 0;
+    I.realTriangleCount = 0;
 }
 
 void OpenGLBackend::endFrame() {
@@ -764,8 +771,10 @@ void OpenGLBackend::present() {
     if (fn) {
         fn(I.display, I.glxWindow);
     }
-    std::fprintf(stderr, "[render] Frame: %u draw calls, %u triangles\n",
-                  I.drawCallCount, I.triangleCount);
+    std::fprintf(stderr, "[render] Frame: %u draw calls, %u triangles (%u real, %u degenerate)\n",
+                  I.drawCallCount, I.triangleCount,
+                  I.triangleCount - I.degenerateTriangleCount,
+                  I.degenerateTriangleCount);
 }
 
 bool OpenGLBackend::captureFrameRGB(u8* out, u32 w, u32 h) const {
@@ -1261,10 +1270,137 @@ void OpenGLBackend::drawIndexed(GSPrimitive primitive, RenderList list,
     (void)texture;
 }
 
+void OpenGLBackend::drawStrips(RenderList list, const RenderVertex* vertices,
+                               u32 vertexCount,
+                               const u32* firsts, const u32* counts,
+                               u32 stripCount,
+                               TextureHandle texture,
+                               u8 r, u8 g, u8 b, u8 a) {
+    auto& I = *m_impl;
+    if (!I.initialized || !vertices || !firsts || !counts || !hasGL()) {
+        return;
+    }
+    if (vertexCount > kMaxBatchVertices) return;
+
+    u32 stripTriangles = 0;
+    for (u32 s = 0; s < stripCount; ++s) {
+        if (counts[s] < 3) continue;
+        stripTriangles += counts[s] - 2;
+    }
+    if (stripTriangles == 0) return;
+
+    // Strips bypass the static quad EBO (which only knows [A,B,C,C] groups),
+    // so they render immediately through glMultiDrawArrays once any
+    // accumulated quad-style batches are flushed. All strips in this call
+    // share one texture bind, matching Per-texture batch grouping.
+    flushBatch();
+
+    if (I.currentList != list) {
+        I.currentList = list;
+    }
+
+    Matrix4x4 mvp = Matrix4x4::multiply(I.projMat, Matrix4x4::multiply(I.viewMat, I.modelMat));
+
+    // Texture binding mirrors the drawIndexed path: bind the requested
+    // texture, or fall back to the solid/white texture for untextured strips.
+    if (texture != kNullTexture) {
+        bindTexture(texture, 0);
+    } else {
+        if (p_glActiveTexture) p_glActiveTexture(GL_TEXTURE0);
+        if (I.whiteTexture) {
+            p_glBindTexture(GL_TEXTURE_2D, I.whiteTexture);
+        } else {
+            p_glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        I.boundTexture = kNullTexture;
+    }
+
+    if (I.isGL33) {
+        p_glUseProgram(I.currentProgram);
+        if (I.mvpLoc >= 0) {
+            p_glUniformMatrix4fv(I.mvpLoc, 1, GL_FALSE, mvp.m);
+        }
+    } else {
+        glLoadMatrixf(mvp.m);
+    }
+
+    // Feed the concatenated spine stream into the shared VBO at offset 0
+    // (the batch was just flushed, so slots 0..vertexCount are free).
+    for (u32 i = 0; i < vertexCount; ++i) {
+        BatchVertex bv{};
+        bv.x = vertices[i].x;
+        bv.y = vertices[i].y;
+        bv.z = vertices[i].z;
+        bv.nx = vertices[i].nx;
+        bv.ny = vertices[i].ny;
+        bv.nz = vertices[i].nz;
+        bv.u = vertices[i].u;
+        bv.v = vertices[i].v;
+        bv.r = r; bv.g = g; bv.b = b; bv.a = a;
+        I.batchVertices[i] = bv;
+    }
+    p_glBindBuffer(GL_ARRAY_BUFFER, I.batchVBO);
+    p_glBufferSubData(GL_ARRAY_BUFFER, 0,
+                      static_cast<GLsizeiptr>(vertexCount * sizeof(BatchVertex)),
+                      I.batchVertices);
+    p_glBindVertexArray(I.batchVAO);
+
+    if (p_glMultiDrawArrays) {
+        // Valid strip ranges only: filter out empty/1-vertex spines up front
+        // so the driver gets clean spans (much faster than one glDrawArrays
+        // per strip).
+        std::vector<GLint> firstsF;   firstsF.reserve(stripCount);
+        std::vector<GLsizei> countsF; countsF.reserve(stripCount);
+        for (u32 s = 0; s < stripCount; ++s) {
+            if (counts[s] < 3) continue;
+            firstsF.push_back(static_cast<GLint>(firsts[s]));
+            countsF.push_back(static_cast<GLsizei>(counts[s]));
+        }
+        p_glMultiDrawArrays(GL_TRIANGLE_STRIP, firstsF.data(), countsF.data(),
+                            static_cast<GLsizei>(firstsF.size()));
+    } else {
+        // Fallback: one immediate glDrawArrays per strip.
+        for (u32 s = 0; s < stripCount; ++s) {
+            if (counts[s] < 3) continue;
+            p_glDrawArrays(GL_TRIANGLE_STRIP,
+                           static_cast<GLint>(firsts[s]),
+                           static_cast<GLsizei>(counts[s]));
+        }
+    }
+
+    I.batchVertexCount = 0;
+    I.batchIndices.clear();
+    I.drawCallCount++;
+    I.triangleCount += stripTriangles;
+
+    // Classify strip triangles the same way as the batch stream: a strip
+    // triangle (s[i], s[i+1], s[i+2]) is degenerate when two spine verts
+    // coincide (equal position+uv).
+    u32 stripDegenerates = 0;
+    for (u32 s = 0; s < stripCount; ++s) {
+        if (counts[s] < 3) continue;
+        const u32 base = firsts[s];
+        for (u32 i = 0; i + 2 < counts[s]; ++i) {
+            const BatchVertex& v0 = I.batchVertices[base + i + 0];
+            const BatchVertex& v1 = I.batchVertices[base + i + 1];
+            const BatchVertex& v2 = I.batchVertices[base + i + 2];
+            const bool degenerate =
+                (v0.x == v1.x && v0.y == v1.y && v0.z == v1.z &&
+                 v0.u == v1.u && v0.v == v1.v) ||
+                (v1.x == v2.x && v1.y == v2.y && v1.z == v2.z &&
+                 v1.u == v2.u && v1.v == v2.v);
+            if (degenerate) ++stripDegenerates;
+        }
+    }
+    I.degenerateTriangleCount += stripDegenerates;
+
+    (void)texture;
+}
+
 void OpenGLBackend::drawSprite(float x, float y, float w, float h,
-                                float u0, float v0, float u1, float v1,
-                                TextureHandle texture,
-                                u8 r, u8 g, u8 b, u8 a) {
+                               float u0, float v0, float u1, float v1,
+                               TextureHandle texture,
+                               u8 r, u8 g, u8 b, u8 a) {
     auto& I = *m_impl;
     if (!I.initialized) return;
 
@@ -1466,9 +1602,29 @@ void OpenGLBackend::flushBatch() {
                       GL_UNSIGNED_INT, nullptr);
 
     I.batchVertexCount = 0;
-    I.batchIndices.clear();
     I.drawCallCount++;
     I.triangleCount += indexCount / 3;
+
+    // Classify each emitted triangle as real or degenerate (two identical
+    // vertices). The batch stream is pairs of [b0,b1,b2, b0,b2,b3] per
+    // source quad; the second triple is zero-area when v2==v3 (the
+    // [A,B,C,C] duplication emitted by main.cpp's buildBatches).
+    u32 degenerates = 0;
+    for (size_t gi = 0; gi + 2 < I.batchIndices.size(); gi += 3) {
+        const u32 i0 = I.batchIndices[gi + 0];
+        const u32 i1 = I.batchIndices[gi + 1];
+        const u32 i2 = I.batchIndices[gi + 2];
+        const BatchVertex& v0 = I.batchVertices[i0];
+        const BatchVertex& v1 = I.batchVertices[i1];
+        const BatchVertex& v2 = I.batchVertices[i2];
+        const bool degenerate = (v0.x == v1.x && v0.y == v1.y && v0.z == v1.z &&
+                                 v0.u == v1.u && v0.v == v1.v) ||
+                                (v1.x == v2.x && v1.y == v2.y && v1.z == v2.z &&
+                                 v1.u == v2.u && v1.v == v2.v);
+        if (degenerate) ++degenerates;
+    }
+    I.degenerateTriangleCount += degenerates;
+    I.batchIndices.clear();
 }
 
 } // namespace ico::engine

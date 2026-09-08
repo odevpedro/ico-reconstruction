@@ -124,7 +124,8 @@ void computeMaterialUVOffsets(const std::vector<uint16_t>& materials,
                               const std::vector<float>& uvs,
                               const std::vector<uint32_t>& triangles,
                               const std::vector<uint16_t>& triMaterials,
-                              std::vector<float>& triVertUVs) {
+                              std::vector<float>& triVertUVs,
+                              std::vector<int>& materialUVBase) {
     // Find unique materials
     int maxMat = 0;
     for (auto m : triMaterials) if (m > maxMat) maxMat = m;
@@ -177,6 +178,7 @@ void computeMaterialUVOffsets(const std::vector<uint16_t>& materials,
         }
         bestOffset[f] = bestOff;
     }
+    materialUVBase = bestOffset;
 
     // Build triVertUVs using the best offsets per material
     triVertUVs.resize(triangles.size() * 2);
@@ -301,6 +303,13 @@ bool loadPs2oMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh) {
             spine.push_back(a2);
             j += kVertexStrideBytes;
         }
+        // Preserve strip topology for a native GL_TRIANGLE_STRIP path.
+        if (spine.size() >= 3) {
+            Ps2oStrip strip;
+            strip.material = stripMat;
+            strip.spine = spine;
+            mesh.strips.push_back(std::move(strip));
+        }
         // spine = [v0, v1, v2, ...] : triangles (v0,v1,v2)(v1,v2,v3)(...),
         // dropping degenerate strips.
         for (size_t k = 0; k + 2 < spine.size(); ++k) {
@@ -326,7 +335,29 @@ bool loadPs2oMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh) {
     // material-specific base offset (UV = k + offset[f]).
     computeMaterialUVOffsets(mesh.triMaterials, mesh.uvs,
                              mesh.triangles, mesh.triMaterials,
-                             mesh.triVertUVs);
+                             mesh.triVertUVs, mesh.materialUVBase);
+
+    // Per-spine-vertex UVs for the native strip path: spine vertex k of a
+    // strip with material f reads UVarray[k + offset[f]] (Rev.143 UV = k + f
+    // indexed by position within the strip). Strip UVs mirror the flat
+    // triVertUVs contract so the strip and flat paths sample the same texture
+    // region per material; out-of-range UVs default to (0,0).
+    for (auto& strip : mesh.strips) {
+        if (mesh.uvs.empty()) continue; // no UV array in this file -> strip UVs stay empty
+        const int base = (strip.material < mesh.materialUVBase.size())
+            ? mesh.materialUVBase[strip.material] : 0;
+        strip.uvs.reserve(strip.spine.size() * 2);
+        for (size_t k = 0; k < strip.spine.size(); ++k) {
+            const int idx = base + static_cast<int>(k);
+            if (idx * 2 + 1 < (int)mesh.uvs.size()) {
+                strip.uvs.push_back(mesh.uvs[idx * 2]);
+                strip.uvs.push_back(mesh.uvs[idx * 2 + 1]);
+            } else {
+                strip.uvs.push_back(0.0f);
+                strip.uvs.push_back(0.0f);
+            }
+        }
+    }
 
     extractMaterialNames(data, size, mesh.materialNames);
 
