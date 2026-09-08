@@ -5,7 +5,6 @@
 #include <cstring>
 #include <fstream>
 #include <cmath>
-#include <limits>
 
 namespace ico::engine {
 
@@ -114,92 +113,6 @@ void extractMaterialNames(const uint8_t* data, size_t size,
     out = std::move(names);
 }
 
-// Per-material UV base offset, discovered in Rev.143 follow-up.
-// The UV array has dense interleaving (not grouped by material
-// in blocks). UV index = base + k where base is the material-specific
-// base offset and k is the triangle vertex index (0..2).
-// The base offsets are found by sampling and minimizing UV edge
-// spread per material group.
-void computeMaterialUVOffsets(const std::vector<uint16_t>& materials,
-                              const std::vector<float>& uvs,
-                              const std::vector<uint32_t>& triangles,
-                              const std::vector<uint16_t>& triMaterials,
-                              std::vector<float>& triVertUVs,
-                              std::vector<int>& materialUVBase) {
-    // Find unique materials
-    int maxMat = 0;
-    for (auto m : triMaterials) if (m > maxMat) maxMat = m;
-    maxMat++;
-
-    std::vector<int> bestOffset(maxMat, 0);
-
-    // For each material, find the best UV base offset by minimizing
-    // mean edge spread of sampled triangles.
-    for (int f = 0; f < maxMat; ++f) {
-        // Collect triangle indices with this material
-        std::vector<int> matTris;
-        for (size_t t = 0; t < triMaterials.size(); ++t) {
-            if (triMaterials[t] == (uint16_t)f) matTris.push_back((int)t);
-        }
-        if (matTris.empty()) continue;
-
-        float bestSpread = std::numeric_limits<float>::max();
-        int bestOff = 0;
-
-        // Search all possible offsets
-        int maxOff = std::min((int)uvs.size() / 2 - 3, 20000);
-        for (int off = 0; off < maxOff; ++off) {
-            float totSpread = 0.0f;
-            int cnt = 0;
-            // Sample up to 200 triangles for this material
-            int sampleLimit = std::min((int)matTris.size(), 200);
-            for (int si = 0; si < sampleLimit; ++si) {
-                int t = matTris[si];
-                const uint32_t* tri = &triangles[t * 3];
-                float spd[3];
-                for (int k = 0; k < 3; ++k) {
-                    int idx = off + k;
-                    if (idx * 2 + 1 >= (int)uvs.size()) { spd[k] = 0; continue; }
-                    float u0 = uvs[idx * 2];
-                    float v0 = uvs[idx * 2 + 1];
-                    int next = off + ((k + 1) % 3);
-                    if (next * 2 + 1 >= (int)uvs.size()) { spd[k] = 0; continue; }
-                    float u1 = uvs[next * 2];
-                    float v1 = uvs[next * 2 + 1];
-                    spd[k] = std::hypot(u0 - u1, v0 - v1);
-                    totSpread += spd[k];
-                    cnt++;
-                }
-            }
-            if (cnt > 0 && totSpread / cnt < bestSpread) {
-                bestSpread = totSpread / cnt;
-                bestOff = off;
-            }
-        }
-        bestOffset[f] = bestOff;
-    }
-    materialUVBase = bestOffset;
-
-    // Build triVertUVs using the best offsets per material
-    triVertUVs.resize(triangles.size() * 2);
-    for (size_t t = 0; t < triMaterials.size(); ++t) {
-        int f = triMaterials[t];
-        int off = (f < maxMat) ? bestOffset[f] : 0;
-        const uint32_t* tri = &triangles[t * 3];
-        for (int k = 0; k < 3; ++k) {
-            int idx = off + k;
-            size_t outIdx = (t * 3 + k) * 2;
-            if (idx * 2 + 1 < (int)uvs.size()) {
-                triVertUVs[outIdx] = uvs[idx * 2];
-                triVertUVs[outIdx + 1] = uvs[idx * 2 + 1];
-            } else {
-                triVertUVs[outIdx] = 0.0f;
-                triVertUVs[outIdx + 1] = 0.0f;
-            }
-        }
-    }
-}
-
 } // namespace
 
 bool loadPs2oMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh) {
@@ -254,109 +167,127 @@ bool loadPs2oMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh) {
         }
     }
 
-    // Face data. Record layout is 16 bytes = 8 x u16: [c, t, 0, a, m, b, s, f].
-    //   - c == 0xFFFF marks the first record of a primitive (frame head).
-    //   - c != 0xFFFF on a continuation record is a sub-stream id (0, 1, 2, ...).
-    //   - t is the primitive type; t > 1 is a terminator record ([0, t, 0xFFFF...]).
+    // Face data. Strip format (byte-exact, validated by Rev.151 metrics):
     //
-    // Each frame primitive is a triangle strip whose spine is the u16[3] (`a`)
-    // column of consecutive records. Consecutive a values [v0, v1, v2, ...]
-    // form triangles (v0,v1,v2)(v1,v2,v3)(...). This matches the validated
-    // Rev.142 spine-x decode (room p1: 15,161 tris / max idx 7792). Records
-    // whose a and b agree (a == b) are the explicit-mirror form; records with
-    // a != b still contribute their a value to the spine. Degenerate
-    // (equal-index) inner triangles are dropped.
+    //   Each strip is a 16-byte = 8 x u16 header: [N, 0xFFFF x7] where
+    //   N = number of record rows that follow this header. N is a literal
+    //   record count, not a type code (4636 headers carry 3 records,
+    //   2352 carry 4, 142 carry 5, ... ; count x N reproduces the observed
+    //   record total exactly).
+    //
+    //   Records are 16 bytes = 8 x u16 each:
+    //     u16[0] = 1 (0 on a minority of strip types)        [flag]
+    //     u16[1] = 0
+    //     u16[2] = a  vertex position index                  (max 7792 in p1)
+    //     u16[3] = s  stream / spine id (const per strip,    (max 6083, 5349
+    //              NOT material / NOT ordinal-in-file)        distinct in p1)
+    //     u16[4] = m  UV index into the UV array             (max 13069 =
+    //              NUV-1: EXACT full coverage 13070/13070)
+    //     u16[5] = b  mirror of a (== a on most records)
+    //     u16[6] = const per strip (10 distinct values 0..9; 2:2154 & 3:168
+    //              coincidentally match the legacy tex=1/tex=2 counts but
+    //              cannot be the material index: 10 > 7 names)
+    //     u16[7] = f  material index (EXACTLY 7 distinct values 0..6 in p1,
+    //              matching the 7 embedded material names)
+    //
+    //   Each strip of N records emits N-2 triangles in cascade strip order:
+    //   records (0,1,2)(1,2,3)...(N-3,N-2,N-1). Vertex positions come from
+    //   `a` and UVs directly from `m` (no per-material UV base offset
+    //   heuristic: the UV index IS the per-vertex record field). This is the
+    //   native counterpart of the PS2 gif_DrawStripF triangle-strip prim.
+    //
+    //   The face region ends at the first 16-byte row that is not a valid
+    //   [N, ffff x7] header (in p1, exactly at 0x101580, right before the
+    //   OBJH dispatch tags at 0x101620). The walker starts scanning from
+    //   the end of the UV array for the first valid header.
 
-    size_t i = kPositionsOffset;
-    while (i + 15 < size) {
-        const uint16_t c0 = rd16(data + i);
-        const uint16_t t0 = rd16(data + i + 2);
-        if (c0 != 0xFFFF) { i += 2; continue; } // drift to next frame head
-        if (t0 > 0x01)    { i += 2; continue; } // false head / terminator while hunting
-
-        const uint16_t a0 = rd16(data + i + 6);
-        const uint16_t b0 = rd16(data + i + 10);
-        if (a0 >= nv || b0 >= nv) { i += 2; continue; } // false head while hunting
-
-        // Face data = triangle strips. Each strip is a 16-byte record header
-        // (see Rev.142): [c, t, 0, a, m, b, s, f] where c == 0xFFFF marks the
-        // strip head and c == 0 on continuations. The strip spine is the
-        // u16[3] (`a`) column of consecutive records: consecutive a values
-        // [v0, v1, v2, ...] form triangles (v0,v1,v2)(v1,v2,v3)(...). Many
-        // records mirror the index into u16[5] (`b' == a), but that mirror is
-        // not guaranteed across all objects, so we decode from `a` only and
-        // strip degenerate (equal-index) triangles.
-        size_t j = i + kVertexStrideBytes;
-        bool hitTerminator = false;
-        std::vector<uint16_t> spine;
-        uint16_t stripMat = rd16(data + i + 14); // f: material/partition (u16[7])
-        spine.push_back(a0);
-        // Continuation records contribute one spine vertex each.
-        while (j + 15 < size) {
-            const uint16_t c2 = rd16(data + j);
-            const uint16_t t2 = rd16(data + j + 2);
-            if (c2 == 0xFFFF && j != i) break;  // next frame head
-            if (t2 > 0x01) { hitTerminator = true; break; } // terminator
-            const uint16_t a2 = rd16(data + j + 6);
-            const uint16_t b2 = rd16(data + j + 10);
-            if (a2 >= nv || b2 >= nv) break;
-            spine.push_back(a2);
-            j += kVertexStrideBytes;
-        }
-        // Preserve strip topology for a native GL_TRIANGLE_STRIP path.
-        if (spine.size() >= 3) {
-            Ps2oStrip strip;
-            strip.material = stripMat;
-            strip.spine = spine;
-            mesh.strips.push_back(std::move(strip));
-        }
-        // spine = [v0, v1, v2, ...] : triangles (v0,v1,v2)(v1,v2,v3)(...),
-        // dropping degenerate strips.
-        for (size_t k = 0; k + 2 < spine.size(); ++k) {
-            const uint16_t s0 = spine[k];
-            const uint16_t s1 = spine[k + 1];
-            const uint16_t s2 = spine[k + 2];
-            if (s0 == s1 || s1 == s2) continue; // strip degenerate
-            mesh.triangles.push_back(s0);
-            mesh.triangles.push_back(s1);
-            mesh.triangles.push_back(s2);
-            mesh.triMaterials.push_back(stripMat);
-        }
-
-        // Advance outer loop past this strip.
-        if (hitTerminator) {
-            i = j + kVertexStrideBytes; // skip the 16-byte terminator record
-        } else {
-            i = j; // j is at the next frame head (c == 0xFFFF) or EOB
-        }
+    const size_t uvEnd = kPositionsOffset + (size_t)nv * kVertexStrideBytes
+                       + mesh.uvs.size() * 4; // 2 floats per entry
+    size_t i = (uvEnd + kVertexStrideBytes - 1) & ~(size_t)(kVertexStrideBytes - 1);
+    auto isStripHeader = [&](size_t at) -> bool {
+        if (at + kVertexStrideBytes > size) return false;
+        const uint16_t n0 = rd16(data + at);
+        if (n0 < 2 || n0 > 64) return false;
+        for (int k = 1; k < 8; ++k)
+            if (rd16(data + at + 2 * k) != 0xFFFF) return false;
+        return true;
+    };
+    while (i + kVertexStrideBytes <= size && !isStripHeader(i)) i += kVertexStrideBytes;
+    if (i + kVertexStrideBytes > size) {
+        mesh.valid = false;
+        return false;
     }
 
-    // Compute per-triangle-vertex UV coordinates using the
-    // material-specific base offset (UV = k + offset[f]).
-    computeMaterialUVOffsets(mesh.triMaterials, mesh.uvs,
-                             mesh.triangles, mesh.triMaterials,
-                             mesh.triVertUVs, mesh.materialUVBase);
+    // Two code paths below: strips consumed as UVB-spine (strip topology kept
+    // so a native path can render GL_TRIANGLE_STRIP with N spine verts) and
+    // a flat indexed list of cascade triangles.
+    while (i + kVertexStrideBytes <= size && isStripHeader(i)) {
+        const uint16_t n = rd16(data + i);
+        const size_t recStart = i + kVertexStrideBytes;
+        if (recStart + (size_t)n * kVertexStrideBytes > size) break;
 
-    // Per-spine-vertex UVs for the native strip path: spine vertex k of a
-    // strip with material f reads UVarray[k + offset[f]] (Rev.143 UV = k + f
-    // indexed by position within the strip). Strip UVs mirror the flat
-    // triVertUVs contract so the strip and flat paths sample the same texture
-    // region per material; out-of-range UVs default to (0,0).
-    for (auto& strip : mesh.strips) {
-        if (mesh.uvs.empty()) continue; // no UV array in this file -> strip UVs stay empty
-        const int base = (strip.material < mesh.materialUVBase.size())
-            ? mesh.materialUVBase[strip.material] : 0;
-        strip.uvs.reserve(strip.spine.size() * 2);
-        for (size_t k = 0; k < strip.spine.size(); ++k) {
-            const int idx = base + static_cast<int>(k);
-            if (idx * 2 + 1 < (int)mesh.uvs.size()) {
-                strip.uvs.push_back(mesh.uvs[idx * 2]);
-                strip.uvs.push_back(mesh.uvs[idx * 2 + 1]);
+        const size_t uvLimit = mesh.uvs.size() / 2;
+        const uint16_t stripMat = rd16(data + recStart + 14); // u16[7] f
+
+        // Guard: every record of a real strip is a non-header row; bail on
+        // anything that looks like a next header or out-of-bounds position.
+        bool bad = false;
+        for (size_t r = 0; r < n; ++r) {
+            const uint16_t a = rd16(data + recStart + r * kVertexStrideBytes + 4);
+            if (a >= nv) { bad = true; break; }
+        }
+        if (bad) break;
+
+        // Keep the strip spine (a) with per-vertex UVs from the same record.
+        Ps2oStrip strip;
+        strip.material = stripMat;
+        strip.spine.reserve(n);
+        strip.uvs.reserve(n * 2);
+        for (size_t r = 0; r < n; ++r) {
+            const size_t o = recStart + r * kVertexStrideBytes;
+            const uint16_t a = rd16(data + o + 4);
+            const uint16_t mm = rd16(data + o + 8);
+            strip.spine.push_back(a);
+            if (mm < uvLimit) {
+                strip.uvs.push_back(mesh.uvs[mm * 2 + 0]);
+                strip.uvs.push_back(mesh.uvs[mm * 2 + 1]);
             } else {
                 strip.uvs.push_back(0.0f);
                 strip.uvs.push_back(0.0f);
             }
         }
+
+        // Flat cascade triangles: (r0,r1,r2)(r1,r2,r3)... N-2 triangles,
+        // dropping degenerate (equal consecutive index) inner triangles.
+        for (size_t r = 0; r + 2 < n; ++r) {
+            const uint16_t s0 = strip.spine[r];
+            const uint16_t s1 = strip.spine[r + 1];
+            const uint16_t s2 = strip.spine[r + 2];
+            if (s0 == s1 || s1 == s2) continue;
+            const size_t base = mesh.triangles.size();
+            mesh.triangles.push_back(s0);
+            mesh.triangles.push_back(s1);
+            mesh.triangles.push_back(s2);
+            mesh.triMaterials.push_back(stripMat);
+            // Flat UVs mirror the strip path: vertex k of the cascade span
+            // (r+k) reads the record's own m (u16[4]).
+            mesh.triVertUVs.reserve(mesh.triVertUVs.size() + 6);
+            for (size_t k = 0; k < 3; ++k) {
+                const size_t o = recStart + (r + k) * kVertexStrideBytes;
+                const uint16_t mm = rd16(data + o + 8);
+                if (mm < uvLimit) {
+                    mesh.triVertUVs.push_back(mesh.uvs[mm * 2 + 0]);
+                    mesh.triVertUVs.push_back(mesh.uvs[mm * 2 + 1]);
+                } else {
+                    mesh.triVertUVs.push_back(0.0f);
+                    mesh.triVertUVs.push_back(0.0f);
+                }
+            }
+            (void)base;
+        }
+        if (strip.spine.size() >= 3) mesh.strips.push_back(std::move(strip));
+
+        i = recStart + (size_t)n * kVertexStrideBytes;
     }
 
     extractMaterialNames(data, size, mesh.materialNames);

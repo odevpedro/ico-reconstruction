@@ -75,6 +75,19 @@ A compelling scene is not technical evidence.
   interaction gate (<20.0 proximity, id, !busy). Input vector still comes from
   Phase A (WASD; single key walks, W+D diagonal runs). Demo stable on the real
   p1 mesh; suite **25/25 CTest**.
+- Rev.151 (2026-09-08): the reply ended the p1 PS2O face/UV ambiguity with a
+  byte-validated record layout. A strip is `[N, 0xFFFF x7]` (N = literal
+  record count, in [2,64]); each 16 B record is `[1, 0, a, s, m, b, u, f]`
+  where **a = u16[2] position index**, **m = u16[4] UV index** (full
+  13,070/13,070 coverage), **f = u16[7] material index** (exactly 7 values
+  0-6 == the 7 embedded material names), s = u16[3] is a per-strip stream id
+  (NOT position) and u = u16[6] has 10 distinct values (NOT material).
+  Triangles are cascade N-2 per strip; the face region runs 0x6A6A0-0x101580.
+  Correct figures: 7,877 strips / 15,007 tris / mean UV edge spread 0.1645.
+  All 7 `.tm2` materials (metal, wall_dec1, st0_a, broken, wall_fuchi2,
+  isikabe, pole) now load from `native/assets/` and the castle room renders
+  fully texturized (white pixels 7.1% -> 0.0%, colored 22.7% -> 30.1% in a
+  screenshot histogram). The p2 wall-family discriminator remains open.
 
 ## Current runtime baseline (Rev.126)
 
@@ -115,13 +128,14 @@ state machine against a real gameplay state sequence.
 
 ## Sources to prefer
 
-1. `research/elf/rev135-gif-pipeline-window-milestone.md`
-2. `research/elf/rev134-moveimage-copytexture-plumbing.md`
-3. `research/elf/rev133-hotgap-semantic-bridges.md`
-4. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
-5. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
-6. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
-7. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+1. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
+2. `research/elf/rev135-gif-pipeline-window-milestone.md`
+3. `research/elf/rev134-moveimage-copytexture-plumbing.md`
+4. `research/elf/rev133-hotgap-semantic-bridges.md`
+5. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
+6. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
+7. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
+8. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
 8. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
 9. `research/elf/rev109-isysgobj-abi-consolidation.md`
 9. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`

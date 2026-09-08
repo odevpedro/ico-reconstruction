@@ -697,8 +697,10 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     return 0;
 }
 
-int runMeshDemo(const char* p2oPath, u32 frames, const char* shotPath, bool uvTest, bool matTest, const char* tm2Path) {
-    return runSceneDemo({ p2oPath }, tm2Path ? std::string(tm2Path) : std::string(), frames, shotPath, uvTest, -1.0f, false);
+int runMeshDemo(const char* p2oPath, const std::string& texDir,
+                u32 frames, const char* shotPath, bool uvTest, bool matTest,
+                const char* tm2Path) {
+    return runSceneDemo({ p2oPath }, texDir, frames, shotPath, uvTest, -1.0f, false);
 }
 
 int runOpenGLDemo(int argc, char* argv[]) {
@@ -861,7 +863,19 @@ int runOpenGLDemo(int argc, char* argv[]) {
     }
 
     if (p2oPath != nullptr) {
-        return runMeshDemo(p2oPath, frames, shotPath, uvTest, matTest, tm2Path);
+        // Resolve textures from --tex-dir when given; otherwise default to a
+        // directory that actually contains the piece (assets/ mirrors the
+        // extracted .tm2), so `--p2o assets/170_st00a_p1.p2o` finds e.g.
+        // assets/st0_a.tm2 instead of st0_a.tm2 in the CWD.
+        std::string texDirResolved = texDir ? texDir : "";
+        if (texDirResolved.empty()) {
+            const std::string p2oStr = p2oPath;
+            const std::size_t slash = p2oStr.find_last_of('/');
+            if (slash != std::string::npos)
+                texDirResolved = p2oStr.substr(0, slash);
+        }
+        return runMeshDemo(p2oPath, texDirResolved, frames, shotPath, uvTest,
+                           matTest, tm2Path);
     }
 
     // Auto-discover .tm2 texture in native/assets/ if not provided.

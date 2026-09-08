@@ -857,6 +857,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 47. ~~**Rev.142: PS2O (`.p2o`) geometry decode** — vertex positions = 4 floats LE `(x,y,z,1.0)` from +0x20 (16 B/vertex, Y-up, floor at Y≈0); face data = 16 B records `[c,t,0,a,1,b,0,0]` in strips framed by `0xFFFF` at the `c` position; **global parsing rule now CLOSED** (detect `0xFFFF` at `c`, then consume 16 B records while valid — NOT fixed stride): 27 strips / 76 non-degenerate triangles recovered from full p2 scan into `/tmp/st00a_p2_faces.obj`; two strip types (0x00 = long triangle strips a==b, 0x01 = short quads/fans a≠b); `OBJH`/`null` tags + [offset,count] stream table in minimal object; `+0x1c` field and multi-submesh delimitation (p1 count=3) still open. TYPE 0x01 SEMANTICS is the next step for the static-mesh milestone (asset → geometry → render).~~ **DONE (2026-09-06)**
 48. **Rev.143 (native-port, P1 — texturized room render):** `ico_native` auto-loads `.p2o` mesh (`170_st00a_p1.p2o`: 13,877 verts, 15,161 triangles, 3 submeshes, 13,070 UVs, 15,161 material indices) and `.tm2` texture (`st0_a.tm2` 256×256) from `native/assets/`. TM2 texture pipeline integrated into `runMeshDemo`: UV mapping via `triVertUVs`, texture binding through `OpenGLBackend`. Material index per strip (`f` = u16[7]) confirmed. Material↔TM2 by name (7 materials). Extraction of `.p2o`/`.tm2` from PAL `.DF` containers via `dfdatas_unpack.py`. `run_native_demo.sh` for one-command demo. 21/22 CTest (only `opengl_backend_test` segfaults due to headless context). 95% pass rate.~~ **DONE (2026-09-06)**
 49. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model, then begin scene loading integration through `KanbanSceneLoader`. Next: replace per-triangle draw calls with batch rendering for performance.
+50. ~~**Rev.151: p1 face/UV decode correction (byte-validated)** — the record is NOT `[c,t,0,a,1,b,0,0]`; the strip is a 16 B header `[N, 0xFFFF x7]` where N = number of record rows that follow (literal count — 4636 headers carry 3 records, 2352 carry 4, ..., count x N reproduces the record total exactly). Each record is `[1, 0, a, s, m, b, u, f]`: pos=`u16[2]` (max 7792), **UV index=`u16[4]` (max 13069 = NUV-1, EXACT full coverage 13070/13070)**, material=`u16[7]` (EXACTLY 7 values 0-6, matching the 7 names), stream id=`u16[3]` (const per strip, NOT material). Tris = cascade (r0,r1,r2)(r1,r2,r3)... = N-2 per strip. Face region: 0x6A6A0 → ends before OBJH (0x101620). Result: 7877 strips / 15007 tris / mean UV edge spread 0.1645; runs in `ico_native` at 15019 real tris with correct brick texture. **The old "UV = k + offset[f]" heuristic is WRONG — replaced by the direct u16[4] UV index (Rev.151) in `Ps2oMesh.cpp`; p2 wall family (type 0x00/0x01 quads/fans) still needs its own discriminator.**~~ **DONE (2026-09-08)**
 
 ---
 
@@ -874,6 +875,81 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 | CTest | ✅ 21/22 | Only `opengl_backend_test` segfaults (headless) |
 | Extraction pipeline | ✅ Working | `dfdatas_unpack.py` on PAL ISO → `.p2o` + `.tm2` |
 | Demo runner | ✅ Working | `run_native_demo.sh` |
+
+> **Rev.151 NOTE.** The rendering-status table above predates Rev.151.
+> Current p1 figures (after the face/UV decode correction): **13,877 verts,
+> 13,070 UVs, 7,877 strips, 15,007 tris, 7 materials**. UV mapping uses the
+> record's own `u16[4]` index (NOT a material-offset heuristic). See the PS2O
+> face-record format block below.
+
+---
+
+## PS2O (.p2o) face-record format — CANONICAL (Rev.151, byte-validated)
+
+Use this as ground truth when decoding p1-room face data. It supersedes the
+Rev.142/143 `[c,t,0,a,1,b,0,0]` + `0xFFFF`-frame description, which was WRONG
+for positions and UVs.
+
+**Layout (all little-endian):**
+
+```
+header:  PS2O | u32 payload-16 | u32 submesh_count | 0x18 "SUM\0" | u32 @0x1c
+verts:   records at +0x20, 16 B each = 4 floats (x,y,z,1.0); array ends at
+         the first record whose w != 1.0.  (p1: 13,877 verts, nv=13877)
+uvs:     immediately after positions, 16 B each = 4 floats (u,v,0,0);
+         ends when trailing floats != 0.          (p1: 13,070 entries, NUV)
+faces:   immediately after the UV region (p1: 0x6A6A0). 16 B rows:
+    STRIP HEADER row (8 x u16):  [ N, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
+                                   0xFFFF, 0xFFFF, 0xFFFF ]
+      N = literal number of record rows that follow this header.
+      Validate by counting: for EVERY header value in p1, count x N equals
+      the observed record total exactly (4636x3, 2352x4, 142x5, 330x6,
+      73x7, 133x8, ... up to 32). N in [2,64] is a safe acceptance rule;
+      rows that are not `[N, ffff x7]` mark the END of the face region
+      (p1: ends at 0x101580, right before OBJH tags at 0x101620).
+    RECORD row (8 x u16):        [ 1, 0, a, s, m, b, u6, f ]
+      a  = u16[2] vertex-position index            (p1 max 7792 < nv)
+      s  = u16[3] stream id, CONST per strip       (p1 max 6083, 5349
+           distinct; does NOT index materials)       ← DO NOT use as pos!
+      m  = u16[4] UV index into the UV array       (p1 max 13069 = NUV-1,
+           EXACT full coverage: all 13070 UVs referenced) ← UV source
+      b  = u16[5] mirror of a (== a on most rows)
+      u6 = u16[6] CONST per strip, 10 distinct values 0..9; coincides with
+           legacy tex=1/tex=2 counts at 2154/168 but CANNOT be material
+           (10 != 7 names)                            ← DO NOT use as mat!
+      f  = u16[7] material index, EXACTLY 7 const  (p1 values 0..6 == the 7
+           embedded material names)                  ← the material source
+```
+
+**Triangle construction (cascade strip):** one strip = header + N records
+emits N-2 triangles using consecutive records:
+`(r0,r1,r2)(r1,r2,r3)...(rN-3,rN-2,rN-1)`. Vertex k of each triple = `a` of
+record r(k); the UV of that vertex = `m` of the same record row. Aligned
+16-byte walking from the UV end → first `[N, ffff x7]` header finds the face
+region; the walker stops at the first non-header row. Degenerate inner
+triangles (equal consecutive `a`) are dropped from the flat list.
+
+**Validated numbers (room `170_st00a_p1.p2o`):** 7,877 strips / 15,007 tris /
+mean UV edge spread **0.1645** (the winning model among cascade 0.171, old
+tolerant-walker 0.171, strip-window s-equal 0.189, fan-pivot 0.228). The old
+loader's 15,161 tris came from a misaligned spine (u16[3]=s read as `a`).
+
+**Material names:** located by scanning the file for path-style printable
+runs (`...\texture\<name>\0`) or `?name`/`>name` on NUL boundaries,
+deduped in file order == material index order. p1 yields exactly 7:
+`metal, wall_dec1, st0_a, broken, wall_fuchi2, isikabe, pole` (index 0..6).
+The TM2 texture for material f is `<name>.tm2`.
+
+**What is still open (p2 wall family):** the p2 wall mesh uses a DIFFERENT
+rule (type 0x00 long tri-strips with a==b vs type 0x01 short quads/fans with
+a!=b per Rev.142) so the p1 cascade-a rule over-decodes p2. A per-file
+family discriminator is still unresolved.
+
+**Native implementation:** `native/src/engine/Ps2oMesh.cpp` —
+`loadPs2oMesh()` parses the canonical format above; `Ps2oStrip` keeps the
+spine + per-vertex UVs; `Ps2oMesh::triVertUVs` is built directly from each
+record's `m`. Remove neither the row-aligned header scan nor the stop-on-
+non-header rule when adding p2 support.
 
 ---
 

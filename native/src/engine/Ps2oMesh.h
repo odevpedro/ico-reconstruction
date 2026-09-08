@@ -7,7 +7,8 @@
 
 namespace ico::engine {
 
-// Decoded PS2O (.p2o) geometry, as reverse-engineered in Rev.142.
+// Decoded PS2O (.p2o) geometry, as reverse-engineered in Rev.142 and refined
+// in Rev.151 (byte-level face/UV validation).
 //
 // Header (little-endian):
 //   +0x00  magic "PS2O"
@@ -16,35 +17,43 @@ namespace ico::engine {
 //   +0x18  tag "SUM\0"
 //   +0x1c  u32 (flags/checksum, semantics not yet confirmed)
 // Vertex positions start at +0x20: 4 floats LE (x, y, z, 1.0), 16 bytes each.
-// Face data is stored as 16-byte records [c, t, 0, a, m, b, s, f] framed by
-// runs of 0xFFFF (c == 0xFFFF on the first record of a primitive, 0 on
-// continuations; t > 1 is a terminator record). The strip spine is the u16[3]
-// (`a`) column of consecutive records: consecutive a values [s0,s1,...]
-// form triangles (s0,s1,s2)(s1,s2,s3)(...), dropping degenerate (equal-index)
-// inner triangles. This matches the validated Rev.142/Rev.143 spine-x decode
-// (room p1: 15,161 tris, max index 7792).
+// Face data is stored as 16-byte = 8 x u16 records. A strip is a header row
+// [N, 0xFFFF x7] where N = number of record rows that follow; each record row
+// is [1, 0, a, s, m, b, u, f] with:
+//   a = u16[2] vertex position index
+//   s = u16[3] stream/spine id (const per strip; NOT material)
+//   m = u16[4] UV index into the UV array (EXACT full coverage of NUV in p1:
+//             max == NUV-1, so this column IS the per-vertex UV index)
+//   f = u16[7] material index (EXACTLY 7 distinct values 0..6 in p1, matching
+//             the 7 embedded material names)
+// Each strip of N records emits N-2 triangles in cascade strip order
+// (0,1,2)(1,2,3)...(N-3,N-2,N-1); vertex positions from `a`, UVs directly
+// from `m`. Validated: 7877 strips / 15007 tris / mean UV edge spread 0.1645
+// in the room piece, and count x N reproduces the record total exactly for
+// every header value (4636x3, 2352x4, 142x5, ...).
 //
 // NOTE: the p2 wall family (Rev.142) uses a different rule (type 0x00 long
-// tri-strips a==b vs type 0x01 short quads/fans a!=b), so the p1 spine-a rule
-// over-decodes p2. A per-file family discriminator is still to be resolved.
+// tri-strips a==b vs type 0x01 short quads/fans a!=b), so the p1 cascade-a
+// rule over-decodes p2. A per-file family discriminator is still to be
+// resolved.
 
-// One p2o frame primitive decoded as a triangle strip whose spine is the
-// u16[3] (`a`) column of consecutive 16-byte records. Consecutive spine
-// values [v0, v1, v2, ...] form triangles (v0,v1,v2)(v1,v2,v3)(...). With
-// a GL_TRIANGLE_STRIP path, N spine vertices render N-2 triangles with no
-// indexed duplication — the native counterpart of PS2 gif_DrawStripF
-// (GIF prim 0xD), where adjacent triangles share an edge by construction.
+// One p2o frame primitive decoded as a triangle strip whose N records emit
+// N-2 cascade triangles. Consecutive spine positions [v0, v1, v2, ...] form
+// triangles (v0,v1,v2)(v1,v2,v3)(...). With a GL_TRIANGLE_STRIP path, N spine
+// vertices render N-2 triangles with no indexed duplication — the native
+// counterpart of PS2 gif_DrawStripF (GIF prim 0xD), where adjacent triangles
+// share an edge by construction.
 struct Ps2oStrip {
     // Spine vertex indices in draw order. Degenerate (equal-index) inner
     // pairs are KEPT so the strip renders exactly what the record list says
     // (GL skips zero-area tris); the flat `triangles` list below drops them.
     std::vector<uint16_t> spine;
-    // Material/partition index f (u16[7]) of the strip (constant per strip).
+    // Material/partition index f (u16[7]) of the strip (constant per strip;
+    // validated: exactly 7 distinct values 0..6 in the room piece).
     uint16_t material = 0;
     // Per-spine-vertex UV coordinates (2 floats per spine vertex, same order
-    // as spine). Computed as UVarray[k + offset[material]] with k the position
-    // within the strip (Rev.143 "UV = k + offset[f]"). Empty when the file
-    // carries no UV array, or when the strip has no vertices.
+    // as spine) from the record's own UV index m (u16[4]). Out-of-range UV
+    // indices default to (0,0). Empty when the file carries no UV array.
     std::vector<float> uvs;
 };
 
@@ -69,17 +78,13 @@ struct Ps2oMesh {
     // within each strip). Empty if not available.
     std::vector<uint16_t> triMaterials;
     // Pre-computed UV coordinates per triangle vertex (2 floats each).
-    // Computed as UVarray[k + offset[material]] for the k-th vertex within
-    // each strip, using the material-specific base offset discovered in
-    // Rev.143 follow-up (UV = k + offset[f]).
+    // Computed directly from each triangle's own record UV index m (u16[4]),
+    // in cascade strip order — no per-material UV base offset heuristic (the
+    // old "UV = k + offset[f]" model was replaced in Rev.151 after byte-level
+    // validation showed u16[4] independently covers all NUV UV entries).
     std::vector<float> triVertUVs;
-    // Material-specific UV base offsets into the UV array (index == material f,
-    // value == offset[f]). Discovered heuristically in Rev.143 (best offset per
-    // material minimizing UV edge spread). Used to build per-strip UVs and to
-    // key native strip batches. Empty when no UV array was found.
-    std::vector<int> materialUVBase;
     // Secondary face records (kept raw for p2 quad/fan semantics, not yet
-    // populated by the spine-a decode).
+    // populated by the cascade-a decode).
     std::vector<uint16_t> quadRecords;
     // Ordered material texture names, one per material index `f`. Extracted
     // from the embedded material-name table (`name\0...\texture\<name>\0`
