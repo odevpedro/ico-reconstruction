@@ -21,6 +21,7 @@ bool KanbanSceneLoader::initialize(IsysGObj& runtime) {
         m_descriptors[i].hasInitFn = false;
         m_descriptors[i].initFn = {};
         m_descriptors[i].processCallback_40 = 0;
+        m_descriptors[i].gate_44 = 1;
     }
 
     for (auto& record : m_entries) {
@@ -31,6 +32,9 @@ bool KanbanSceneLoader::initialize(IsysGObj& runtime) {
         record.userData = 0;
         record.processCallback_24 = 0;
         record.processArgument_40 = 0;
+        record.listId = kSceneEntryListIdUnknown;
+        record.gobjType = 0;
+        record.flag_44 = 0;
     }
 
     return true;
@@ -92,6 +96,80 @@ bool KanbanSceneLoader::applyVerifiedDescriptorRecords(
     for (std::size_t i = 0; i < count; ++i) {
         m_descriptors[records[i].descriptorIndex].processCallback_40 =
             records[i].processCallback_40;
+    }
+    return true;
+}
+
+bool KanbanSceneLoader::applyVerifiedSceneTables(
+    const ico::engine::VerifiedSceneDescriptor* descriptors,
+    std::size_t descriptorCount,
+    const ico::engine::VerifiedSceneEntry* payload,
+    std::size_t payloadCount,
+    const ico::engine::VerifiedSceneRange* ranges,
+    std::size_t rangeCount) {
+    if (!m_initialized || (descriptors == nullptr && descriptorCount != 0) ||
+        (payload == nullptr && payloadCount != 0) ||
+        (ranges == nullptr && rangeCount != 0)) {
+        return false;
+    }
+    for (std::size_t i = 0; i < descriptorCount; ++i) {
+        if (descriptors[i].descriptorIndex >= m_descriptors.size()) {
+            return false;
+        }
+    }
+
+    // Validate scene ranges: scene ids must be distinct and entry spans must
+    // not wrap over the verified table size.
+    for (std::size_t i = 0; i < rangeCount; ++i) {
+        const ico::engine::VerifiedSceneRange& range = ranges[i];
+        if (range.endEntry <= range.startEntry ||
+            range.startEntry >= m_entries.size() ||
+            range.endEntry > m_entries.size()) {
+            return false;
+        }
+        for (std::size_t j = 0; j < i; ++j) {
+            if (ranges[j].sceneId == range.sceneId) {
+                return false;
+            }
+        }
+    }
+
+    // Descriptor process callbacks feed the registration fallback path.
+    for (std::size_t i = 0; i < descriptorCount; ++i) {
+        const u16 index = descriptors[i].descriptorIndex;
+        m_descriptors[index].processCallback_40 = descriptors[i].processCallback_40;
+        m_descriptors[index].gate_44 = descriptors[i].gate_44;
+        m_descriptors[index].listId = 0;
+        m_descriptors[index].hasInitFn = false;
+        m_descriptors[index].initFn = {};
+    }
+
+    // Enable every payload entry against its scene's range with raw fields.
+    for (std::size_t i = 0; i < payloadCount; ++i) {
+        const ico::engine::VerifiedSceneEntry& verified = payload[i];
+        const ico::engine::VerifiedSceneRange* range = nullptr;
+        for (std::size_t j = 0; j < rangeCount; ++j) {
+            if (verified.entryIndex >= ranges[j].startEntry &&
+                verified.entryIndex < ranges[j].endEntry) {
+                range = &ranges[j];
+                break;
+            }
+        }
+        if (range == nullptr || verified.descriptorIndex >= m_descriptors.size() ||
+            verified.entryIndex >= m_entries.size()) {
+            return false;
+        }
+        SceneEntryRecord& record = m_entries[verified.entryIndex];
+        record.sceneId = range->sceneId;
+        record.descriptorIndex = verified.descriptorIndex;
+        record.enabled = true;
+        record.sortKey = 0;
+        record.userData = verified.userData_30;
+        record.processCallback_24 = verified.processCallback_24;
+        record.processArgument_40 = verified.processArgument_40;
+        record.listId = verified.listId;
+        record.gobjType = verified.gobjType & 0x1Fu;
+        record.flag_44 = verified.flag_44;
     }
     return true;
 }
@@ -202,10 +280,20 @@ std::size_t KanbanSceneLoader::initSceneGObj(u32 sceneId) {
         }
 
         const SceneGObjDescriptor& desc = m_descriptors[record.descriptorIndex];
-        ico::engine::GObj* gobj = m_runtime->add(desc.listId, record.sortKey, record.userData);
+        // Rev.154: descriptor+0x44 gate; 0 skips GObj creation entirely.
+        if (desc.gate_44 == 0) {
+            continue;
+        }
+        const u8 listId = (record.listId != kSceneEntryListIdUnknown)
+                              ? record.listId
+                              : desc.listId;
+        ico::engine::GObj* gobj =
+            m_runtime->add(listId, record.sortKey, record.userData);
         if (gobj == nullptr) {
             continue;
         }
+        // Rev.154: entry+0x47 low 5 bits drive the GObj kind selector (0x115108).
+        gobj->type = record.gobjType;
 
         const ico::engine::GObjHandle handle = m_runtime->pool().handleOf(*gobj);
         m_sceneGObjs.push_back(handle);

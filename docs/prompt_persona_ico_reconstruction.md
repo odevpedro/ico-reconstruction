@@ -109,6 +109,18 @@ A compelling scene is not technical evidence.
   regression: `drawSkyGradient` pure virtual added without updating the two
   test backends (build was broken). 25/26 CTest; only the documented headless
   `opengl_backend` segfault fails.
+- Rev.154 (2026-09-09): the "0 GObjs" gap closes. `tools/extract_scene_tables.py`
+  extracts the 68 entity descriptors (`0x2A31B8`, stride 0x64), 97 verified
+  world-dispatch scene ranges (tiling of `[41,3453)` from `0x5F2FB8`), and the
+  scene-0x0F entry slice (29 entries, idx 847..875) into
+  `native/src/game/GeneratedSceneTables.h`. `KanbanSceneLoader` now owns 3600
+  entry rows (the valid `descIdx<68` run runs 0..3590; the old "512" was an
+  understatement), and `applyVerifiedSceneTables()` enables real
+  `requestScene(0x0F)`/`execute()`: **`initSceneGObj` creates 25 host GObjs**
+  (29 payload entries minus 4 gate-0 descriptors DYNAMICMOTIONDAT/STAGESETTING),
+  per-entry `listId` (e.g. entry 855→list 0) and `gobjType`. Demo shows
+  `currentSceneId=0x0F, 25 host GObjs` with the BoyController spawn stable at
+  60 fps; 26/27 CTest (`verified_scene_test` added).
 
 ## Current runtime baseline (Rev.126)
 
@@ -140,30 +152,35 @@ semantic bridge are implemented and tested, as are the two hot-gap scene
 factories: `GObjFactory` (CreateGObj / CreateGObj_v, `0x240D40`/`0x240EA0`)
 and `GObjEntityAllocator` (AllocGObjEntity, `0x19F310`), plus the
 `ClipBridge` collision bridge and the `BoyController` semantic BOY state
-machine (Rev.150, ports `boy_hA/hB/hC`; 25/25 CTest). Next up is a new
-runtime session to observe the per-room `init_fn` targets (the `jalr` at
-`0x001AF96C`) so the native dispatch table can be bound to real room setup
-functions beyond the currently injected mocks, and a PCSX2 capture with
-probes on `boy_hA/hB/hC` (`0x1C1A98/0x1C1DD8/0x1C1F58`) to compare the native
-state machine against a real gameplay state sequence.
+machine (Rev.150, ports `boy_hA/hB/hC`; 25/25 CTest). Verifed scene tables
+drive **25 real host GObjs** for scene 0x0F (Rev.154). Next up is
+per-GObj asset attachment — linking the scene-0x0F GObj rows to `.p2o`
+pieces/descriptors so the runtime-validated GObjs drive the render
+composition — and a new runtime session to observe the per-room `init_fn`
+targets (the `jalr` at `0x001AF96C`) so the native dispatch table can be bound
+to real room setup functions beyond the currently injected mocks, plus a
+PCSX2 capture with probes on `boy_hA/hB/hC`
+(`0x1C1A98/0x1C1DD8/0x1C1F58`) to compare the native state machine against a
+real gameplay state sequence.
 
 ## Sources to prefer
 
-1. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
-2. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
-3. `research/elf/rev135-gif-pipeline-window-milestone.md`
-4. `research/elf/rev134-moveimage-copytexture-plumbing.md`
-5. `research/elf/rev133-hotgap-semantic-bridges.md`
-5. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
-6. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
-7. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
-8. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
-8. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
-9. `research/elf/rev109-isysgobj-abi-consolidation.md`
-9. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
-10. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
-11. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
-12. Byte-exact sources under `src/core/asm/`
+1. `research/native/rev154-verified-scene-tables.md`
+2. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
+3. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
+4. `research/elf/rev135-gif-pipeline-window-milestone.md`
+5. `research/elf/rev134-moveimage-copytexture-plumbing.md`
+6. `research/elf/rev133-hotgap-semantic-bridges.md`
+7. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
+8. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
+9. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
+10. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+11. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
+12. `research/elf/rev109-isysgobj-abi-consolidation.md`
+13. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+14. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+15. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+16. Byte-exact sources under `src/core/asm/`
 
 When an older note conflicts with Rev.131 on the `world_state_load` boundary
 (0x80 vs the earlier 0x248), use Rev.131. When an older note conflicts with

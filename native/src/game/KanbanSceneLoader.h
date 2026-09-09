@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/SceneAssetStore.h"
+#include "game/GeneratedSceneTables.h"
 #include "game/IsysGObj.h"
 
 #include <array>
@@ -13,9 +14,17 @@ class GifPacketBridge;
 }
 
 
-constexpr std::size_t kSceneDescriptorCount = 68;
-constexpr std::size_t kSceneEntryCount = 512;
+constexpr std::size_t kSceneDescriptorCount = ico::engine::kVerifiedSceneDescriptorCount;
+/*
+ * Rev.154: the USA entry table's valid descriptor-index run is contiguous
+ * from idx 0 through 3590 (first invalid at 3591). AGENTS' former "512
+ * entries" was an understatement; the native loader owns up to the verified
+ * table size so scene 0x0F's slice (idx 847..875) is addressable.
+ */
+constexpr std::size_t kSceneEntryCount = 3600;
 constexpr u16 kInvalidSceneDescriptorIndex = 0xFFFFu;
+/* Sentinel: an entry whose list is not known falls back to the descriptor's. */
+constexpr u8 kSceneEntryListIdUnknown = 0xFFu;
 
 struct SceneGObjDescriptor {
     using InitFn = std::function<void(ico::engine::GObj&, const SceneGObjDescriptor&)>;
@@ -26,6 +35,8 @@ struct SceneGObjDescriptor {
     InitFn initFn{};
     /* Raw original descriptor field at +0x40; its source-level name is unknown. */
     ico_ptr32 processCallback_40 = 0;
+    /* Rev.154: descriptor +0x44 gate. 0 skips GObj creation entirely. */
+    u32 gate_44 = 1;
 };
 
 struct SceneEntryRecord {
@@ -37,6 +48,10 @@ struct SceneEntryRecord {
     /* Raw original entry fields used by initSceneGObj's registration gate. */
     ico_ptr32 processCallback_24 = 0;
     u16 processArgument_40 = 0;
+    /* Rev.154: per-entry verified fields from the USA entry table. */
+    u8 listId = kSceneEntryListIdUnknown;
+    u8 gobjType = 0;
+    u16 flag_44 = 0;
 };
 
 struct SceneProcessRegistrationSpec {
@@ -111,6 +126,25 @@ public:
     bool applyVerifiedDescriptorRecords(const VerifiedSceneDescriptorRecord* records,
                                         std::size_t count);
 
+    /*
+     * Applies the verified raw scene tables exported by
+     * tools/extract_scene_tables.py (Rev.154):
+     *   - descriptors feed processCallback_40 (+0x40 of each descriptor);
+     *   - scene ranges map sceneId -> contiguous entry indices;
+     *   - payload entries are per-scene slices of the entry table; each is
+     *     enabled against its scene's range with the verified raw fields
+     *     (listId from +0x48 bits[16:14], gobjType from +0x47 low 5, flag_44,
+     *     processCallback_24, userData_30, processArgument_40).
+     * No claim of byte-exactness is made for the scene->entry mapping itself
+     * beyond the tiling validated from the dispatch table (0x5F2FB8).
+     */
+    bool applyVerifiedSceneTables(const ico::engine::VerifiedSceneDescriptor* descriptors,
+                                  std::size_t descriptorCount,
+                                  const ico::engine::VerifiedSceneEntry* payload,
+                                  std::size_t payloadCount,
+                                  const ico::engine::VerifiedSceneRange* ranges,
+                                  std::size_t rangeCount);
+
     bool requestScene(u32 sceneId);
     void clearRequests();
     std::size_t pendingRequestCount() const;
@@ -147,6 +181,8 @@ public:
         const SceneEntryRecord& record, const SceneGObjDescriptor& descriptor);
 
     u32 currentSceneId() const;
+    /* Rev.154: number of host GObjs created by the last initSceneGObj(). */
+    std::size_t sceneGObjCount() const { return m_sceneGObjs.size(); }
 
 private:
     IsysGObj* m_runtime = nullptr;

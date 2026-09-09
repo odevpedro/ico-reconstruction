@@ -303,6 +303,7 @@ Before doing new analysis, read these files in this order if they exist:
 31. `research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md`
 32. `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
 33. `research/elf/rev142-p2o-vertex-layout-and-face-record-structure.md` (native-port, P1: PS2O geometry decode)
+34. `research/native/rev154-verified-scene-tables.md` (native-port: 68 descriptors + 97 scene ranges drive 25 host GObjs for scene 0x0F)
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -332,7 +333,8 @@ The game object lifecycle is now fully traced:
 
 ```
 initSceneGObj (0x1B76F8, 2088B) — connects descriptor table (0x2A31B8, 68 entries)
-                                     to isysGObj* via entry table (0x2A4C48, 512 entries)
+                                     to isysGObj* via entry table (0x2A4C48, 3600 entries;
+                                     valid descIdx<68 run is contiguous idx 0..3590; Rev.154)
   ↓
 isysGObjInit (0x13DDA0) — zeros head/tail tables (0x281A70/0x281A90, 8 DLs)
   ↓
@@ -448,7 +450,11 @@ Files in `src/entity/asm/` (658), `src/cloth/asm/` (6), `src/core/asm/` (46).
 ### Verified facts (Rev.038-099)
 
 - **Descriptor table** at 0x2A31B8: 68 entity types, stride 0x64. Only 12/68 have init_fn.
-- **Entry table** at 0x2A4C48: 512 entries, stride 0x4C. Maps scene objects to descriptors.
+- **Entry table** at 0x2A4C48: 3600 entries (512 understates), stride 0x4C.
+  Maps scene objects to descriptors. Valid `descIdx<68` run is contiguous
+  idx 0..3590 (Rev.154). Field slice `+0x48` bits[16:14] = per-entry listId,
+  `+0x47` low 5 bits = gobjType, `+0x40` = u16 processArgument_40,
+  descriptor `+0x44` = gate (0 skips GObj creation).
 - **initSceneGObj** (0x1B76F8, 2088B): connects entry table to isysGObj* system.
 - **Two independent entity systems**: callback_register (52 scene objects via 28 init_fn)
   and live dispatch (8 core entities, 20 ctx/frame).
@@ -856,8 +862,9 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 46. ~~**Rev.135 (native-port, P1): first visible milestone** — `ICO_ENABLE_OPENGL` default ON; `ico_native` opens a real GLX 640x448 window and renders 3 animated quads at 60 fps through the semantic GIF pipeline (GifPacketBridge→executor→OpenGLBackend); screenshot evidence in `research/native/ico-native-first-window-2026-09-05.png`. Fixed two rendering-blocking GL bugs: `glCreateShader` vs `glCreateProgram`, and GL context current to the GLX window (not the X window) for `glXSwapBuffers`. 21/21 CTest.~~ **DONE (2026-09-05)**
 47. ~~**Rev.142: PS2O (`.p2o`) geometry decode** — vertex positions = 4 floats LE `(x,y,z,1.0)` from +0x20 (16 B/vertex, Y-up, floor at Y≈0); face data = 16 B records `[c,t,0,a,1,b,0,0]` in strips framed by `0xFFFF` at the `c` position; **global parsing rule now CLOSED** (detect `0xFFFF` at `c`, then consume 16 B records while valid — NOT fixed stride): 27 strips / 76 non-degenerate triangles recovered from full p2 scan into `/tmp/st00a_p2_faces.obj`; two strip types (0x00 = long triangle strips a==b, 0x01 = short quads/fans a≠b); `OBJH`/`null` tags + [offset,count] stream table in minimal object; `+0x1c` field and multi-submesh delimitation (p1 count=3) still open. TYPE 0x01 SEMANTICS is the next step for the static-mesh milestone (asset → geometry → render).~~ **DONE (2026-09-06)**
 48. **Rev.143 (native-port, P1 — texturized room render):** `ico_native` auto-loads `.p2o` mesh (`170_st00a_p1.p2o`: 13,877 verts, 15,161 triangles, 3 submeshes, 13,070 UVs, 15,161 material indices) and `.tm2` texture (`st0_a.tm2` 256×256) from `native/assets/`. TM2 texture pipeline integrated into `runMeshDemo`: UV mapping via `triVertUVs`, texture binding through `OpenGLBackend`. Material index per strip (`f` = u16[7]) confirmed. Material↔TM2 by name (7 materials). Extraction of `.p2o`/`.tm2` from PAL `.DF` containers via `dfdatas_unpack.py`. `run_native_demo.sh` for one-command demo. 21/22 CTest (only `opengl_backend_test` segfaults due to headless context). 95% pass rate.~~ **DONE (2026-09-06)**
-49. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model, then begin scene loading integration through `KanbanSceneLoader`. Next: replace per-triangle draw calls with batch rendering for performance.
+49. ~~**Rev.154: verified scene tables drive real GObj creation** — `tools/extract_scene_tables.py` extracts the 68 entity descriptors (0x2A31B8), 97 verified world-dispatch scene ranges (tiling [41,3453) from 0x5F2FB8), and the scene-0x0F entry slice (29 entries) into `native/src/game/GeneratedSceneTables.h`; `KanbanSceneLoader::applyVerifiedSceneTables()` feeds them into the original requestScene/execute flow with per-entry listId/gobjType/flag_44 and descriptor gate_44; **`initSceneGObj` now creates 25 host GObjs for scene 0x0F** (29 payload − 4 gate-0 descriptors DYNAMICMOTIONDAT/STAGESETTING), entry-table correction 512→3600 (valid run idx 0..3590); `verified_scene_test` + demo run confirmed GObjs>0 with BoyController stable; 26/27 CTest.~~ **DONE (2026-09-09)**
 50. ~~**Rev.151: p1 face/UV decode correction (byte-validated)** — the record is NOT `[c,t,0,a,1,b,0,0]`; the strip is a 16 B header `[N, 0xFFFF x7]` where N = number of record rows that follow (literal count — 4636 headers carry 3 records, 2352 carry 4, ..., count x N reproduces the record total exactly). Each record is `[1, 0, a, s, m, b, u, f]`: pos=`u16[2]` (max 7792), **UV index=`u16[4]` (max 13069 = NUV-1, EXACT full coverage 13070/13070)**, material=`u16[7]` (EXACTLY 7 values 0-6, matching the 7 names), stream id=`u16[3]` (const per strip, NOT material). Tris = cascade (r0,r1,r2)(r1,r2,r3)... = N-2 per strip. Face region: 0x6A6A0 → ends before OBJH (0x101620). Result: 7877 strips / 15007 tris / mean UV edge spread 0.1645; runs in `ico_native` at 15019 real tris with correct brick texture. **The old "UV = k + offset[f]" heuristic is WRONG — replaced by the direct u16[4] UV index (Rev.151) in `Ps2oMesh.cpp`; p2 wall family (type 0x00/0x01 quads/fans) still needs its own discriminator.**~~ **DONE (2026-09-08)**
+50. **Native engine next:** per-GObj asset attachment — link scene-0x0F GObj rows to `.p2o` pieces/descriptors so the runtime-validated GObjs drive the render composition; keep batch-strip rendering. Bridge `GifPacket.*` functions to the GIF command buffer model.
 
 ---
 
@@ -881,6 +888,13 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 > 13,070 UVs, 7,877 strips, 15,007 tris, 7 materials**. UV mapping uses the
 > record's own `u16[4]` index (NOT a material-offset heuristic). See the PS2O
 > face-record format block below.
+
+> **Rev.154 NOTE.** `KanbanSceneLoader` now consumes byte-verified USA scene
+> tables (`tools/extract_scene_tables.py` → `GeneratedSceneTables.h`): 68
+> descriptors, 97 scene ranges, and the scene-0x0F slice of 29 entries →
+> **25 host GObjs** created at load (4 gate-0 descriptors). Entry table is
+> 3600 rows (valid `descIdx<68` run idx 0..3590), not 512. CTest baseline
+> raised to **26/27** by `verified_scene_test`.
 
 ---
 

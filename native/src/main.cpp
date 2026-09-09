@@ -621,12 +621,26 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     // requestScene()/execute() (kanban.c) flow and creates host GObjs in the
     // same gobjRuntime the BoyController process uses. The render loop below
     // stays decoupled — it reads the bound SceneAssetStore directly — so this
-    // is the wiring where runtime-validated GObj creation will feed later
-    // revisions. Room entry descriptors are not decoded yet, so the loader
-    // creates 0 host GObjs (m_entries disabled); that is expected and logged.
+    // is the wiring where runtime-validated GObj creation feeds later revisions.
+    // Rev.154: applyVerifiedSceneTables() enables the USA-ELF scene-0x0F slice
+    // (entries 847..875), so initSceneGObj() creates 25 host GObjs (descriptors
+    // 44/54 are gate-0 and skip creation).
     KanbanSceneLoader sceneLoader;
     if (!sceneLoader.initialize(gobjRuntime)) {
         std::fprintf(stderr, "main: KanbanSceneLoader failed to initialize\n");
+        return 1;
+    }
+    // Rev.154: verified descriptor/entry/range tables extracted from the USA
+    // ELF (tools/extract_scene_tables.py). Enables the real scene-0x0F sample
+    // so initSceneGObj() creates the Boy-facing GObjs instead of 0.
+    if (!sceneLoader.applyVerifiedSceneTables(
+            ico::engine::kVerifiedSceneDescriptors,
+            ico::engine::kVerifiedSceneDescriptorCount,
+            ico::engine::kVerifiedScenePayload,
+            ico::engine::kVerifiedScenePayloadCount,
+            ico::engine::kVerifiedSceneRanges,
+            ico::engine::kVerifiedSceneRangeCount)) {
+        std::fprintf(stderr, "main: failed to apply verified scene tables\n");
         return 1;
     }
     if (store != nullptr) {
@@ -638,11 +652,11 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         }
         sceneLoader.requestScene(0x0Fu);
         const bool loaded = sceneLoader.execute();
+        const std::size_t createdGObjs = sceneLoader.sceneGObjCount();
         std::fprintf(stderr,
             "main: scene 0x0F semantic load via requestScene/execute: %s "
-            "(currentSceneId=0x%02X; room entry descriptors not yet recovered, "
-            "0 host GObjs expected)\n",
-            loaded ? "ok" : "no-op", sceneLoader.currentSceneId());
+            "(currentSceneId=0x%02X, %zu host GObjs)\n",
+            loaded ? "ok" : "no-op", sceneLoader.currentSceneId(), createdGObjs);
     } else {
         std::fprintf(stderr,
             "main: no SceneAssetStore supplied; KanbanSceneLoader runs "
