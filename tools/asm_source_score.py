@@ -71,10 +71,11 @@ TARGET_FUNCTIONS = [
     ("GirlBrainClearTarget",0x16AC10, 0x10, "entity"),
     ("girlBrainMain_PositionUpdate",0x16BCA0, 0x68, "entity"),
     ("subGirlBrain_PulledUp",0x16CED0, 0x460, "entity"),
-    # NOTE: _girlBrainHide_MakeHidePoint (0x16E910), girlBrainRunawaySearchPoint (0x16F410),
-    # eBrainProcess (0x190B30), eBrainGetTargetGeneratorFromLabel (0x190D70)
-    # are .word-only .s files (Capstone can't disassemble R5900 COP1 insns).
-    # They are BYTE-EXACT but NOT in this pipeline.
+    # BoyAI sub-functions (discovered via prologue scan, 0x14xxxx-0x15xxxx range)
+    # boyAI_sub_1435A0 (0x130) — byte-exact .s, NOT in this pipeline (Rev.157).
+    # eBrainProcess (0x190B30), eBrainGetTargetGeneratorFromLabel (0x190D70),
+    # girlBrain_sub_16F618/16F620 (0x258) — see rev157 note for the real
+    # ee-as branch-padding root cause behind the old ".word-only" label.
     ("girlBrainHide_GoalTurn",0x16EB68, 0x110, "entity"),
     ("girlBrainRunawayMoveByWay",0x16F9A8, 0x2AC, "entity"),
     ("subGirlBrain_Idle",0x175CB0, 0x30, "entity"),
@@ -88,7 +89,7 @@ TARGET_FUNCTIONS = [
     ("girlBrain_sub_16B7A8",0x16B7A8, 0x324, "entity"),
     ("girlBrain_sub_16C2EC",0x16C2EC, 0x258, "entity"),
     ("girlBrain_sub_16D3A4",0x16D3A4, 0x230, "entity"),
-    # girlBrain_sub_16F618 (548 bytes) — size mismatch
+    # girlBrain_sub_16F618/16F620 (0x258) — byte-exact .s, NOT in this pipeline (Rev.157)
     ("girlBrain_sub_16DC58",0x16DC58, 0x184, "entity"),
     ("girlBrain_sub_16DADC",0x16DADC, 0x180, "entity"),
     # Batch-scored GirlBrain sub-functions (all 100% byte-exact)
@@ -523,7 +524,11 @@ TARGET_FUNCTIONS = [
     ("boyAI_sub_14B5BC",0x14B5BC, 0x4, "entity"),
     # eBrain entry AI functions (src/omori/, verified Ghidra symbols at 0x0019xxxx)
     # eBrainProcess (0x190B30) and eBrainGetTargetGeneratorFromLabel (0x190D70)
-    # are .word-only .s files.
+    # are NOT in this pipeline. They are byte-exact .s files (Rev.157): the
+    # previous "ee-gcc 2.9 cannot assemble one-shot (COP1/mult)" story was
+    # wrong — the root cause was ee-as padding nops into short backward
+    # branches; the .s now emit branches/jal/mult/COP1 as .word and verify
+    # byte-exact with ee-gcc 2.9. See research/elf/rev157-*.md.
     ("eBrainGetTarget",0x190F30, 0x9C0, "entity"),
     ("eBrainInit",0x1918A8, 0x44, "entity"),
     ("eBrainStatusSet",0x1918F0, 0xB0, "entity"),

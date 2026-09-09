@@ -304,7 +304,8 @@ Before doing new analysis, read these files in this order if they exist:
 32. `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
 33. `research/elf/rev142-p2o-vertex-layout-and-face-record-structure.md` (native-port, P1: PS2O geometry decode)
 34. `research/native/rev154-verified-scene-tables.md` (native-port: 68 descriptors + 97 scene ranges drive 25 host GObjs for scene 0x0F)
-35. `research/native/rev155-per-gobj-visual-composition.md` (native-port: GObjAttachmentStore — renderer iterates active isysGObj lists and draws each GObj's composition; boy via BoxMarker; round-robin GObj↔mesh is HOST heuristic pending PCSX2 capture)
+35. `research/native/rev156-gifpacket-bridge-fidelity-and-p2-family-closed.md` (native-port: GifPacketBridge captures prim/path + viewport origin + host half-offset hook; p2 decodes via the same canonical Rev.151 rule — no discriminator needed; `tools/ps2o_family_analysis.py`)
+36. `research/native/rev155-per-gobj-visual-composition.md` (native-port: GObjAttachmentStore — renderer iterates active isysGObj lists and draws each GObj's composition; boy via BoxMarker; round-robin GObj↔mesh is HOST heuristic pending PCSX2 capture)
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -400,7 +401,7 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.131 — 688 of 710 .s verified byte-exact)
+### Byte-exact reconstruction status (Rev.157 — 692 of 710 .s verified byte-exact)
 
 > **CORRECTION (Rev.130).** The Rev.116f count of 684/701 has been superseded.
 > Six hot-path gaps were reconstructed byte-exact since Rev.116f and now the
@@ -416,33 +417,39 @@ are kept as byte-exact `.s` even without Ghidra symbol verification.
 > `DispIcoMisc.s` (0x1AF9C8, 0x1C8, named by the Ghidra/PAL map). On-disk total
 > is now **710 `.s` files** (entity 658, cloth 6, core 46). Both split `.s`
 > verify 100% via `assemble_and_verify`.
+>
+> **CORRECTION (Rev.157).** The 4 "Divergent `.word`-only" files — `boyAI_sub_1435A0`,
+> `eBrainProcess`, `girlBrain_sub_16F618`, `girlBrain_sub_16F620` — are now
+> **byte-exact** through ee-gcc 2.9. Root cause was NOT a toolchain limitation:
+> the ee-as injects nop padding into short (≤5 instruction) **backward** branches,
+> which broke any `.s` that used in-text labels for those branches. The regenerated
+> `.s` emit every branch/jal/mult/COP1 as raw `.word` and assemble byte-exact
+> (sizes 0x130/0x258). See `research/elf/rev157-branch-padding-rootcause-and-4-byteexact.md`.
 
 | Step | Count | Method |
 |------|-------|--------|
 | Pipeline functions | 612 | `asm_source_score.py --all --no-save` → 612/612 byte-exact (0 failures) |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 76 | byte-exact via `assemble_and_verify` at target VA |
-| **Total byte-exact `.s`** | **688** / 710 (96.9%) | verified against USA ELF |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 80 | byte-exact via `assemble_and_verify` at target VA |
+| **Total byte-exact `.s`** | **692** / 710 (97.5%) | verified against USA ELF |
 
-Not byte-exact / not verified (17 of 701, stable across Rev.106→116):
+Not byte-exact / not verified (13 of 701, reduced from 17 by Rev.157):
 
 | Status | Count | Files |
 |--------|-------|-------|
-| Divergent `.word`-only (R5900 COP1/mult: ee-gcc 2.9 cannot assemble one-shot) | 4 | `boyAI_sub_1435A0`, `eBrainProcess`, `girlBrain_sub_16F618`, `girlBrain_sub_16F620` |
 | ASM-ERR (COP2/HPI instructions `ld.b $w0` rejected by ee-gcc 2.9) | 4 | `boyAI_sub_1562D4`, `1562DC`, `1562E0`, `1562E8` |
 | Trivial stubs (`jr $ra` placeholder, ≤8 B) | 4 | `isysGObjActiveLink`, `isysGObjActiveDlLink`, `isysGObjProcPause`, `boyAI_sub_14BB08` |
 | Conservative recount reserve (duplicate basenames core vs entity) | 5 | — |
 
-3 divergent BoyAI/GirlBrain `.s` were regenerated from the USA ELF at Rev.116f
-and are now byte-exact: `boyAI_sub_143B58`, `boyAI_sub_15C7C0`,
-`girlBrain_sub_16E6C4`. (The 17 "not verified" rows above predate those 3
-regenerations; the authoritative pipeline count is the 612-function
-`asm_source_score.py --all` run plus the per-file `assemble_and_verify` checks
-of the new Rev.128-130 additions, which all verify 100%.)
+The 4 former "Divergent `.word`-only" files (`boyAI_sub_1435A0`, `eBrainProcess`,
+`girlBrain_sub_16F618`, `girlBrain_sub_16F620`) are now byte-exact through
+ee-gcc 2.9 (Rev.157); the `.word` fallback there is a generator choice (backward
+branch padding avoidance), not a toolchain necessity.
 
 `asm_source_score.py --all` remains the authoritative pipeline for the 612
-`TARGET_FUNCTIONS`. The 4 `.word`-only divergence files are byte-exact **to the
-ELF bytes** but cannot be re-assembled one-shot by ee-gcc 2.9 (documented
-toolchain limitation), so they sit outside the automated scoring pipeline.
+`TARGET_FUNCTIONS`. The 4 Rev.157 files are byte-exact via
+`assemble_and_verify` at target VA (sizes 0x130/0x258) and sit outside the
+automated scoring pipeline because the pipeline emits labels for in-range
+branches, which the ee-as backward padding would corrupt.
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
@@ -734,22 +741,24 @@ the next priority merely because the capture is running. The capture is the
 primary source of new evidence; native-port work follows the validated
 reconstruction it enables. The user may explicitly request an exception.
 
-### Current score status (Rev.131 — 688 of 710 .s verified byte-exact)
+### Current score status (Rev.157 — 692 of 710 .s verified byte-exact)
 
-See the "Byte-exact reconstruction status (Rev.131)" section above for the
-authoritative counts. Summary: **688 of 710 `.s` verified byte-exact against
-the USA ELF** (96.9%). The earlier "1224" figure (Rev.106f) did not match the
+See the "Byte-exact reconstruction status (Rev.157)" section above for the
+authoritative counts. Summary: **692 of 710 `.s` verified byte-exact against
+the USA ELF** (97.5%). The earlier "1224" figure (Rev.106f) did not match the
 `.s` on disk and has been corrected. Six hot-gap `.s` were added by
 Rev.128-130: sister_callback_reg, CreateGObj, CreateGObj_v, AllocGObjEntity,
 world_state_load, isysGObjProcRemoveUnlink. Rev.131 re-split world_state_load
-(correct boundary 0x80) and added `DispIcoMisc` (0x1AF9C8, 0x1C8) — all
-verify 100%.
+(correct boundary 0x80) and added `DispIcoMisc` (0x1AF9C8, 0x1C8). Rev.157
+regenerated the 4 former `.word`-only files byte-exact (ee-as backward-branch
+padding root cause; sizes 0x130/0x258) and reconciled the split `DispIcoMisc`
+count so all top-level numbers now match the on-disk 710 `.s`.
 
 | Step | Count | Method |
 |------|-------|--------|
 | Pipeline functions | 612 | `asm_source_score.py --all` |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 76 | `assemble_and_verify` at target VA |
-| **Total .s files** | **688 / 710** | verified byte-exact |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 80 | `assemble_and_verify` at target VA |
+| **Total .s files** | **692 / 710** | verified byte-exact |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
 
@@ -774,6 +783,13 @@ Plus entity/cloth functions as byte-exact C source (`.c` files).
 - **COP1 compares** (`c.olt.s`, etc.): unsupported by EE assembler → emit raw bytes via `.word`.
 - **R5900 `mult $acN`**: `$ac3` → `$3` (rd field encodes accumulator).
 - **R5900 `bbit032`**: unsupported → emit raw bytes via `.word`.
+- **Very short backward branches**: the ee-as injects nop padding when a branch
+  target label lies within ≤5 instructions *before* the branch (observed for
+  `bne`, `beq`, `bnel`, `beqz`, `b`, `blez`, ...), regardless of
+  `.set noreorder/nomacro/noat` and of label naming (symbolic vs `1:` numeric).
+  dist ≥ 6 assembles clean. Fix: emit such branches as `.word` (Rev.157 root
+  cause of the 4 former "divergent .word-only" files; see
+  `research/elf/rev157-branch-padding-rootcause-and-4-byteexact.md`).
 - **Branch labels**: GAS numeric local labels (`1:`/`1f`/`1b`) required. `.L` prefixed labels create `BFD_RELOC_16_PCREL_S2` relocations that fail.
 - **`.set noreorder`/`.set nomacro` required**: prevents assembler from expanding pseudo-ops.
 - **`.set noat`**: required for functions using `$at` (`$1`).
@@ -856,7 +872,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 39. ~~**Native engine: iosOmCreateDL slot dispatch and type-based routing** — `dispatchTypeSlots()` (type slots 19-27 per GObj), `dispatchAll()` = `dispatchActiveLists` + `dispatchTypeSlots`, `slot_dispatch_test.cpp` with full coverage. Fixed critical `assert(runtime.initialize(...))` UB where NDEBUG stripped the init call in Release mode causing SIGSEGV.~~ **DONE (2026-08-26)**
 40. ~~**Native engine: RenderBackend abstraction** — PS2 GIF/GS rendering pipeline modeled as `RenderBackend` interface with textures, render targets, blend/depth/alpha test, sprites (flat + gouraud), primitives, indexed draw, render passes per display list, double-buffer swap. `Matrix4x4` math library. `Rev.110` research note mapping ~200 rendering functions across 12 modules. `render_backend_test` with 7 tests (all passing).~~ **DONE (2026-08-26)**
 41. ~~**Native engine: rendering pipeline** — TM2 texture loading (PSMCT32/CT24/CT16/PSMT8/PSMT4, CLUT, GS page swizzle), GIF command buffer (tag parsing, state tracking, quad accumulation), GIF executor (bridges command buffer to RenderBackend), OpenGL backend (GLX windowing, GL 3.3 core/fallback, batch renderer, FBO, shaders, test mode). 47 new tests across 4 files. All 10 test targets pass. Fixed PSMT4 nibble order.~~ **DONE (2026-08-26)**
-42. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model, then begin scene loading integration.
+42. ~~**Native engine: `GifPacket.*` bridge to GIF command-buffer model (Rev.156)** — `GifPacketBridge` now captures `prim`/path (`currentPrim()`/`currentPath()`), honors `setDrawEnvironment` viewport origin x/y, and applies an explicit host-side half-offset (`setHalfOffset`) to every `*Offset` emit variant + `draw2DUVStripG` (default 0 = identity). Byte-exact `0x8000` in XYZ2 packing verified to appear in BOTH base and Offset `.s` (`gif_MakeSprite`, `gif_Draw2DStripG`, `gif_Draw2DUVStripG`, `gif_SpriteSensitive`) — so NOT a verified Offset discriminator; kept as documented host hook, not a byte claim. Also closed the Rev.151 "p2 needs a discriminator" item: `tools/ps2o_family_analysis.py` + fixture test prove p2 flags u16[0]=0/1 decode with the SAME canonical Rev.151 rule (p2: 3,562 headers, 15,005 records, 4,844/4,844 UV coverage, bnd_ratio 0.126 = Rev.144 M-A).~~ **DONE (2026-09-09)**
 43. ~~**Rev.128-130: close all 5 hot-path byte-exact gaps** — `sister_callback_reg` (0x13F778), `CreateGObj`/`CreateGObj_v` (0x240D40/0x240EA0), `AllocGObjEntity` (0x19F310), `world_state_load` (0x1AF948), `isysGObjProcRemoveUnlink` (0x13F638); corrected Rev.099 size of `isysGObjKindTableAdd` (0xDC→0xE0); 687/709 `.s` byte-exact.~~ **DONE (2026-09-05)**
 44. ~~**Rev.131: `world_state_load` boundary correction** (0x248 merged two functions → `world_state_load` 0x80 + `DispIcoMisc` 0x1C8, both byte-exact) — plus native `WorldStateLoader` semantic bridge with `world_state_loader_test` CTest; 688/710 `.s` byte-exact.~~ **DONE (2026-09-05)**
 45. ~~**Rev.134: `moveImage`/CopyTexture plumbing** — `RenderBackend::copyTexture`, `RenderCmd.copy`, executor bridge, no-op stub overrides, `test_move_image_guards`; 20/20 CTest.~~ **DONE (2026-09-05)**
@@ -866,7 +882,8 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 49. ~~**Rev.154: verified scene tables drive real GObj creation** — `tools/extract_scene_tables.py` extracts the 68 entity descriptors (0x2A31B8), 97 verified world-dispatch scene ranges (tiling [41,3453) from 0x5F2FB8), and the scene-0x0F entry slice (29 entries) into `native/src/game/GeneratedSceneTables.h`; `KanbanSceneLoader::applyVerifiedSceneTables()` feeds them into the original requestScene/execute flow with per-entry listId/gobjType/flag_44 and descriptor gate_44; **`initSceneGObj` now creates 25 host GObjs for scene 0x0F** (29 payload − 4 gate-0 descriptors DYNAMICMOTIONDAT/STAGESETTING), entry-table correction 512→3600 (valid run idx 0..3590); `verified_scene_test` + demo run confirmed GObjs>0 with BoyController stable; 26/27 CTest.~~ **DONE (2026-09-09)**
 50. ~~**Rev.151: p1 face/UV decode correction (byte-validated)** — the record is NOT `[c,t,0,a,1,b,0,0]`; the strip is a 16 B header `[N, 0xFFFF x7]` where N = number of record rows that follow (literal count — 4636 headers carry 3 records, 2352 carry 4, ..., count x N reproduces the record total exactly). Each record is `[1, 0, a, s, m, b, u, f]`: pos=`u16[2]` (max 7792), **UV index=`u16[4]` (max 13069 = NUV-1, EXACT full coverage 13070/13070)**, material=`u16[7]` (EXACTLY 7 values 0-6, matching the 7 names), stream id=`u16[3]` (const per strip, NOT material). Tris = cascade (r0,r1,r2)(r1,r2,r3)... = N-2 per strip. Face region: 0x6A6A0 → ends before OBJH (0x101620). Result: 7877 strips / 15007 tris / mean UV edge spread 0.1645; runs in `ico_native` at 15019 real tris with correct brick texture. **The old "UV = k + offset[f]" heuristic is WRONG — replaced by the direct u16[4] UV index (Rev.151) in `Ps2oMesh.cpp`; p2 wall family (type 0x00/0x01 quads/fans) still needs its own discriminator.**~~ **DONE (2026-09-08)**
 50. ~~**Rev.155 (native-port, P1 — per-GObj visual composition):** — **Passo 1 do plano de sequência do usuário entregue.** Novo `GObjAttachmentStore` host-side (`native/src/engine/GObjAttachment.{h,cpp}`) liga cada GObj à sua composição visual (mesh path, material names, Matrix4x4 transform) sem crescer o ABI byte-exact `IcoGObj` 0x174; um GObj pode ser dono de vários meshes (28 assets / 25 GObjs, round-robin HOST pareio `m_sceneGObjs[i % size]` — **heurística explícita, não reconstrução byte-verified do vínculo GObj↔modelo**). `KanbanSceneLoader::attachBoundAssetsToGObjs(0x0F)` → 28 anexos; accessibility `attachmentStore()`/`sceneGObjHandle()`. **O loop de render em `main.cpp` agora itera as listas primárias do runtime isysGObj (`head(listId)`→`next`) e desenha o que cada GObj ativo comanda** (fallback para `stripBatches` global apenas sem store). O boy virou **BoxMarker attachment GObj-ownered**: `BoyController` atualiza `m->transform` todo frame e o renderer lê o marker (`drawBoxMarker`), sem hardcode da posição. `gobj_attachment_test` novo (28 anexos, dedup por (handle,meshPath), detach/find coherence, re-init limpa). CTest 27/28 (só `opengl_backend` headless). Demo `--frames 1 --shot` verificado: `requestScene/execute` ok, 25 host GObjs, 28 anexos, PPM com sala texturizada + 98 px do box do boy. Nota: `research/native/rev155-per-gobj-visual-composition.md`. ROUND-ROBIN GObj↔modelo é provisional — um capture PCSX2 real o substitui (Passo 2).~~ **DONE (2026-09-09)**
-50. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model; Passo 2 = capturar `init_fn`/`processCallback` por GObj via PCSX2 para substituir o round-robin.
+50. ~~**Rev.156: `GifPacket.*` bridge fidelity + p2 family closed** — `GifPacketBridge` captures `prim`/path (`currentPrim()`/`currentPath()`), honors `setDrawEnvironment` viewport origin x/y, exposes documented host half-offset hook (`setHalfOffset`) applied to all `*Offset` emit variants + `draw2DUVStripG` (default 0 = identity); byte-exact `0x8000` verified in BOTH base and Offset `.s` (`gif_MakeSprite`, `gif_Draw2DStripG`, `gif_Draw2DUVStripG`, `gif_SpriteSensitive`, `gif_MakePoint2DOffset`, `gif_EndPacket`) — NOT a verified Offset discriminator, kept explicit/host-only. `tools/ps2o_family_analysis.py` + `test_two_strip_family_unified` fixture prove p2 flags u16[0]=0/1 decode with the SAME canonical Rev.151 rule (p2: 3,562 headers / 15,005 records, max a 4,714 < nv 6,213, UV 4,844/4,844, f∈0..5, flag0=590/flag1=2,972, bnd_ratio 0.126 = Rev.144 M-A) — **Rev.151 open item CLOSED, no decoder change**. 27/27 CTest (only headless `opengl_backend` excluded). Nota: `research/native/rev156-gifpacket-bridge-fidelity-and-p2-family-closed.md`.~~ **DONE (2026-09-09)**
+51. **Native engine next:** Passo 2 = capturar `init_fn`/`processCallback` por GObj via PCSX2 para substituir o round-robin; repair `draw2DUVStripG` per-vertex UV carrier in `RenderCmd` (documented limitation).
 
 ---
 

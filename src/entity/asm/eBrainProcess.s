@@ -1,173 +1,155 @@
 	.text
 	.p2align 3
-	.globl	eBrainProcess
-	.ent	eBrainProcess
-eBrainProcess:
-	.frame	$sp,0,$31
-	.mask	0x00000000,0
-	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
-	addiu	$29,$29,-0xa0
-	lw	$2,-0x6e0c($28)
-	sd	$31,0x90($29)
-	sd	$20,0x80($29)
-	sd	$19,0x70($29)
-	sd	$18,0x60($29)
-	sd	$17,0x50($29)
-	sd	$16,0x40($29)
-	sw	$0,-0x4b48($28)
-	bnez	$2,loc_00190b70
-	sw	$0,-0x4b4c($28)
-	lw	$5,-0x6e08($28)
-	beqz	$5,loc_00190d54
-	ld	$31,0x90($29)
-	b	loc_00190b8c
-	nop	
-loc_00190b70:
-	jal	0x00154520
-	nop	
-	lw	$5,-0x6e0c($28)
-	move	$4,$29
-	jal	0x00104508
-	sw	$2,-0x4b40($28)
-	lw	$5,-0x6e08($28)
-loc_00190b8c:
-	beqz	$5,loc_00190ba0
-	move	$17,$0
-	jal	0x00104508
-	addiu	$4,$29,0x10
-	move	$17,$0
-loc_00190ba0:
-	lui	$20,0x6d
-	addiu	$19,$29,0x20
-	addiu	$18,$29,0x30
-	addiu	$2,$0,0x1c
-loc_00190bb0:
-	addiu	$3,$20,0x710
-	mult	$2,$17,$2
-	addu	$16,$2,$3
-	lw	$5,0x18($16)
-	beqz	$5,loc_00190d40
-	addiu	$8,$17,1
-	jal	0x00104508
-	move	$4,$19
-	move	$4,$18
-	move	$5,$19
-	jal	0x00243ae8
-	move	$6,$29
-	move	$4,$18
-	jal	0x00243950
-	move	$5,$18
-	swc1	$f0,8($16)
-	move	$4,$18
-	move	$5,$19
-	jal	0x00243ae8
-	addiu	$6,$29,0x10
-	move	$4,$18
-	jal	0x00243950
-	move	$5,$18
-	lhu	$4,0($16)
-	bnez	$4,loc_00190d28
-	swc1	$f0,0xc($16)
-	lw	$2,-0x6e0c($28)
-	beqz	$2,loc_00190cac
-	lw	$3,-0x4b4c($28)
-	lui	$2,0x6d
-	addiu	$9,$2,0xa90
-	move	$7,$16
-	move	$6,$3
-	lwc1	$f1,8($16)
-	slt	$2,$4,$6
-	beqz	$2,loc_00190c8c
-	move	$4,$0
-	lw	$5,-0x6e08($28)
-	addiu	$8,$17,1
-	sll	$2,$4,2
-loc_00190c50:
-	addu	$2,$2,$9
-	lw	$3,0($2)
-	lwc1	$f0,8($3)
+	.set	noat
+	addiu       $29,$29,-0xA0
+	lw          $2,-0x6E0C($28)
+	sd          $31,0x90($29)
+	sd          $20,0x80($29)
+	sd          $19,0x70($29)
+	sd          $18,0x60($29)
+	sd          $17,0x50($29)
+	sd          $16,0x40($29)
+	sw          $0,-0x4B48($28)
+	.word	0x14400006
+	sw          $0,-0x4B4C($28)
+	lw          $5,-0x6E08($28)
+	.word	0x10a0007c
+	ld          $31,0x90($29)
+	.word	0x10000008
+	nop
+	.word	0x0c055148
+	nop
+	lw          $5,-0x6E0C($28)
+	daddu       $4,$29,$0
+	.word	0x0c041142
+	sw          $2,-0x4B40($28)
+	lw          $5,-0x6E08($28)
+	.word	0x10a00004
+	daddu       $17,$0,$0
+	.word	0x0c041142
+	addiu       $4,$29,0x10
+	daddu       $17,$0,$0
+	lui         $20,0x6D
+	addiu       $19,$29,0x20
+	addiu       $18,$29,0x30
+	addiu       $2,$0,0x1C
+	addiu       $3,$20,0x710
+	.word	0x02221018
+	addu        $16,$2,$3
+	lw          $5,0x18($16)
+	.word	0x10a0005f
+	addiu       $8,$17,0x1
+	.word	0x0c041142
+	daddu       $4,$19,$0
+	daddu       $4,$18,$0
+	daddu       $5,$19,$0
+	.word	0x0c090eba
+	daddu       $6,$29,$0
+	daddu       $4,$18,$0
+	.word	0x0c090e54
+	daddu       $5,$18,$0
+	swc1        $f0,0x8($16)
+	daddu       $4,$18,$0
+	daddu       $5,$19,$0
+	.word	0x0c090eba
+	addiu       $6,$29,0x10
+	daddu       $4,$18,$0
+	.word	0x0c090e54
+	daddu       $5,$18,$0
+	lhu         $4,0x0($16)
+	.word	0x14800045
+	swc1        $f0,0xC($16)
+	lw          $2,-0x6E0C($28)
+	.word	0x10400023
+	lw          $3,-0x4B4C($28)
+	lui         $2,0x6D
+	addiu       $9,$2,0xA90
+	daddu       $7,$16,$0
+	daddu       $6,$3,$0
+	lwc1        $f1,0x8($16)
+	slt         $2,$4,$6
+	.word	0x10400013
+	daddu       $4,$0,$0
+	lw          $5,-0x6E08($28)
+	addiu       $8,$17,0x1
+	sll         $2,$4,2
+	addu        $2,$2,$9
+	lw          $3,0x0($2)
+	lwc1        $f0,0x8($3)
 	.word	0x46000834
-	nop	
-	bc1f	loc_00190c78
-	addiu	$4,$4,1
-	sw	$7,0($2)
-	mov.s	$f1,$f0
-	move	$7,$3
-loc_00190c78:
-	slt	$2,$4,$6
-	bnez	$2,loc_00190c50
-	sll	$2,$4,2
-	b	loc_00190c9c
-	addiu	$3,$6,1
-loc_00190c8c:
-	lw	$5,-0x6e08($28)
-	addiu	$8,$17,1
-	sll	$2,$4,2
-	addiu	$3,$6,1
-loc_00190c9c:
-	addu	$2,$2,$9
-	sw	$3,-0x4b4c($28)
-	b	loc_00190cb4
-	sw	$7,0($2)
-loc_00190cac:
-	lw	$5,-0x6e08($28)
-	addiu	$8,$17,1
-loc_00190cb4:
-	beqz	$5,loc_00190d40
-	lui	$2,0x6d
-	lw	$3,-0x4b48($28)
-	move	$5,$16
-	addiu	$7,$2,0xb10
-	lwc1	$f1,0xc($5)
-	move	$6,$3
-	blez	$3,loc_00190d10
-	move	$2,$0
-	move	$2,$3
-	move	$4,$7
-loc_00190ce0:
-	lw	$3,0($4)
-	lwc1	$f0,0xc($3)
+	nop
+	.word	0x45000004
+	addiu       $4,$4,0x1
+	sw          $7,0x0($2)
+	mov.s       $f1,$f0
+	daddu       $7,$3,$0
+	slt         $2,$4,$6
+	.word	0x1440fff4
+	sll         $2,$4,2
+	.word	0x10000005
+	addiu       $3,$6,0x1
+	lw          $5,-0x6E08($28)
+	addiu       $8,$17,0x1
+	sll         $2,$4,2
+	addiu       $3,$6,0x1
+	addu        $2,$2,$9
+	sw          $3,-0x4B4C($28)
+	.word	0x10000003
+	sw          $7,0x0($2)
+	lw          $5,-0x6E08($28)
+	addiu       $8,$17,0x1
+	.word	0x10a00022
+	lui         $2,0x6D
+	lw          $3,-0x4B48($28)
+	daddu       $5,$16,$0
+	addiu       $7,$2,0xB10
+	lwc1        $f1,0xC($5)
+	daddu       $6,$3,$0
+	.word	0x1860000f
+	daddu       $2,$0,$0
+	daddu       $2,$3,$0
+	daddu       $4,$7,$0
+	lw          $3,0x0($4)
+	lwc1        $f0,0xC($3)
 	.word	0x46000834
-	nop	
-	bc1f	loc_00190d04
-	addiu	$2,$2,-1
-	sw	$5,0($4)
-	mov.s	$f1,$f0
-	move	$5,$3
-loc_00190d04:
-	bnez	$2,loc_00190ce0
-	addiu	$4,$4,4
-	move	$2,$6
-loc_00190d10:
-	sll	$2,$2,2
-	addiu	$3,$6,1
-	addu	$2,$2,$7
-	sw	$3,-0x4b48($28)
-	b	loc_00190d40
-	sw	$5,0($2)
-loc_00190d28:
-	addiu	$2,$0,1
-	bne	$4,$2,loc_00190d40
-	addiu	$8,$17,1
-	lw	$2,0x14($16)
-	addiu	$2,$2,1
-	sw	$2,0x14($16)
-loc_00190d40:
-	move	$17,$8
-	slti	$2,$17,0x20
-	bnez	$2,loc_00190bb0
-	addiu	$2,$0,0x1c
-	ld	$31,0x90($29)
-loc_00190d54:
-	ld	$20,0x80($29)
-	ld	$19,0x70($29)
-	ld	$18,0x60($29)
-	ld	$17,0x50($29)
-	ld	$16,0x40($29)
-	jr	$31
-	addiu	$29,$29,0xa0
-	.set	macro
-	.set	reorder
-	.end	eBrainProcess
+	nop
+	.word	0x45000004
+	addiu       $2,$2,-0x1
+	sw          $5,0x0($4)
+	mov.s       $f1,$f0
+	daddu       $5,$3,$0
+	.word	0x1440fff6
+	addiu       $4,$4,0x4
+	daddu       $2,$6,$0
+	sll         $2,$2,2
+	addiu       $3,$6,0x1
+	addu        $2,$2,$7
+	sw          $3,-0x4B48($28)
+	.word	0x10000007
+	sw          $5,0x0($2)
+	addiu       $2,$0,0x1
+	.word	0x14820004
+	addiu       $8,$17,0x1
+	lw          $2,0x14($16)
+	addiu       $2,$2,0x1
+	sw          $2,0x14($16)
+	daddu       $17,$8,$0
+	slti        $2,$17,0x20
+	.word	0x1440ff99
+	addiu       $2,$0,0x1C
+	ld          $31,0x90($29)
+	ld          $20,0x80($29)
+	ld          $19,0x70($29)
+	ld          $18,0x60($29)
+	ld          $17,0x50($29)
+	ld          $16,0x40($29)
+	jr          $31
+	addiu       $29,$29,0xA0
+	addiu       $29,$29,-0x60
+	sd          $16,0x0($29)
+	daddu       $16,$4,$0
+	sd          $20,0x40($29)
+	sd          $19,0x30($29)
+	addiu       $19,$0,-0x1

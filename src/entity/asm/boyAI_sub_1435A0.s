@@ -1,55 +1,81 @@
 	.text
 	.p2align 3
-	.globl	boyAI_sub_1435A0
-	.ent	boyAI_sub_1435A0
-boyAI_sub_1435A0:
-	.frame	$sp,0,$31
-	.mask	0x00000000,0
-	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
 	.set	noat
-	lw	$2,0($29)
-	beqz	$2,loc_00143618
-	move	$18,$16
-	addiu	$2,$0,0x194
-	addiu	$3,$9,0x2fb8
-	mult	$2,$10,$2
-	addu	$4,$3,$2
-	move	$3,$4
-	lw	$4,0x10c($4)
-	lw	$16,0x108($3)
-	slt	$2,$16,$4
-	beqz	$2,loc_00143618
-	addiu	$2,$0,0x64
-	lui	$3,0x5f
-	mult	$2,$16,$2
-	move	$6,$4
-	addiu	$3,$3,-0x7090
-	addiu	$7,$0,1
-	addiu	$4,$2,0x60
-	addu	$5,$2,$3
-	addu	$4,$4,$3
-	nop	
-loc_001435f8:
-	lw	$2,0($4)
-	andi	$2,$2,1
+	lw          $2,0x0($29)
+	.word	0x1040001c
+	daddu       $18,$16,$0
+	addiu       $2,$0,0x194
+	addiu       $3,$9,0x2FB8
+	.word	0x01421018
+	addu        $4,$3,$2
+	daddu       $3,$4,$0
+	lw          $4,0x10C($4)
+	lw          $16,0x108($3)
+	slt         $2,$16,$4
+	.word	0x10400012
+	addiu       $2,$0,0x64
+	lui         $3,0x5F
+	.word	0x02021018
+	daddu       $6,$4,$0
+	addiu       $3,$3,-0x7090
+	addiu       $7,$0,0x1
+	addiu       $4,$2,0x60
+	addu        $5,$2,$3
+	addu        $4,$4,$3
+	nop
+	lw          $2,0x0($4)
+	andi        $2,$2,0x1
 	.word	0x1047ffcf
-	addiu	$4,$4,0x64
-	addiu	$16,$16,1
-	slt	$2,$16,$6
-	bnez	$2,loc_001435f8
-	addiu	$5,$5,0x64
-loc_00143618:
+	addiu       $4,$4,0x64
+	addiu       $16,$16,0x1
+	slt         $2,$16,$6
+	.word	0x1440fff9
+	addiu       $5,$5,0x64
 	.word	0x16600022
-	lw	$8,-0x66e0($28)
-	addiu	$2,$17,-0x6a50
-	addiu	$7,$0,-1
-	lhu	$3,2($2)
-	addiu	$2,$0,0xb
+	lw          $8,-0x66E0($28)
+	addiu       $2,$17,-0x6A50
+	addiu       $7,$0,-0x1
+	lhu         $3,0x2($2)
+	addiu       $2,$0,0xB
 	.word	0x14620007
-	move	$4,$0
-	lhu	$2,-0x6a50($17)
-	.set	macro
-	.set	reorder
-	.end	boyAI_sub_1435A0
+	daddu       $4,$0,$0
+	lhu         $2,-0x6A50($17)
+	.word	0x14500005
+	addiu       $4,$4,0x1
+	.word	0x10000011
+	daddu       $7,$0,$0
+	nop
+	addiu       $4,$4,0x1
+	addiu       $3,$0,0x30
+	addiu       $5,$17,-0x6A50
+	addiu       $6,$0,0xB
+	slti        $2,$4,0x10
+	.word	0x10400009
+	.word	0x00831818
+	addu        $3,$3,$5
+	lhu         $2,0x2($3)
+	.word	0x5446fff7
+	addiu       $4,$4,0x1
+	lhu         $2,0x0($3)
+	.word	0x5450fff4
+	addiu       $4,$4,0x1
+	daddu       $7,$4,$0
+	.word	0x04e00005
+	addiu       $2,$0,0x30
+	addiu       $3,$17,-0x6A50
+	.word	0x00e21018
+	addu        $2,$2,$3
+	sh          $18,0x0($2)
+	addiu       $5,$0,0x194
+	lui         $2,0x5F
+	.word	0x02c52818
+	addiu       $2,$2,0x30C8
+	addiu       $6,$2,0x4
+	lui         $3,0x5D
+	addiu       $30,$3,0x1B60
+	addiu       $7,$0,0x1
+	lui         $4,0x5F
+	lui         $3,0x2E
+	addu        $2,$5,$2
