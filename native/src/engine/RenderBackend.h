@@ -141,6 +141,11 @@ enum class RenderCommand : u8 {
     DrawLine,
     DrawPoint,
     DrawTriangle,
+    // Scene bridge draws (added Rev.153, front-1 GIF command buffer bridge):
+    // sky backdrop and triangle-strip batches flow through GifPacketBridge →
+    // GifCommandBuffer → GifCommandExecutor like the classic forged packets.
+    DrawSkyGradient,
+    DrawStrips,
     CopyTexture,
     BeginPass,
     EndPass,
@@ -206,6 +211,24 @@ struct RenderCmd {
             float u0, v0, u1, v1, u2, v2;
             u8 r, g, b, a;
         } triangle;
+        // Full-screen vertical sky gradient (zenith top / horizon bottom).
+        struct {
+            u8 top[4];
+            u8 bottom[4];
+        } skyGradient;
+        // One triangle-strip batch. Geometry lives in the GifCommandBuffer
+        // (vertexOffset/firstOffset/countOffset index into buffer-owned arrays)
+        // so the bridge can own the strip stream like a real GIF packet would.
+        struct {
+            RenderList list;
+            u32 vertexOffset; // base vertex index into buffer.stripVertices()
+            u32 vertexCount;
+            u32 firstOffset;  // first-strip index into buffer.stripFirsts()
+            u32 stripCount;
+            u32 countOffset;  // first-strip index into buffer.stripCounts()
+            TextureHandle texture;
+            u8 r, g, b, a;
+        } strips;
         struct { RenderTargetHandle target; RenderList list; } pass;
     };
 };

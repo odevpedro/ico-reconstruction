@@ -68,6 +68,13 @@ void drawPrimitive(GSPrimitive p, RenderList l, const RenderVertex*, u32 c,
         (void)vertexCount; (void)firsts; (void)counts;
         (void)t; (void)r; (void)g; (void)b; (void)a;
     }
+    void drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4]) override {
+        m_skyGradientCalls++;
+        m_lastSkyTop[0] = topColor[0]; m_lastSkyTop[1] = topColor[1];
+        m_lastSkyTop[2] = topColor[2]; m_lastSkyTop[3] = topColor[3];
+        m_lastSkyHorizon[0] = bottomColor[0]; m_lastSkyHorizon[1] = bottomColor[1];
+        m_lastSkyHorizon[2] = bottomColor[2]; m_lastSkyHorizon[3] = bottomColor[3];
+    }
     void drawIndexed(GSPrimitive, RenderList, const u32*, u32,
                      const RenderVertex*, u32, TextureHandle, u8, u8, u8, u8) override {}
     void drawSprite(float x, float y, float w, float h,
@@ -123,6 +130,9 @@ void drawPrimitive(GSPrimitive p, RenderList l, const RenderVertex*, u32 c,
     u32 m_drawPrimCalls = 0;
     u32 m_stripCalls = 0;
     int m_lastStripCount = 0;
+    u32 m_skyGradientCalls = 0;
+    u8 m_lastSkyTop[4] = {};
+    u8 m_lastSkyHorizon[4] = {};
     GSPrimitive m_lastPrim = GSPrimitive::Point;
     RenderList m_lastList = RenderList::Opaque;
     u32 m_lastPrimCount = 0;
@@ -405,6 +415,71 @@ static void test_flush_empty_is_noop() {
     assert(backend.m_drawPrimCalls == 0);
 }
 
+static void test_scene_bridge_commands() {
+    TestBackend backend;
+    backend.initialize(640, 448);
+    GifPacketBridge bridge(backend);
+    bridge.init(640, 448);
+    bridge.startPacketPri(0);
+
+    /* Direct depth state: (Always, write=false) precondition for the sky
+       backdrop — not expressible via the PS2 zte/ztst setters. */
+    bridge.setDepthState(GSDepthTest::Always, false);
+    assert(bridge.commandBuffer().commandCount() == 1);
+    const RenderCmd& depthCmd = bridge.commandBuffer().command(0);
+    assert(depthCmd.type == RenderCommand::SetDepthTest);
+    assert(depthCmd.depthTest.test == GSDepthTest::Always);
+    assert(!depthCmd.depthTest.write);
+
+    /* Sky gradient recorded with the exact backdrop colors */
+    const u8 top[4] = {10, 20, 30, 40};
+    const u8 horizon[4] = {50, 60, 70, 80};
+    bridge.drawSkyGradient(top, horizon);
+    assert(bridge.commandBuffer().commandCount() == 2);
+    const RenderCmd& skyCmd = bridge.commandBuffer().command(1);
+    assert(skyCmd.type == RenderCommand::DrawSkyGradient);
+    assert(std::memcmp(skyCmd.skyGradient.top, top, 4) == 0);
+    assert(std::memcmp(skyCmd.skyGradient.bottom, horizon, 4) == 0);
+
+    /* Triangle-strip batch: geometry copied into the buffer, command offsets
+       index it, full RGBA+texture carried on the command. */
+    RenderVertex verts[4] = {};
+    for (u32 i = 0; i < 4; ++i) verts[i].x = (float)i;
+    const u32 firsts[1] = {0};
+    const u32 counts[1] = {4};
+    bridge.drawStrips(RenderList::Opaque, verts, 4, firsts, counts, 1,
+                      42, 200, 210, 220, 230);
+    assert(bridge.commandBuffer().commandCount() == 3);
+    const RenderCmd& stripCmd = bridge.commandBuffer().command(2);
+    assert(stripCmd.type == RenderCommand::DrawStrips);
+    assert(stripCmd.strips.list == RenderList::Opaque);
+    assert(stripCmd.strips.vertexOffset == 0);
+    assert(stripCmd.strips.vertexCount == 4);
+    assert(stripCmd.strips.firstOffset == 0);
+    assert(stripCmd.strips.countOffset == 0);
+    assert(stripCmd.strips.stripCount == 1);
+    assert(stripCmd.strips.texture == 42);
+    assert(stripCmd.strips.r == 200 && stripCmd.strips.a == 230);
+    assert(bridge.commandBuffer().stripVertexCount() == 4);
+    assert(bridge.commandBuffer().stripFirstCount() == 1);
+    assert(bridge.commandBuffer().stripCountCount() == 1);
+    assert(bridge.commandBuffer().stripVertices()[0].x == 0.0f);
+    assert(bridge.commandBuffer().stripFirsts()[0] == 0);
+    assert(bridge.commandBuffer().stripCounts()[0] == 4);
+
+    /* flush() forwards state + sky + strip to the backend in order */
+    bridge.flush();
+    assert(backend.m_lastDepthTest == GSDepthTest::Always);
+    assert(!backend.m_depthWrite);
+    assert(backend.m_skyGradientCalls == 1);
+    assert(std::memcmp(backend.m_lastSkyTop, top, 4) == 0);
+    assert(std::memcmp(backend.m_lastSkyHorizon, horizon, 4) == 0);
+    assert(backend.m_stripCalls == 1);
+    assert(backend.m_lastStripCount == 1);
+    assert(bridge.commandBuffer().commandCount() == 0);
+    assert(bridge.commandBuffer().stripVertexCount() == 0);
+}
+
 static void test_screen_check() {
     TestBackend backend;
     backend.initialize(640, 448);
@@ -424,6 +499,7 @@ int main() {
     test_move_image_guards();
     test_flush_executes();
     test_flush_empty_is_noop();
+    test_scene_bridge_commands();
     test_screen_check();
 
     std::printf("gif_packet_test: all passed\n");

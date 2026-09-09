@@ -27,6 +27,11 @@ public:
     void setAlpha(u32 abc, u32 abd, u32 abe, u32 abfix);
     void setZTest(u32 ate, u32 atst, u32 aref, u32 afail);
     void setZWrite(u32 zte, u32 ztst);
+    /* Direct depth state for the scene bridge (Rev.153): expresses arbitrary
+       combinations such as (Always, write=false) needed as the backdrop
+       precondition of drawSkyGradient, which the PS2 zte/ztst setters above
+       cannot represent. */
+    void setDepthState(GSDepthTest test, bool write = true);
     void setDrawEnvironment(float x, float y, float w, float h, u32 fbp, u32 psm, u32 fbw);
     void setHalfOffset(u32 h, u32 v);
 
@@ -72,6 +77,16 @@ public:
 
     void moveImage(float srcX, float srcY, float dstX, float dstY, float w, float h);
     bool isInScreen(float x, float y, float w, float h) const;
+
+    /* Scene bridge commands (Rev.153). The native room pipeline accumulates
+       its sky backdrop and triangle-strip batches into the same command
+       buffer as a classic GIF packet and flushes through the executor, so the
+       semantic scene path (front 2) and the renderer share one pipeline. */
+    void drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4]);
+    void drawStrips(RenderList list, const RenderVertex* vertices, u32 vertexCount,
+                    const u32* firsts, const u32* counts, u32 stripCount,
+                    TextureHandle texture,
+                    u8 r = 255, u8 g = 255, u8 b = 255, u8 a = 255);
 
     GifCommandBuffer& commandBuffer();
     const GifCommandBuffer& commandBuffer() const;

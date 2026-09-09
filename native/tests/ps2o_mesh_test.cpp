@@ -107,6 +107,58 @@ std::vector<uint8_t> makeBox() {
 
 } // namespace
 
+static Ps2oMesh makeManualMesh(const std::vector<uint32_t>& tris,
+                               std::size_t uvFloats) {
+    Ps2oMesh m;
+    m.positions = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0};
+    m.triangles = tris;
+    m.triVertUVs.assign(uvFloats, 0.0f);
+    for (size_t k = 0; k < uvFloats; ++k) m.triVertUVs[k] = (float)(k + 1);
+    m.triMaterials.assign(tris.size() / 3, 1);
+    m.vertexCount = 4;
+    m.valid = true;
+    return m;
+}
+
+static void test_fill_strips_guards() {
+    // Already has strip topology -> no synthesis.
+    Ps2oMesh withStrips = makeManualMesh({0, 1, 2, 1, 2, 3}, 12);
+    withStrips.strips.push_back(Ps2oStrip{});
+    assert(synthesizeTriangleStrips(withStrips) == 0);
+
+    // Invalid mesh / no triangles.
+    Ps2oMesh invalid = makeManualMesh({0, 1, 2}, 6);
+    invalid.valid = false;
+    assert(synthesizeTriangleStrips(invalid) == 0);
+    Ps2oMesh empty = makeManualMesh({}, 0);
+    assert(synthesizeTriangleStrips(empty) == 0);
+
+    // Vertex index beyond u16 spine range is refused.
+    Ps2oMesh tooBig = makeManualMesh({0, 1, 0xFFFF}, 6);
+    assert(synthesizeTriangleStrips(tooBig) == 0);
+}
+
+static void test_fill_strips_cascade() {
+    // Two triangles sharing the (1,2) edge -> one strip, spine (0,1,2,3).
+    Ps2oMesh m = makeManualMesh({0, 1, 2, 1, 2, 3}, 12);
+    const std::size_t n = synthesizeTriangleStrips(m);
+    assert(n == 1);
+    assert(m.strips.size() == 1);
+    const Ps2oStrip& st = m.strips[0];
+    assert(st.spine.size() == 4);
+    assert(st.spine[0] == 0 && st.spine[1] == 1 && st.spine[2] == 2 && st.spine[3] == 3);
+    assert(st.material == 1);
+    // UVs follow the per-vertex record of each triangle: tri0 (0,1,2) emits
+    // triUV values 1..6 (floats 0-5); the forward extension takes the third
+    // vertex (local idx 2) of tri1 (1,2,3) = floats 6+4, 6+5 -> values 11,12.
+    assert(st.uvs.size() == 8);
+    assert(st.uvs[0] == 1.0f);   // tri0 v0 u
+    assert(st.uvs[1] == 2.0f);   // tri0 v0 v
+    assert(st.uvs[4] == 5.0f);   // tri0 v2 u
+    assert(st.uvs[6] == 11.0f);  // tri1 third vertex u
+    assert(st.uvs[7] == 12.0f);  // tri1 third vertex v
+}
+
 int main() {
     std::vector<uint8_t> box = makeBox();
 
@@ -162,6 +214,10 @@ int main() {
     // Reject non-PS2O.
     Ps2oMesh bad;
     assert(!loadPs2oMesh(reinterpret_cast<const uint8_t*>("XXXX"), 4, bad));
+
+    // Rev.153 strip synthesis (front 3 — unified batch).
+    test_fill_strips_guards();
+    test_fill_strips_cascade();
 
     std::fprintf(stderr, "ps2o_mesh_test: OK (%u verts, %u tris)\n",
                  mesh.vertexCount, static_cast<unsigned>(mesh.triangles.size() / 3));

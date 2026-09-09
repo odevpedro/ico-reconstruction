@@ -66,6 +66,23 @@ void GifCommandBuffer::reset() {
     m_transferTrxDir = GsTrxDir{};
     m_uploads.clear();
     m_nextTextureHandle = 0;
+    m_stripsVertices.clear();
+    m_stripsFirsts.clear();
+    m_stripsCounts.clear();
+}
+
+void GifCommandBuffer::setStripGeometry(const RenderVertex* vertices, u32 vertexCount,
+                                        const u32* firsts, u32 firstCount,
+                                        const u32* counts, u32 countCount) {
+    if (vertices != nullptr && vertexCount != 0) {
+        m_stripsVertices.insert(m_stripsVertices.end(), vertices, vertices + vertexCount);
+    }
+    if (firsts != nullptr && firstCount != 0) {
+        m_stripsFirsts.insert(m_stripsFirsts.end(), firsts, firsts + firstCount);
+    }
+    if (counts != nullptr && countCount != 0) {
+        m_stripsCounts.insert(m_stripsCounts.end(), counts, counts + countCount);
+    }
 }
 
 bool GifCommandBuffer::parsePacket(const u8* data, u32 size) {

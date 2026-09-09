@@ -104,4 +104,15 @@ bool loadPs2oMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh);
 // Convenience wrapper reading a whole file into memory.
 bool loadPs2oMeshFromFile(const char* path, Ps2oMesh& mesh);
 
+/* Greedy triangle→strip stripification (Rev.153, front 3 — unified batch).
+   Fills mesh.strips from the flat `triangles`/`triVertUVs`/`triMaterials`
+   lists when the file parsed no strip topology (e.g. the 0str structures and
+   p2 wall family). Each emitted strip renders N-2 triangles from N spine verts
+   via glMultiDrawArrays(GL_TRIANGLE_STRIP), so no [A,B,C,C] indexed
+   duplication remains for strip-less pieces. Consecutive spine triangles share
+   an edge by construction (greedy adjacency walk). Returns the number of
+   strips built; 0 when the mesh already has strips, is invalid, has no
+   triangles, or has a vertex index that does not fit the u16 spine. */
+std::size_t synthesizeTriangleStrips(Ps2oMesh& mesh);
+
 } // namespace ico::engine

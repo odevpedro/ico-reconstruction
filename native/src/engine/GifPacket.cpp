@@ -157,6 +157,16 @@ void GifPacketBridge::setZWrite(u32 zte, u32 ztst) {
     m_buffer.commands().push_back(cmd);
 }
 
+void GifPacketBridge::setDepthState(GSDepthTest test, bool write) {
+    if (!m_packetOpen) return;
+
+    RenderCmd cmd{};
+    cmd.type = RenderCommand::SetDepthTest;
+    cmd.depthTest.test = test;
+    cmd.depthTest.write = write;
+    m_buffer.commands().push_back(cmd);
+}
+
 void GifPacketBridge::setDrawEnvironment(float /* x */, float /* y */, float w, float h,
                                          u32 fbp, u32 psm, u32 fbw) {
     if (!m_packetOpen) return;
@@ -351,6 +361,48 @@ void GifPacketBridge::moveImage(float srcX, float srcY, float dstX, float dstY,
 bool GifPacketBridge::isInScreen(float x, float y, float w, float h) const {
     return x + w > 0 && x < static_cast<float>(m_screenWidth)
         && y + h > 0 && y < static_cast<float>(m_screenHeight);
+}
+
+void GifPacketBridge::drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4]) {
+    if (!m_packetOpen) return;
+
+    RenderCmd cmd{};
+    cmd.type = RenderCommand::DrawSkyGradient;
+    for (u32 i = 0; i < 4; ++i) {
+        cmd.skyGradient.top[i] = topColor[i];
+        cmd.skyGradient.bottom[i] = bottomColor[i];
+    }
+    m_buffer.commands().push_back(cmd);
+}
+
+void GifPacketBridge::drawStrips(RenderList list, const RenderVertex* vertices,
+                                 u32 vertexCount,
+                                 const u32* firsts, const u32* counts,
+                                 u32 stripCount,
+                                 TextureHandle texture,
+                                 u8 r, u8 g, u8 b, u8 a) {
+    if (!m_packetOpen) return;
+    if (vertices == nullptr || vertexCount == 0 || stripCount == 0) return;
+    if (firsts == nullptr || counts == nullptr) return;
+
+    // Append the strip stream to the buffer-owned geometry and store A
+    // command whose offsets index the appended block (base = pre-append
+    // length). The executor resolves them against the buffer at flush time.
+    RenderCmd cmd{};
+    cmd.type = RenderCommand::DrawStrips;
+    cmd.strips.list = list;
+    cmd.strips.vertexOffset = m_buffer.stripVertexCount();
+    cmd.strips.vertexCount = vertexCount;
+    cmd.strips.firstOffset = m_buffer.stripFirstCount();
+    cmd.strips.countOffset = m_buffer.stripCountCount();
+    cmd.strips.stripCount = stripCount;
+    cmd.strips.texture = texture;
+    cmd.strips.r = r;
+    cmd.strips.g = g;
+    cmd.strips.b = b;
+    cmd.strips.a = a;
+    m_buffer.setStripGeometry(vertices, vertexCount, firsts, stripCount, counts, stripCount);
+    m_buffer.commands().push_back(cmd);
 }
 
 GifCommandBuffer& GifPacketBridge::commandBuffer() { return m_buffer; }

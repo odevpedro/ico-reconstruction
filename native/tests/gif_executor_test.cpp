@@ -70,6 +70,13 @@ public:
         m_lastStripCount = (int)stripCount;
         (void)vertexCount; (void)firsts; (void)counts;
     }
+    void drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4]) override {
+        m_skyGradientCalls++;
+        m_lastSkyTop[0] = topColor[0]; m_lastSkyTop[1] = topColor[1];
+        m_lastSkyTop[2] = topColor[2]; m_lastSkyTop[3] = topColor[3];
+        m_lastSkyHorizon[0] = bottomColor[0]; m_lastSkyHorizon[1] = bottomColor[1];
+        m_lastSkyHorizon[2] = bottomColor[2]; m_lastSkyHorizon[3] = bottomColor[3];
+    }
     void drawIndexed(GSPrimitive, RenderList, const u32*, u32,
                      const RenderVertex*, u32, TextureHandle, u8, u8, u8, u8) override {}
     void drawSprite(float x, float y, float w, float h,
@@ -127,6 +134,9 @@ public:
     u32 m_drawPrimCalls = 0;
     u32 m_stripCalls = 0;
     int m_lastStripCount = 0;
+    u32 m_skyGradientCalls = 0;
+    u8 m_lastSkyTop[4] = {};
+    u8 m_lastSkyHorizon[4] = {};
     GSPrimitive m_lastPrim = GSPrimitive::Point;
     RenderList m_lastList = RenderList::Opaque;
     u32 m_lastPrimCount = 0;

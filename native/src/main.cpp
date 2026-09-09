@@ -185,7 +185,8 @@ bool loadRoomSkyColors(const std::string& texDir,
 int runSceneDemo(const std::vector<std::string>& piecePaths,
                  const std::string& texDir,
                  u32 frames, const char* shotPath, bool uvTest,
-                 float camAngleRad, bool fitMacro) {
+                 float camAngleRad, bool fitMacro,
+                 const ico::engine::SceneAssetStore* store = nullptr) {
     using namespace ico::engine;
 
     // Load all pieces.
@@ -196,6 +197,14 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         if (!loadPs2oMeshFromFile(path.c_str(), sp.mesh)) {
             std::fprintf(stderr, "main: failed to load PS2O mesh %s\n", path.c_str());
             continue;
+        }
+        const std::size_t synthesized = synthesizeTriangleStrips(sp.mesh);
+        if (synthesized != 0) {
+            std::fprintf(stderr,
+                "main:   strip synthesis: %zu strips from %u flat triangles "
+                "(unified GL_TRIANGLE_STRIP path)\n",
+                synthesized,
+                static_cast<uint32_t>(sp.mesh.triangles.size() / 3));
         }
         uint32_t maxMat = 0;
         for (auto m : sp.mesh.triMaterials) if (m > maxMat) maxMat = m;
@@ -607,6 +616,39 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                              "(F camera follow disabled, WASD ignored)\n");
     }
 
+    // Semantic scene-load bridge (front 2 — KanbanSceneLoader seam). The
+    // loader consumes the real room composition through the original
+    // requestScene()/execute() (kanban.c) flow and creates host GObjs in the
+    // same gobjRuntime the BoyController process uses. The render loop below
+    // stays decoupled — it reads the bound SceneAssetStore directly — so this
+    // is the wiring where runtime-validated GObj creation will feed later
+    // revisions. Room entry descriptors are not decoded yet, so the loader
+    // creates 0 host GObjs (m_entries disabled); that is expected and logged.
+    KanbanSceneLoader sceneLoader;
+    if (!sceneLoader.initialize(gobjRuntime)) {
+        std::fprintf(stderr, "main: KanbanSceneLoader failed to initialize\n");
+        return 1;
+    }
+    if (store != nullptr) {
+        if (sceneLoader.bindSceneAssets(*store, 0x0Fu)) {
+            std::fprintf(stderr,
+                "main: loader bound scene 0x0F: %zu assets (first=%s)\n",
+                sceneLoader.boundAssetCount(0x0Fu),
+                sceneLoader.boundAsset(0x0Fu, 0)->label.c_str());
+        }
+        sceneLoader.requestScene(0x0Fu);
+        const bool loaded = sceneLoader.execute();
+        std::fprintf(stderr,
+            "main: scene 0x0F semantic load via requestScene/execute: %s "
+            "(currentSceneId=0x%02X; room entry descriptors not yet recovered, "
+            "0 host GObjs expected)\n",
+            loaded ? "ok" : "no-op", sceneLoader.currentSceneId());
+    } else {
+        std::fprintf(stderr,
+            "main: no SceneAssetStore supplied; KanbanSceneLoader runs "
+            "unbound (viewer path)\n");
+    }
+
     auto feedKey = [&](XKeyEvent& xk, bool down) {
         const ::KeySym ks = ::XLookupKeysym(&xk, 0);
         switch (ks) {
@@ -729,18 +771,16 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     unsigned char skyHorizon[4] = { 10, 12, 18, 255 };
     hasSky = loadRoomSkyColors(texDir, skyTop, skyHorizon);
 
+    // GIF command bridge (front 1): the semantic packet pipeline shares one
+    // executor with the renderer. The sky backdrop and every strip batch ride
+    // a single packet per frame; the executor flushes through the backend.
+    GifPacketBridge bridge(backend);
+    bridge.init(kPs2ScreenWidth, kPs2ScreenHeight);
+
     for (u32 f = 0; frames == 0 || f < frames; ++f) {
         backend.beginFrame();
 
-        // Real game sky background: sample the room's sky.tm2 gradient and
-        // paint it as a full-screen background quad (depth Always/write off)
-        // so the scene composes on top of the room's actual sky colors.
         backend.clear(10, 12, 18, 255);
-        if (hasSky) {
-            backend.setDepthTest(GSDepthTest::Always, false);
-            backend.drawSkyGradient(skyTop, skyHorizon);
-            backend.setDepthTest(GSDepthTest::Less, true);
-        }
 
         // Top-of-frame key snapshot must precede the X11 pump so edge
         // queries compare against last frame's state (see input_test).
@@ -802,25 +842,38 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         const Matrix4x4 model = Matrix4x4::identity();
         backend.setMatrices(proj2, view, model);
 
-        // Single draw per pre-computed per-texture block: one state bind +
-        // one flush per texture instead of per-mesh/per-material vectors.
+        // Unified scene packet (fronts 1+3): sky backdrop + every strip batch
+        // accumulate in ONE command buffer, executed through the semantic
+        // GIF pipeline — the same path a real GIF DMA upload feeds. Since
+        // synthesizeTriangleStrips() runs at load, every piece carries strip
+        // topology, so useStrips is always true here and the [A,B,C,C] index
+        // duplication never reaches the driver.
         if (useStrips) {
-            // Strip-semantics path: the PS2O geometry renders through
-            // glMultiDrawArrays(GL_TRIANGLE_STRIP) — N spine verts per strip
-            // become N-2 triangles with no indexed duplication.
+            bridge.startPacketPri(0);
+            if (hasSky) {
+                // Sky backdrop: depth Always / write off within the same
+                // packet (setZWrite/setZTest cannot express this pair).
+                bridge.setDepthState(GSDepthTest::Always, false);
+                bridge.drawSkyGradient(skyTop, skyHorizon);
+                bridge.setDepthState(GSDepthTest::Less, true);
+            }
             for (const auto& sb : stripBatches) {
                 if (sb.sourceStrips == 0) continue;
-                TextureHandle tex = (sb.texture != kNullTexture) ? sb.texture
-                                    : (uvTest ? checkerTex : kNullTexture);
-                backend.bindTexture(tex, 0);
-                backend.drawStrips(RenderList::Opaque,
-                                   sb.vertices.data(),
-                                   static_cast<uint32_t>(sb.vertices.size()),
-                                   sb.firsts.data(), sb.counts.data(),
-                                   static_cast<uint32_t>(sb.counts.size()),
-                                   sb.texture, 255, 255, 255, 255);
+                bridge.drawStrips(RenderList::Opaque,
+                                  sb.vertices.data(),
+                                  static_cast<u32>(sb.vertices.size()),
+                                  sb.firsts.data(), sb.counts.data(),
+                                  static_cast<u32>(sb.counts.size()),
+                                  sb.texture, 255, 255, 255, 255);
             }
+            bridge.endPacket();
         } else {
+            // Flat fallback (pre-front-3): direct backend calls, unchanged.
+            if (hasSky) {
+                backend.setDepthTest(GSDepthTest::Always, false);
+                backend.drawSkyGradient(skyTop, skyHorizon);
+                backend.setDepthTest(GSDepthTest::Less, true);
+            }
             for (const auto& tb : textureBatches) {
                 if (tb.indices.empty()) continue;
                 TextureHandle tex = (tb.texture != kNullTexture) ? tb.texture
@@ -828,7 +881,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                 backend.bindTexture(tex, 0);
                 backend.drawIndexed(GSPrimitive::Triangle, RenderList::Opaque,
                                     tb.indices.data(),
-                                    static_cast<uint32_t>(tb.indices.size()),
+                                    static_cast<u32>(tb.indices.size()),
                                     tb.vertices.data(), 0,
                                     tb.texture, 255, 255, 255, 255);
             }
@@ -1030,14 +1083,29 @@ int runOpenGLDemo(int argc, char* argv[]) {
             }
         }
         if (!manifestPath.empty() && store.parse(manifestPath.c_str())) {
+            // Data-driven composition through the KanbanSceneLoader seam
+            // (front 2): a composition runtime drives the semantic loader the
+            // same way the game would, and boundAsset() supplies the piece
+            // list. This is the same API runSceneDemo consumes at load time.
+            IsysGObj compositionRuntime;
+            if (!compositionRuntime.initialize(0x40, 0x40)) {
+                std::fprintf(stderr, "main: composition runtime failed to initialize\n");
+                return 1;
+            }
+            KanbanSceneLoader compositionLoader;
+            if (!compositionLoader.initialize(compositionRuntime) ||
+                !compositionLoader.bindSceneAssets(store, 0x0Fu)) {
+                std::fprintf(stderr, "main: composition loader bind of scene 0x0F failed\n");
+                return 1;
+            }
             const u32 exhibitionScene = 0x0Fu;
-            const std::size_t count = store.sceneAssetCount(exhibitionScene);
+            const std::size_t count = compositionLoader.boundAssetCount(exhibitionScene);
             std::fprintf(stderr, "main: scene composition from manifest %s "
-                                 "(scene 0x0F, %zu pieces)\n",
+                                 "(scene 0x0F via KanbanSceneLoader, %zu pieces)\n",
                          manifestPath.c_str(), count);
             for (std::size_t i = 0; i < count; ++i) {
                 const ico::engine::SceneAssetEntry* entry =
-                    store.sceneAsset(exhibitionScene, i);
+                    compositionLoader.boundAsset(exhibitionScene, i);
                 if (entry != nullptr) {
                     std::ifstream f(entry->meshPath.c_str());
                     if (f.good()) pieces.push_back(entry->meshPath);
@@ -1119,7 +1187,8 @@ int runOpenGLDemo(int argc, char* argv[]) {
             }
         }
         return runSceneDemo(pieces, texDirResolved, frames, shotPath, uvTest,
-                            camAngleRad, fitMacro);
+                            camAngleRad, fitMacro,
+                            manifestPath.empty() ? nullptr : &store);
     }
 
     // Auto-discover .p2o mesh in native/assets/ if not provided.

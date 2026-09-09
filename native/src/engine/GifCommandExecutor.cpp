@@ -12,7 +12,7 @@ void GifCommandExecutor::execute(const GifCommandBuffer& buffer) {
     for (u32 i = 0; i < buffer.commandCount(); ++i) {
         RenderCmd cmd = buffer.command(i);
         resolveTextureHandles(cmd, buffer);
-        executeCommand(cmd);
+        executeCommand(cmd, &buffer);
     }
 }
 
@@ -23,6 +23,7 @@ void GifCommandExecutor::resolveTextureHandles(RenderCmd& cmd, const GifCommandB
         case RenderCommand::DrawIndexed:        texPtr = &cmd.drawIndexed.texture; break;
         case RenderCommand::DrawSprite:         texPtr = &cmd.sprite.texture; break;
         case RenderCommand::DrawSpriteGouraud:  texPtr = &cmd.spriteGouraud.texture; break;
+        case RenderCommand::DrawStrips:         texPtr = &cmd.strips.texture; break;
         default: return;
     }
     if (*texPtr == kNullTexture) {
@@ -58,6 +59,10 @@ void GifCommandExecutor::resolveTextureHandles(RenderCmd& cmd, const GifCommandB
 }
 
 void GifCommandExecutor::executeCommand(const RenderCmd& cmd) {
+    executeCommand(cmd, nullptr);
+}
+
+void GifCommandExecutor::executeCommand(const RenderCmd& cmd, const GifCommandBuffer* buffer) {
     switch (cmd.type) {
         case RenderCommand::Clear:
             m_backend.clear(cmd.viewport.x, cmd.viewport.y, cmd.viewport.w);
@@ -182,6 +187,30 @@ void GifCommandExecutor::executeCommand(const RenderCmd& cmd) {
             m_backend.drawPrimitive(GSPrimitive::Triangle, RenderList::Opaque,
                                     vertices, 3, kNullTexture,
                                     cmd.triangle.r, cmd.triangle.g, cmd.triangle.b, cmd.triangle.a);
+            break;
+        }
+        case RenderCommand::DrawSkyGradient:
+            m_backend.drawSkyGradient(cmd.skyGradient.top, cmd.skyGradient.bottom);
+            break;
+        case RenderCommand::DrawStrips: {
+            if (buffer == nullptr) break;
+            const std::vector<RenderVertex>& verts = buffer->stripVertices();
+            const std::vector<u32>& firsts = buffer->stripFirsts();
+            const std::vector<u32>& counts = buffer->stripCounts();
+            const u32 vo = cmd.strips.vertexOffset;
+            const u32 vc = cmd.strips.vertexCount;
+            if (vo + vc > verts.size() ||
+                cmd.strips.firstOffset + cmd.strips.stripCount > firsts.size() ||
+                cmd.strips.countOffset + cmd.strips.stripCount > counts.size()) {
+                break;
+            }
+            m_backend.drawStrips(cmd.strips.list,
+                                 verts.data() + vo, vc,
+                                 firsts.data() + cmd.strips.firstOffset,
+                                 counts.data() + cmd.strips.countOffset,
+                                 cmd.strips.stripCount,
+                                 cmd.strips.texture,
+                                 cmd.strips.r, cmd.strips.g, cmd.strips.b, cmd.strips.a);
             break;
         }
         case RenderCommand::CopyTexture:

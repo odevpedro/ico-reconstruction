@@ -88,6 +88,27 @@ A compelling scene is not technical evidence.
   isikabe, pole) now load from `native/assets/` and the castle room renders
   fully texturized (white pixels 7.1% -> 0.0%, colored 22.7% -> 30.1% in a
   screenshot histogram). The p2 wall-family discriminator remains open.
+- Rev.152 (2026-09-09): multi-room scene loading. `--room <name>` loads any of
+  40 rooms from `assets/scene/rooms/<room>/` (manifest-driven), the room's real
+  `sky.tm2` gradient is sampled for a `drawSkyGradient()` backdrop quad (depth
+  Always/write-off, background list), camera-relative WASD follow-boy
+  third-person mode plus orbit/pan/pitch free camera, and graceful
+  viewer-only fallback when `ClipBridge`/spawn fails. Playable-demo screenshot
+  evidence in `research/native/ico-rev150-demojogavel-2026-09-08.png`.
+- Rev.153 (2026-09-09): the scene bridge closes as one pipeline. The
+  `GifPacketBridge` gains scene commands (`drawSkyGradient`, `drawStrips`,
+  `setDepthState`) recorded into the GIF command buffer and executed through
+  the semantic executor; the sky backdrop + every strip batch ride a single
+  packet per frame (`[render] 20 draw calls / 26747 real triangles / 12
+  degenerate` — the `[A,B,C,C]` duplication is gone). `KanbanSceneLoader`
+  (kanban.c `requestScene`/`execute`/`initSceneGObj`) is wired for composition
+  (`boundAsset(0x0F,i)`, 33 st00a pieces) and against the real `gobjRuntime`
+  in `runSceneDemo` (honest 0 GObjs until entry descriptors are recovered).
+  `Ps2oMesh::synthesizeTriangleStrips()` greedily stripifies strip-less pieces
+  (safety net; today all 33 st00a pieces carry parser strips). Fixed a Rev.152
+  regression: `drawSkyGradient` pure virtual added without updating the two
+  test backends (build was broken). 25/26 CTest; only the documented headless
+  `opengl_backend` segfault fails.
 
 ## Current runtime baseline (Rev.126)
 
@@ -128,10 +149,11 @@ state machine against a real gameplay state sequence.
 
 ## Sources to prefer
 
-1. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
-2. `research/elf/rev135-gif-pipeline-window-milestone.md`
-3. `research/elf/rev134-moveimage-copytexture-plumbing.md`
-4. `research/elf/rev133-hotgap-semantic-bridges.md`
+1. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
+2. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
+3. `research/elf/rev135-gif-pipeline-window-milestone.md`
+4. `research/elf/rev134-moveimage-copytexture-plumbing.md`
+5. `research/elf/rev133-hotgap-semantic-bridges.md`
 5. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
 6. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
 7. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`

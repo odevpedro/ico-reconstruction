@@ -71,6 +71,21 @@ public:
                          TextureFormat& format, std::vector<u8>& rgba) const;
     std::size_t uploadedTextureCount() const;
 
+    /* Buffer-owned scene strip geometry (Rev.153). DrawStrips commands index
+       into these arrays via the RenderCmd strips.vertexOffset/firstOffset/
+       countOffset fields, so the bridge can stream an entire per-texture strip
+       batch exactly like the PS2 GIF strips without the caller owning the
+       memory. Copies are appended; reset() frees them with the commands. */
+    void setStripGeometry(const RenderVertex* vertices, u32 vertexCount,
+                          const u32* firsts, u32 firstCount,
+                          const u32* counts, u32 countCount);
+    const std::vector<RenderVertex>& stripVertices() const { return m_stripsVertices; }
+    const std::vector<u32>& stripFirsts() const { return m_stripsFirsts; }
+    const std::vector<u32>& stripCounts() const { return m_stripsCounts; }
+    u32 stripVertexCount() const { return static_cast<u32>(m_stripsVertices.size()); }
+    u32 stripFirstCount() const { return static_cast<u32>(m_stripsFirsts.size()); }
+    u32 stripCountCount() const { return static_cast<u32>(m_stripsCounts.size()); }
+
 private:
     void processTag(const GifTag& tag, const u8* data, u32 dataSize);
     void processPackedData(const GifTag& tag, const u8* data, u32 dataSize);
@@ -156,6 +171,11 @@ private:
     };
     std::vector<UploadedTexture> m_uploads;
     TextureHandle m_nextTextureHandle;
+
+    /* Scene strip geometry appended by GifPacketBridge::drawStrips. */
+    std::vector<RenderVertex> m_stripsVertices;
+    std::vector<u32> m_stripsFirsts;
+    std::vector<u32> m_stripsCounts;
 };
 
 } // namespace ico::engine

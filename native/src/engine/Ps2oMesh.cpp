@@ -5,6 +5,7 @@
 #include <cstring>
 #include <fstream>
 #include <cmath>
+#include <unordered_map>
 
 namespace ico::engine {
 
@@ -321,6 +322,131 @@ bool loadPs2oMeshFromFile(const char* path, Ps2oMesh& mesh) {
     std::vector<uint8_t> buf(static_cast<size_t>(sz));
     f.read(reinterpret_cast<char*>(buf.data()), sz);
     return loadPs2oMesh(buf.data(), buf.size(), mesh);
+}
+
+std::size_t synthesizeTriangleStrips(Ps2oMesh& mesh) {
+    if (!mesh.valid) return 0;
+    if (!mesh.strips.empty()) return 0;
+
+    const uint32_t triCount = static_cast<uint32_t>(mesh.triangles.size() / 3);
+    if (triCount == 0) return 0;
+    const bool hasUV = mesh.triVertUVs.size() >= static_cast<uint32_t>(triCount) * 6;
+
+    // The spine is u16; refuse meshes whose indices exceed that range.
+    uint32_t maxIdx = 0;
+    for (size_t t = 0; t < mesh.triangles.size(); ++t)
+        if (mesh.triangles[t] > maxIdx) maxIdx = mesh.triangles[t];
+    if (maxIdx > 0xFFFEu) return 0;
+
+    // Adjacency: ordered vertex-pair key -> triangle indices.
+    auto keyOf = [](uint32_t a, uint32_t b) -> uint64_t {
+        const uint32_t lo = a < b ? a : b;
+        const uint32_t hi = a < b ? b : a;
+        return (static_cast<uint64_t>(hi) << 32) | lo;
+    };
+    std::unordered_map<uint64_t, std::vector<uint32_t>> edgeTriangles;
+    edgeTriangles.reserve(mesh.triangles.size());
+    for (uint32_t t = 0; t < triCount; ++t) {
+        const uint32_t a = mesh.triangles[t * 3 + 0];
+        const uint32_t b = mesh.triangles[t * 3 + 1];
+        const uint32_t c = mesh.triangles[t * 3 + 2];
+        edgeTriangles[keyOf(a, b)].push_back(t);
+        edgeTriangles[keyOf(b, c)].push_back(t);
+        edgeTriangles[keyOf(c, a)].push_back(t);
+    }
+
+    std::vector<uint8_t> used(static_cast<size_t>(triCount), 0);
+    std::vector<Ps2oStrip> result;
+
+    auto appendUV = [&](Ps2oStrip& st, uint32_t tri, uint32_t local) {
+        st.uvs.push_back(mesh.triVertUVs[tri * 6 + local * 2 + 0]);
+        st.uvs.push_back(mesh.triVertUVs[tri * 6 + local * 2 + 1]);
+    };
+    auto localIndexOf = [&](uint32_t tri, uint32_t vi) -> uint32_t {
+        for (uint32_t k = 0; k < 3; ++k)
+            if (mesh.triangles[tri * 3 + k] == vi) return k;
+        return 0;
+    };
+
+    // Advance the spine by one cascade triangle sharing the (X,Y) edge.
+    // Returns the triangle index+1 (0 = none) and the third vertex.
+    constexpr uint32_t kInvalid = 0xFFFFFFFFu;
+    auto nextEdgeTri = [&](uint32_t x, uint32_t y, uint32_t& third) -> uint32_t {
+        if (x == y) return 0;
+        const auto it = edgeTriangles.find(keyOf(x, y));
+        if (it == edgeTriangles.end()) return 0;
+        for (uint32_t t : it->second) {
+            if (used[t]) continue;
+            const uint32_t a = mesh.triangles[t * 3 + 0];
+            const uint32_t b = mesh.triangles[t * 3 + 1];
+            const uint32_t c = mesh.triangles[t * 3 + 2];
+            bool hasX = false, hasY = false;
+            third = kInvalid;
+            for (uint32_t v : {a, b, c}) {
+                if (v == x) hasX = true;
+                else if (v == y) hasY = true;
+                else third = v;
+            }
+            if (hasX && hasY && third != kInvalid) {
+                used[t] = 1;
+                return t + 1;
+            }
+        }
+        return 0;
+    };
+
+    for (uint32_t s = 0; s < triCount; ++s) {
+        if (used[s]) continue;
+        used[s] = 1;
+
+        const uint32_t a = mesh.triangles[s * 3 + 0];
+        const uint32_t b = mesh.triangles[s * 3 + 1];
+        const uint32_t c = mesh.triangles[s * 3 + 2];
+        if (a == b || b == c || c == a) continue; // degenerate seed
+
+        Ps2oStrip st;
+        st.material = (s < mesh.triMaterials.size()) ? mesh.triMaterials[s] : 0;
+        st.spine.push_back(static_cast<uint16_t>(a));
+        st.spine.push_back(static_cast<uint16_t>(b));
+        st.spine.push_back(static_cast<uint16_t>(c));
+        if (hasUV) {
+            appendUV(st, s, 0);
+            appendUV(st, s, 1);
+            appendUV(st, s, 2);
+        }
+
+        // Forward: extend the (last-1,last) spine edge.
+        for (;;) {
+            const uint32_t x = st.spine[st.spine.size() - 2];
+            const uint32_t y = st.spine[st.spine.size() - 1];
+            uint32_t third = kInvalid;
+            const uint32_t t1 = nextEdgeTri(x, y, third);
+            if (t1 == 0) break;
+            st.spine.push_back(static_cast<uint16_t>(third));
+            if (hasUV) appendUV(st, t1 - 1, localIndexOf(t1 - 1, third));
+        }
+
+        // Backward: prepend a vertex to the (0,1) spine edge.
+        for (;;) {
+            const uint32_t x = st.spine[0];
+            const uint32_t y = st.spine[1];
+            uint32_t third = kInvalid;
+            const uint32_t t1 = nextEdgeTri(x, y, third);
+            if (t1 == 0) break;
+            st.spine.insert(st.spine.begin(), static_cast<uint16_t>(third));
+            if (hasUV) {
+                const uint32_t lo = localIndexOf(t1 - 1, third);
+                st.uvs.insert(st.uvs.begin(), mesh.triVertUVs[(t1 - 1) * 6 + lo * 2 + 1]);
+                st.uvs.insert(st.uvs.begin(), mesh.triVertUVs[(t1 - 1) * 6 + lo * 2 + 0]);
+            }
+        }
+
+        if (st.spine.size() >= 3) result.push_back(std::move(st));
+    }
+
+    const std::size_t built = result.size();
+    if (built != 0) mesh.strips = std::move(result);
+    return built;
 }
 
 } // namespace ico::engine
