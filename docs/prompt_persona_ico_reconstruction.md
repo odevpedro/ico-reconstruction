@@ -121,6 +121,21 @@ A compelling scene is not technical evidence.
   per-entry `listId` (e.g. entry 855→list 0) and `gobjType`. Demo shows
   `currentSceneId=0x0F, 25 host GObjs` with the BoyController spawn stable at
   60 fps; 26/27 CTest (`verified_scene_test` added).
+- Rev.155 (2026-09-09): **Passo 1 — per-GObj visual composition.** A host-side
+  `GObjAttachmentStore` (`native/src/engine/GObjAttachment.{h,cpp}`) binds each
+  GObj to its composition (mesh path, per-material texture names, `Matrix4x4`
+  transform) as a parallel registry — the byte-exact `IcoGObj` 0x174 does NOT
+  grow. `KanbanSceneLoader::attachBoundAssetsToGObjs(0x0F)` pairs the 28 bound
+  assets onto the 25 host GObjs; **the render loop in `runSceneDemo` now walks
+  the ACTIVE isysGObj primary lists (`head(listId)`→`next`) and draws what each
+  GObj commands**, falling back to the global `stripBatches` only without a
+  store. The boy is a GObj-owned **BoxMarker** attachment: `BoyController`
+  writes its transform every frame and the renderer reads the marker (no
+  hardcoded player box). The GObj↔mesh pairing is a documented HOST round-robin
+  heuristic — NOT a byte-verified reconstruction. `gobj_attachment_test`
+  asserts 28 attachments, dedup by (handle,meshPath), detach/find coherence,
+  re-init clearing. 27/28 CTest; demo `--frames 1 --shot` shows the textured
+  room + the boy box driven by the GObj marker.
 
 ## Current runtime baseline (Rev.126)
 
@@ -153,11 +168,14 @@ factories: `GObjFactory` (CreateGObj / CreateGObj_v, `0x240D40`/`0x240EA0`)
 and `GObjEntityAllocator` (AllocGObjEntity, `0x19F310`), plus the
 `ClipBridge` collision bridge and the `BoyController` semantic BOY state
 machine (Rev.150, ports `boy_hA/hB/hC`; 25/25 CTest). Verifed scene tables
-drive **25 real host GObjs** for scene 0x0F (Rev.154). Next up is
-per-GObj asset attachment — linking the scene-0x0F GObj rows to `.p2o`
-pieces/descriptors so the runtime-validated GObjs drive the render
-composition — and a new runtime session to observe the per-room `init_fn`
-targets (the `jalr` at `0x001AF96C`) so the native dispatch table can be bound
+drive **25 real host GObjs** for scene 0x0F (Rev.154), and those GObjs now
+**own their visual composition** through the host `GObjAttachmentStore`
+(Rev.155): the render loop iterates the active isysGObj lists and draws what
+each GObj commands (28 meshes across 25 GObjs, boy via a GObj-owned BoxMarker).
+Next up is Passo 2 — a new PCSX2 runtime session that captures each GObj's
+`init_fn`/`processCallback` and its real model binding, replacing the
+round-robin HOST pairing — and capturing the per-room `init_fn` targets (the
+`jalr` at `0x001AF96C`) so the native dispatch table can be bound
 to real room setup functions beyond the currently injected mocks, plus a
 PCSX2 capture with probes on `boy_hA/hB/hC`
 (`0x1C1A98/0x1C1DD8/0x1C1F58`) to compare the native state machine against a
@@ -165,24 +183,27 @@ real gameplay state sequence.
 
 ## Sources to prefer
 
-1. `research/native/rev154-verified-scene-tables.md`
-2. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
-3. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
-4. `research/elf/rev135-gif-pipeline-window-milestone.md`
-5. `research/elf/rev134-moveimage-copytexture-plumbing.md`
-6. `research/elf/rev133-hotgap-semantic-bridges.md`
-7. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
-8. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
-9. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
-10. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
-11. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
-12. `research/elf/rev109-isysgobj-abi-consolidation.md`
-13. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
-14. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
-15. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
-16. Byte-exact sources under `src/core/asm/`
+1. `research/native/rev155-per-gobj-visual-composition.md`
+2. `research/native/rev154-verified-scene-tables.md`
+3. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
+4. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
+5. `research/elf/rev135-gif-pipeline-window-milestone.md`
+6. `research/elf/rev134-moveimage-copytexture-plumbing.md`
+7. `research/elf/rev133-hotgap-semantic-bridges.md`
+8. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
+9. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
+10. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
+11. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+12. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
+13. `research/elf/rev109-isysgobj-abi-consolidation.md`
+14. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+15. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+16. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+17. Byte-exact sources under `src/core/asm/`
 
 When an older note conflicts with Rev.131 on the `world_state_load` boundary
 (0x80 vs the earlier 0x248), use Rev.131. When an older note conflicts with
 Rev.109 on the four list tables, use Rev.109. When prose conflicts with raw
-instructions, use the instructions.
+instructions, use the instructions. Rev.155's GObj↔mesh pairing is an explicit
+HOST heuristic (round-robin), NOT verified ground truth — do not present it as
+the real PS2 model binding.

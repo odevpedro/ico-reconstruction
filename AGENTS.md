@@ -304,6 +304,7 @@ Before doing new analysis, read these files in this order if they exist:
 32. `research/elf/ghidra-rev105-extended-session-25-worldstates-20-dl-slots.md`
 33. `research/elf/rev142-p2o-vertex-layout-and-face-record-structure.md` (native-port, P1: PS2O geometry decode)
 34. `research/native/rev154-verified-scene-tables.md` (native-port: 68 descriptors + 97 scene ranges drive 25 host GObjs for scene 0x0F)
+35. `research/native/rev155-per-gobj-visual-composition.md` (native-port: GObjAttachmentStore — renderer iterates active isysGObj lists and draws each GObj's composition; boy via BoxMarker; round-robin GObj↔mesh is HOST heuristic pending PCSX2 capture)
 
 Use Rev.039 and the ICO-decomp cross-reference as the current source of truth
 for the domain of `0x001d37c8` / `0x001d3a30` when they contradict earlier
@@ -864,7 +865,8 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 48. **Rev.143 (native-port, P1 — texturized room render):** `ico_native` auto-loads `.p2o` mesh (`170_st00a_p1.p2o`: 13,877 verts, 15,161 triangles, 3 submeshes, 13,070 UVs, 15,161 material indices) and `.tm2` texture (`st0_a.tm2` 256×256) from `native/assets/`. TM2 texture pipeline integrated into `runMeshDemo`: UV mapping via `triVertUVs`, texture binding through `OpenGLBackend`. Material index per strip (`f` = u16[7]) confirmed. Material↔TM2 by name (7 materials). Extraction of `.p2o`/`.tm2` from PAL `.DF` containers via `dfdatas_unpack.py`. `run_native_demo.sh` for one-command demo. 21/22 CTest (only `opengl_backend_test` segfaults due to headless context). 95% pass rate.~~ **DONE (2026-09-06)**
 49. ~~**Rev.154: verified scene tables drive real GObj creation** — `tools/extract_scene_tables.py` extracts the 68 entity descriptors (0x2A31B8), 97 verified world-dispatch scene ranges (tiling [41,3453) from 0x5F2FB8), and the scene-0x0F entry slice (29 entries) into `native/src/game/GeneratedSceneTables.h`; `KanbanSceneLoader::applyVerifiedSceneTables()` feeds them into the original requestScene/execute flow with per-entry listId/gobjType/flag_44 and descriptor gate_44; **`initSceneGObj` now creates 25 host GObjs for scene 0x0F** (29 payload − 4 gate-0 descriptors DYNAMICMOTIONDAT/STAGESETTING), entry-table correction 512→3600 (valid run idx 0..3590); `verified_scene_test` + demo run confirmed GObjs>0 with BoyController stable; 26/27 CTest.~~ **DONE (2026-09-09)**
 50. ~~**Rev.151: p1 face/UV decode correction (byte-validated)** — the record is NOT `[c,t,0,a,1,b,0,0]`; the strip is a 16 B header `[N, 0xFFFF x7]` where N = number of record rows that follow (literal count — 4636 headers carry 3 records, 2352 carry 4, ..., count x N reproduces the record total exactly). Each record is `[1, 0, a, s, m, b, u, f]`: pos=`u16[2]` (max 7792), **UV index=`u16[4]` (max 13069 = NUV-1, EXACT full coverage 13070/13070)**, material=`u16[7]` (EXACTLY 7 values 0-6, matching the 7 names), stream id=`u16[3]` (const per strip, NOT material). Tris = cascade (r0,r1,r2)(r1,r2,r3)... = N-2 per strip. Face region: 0x6A6A0 → ends before OBJH (0x101620). Result: 7877 strips / 15007 tris / mean UV edge spread 0.1645; runs in `ico_native` at 15019 real tris with correct brick texture. **The old "UV = k + offset[f]" heuristic is WRONG — replaced by the direct u16[4] UV index (Rev.151) in `Ps2oMesh.cpp`; p2 wall family (type 0x00/0x01 quads/fans) still needs its own discriminator.**~~ **DONE (2026-09-08)**
-50. **Native engine next:** per-GObj asset attachment — link scene-0x0F GObj rows to `.p2o` pieces/descriptors so the runtime-validated GObjs drive the render composition; keep batch-strip rendering. Bridge `GifPacket.*` functions to the GIF command buffer model.
+50. ~~**Rev.155 (native-port, P1 — per-GObj visual composition):** — **Passo 1 do plano de sequência do usuário entregue.** Novo `GObjAttachmentStore` host-side (`native/src/engine/GObjAttachment.{h,cpp}`) liga cada GObj à sua composição visual (mesh path, material names, Matrix4x4 transform) sem crescer o ABI byte-exact `IcoGObj` 0x174; um GObj pode ser dono de vários meshes (28 assets / 25 GObjs, round-robin HOST pareio `m_sceneGObjs[i % size]` — **heurística explícita, não reconstrução byte-verified do vínculo GObj↔modelo**). `KanbanSceneLoader::attachBoundAssetsToGObjs(0x0F)` → 28 anexos; accessibility `attachmentStore()`/`sceneGObjHandle()`. **O loop de render em `main.cpp` agora itera as listas primárias do runtime isysGObj (`head(listId)`→`next`) e desenha o que cada GObj ativo comanda** (fallback para `stripBatches` global apenas sem store). O boy virou **BoxMarker attachment GObj-ownered**: `BoyController` atualiza `m->transform` todo frame e o renderer lê o marker (`drawBoxMarker`), sem hardcode da posição. `gobj_attachment_test` novo (28 anexos, dedup por (handle,meshPath), detach/find coherence, re-init limpa). CTest 27/28 (só `opengl_backend` headless). Demo `--frames 1 --shot` verificado: `requestScene/execute` ok, 25 host GObjs, 28 anexos, PPM com sala texturizada + 98 px do box do boy. Nota: `research/native/rev155-per-gobj-visual-composition.md`. ROUND-ROBIN GObj↔modelo é provisional — um capture PCSX2 real o substitui (Passo 2).~~ **DONE (2026-09-09)**
+50. **Native engine next:** bridge `GifPacket.*` functions to the GIF command buffer model; Passo 2 = capturar `init_fn`/`processCallback` por GObj via PCSX2 para substituir o round-robin.
 
 ---
 
@@ -879,9 +881,10 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 | Material indices | ✅ Working | `f` = u16[7] per strip, 7 materials |
 | Auto-load | ✅ Working | `--p2o` defaults to `native/assets/170_st00a_p1.p2o` |
 | Infinite loop | ✅ Working | `--frames 0` runs continuously |
-| CTest | ✅ 21/22 | Only `opengl_backend_test` segfaults (headless) |
+| CTest | ✅ 27/28 | Only `opengl_backend_test` segfaults (headless), rest pass |
 | Extraction pipeline | ✅ Working | `dfdatas_unpack.py` on PAL ISO → `.p2o` + `.tm2` |
 | Demo runner | ✅ Working | `run_native_demo.sh` |
+| Per-GObj composition | ✅ Working (Rev.155) | render loop iterates active isysGObj lists, draws each GObj's attachments; boy via BoxMarker attachment |
 
 > **Rev.151 NOTE.** The rendering-status table above predates Rev.151.
 > Current p1 figures (after the face/UV decode correction): **13,877 verts,
@@ -894,7 +897,20 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 > descriptors, 97 scene ranges, and the scene-0x0F slice of 29 entries →
 > **25 host GObjs** created at load (4 gate-0 descriptors). Entry table is
 > 3600 rows (valid `descIdx<68` run idx 0..3590), not 512. CTest baseline
-> raised to **26/27** by `verified_scene_test`.
+> raised to **26/27** by `verified_scene_test`; Rev.155 then added
+> `gobj_attachment_test` → **27/28**.
+
+> **Rev.155 NOTE (Passo 1 — per-GObj composition).** The render loop is no
+> longer driven by the global `stripBatches`/`SceneAssetStore`. It walks the
+> ACTIVE primary isysGObj lists (`head(listId)`→`next`) and, per GObj, draws
+> the strip batches of the meshes that GObj owns through the host
+> `GObjAttachmentStore` (`KanbanSceneLoader::attachBoundAssetsToGObjs(0x0F)`
+> → 28 attachments over 25 host GObjs). Mesh meshes stay in `native/assets/`;
+> the boy is a GObj-owned **BoxMarker** attachment whose transform the
+> `BoyController` updates each frame (no hardcoded player box). The
+> GObj↔mesh pairing is an explicit HOST round-robin heuristic, NOT a
+> byte-verified reconstruction — a future PCSX2 capture that binds each GObj
+> to its model (Passo 2) will replace it.
 
 ---
 

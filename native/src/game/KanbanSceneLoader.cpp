@@ -46,6 +46,7 @@ void KanbanSceneLoader::shutdown() {
     m_initialized = false;
     m_sceneGObjs.clear();
     m_sceneGObjSources.clear();
+    m_attachments.clear();
     m_currentSceneId = 0;
 }
 
@@ -254,6 +255,56 @@ const ico::engine::SceneAssetEntry* KanbanSceneLoader::boundAsset(
     return nullptr;
 }
 
+std::size_t KanbanSceneLoader::attachBoundAssetsToGObjs(u32 sceneId) {
+    if (!m_initialized || m_runtime == nullptr || m_sceneGObjs.empty()) {
+        return 0;
+    }
+
+    const SceneAssetBinding* binding = nullptr;
+    for (const SceneAssetBinding& candidate : m_assetBindings) {
+        if (candidate.sceneId == sceneId) {
+            binding = &candidate;
+            break;
+        }
+    }
+    if (binding == nullptr || binding->assets.empty()) {
+        return 0;
+    }
+
+    // Best-effort HOST pairing: round-robin the scene's allowed payload over
+    // the GObjs the verified entry table actually created. Not a verified
+    // original GObj<->model link (see header comment).
+    if (binding->assets.size() > m_sceneGObjs.size()) {
+        std::fprintf(stderr,
+                     "loader: note: scene 0x%02X has %zu assets but only %zu "
+                     "GObjs; round-robin pairing distributes them\n",
+                     sceneId, binding->assets.size(), m_sceneGObjs.size());
+    }
+    const std::size_t bound = binding->assets.size();
+    for (std::size_t i = 0; i < bound; ++i) {
+        const ico::engine::SceneAssetEntry& asset = binding->assets[i];
+        const ico::engine::GObjHandle owner =
+            m_sceneGObjs[i % m_sceneGObjs.size()];
+        ico::engine::GObjRenderAttachment att{};
+        att.handle = owner;
+        att.kind = ico::engine::GObjAttachmentKind::Mesh;
+        att.meshPath = asset.meshPath;
+        att.meshLabel = asset.label;
+        att.transform = ico::engine::Matrix4x4::identity();
+        att.active = true;
+        m_attachments.attach(att);
+    }
+    return bound;
+}
+
+const ico::engine::GObjAttachmentStore& KanbanSceneLoader::attachmentStore() const {
+    return m_attachments;
+}
+
+ico::engine::GObjAttachmentStore& KanbanSceneLoader::attachmentStore() {
+    return m_attachments;
+}
+
 bool KanbanSceneLoader::execute() {
     if (!m_initialized || m_runtime == nullptr || m_requests.empty()) {
         return false;
@@ -273,6 +324,7 @@ std::size_t KanbanSceneLoader::initSceneGObj(u32 sceneId) {
     std::size_t created = 0;
     m_sceneGObjs.clear();
     m_sceneGObjSources.clear();
+    m_attachments.clear();
     for (const SceneEntryRecord& record : m_entries) {
         if (!record.enabled || record.sceneId != sceneId ||
             record.descriptorIndex >= m_descriptors.size()) {
@@ -345,6 +397,11 @@ SceneProcessRegistrationSpec KanbanSceneLoader::selectProcessRegistration(
 
 u32 KanbanSceneLoader::currentSceneId() const {
     return m_currentSceneId;
+}
+
+ico::engine::GObjHandle KanbanSceneLoader::sceneGObjHandle(std::size_t index) const {
+    return (index < m_sceneGObjs.size()) ? m_sceneGObjs[index]
+                                         : ico::engine::kNullGObjHandle;
 }
 
 std::size_t KanbanSceneLoader::renderSyntheticScene(

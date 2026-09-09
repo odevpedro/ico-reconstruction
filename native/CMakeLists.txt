@@ -32,6 +32,7 @@ set(ICO_ENGINE_SOURCES
     src/engine/GObjFactory.cpp
     src/engine/GObjEntityAllocator.cpp
     src/engine/Ps2oMesh.cpp
+    src/engine/GObjAttachment.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/core/isysgobj_semantic.c
 )
 
@@ -172,7 +173,10 @@ add_executable(ps2o_mesh_test tests/ps2o_mesh_test.cpp)
 target_link_libraries(ps2o_mesh_test PRIVATE ico_engine_core)
 
 add_executable(scene_asset_store_test tests/scene_asset_store_test.cpp)
-target_link_libraries(scene_asset_store_test PRIVATE ico_engine_core)
+  target_link_libraries(scene_asset_store_test PRIVATE ico_engine_core)
+
+  add_executable(gobj_attachment_test tests/gobj_attachment_test.cpp)
+  target_link_libraries(gobj_attachment_test PRIVATE ico_engine_core)
 
 add_executable(gobj_factory_test tests/gobj_factory_test.cpp)
 target_link_libraries(gobj_factory_test PRIVATE ico_engine_core)
@@ -213,6 +217,7 @@ add_test(NAME boy_controller COMMAND boy_controller_test)
 add_test(NAME input COMMAND input_test)
 add_test(NAME ps2o_mesh COMMAND ps2o_mesh_test)
 add_test(NAME scene_asset_store COMMAND scene_asset_store_test)
+  add_test(NAME gobj_attachment COMMAND gobj_attachment_test)
 
 if(ICO_ENABLE_OPENGL)
     add_executable(opengl_backend_test tests/opengl_backend_test.cpp)

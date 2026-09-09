@@ -19,6 +19,7 @@
 #include "engine/Ps2oMesh.h"
 #include "engine/RenderBackend.h"
 #include "engine/ClipBridge.h"
+#include "engine/GObjAttachment.h"
 #include "engine/IsysGObjRuntime.h"
 #include "engine/SceneAssetStore.h"
 #include "engine/Tm2Converter.h"
@@ -33,6 +34,7 @@
 #include <filesystem>
 #include <fstream>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 #else
 #include "runtime/IcoRuntime.h"
@@ -75,6 +77,16 @@ struct StripBatch {
     std::vector<uint32_t> counts;   // per-strip spine vertex count
     uint32_t sourceTriangles = 0;   // sum over strips of (count-2)
     uint32_t sourceStrips = 0;      // number of strips merged into this block
+};
+
+// Rev.155 (Passo 1) — per-GObj render payload. The renderer iterates the
+// ACTIVE isysGObj lists and, for each GObj, draws the strip batches of the
+// meshes that GObj owns through GObjAttachmentStore — instead of reading the
+// SceneAssetStore globally. Batches are grouped per texture within the GObj.
+struct GObjDraw {
+    ico::engine::GObjHandle handle = ico::engine::kNullGObjHandle;
+    std::vector<StripBatch> batches;
+    std::vector<std::string> labels;  // owned mesh labels (debug)
 };
 
 // Loads a TM2 into a texture handle (no-op on kNullTexture result).
@@ -436,53 +448,58 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         return batch;
     };
 
-    // Strip-semantics batch builder: reconstruct per-texture strip blocks
-    // from the preserved Ps2oStrip topology. Each strip contributes N spine
-    // verts explicitly (UV = k + offset[material] per spine position), and
-    // the plane between the current and next strip uses the same N keeps
-    // N-2 triangles. When no piece has strips (fallback file), this returns
-    // an empty vector and the flat TextureBatch path below is used.
+    // Appends the strips of a single piece into a per-texture batch list.
+    // Shared by the global room path (buildStripBatches) and the per-GObj
+    // (Passo 1) path.
+    auto appendStripsOfPiece = [&](const ScenePiece& sp, TextureHandle fallbackTex,
+                                   std::vector<StripBatch>& batch) {
+        const auto& mesh = sp.mesh;
+        if (mesh.strips.empty()) return;
+        for (const auto& strip : mesh.strips) {
+            const uint32_t n = static_cast<uint32_t>(strip.spine.size());
+            if (n < 3) continue;
+
+            TextureHandle tex = (strip.material < sp.texByMat.size())
+                ? sp.texByMat[strip.material] : kNullTexture;
+            if (tex == kNullTexture && fallbackTex != kNullTexture) tex = fallbackTex;
+
+            StripBatch* sb = nullptr;
+            for (auto& b : batch) if (b.texture == tex) { sb = &b; break; }
+            if (sb == nullptr) {
+                batch.push_back(StripBatch{});
+                sb = &batch.back();
+                sb->texture = tex;
+            }
+
+            const uint32_t baseVert = static_cast<uint32_t>(sb->vertices.size());
+            const bool hasStripUV = strip.uvs.size() >= n * 2;
+            for (uint32_t k = 0; k < n; ++k) {
+                const uint32_t vi = strip.spine[k];
+                RenderVertex v{};
+                v.x = mesh.positions[vi * 3 + 0];
+                v.y = mesh.positions[vi * 3 + 1];
+                v.z = mesh.positions[vi * 3 + 2];
+                if (hasStripUV) {
+                    v.u = strip.uvs[k * 2 + 0];
+                    v.v = strip.uvs[k * 2 + 1];
+                }
+                v.r = 255; v.g = 255; v.b = 255; v.a = 255;
+                sb->vertices.push_back(v);
+            }
+            sb->firsts.push_back(baseVert);
+            sb->counts.push_back(n);
+            sb->sourceTriangles += n - 2;
+            sb->sourceStrips++;
+        }
+    };
+
+    // Pre-built global per-texture strip batches (single room draw path,
+    // used when no GObj attachment composition is available).
     auto buildStripBatches = [&](TextureHandle fallbackTex) -> std::vector<StripBatch> {
         std::vector<StripBatch> batch;
         for (const auto& sp : pieces) {
-            const auto& mesh = sp.mesh;
-            if (mesh.strips.empty()) continue;
-            for (const auto& strip : mesh.strips) {
-                const uint32_t n = static_cast<uint32_t>(strip.spine.size());
-                if (n < 3) continue;
-
-                TextureHandle tex = (strip.material < sp.texByMat.size())
-                    ? sp.texByMat[strip.material] : kNullTexture;
-                if (tex == kNullTexture && fallbackTex != kNullTexture) tex = fallbackTex;
-
-                StripBatch* sb = nullptr;
-                for (auto& b : batch) if (b.texture == tex) { sb = &b; break; }
-                if (sb == nullptr) {
-                    batch.push_back(StripBatch{});
-                    sb = &batch.back();
-                    sb->texture = tex;
-                }
-
-                const uint32_t baseVert = static_cast<uint32_t>(sb->vertices.size());
-                const bool hasStripUV = strip.uvs.size() >= n * 2;
-                for (uint32_t k = 0; k < n; ++k) {
-                    const uint32_t vi = strip.spine[k];
-                    RenderVertex v{};
-                    v.x = mesh.positions[vi * 3 + 0];
-                    v.y = mesh.positions[vi * 3 + 1];
-                    v.z = mesh.positions[vi * 3 + 2];
-                    if (hasStripUV) {
-                        v.u = strip.uvs[k * 2 + 0];
-                        v.v = strip.uvs[k * 2 + 1];
-                    }
-                    v.r = 255; v.g = 255; v.b = 255; v.a = 255;
-                    sb->vertices.push_back(v);
-                }
-                sb->firsts.push_back(baseVert);
-                sb->counts.push_back(n);
-                sb->sourceTriangles += n - 2;
-                sb->sourceStrips++;
-            }
+            if (sp.mesh.strips.empty()) continue;
+            appendStripsOfPiece(sp, fallbackTex, batch);
         }
         return batch;
     };
@@ -616,6 +633,28 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                              "(F camera follow disabled, WASD ignored)\n");
     }
 
+    // Rev.155 (Passo 1): the boy's visual is ALSO a GObj-owned composition.
+    // The BoyController's GObj receives a BoxMarker attachment; the render
+    // loop reads that attachment's transform (updated every frame from the
+    // controller position) and draws the placeholder box it commands — the
+    // renderer no longer hardcodes the box around markerX/Y/Z.
+    ico::engine::GObjAttachmentStore boyStore;
+    ico::engine::GObjHandle boyHandle = ico::engine::kNullGObjHandle;
+    if (playerSpawned && player.getGObj() != nullptr) {
+        boyHandle = gobjRuntime.pool().handleOf(*player.getGObj());
+        ico::engine::GObjRenderAttachment marker{};
+        marker.handle = boyHandle;
+        marker.kind = ico::engine::GObjAttachmentKind::BoxMarker;
+        marker.active = true;
+        marker.meshLabel = "BoyController";
+        marker.halfExtent = 20.0f;
+        marker.boxColor[0] = 255; marker.boxColor[1] = 100;
+        marker.boxColor[2] = 100; marker.boxColor[3] = 255;
+        boyStore.attach(marker);
+    }
+    std::fprintf(stderr, "main: boy GObj %u -> BoxMarker attachment (Passo 1)\n",
+                 static_cast<unsigned>(boyHandle));
+
     // Semantic scene-load bridge (front 2 — KanbanSceneLoader seam). The
     // loader consumes the real room composition through the original
     // requestScene()/execute() (kanban.c) flow and creates host GObjs in the
@@ -661,6 +700,52 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         std::fprintf(stderr,
             "main: no SceneAssetStore supplied; KanbanSceneLoader runs "
             "unbound (viewer path)\n");
+    }
+
+    // Rev.155 (Passo 1): per-GObj render payload. When a store is bound, the
+    // attachment store now carries the (GObj handle → mesh) pairing the loader
+    // established. Build one StripBatch set per owning GObj and give the
+    // render loop a handle→draw lookup. The loop below walks the ACTIVE
+    // isysGObj lists and draws what each GObj commands; the global room
+    // stripBatches remain a fallback for the unbound viewer path.
+    std::vector<GObjDraw> gobjDraws;
+    std::unordered_map<GObjHandle, std::size_t> gobjDrawByHandle;
+    const TextureHandle gObjFallbackTex = uvTest ? checkerTex : kNullTexture;
+    if (store != nullptr) {
+        std::size_t attached = sceneLoader.attachBoundAssetsToGObjs(0x0Fu);
+        std::fprintf(stderr,
+            "main: Passo 1 per-GObj composition: %zu attachments for %zu host "
+            "GObjs of scene 0x0F\n",
+            attached, sceneLoader.sceneGObjCount());
+        // MeshPath → loaded ScenePiece lookup (paths come from the same store).
+        std::unordered_map<std::string, std::size_t> pieceByPath;
+        for (std::size_t i = 0; i < pieces.size(); ++i)
+            pieceByPath.emplace(pieces[i].name, i);
+        sceneLoader.attachmentStore().forEach(
+            [&](const GObjRenderAttachment& att) {
+                if (att.kind != GObjAttachmentKind::Mesh || !att.active) return;
+                if (att.handle == kNullGObjHandle) return;
+                auto pit = pieceByPath.find(att.meshPath);
+                if (pit == pieceByPath.end()) return;
+                const ScenePiece& sp = pieces[pit->second];
+                if (sp.mesh.strips.empty()) return;
+
+                auto dit = gobjDrawByHandle.find(att.handle);
+                if (dit == gobjDrawByHandle.end()) {
+                    gobjDrawByHandle.emplace(att.handle, gobjDraws.size());
+                    gobjDraws.push_back(GObjDraw{});
+                    gobjDraws.back().handle = att.handle;
+                    dit = gobjDrawByHandle.find(att.handle);
+                }
+                GObjDraw& draw = gobjDraws[dit->second];
+                appendStripsOfPiece(sp, gObjFallbackTex, draw.batches);
+                draw.labels.push_back(att.meshLabel);
+            });
+        for (const auto& kv : gobjDrawByHandle) {
+            const auto& d = gobjDraws[kv.second];
+            std::fprintf(stderr, "main:   GObj %u draws %zu labels, %zu strip batches\n",
+                         static_cast<unsigned>(kv.first), d.labels.size(), d.batches.size());
+        }
     }
 
     auto feedKey = [&](XKeyEvent& xk, bool down) {
@@ -791,6 +876,59 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     GifPacketBridge bridge(backend);
     bridge.init(kPs2ScreenWidth, kPs2ScreenHeight);
 
+    // Passo 1: draws the placeholder box a GObj commands through its
+    // BoxMarker attachment (transform + half extent + color). drawIndexed
+    // consumes groups of 4 indices ([A,B,C,C] degenerates to two triangles),
+    // so each of the 12 box faces is emitted as a quad group with the 4th
+    // index duplicated.
+    auto drawBoxMarker = [&](const GObjRenderAttachment& marker) {
+        const Matrix4x4& t = marker.transform;
+        const float bx = t.m[12], by = t.m[13], bz = t.m[14];
+        const float s = marker.halfExtent;
+        const float x0 = bx - s, x1 = bx + s;
+        const float y0 = by,       y1 = by + 2.0f * s;
+        const float z0 = bz - s, z1 = bz + s;
+        RenderVertex box[8]{};
+        const float zyx[8][3] = {
+            {x0, y0, z0}, {x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0},
+            {x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1},
+        };
+        for (int i = 0; i < 8; ++i) {
+            box[i].x = zyx[i][0];
+            box[i].y = zyx[i][1];
+            box[i].z = zyx[i][2];
+            box[i].r = marker.boxColor[0]; box[i].g = marker.boxColor[1];
+            box[i].b = marker.boxColor[2]; box[i].a = marker.boxColor[3];
+        }
+        static const int faces[6][4] = {
+            {0, 1, 2, 3},  // -z
+            {5, 4, 7, 6},  // +z
+            {4, 0, 3, 7},  // -x
+            {1, 5, 6, 2},  // +x
+            {3, 2, 6, 7},  // +y
+            {4, 5, 1, 0},  // -y
+        };
+        uint32_t boxIdx[36]{};
+        uint32_t n = 0;
+        for (int f = 0; f < 6; ++f) {
+            const int a = faces[f][0], b = faces[f][1];
+            const int c = faces[f][2], d = faces[f][3];
+            // two triangles -> two quad groups, each [A,B,C,C]
+            boxIdx[n++] = static_cast<uint32_t>(a);
+            boxIdx[n++] = static_cast<uint32_t>(b);
+            boxIdx[n++] = static_cast<uint32_t>(c);
+            boxIdx[n++] = static_cast<uint32_t>(c);
+            boxIdx[n++] = static_cast<uint32_t>(a);
+            boxIdx[n++] = static_cast<uint32_t>(c);
+            boxIdx[n++] = static_cast<uint32_t>(d);
+            boxIdx[n++] = static_cast<uint32_t>(d);
+        }
+        backend.drawIndexed(GSPrimitive::Triangle, RenderList::Opaque,
+                            boxIdx, n, box, 0,
+                            kNullTexture, marker.boxColor[0], marker.boxColor[1],
+                            marker.boxColor[2], marker.boxColor[3]);
+    };
+
     for (u32 f = 0; frames == 0 || f < frames; ++f) {
         backend.beginFrame();
 
@@ -835,6 +973,15 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         const float markerY = playerSpawned ? player.y() : cy;
         const float markerZ = playerSpawned ? player.z() : cz + panZ;
 
+        // Passo 1: BoyController drives the GObj's BoxMarker transform (world
+        // placement read by the renderer below).
+        if (boyHandle != kNullGObjHandle) {
+            ico::engine::GObjRenderAttachment* m = boyStore.find(boyHandle);
+            if (m != nullptr && m->kind == ico::engine::GObjAttachmentKind::BoxMarker) {
+                m->transform = Matrix4x4::translation(markerX, markerY, markerZ);
+            }
+        }
+
         const float ang = curAngle;
         const float pitch = followBoy ? 0.08f : curPitch;
         // Target: follow mode tracks the boy (third-person); free orbit uses
@@ -871,14 +1018,44 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                 bridge.drawSkyGradient(skyTop, skyHorizon);
                 bridge.setDepthState(GSDepthTest::Less, true);
             }
-            for (const auto& sb : stripBatches) {
-                if (sb.sourceStrips == 0) continue;
-                bridge.drawStrips(RenderList::Opaque,
-                                  sb.vertices.data(),
-                                  static_cast<u32>(sb.vertices.size()),
-                                  sb.firsts.data(), sb.counts.data(),
-                                  static_cast<u32>(sb.counts.size()),
-                                  sb.texture, 255, 255, 255, 255);
+            if (!gobjDraws.empty()) {
+                // Rev.155 (Passo 1): render driven by the ACTIVE isysGObj
+                // lists. Each GObj found in the attachment store draws the
+                // strip batches of the meshes it owns; GObjs without a visual
+                // composition are skipped. This replaces the global room
+                // strips below whenever a GObj composition exists.
+                for (u8 listId = 0; listId < kPrimaryListCount; ++listId) {
+                    GObj* g = gobjRuntime.head(listId);
+                    while (g != nullptr) {
+                        const GObjHandle h = gobjRuntime.pool().handleOf(*g);
+                        auto it = gobjDrawByHandle.find(h);
+                        if (it != gobjDrawByHandle.end()) {
+                            const GObjDraw& draw = gobjDraws[it->second];
+                            for (const auto& sb : draw.batches) {
+                                if (sb.sourceStrips == 0) continue;
+                                bridge.drawStrips(RenderList::Opaque,
+                                                  sb.vertices.data(),
+                                                  static_cast<u32>(sb.vertices.size()),
+                                                  sb.firsts.data(), sb.counts.data(),
+                                                  static_cast<u32>(sb.counts.size()),
+                                                  sb.texture, 255, 255, 255, 255);
+                            }
+                        }
+                        const GObjHandle nextH = g->next;
+                        g = (nextH != kNullGObjHandle)
+                            ? gobjRuntime.pool().get(nextH) : nullptr;
+                    }
+                }
+            } else {
+                for (const auto& sb : stripBatches) {
+                    if (sb.sourceStrips == 0) continue;
+                    bridge.drawStrips(RenderList::Opaque,
+                                      sb.vertices.data(),
+                                      static_cast<u32>(sb.vertices.size()),
+                                      sb.firsts.data(), sb.counts.data(),
+                                      static_cast<u32>(sb.counts.size()),
+                                      sb.texture, 255, 255, 255, 255);
+                }
             }
             bridge.endPacket();
         } else {
@@ -901,55 +1078,17 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
             }
         }
 
-        // Player placeholder: a solid-box avatar standing on the walkable
-        // surface (markerY = floor height snapped by ClipBridge). drawIndexed
-        // consumes groups of 4 indices ([A,B,C,C] degenerates to two
-        // triangles), so each of the 12 box triangles is emitted as a quad
-        // group with the 4th index duplicated.
+        // Player placeholder (Passo 1): now a GObj-owned BoxMarker. The renderer
+        // draws what the boy's GObj commands — its transform was set this frame
+        // by BoyController (markerX/Y/Z world placement). When the boy has no
+        // GObj (unbound/spawn-failed path) the marker falls back to the
+        // previously hardcoded values but still goes through the same draw.
         {
-            const float s = 20.0f; // half-size in world units
-            const float bx = markerX, by = markerY, bz = markerZ;
-            // Unit cube corners; scaled and translated into world space.
-            const float x0 = bx - s, x1 = bx + s;
-            const float y0 = by,       y1 = by + 2.0f * s;
-            const float z0 = bz - s, z1 = bz + s;
-            RenderVertex box[8]{};
-            const float zyx[8][3] = {
-                {x0, y0, z0}, {x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0},
-                {x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1},
-            };
-            for (int i = 0; i < 8; ++i) {
-                box[i].x = zyx[i][0];
-                box[i].y = zyx[i][1];
-                box[i].z = zyx[i][2];
-                box[i].r = 255; box[i].g = 100; box[i].b = 100; box[i].a = 255;
+            const GObjRenderAttachment* m = boyStore.find(boyHandle);
+            if (m != nullptr && m->kind == ico::engine::GObjAttachmentKind::BoxMarker &&
+                m->active) {
+                drawBoxMarker(*m);
             }
-            static const int faces[6][4] = {
-                {0, 1, 2, 3},  // -z
-                {5, 4, 7, 6},  // +z
-                {4, 0, 3, 7},  // -x
-                {1, 5, 6, 2},  // +x
-                {3, 2, 6, 7},  // +y
-                {4, 5, 1, 0},  // -y
-            };
-            uint32_t boxIdx[36]{};
-            uint32_t n = 0;
-            for (int f = 0; f < 6; ++f) {
-                const int a = faces[f][0], b = faces[f][1];
-                const int c = faces[f][2], d = faces[f][3];
-                // two triangles -> two quad groups, each [A,B,C,C]
-                boxIdx[n++] = static_cast<uint32_t>(a);
-                boxIdx[n++] = static_cast<uint32_t>(b);
-                boxIdx[n++] = static_cast<uint32_t>(c);
-                boxIdx[n++] = static_cast<uint32_t>(c);
-                boxIdx[n++] = static_cast<uint32_t>(a);
-                boxIdx[n++] = static_cast<uint32_t>(c);
-                boxIdx[n++] = static_cast<uint32_t>(d);
-                boxIdx[n++] = static_cast<uint32_t>(d);
-            }
-            backend.drawIndexed(GSPrimitive::Triangle, RenderList::Opaque,
-                                boxIdx, n, box, 0,
-                                kNullTexture, 255, 100, 100, 255);
         }
 
         backend.endFrame();

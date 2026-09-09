@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/GObjAttachment.h"
 #include "engine/SceneAssetStore.h"
 #include "game/GeneratedSceneTables.h"
 #include "game/IsysGObj.h"
@@ -162,6 +163,27 @@ public:
     const ico::engine::SceneAssetEntry* boundAsset(u32 sceneId,
                                                    std::size_t index) const;
 
+    /*
+     * Rev.155 (Passo 1): per-GObj asset attachment.
+     *
+     * Pairs the bound assets of sceneId to the GObjs created by the last
+     * initSceneGObj(sceneId) and records each pairing in the host-side
+     * GObjAttachmentStore. The renderer then iterates the active isysGObj
+     * lists and draws each GObj's own composition (mesh path, transform)
+     * instead of reading the SceneAssetStore directly.
+     *
+     * The pairing is a best-effort HOST mapping (round-robin over the scene
+     * GObjs that the verified entry table enabled). It is NOT a byte-verified
+     * reconstruction of the original GObj↔model link; a future PCSX2 runtime
+     * capture that binds each GObj to its model would replace it.
+     *
+     * Returns the number of attachments recorded.
+     */
+    std::size_t attachBoundAssetsToGObjs(u32 sceneId);
+    /* Host-side per-GObj visual composition registry (Passo 1). */
+    const ico::engine::GObjAttachmentStore& attachmentStore() const;
+    ico::engine::GObjAttachmentStore& attachmentStore();
+
     bool execute();
     std::size_t initSceneGObj(u32 sceneId);
     std::size_t hotInitSceneObjects(u32 sceneId) const;
@@ -183,6 +205,9 @@ public:
     u32 currentSceneId() const;
     /* Rev.154: number of host GObjs created by the last initSceneGObj(). */
     std::size_t sceneGObjCount() const { return m_sceneGObjs.size(); }
+    /* i-th GObj created by the last initSceneGObj(); kNullGObjHandle if out
+       of range. Order matches scene GObj creation order (entry order). */
+    ico::engine::GObjHandle sceneGObjHandle(std::size_t index) const;
 
 private:
     IsysGObj* m_runtime = nullptr;
@@ -204,4 +229,5 @@ private:
         std::vector<ico::engine::SceneAssetEntry> assets;
     };
     std::vector<SceneAssetBinding> m_assetBindings;
+    ico::engine::GObjAttachmentStore m_attachments;
 };
