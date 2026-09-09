@@ -30,6 +30,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <thread>
 #include <vector>
@@ -102,6 +103,81 @@ ico::engine::TextureHandle loadTm2Tex(ico::engine::OpenGLBackend& backend,
     TextureHandle h = backend.createTexture(desc);
     std::fprintf(stderr, "main: loaded TM2 %s (%ux%u)\n", path.c_str(), tex.width, tex.height);
     return h;
+}
+
+// Reads the room's real sky texture (sky.tm2 / *sky*.tm2 in the texture dir)
+// and extracts the zenith (top) and horizon (bottom) colors from its vertical
+// gradient. The PS2 sky asset is a tall gradient the runtime draws as a
+// background quad; we sample the same colors instead of inventing an
+// atmosphere. Returns true on success.
+bool loadRoomSkyColors(const std::string& texDir,
+                       unsigned char topColor[4], unsigned char bottomColor[4]) {
+    using namespace ico::engine;
+    namespace fs = std::filesystem;
+
+    std::string skyPath;
+    const std::string primary = texDir + "sky.tm2";
+    {
+        std::ifstream f(primary.c_str());
+        if (f.good()) skyPath = primary;
+    }
+    if (skyPath.empty()) {
+        for (const auto& entry : fs::directory_iterator(texDir)) {
+            const std::string name = entry.path().filename().string();
+            if (name.size() > 7 && name.compare(name.size() - 4, 4, ".tm2") == 0 &&
+                name.find("sky") != std::string::npos) {
+                skyPath = entry.path().string();
+                break;
+            }
+        }
+    }
+    if (skyPath.empty()) return false;
+
+    std::ifstream f(skyPath, std::ios::binary);
+    if (!f) return false;
+    f.seekg(0, std::ios::end);
+    const std::streamoff sz = f.tellg();
+    f.seekg(0, std::ios::beg);
+    if (sz <= 0) return false;
+    std::vector<u8> buf(static_cast<size_t>(sz));
+    f.read(reinterpret_cast<char*>(buf.data()), sz);
+
+    Tm2File file{};
+    if (!Tm2Parser::parse(buf.data(), static_cast<u32>(buf.size()), file) ||
+        file.images.empty())
+        return false;
+    Tm2Texture tex{};
+    if (!Tm2Converter::convertImage(file.images[0], tex) || tex.rgbaData.empty())
+        return false;
+
+    // Average a few pixel rows near the top and bottom of the gradient.
+    unsigned sr = 0, sg = 0, sb = 0, ler = 0, lg = 0, lb = 0;
+    const u32 w = tex.width, h = tex.height;
+    auto accum = [&](u32 y, unsigned& cr, unsigned& cg, unsigned& cb) {
+        const u32 row = y * w * 4;
+        for (u32 x = 0; x < w; ++x) {
+            const u32 o = row + x * 4;
+            cr += tex.rgbaData[o];
+            cg += tex.rgbaData[o + 1];
+            cb += tex.rgbaData[o + 2];
+        }
+    };
+    for (u32 y = 0; y < h && y < 8; ++y) accum(y, sr, sg, sb);
+    for (u32 y = (h >= 8) ? (h - 8) : 0; y < h; ++y) accum(y, ler, lg, lb);
+    const u32 topN = w * ((h < 8) ? h : 8);
+    const u32 botN = w * ((h < 8) ? h : 8);
+    topColor[0] = static_cast<unsigned char>(sr / topN);
+    topColor[1] = static_cast<unsigned char>(sg / topN);
+    topColor[2] = static_cast<unsigned char>(sb / topN);
+    topColor[3] = 255;
+    bottomColor[0] = static_cast<unsigned char>(ler / botN);
+    bottomColor[1] = static_cast<unsigned char>(lg / botN);
+    bottomColor[2] = static_cast<unsigned char>(lb / botN);
+    bottomColor[3] = 255;
+    std::fprintf(stderr, "main: sky %s gradient top=(%u,%u,%u) horizon=(%u,%u,%u) (%ux%u)\n",
+                 skyPath.c_str(), topColor[0], topColor[1], topColor[2],
+                 bottomColor[0], bottomColor[1], bottomColor[2], w, h);
+    return true;
 }
 
 // Per-piece scene render: draws every piece every frame, binding the texture
@@ -187,6 +263,27 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     const float cx = (minX + maxX) * 0.5f;
     const float cy = (minY + maxY) * 0.5f;
     const float cz = (minZ + maxZ) * 0.5f;
+
+    // Spawn anchor: the walkable room piece's XZ center (the _p1 room mesh),
+    // independent of the camera fit. With --fit-macro the camera frames the
+    // union of all pieces but the boy must still spawn on the real floor.
+    float spawnX = cx, spawnZ = cz;
+    for (const auto& sp : pieces) {
+        if (sp.name.find("_p1.") != std::string::npos) {
+            const auto& m = sp.mesh;
+            float mnX = 1e30f, mxX = -1e30f, mnZ = 1e30f, mxZ = -1e30f;
+            for (uint32_t i = 0; i < m.triangles.size(); ++i) {
+                const uint32_t vi = m.triangles[i];
+                mnX = std::min(mnX, m.positions[vi * 3 + 0]);
+                mxX = std::max(mxX, m.positions[vi * 3 + 0]);
+                mnZ = std::min(mnZ, m.positions[vi * 3 + 2]);
+                mxZ = std::max(mxZ, m.positions[vi * 3 + 2]);
+            }
+            spawnX = (mnX + mxX) * 0.5f;
+            spawnZ = (mnZ + mxZ) * 0.5f;
+            break;
+        }
+    }
     const float extent = std::max({maxX - minX, maxY - minY, maxZ - minZ, 1.0f});
     const float dist = extent * 1.15f;
     std::fprintf(stderr, "main: camera fit %s: cx=%g cy=%g cz=%g extent=%g dist=%g\n",
@@ -446,9 +543,12 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     const auto frameTime = std::chrono::milliseconds(16);
     std::vector<uint8_t> tmpFrame(kPs2ScreenWidth * kPs2ScreenHeight * 3);
 
-    // Interactive camera state (zoom/orbit via keyboard + mouse wheel).
+    // Interactive camera state (orbit + pan + pitch via keyboard/mouse wheel).
     float curDist = dist;
     float curAngle = (camAngleRad > 0.0f) ? camAngleRad : 0.0f;
+    float curPitch = 0.15f;      // elevation above the target (rad)
+    float panX = 0.0f, panZ = 0.0f;  // target offset for free navigation
+    bool followBoy = false;      // third-person camera tracking the player
 
     // Input wiring: platform Input class fed from the X11 event pump. The
     // key state then drives a real world-space player controller (WASD moves
@@ -458,41 +558,53 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     Input input;
     input.initialize();
 
-    // Collision ground truth for the walkable room: the fit piece (p1). The
-    // ClipBridge rasterizes the triangle soup into a heightfield + wall
-    // occupancy grid; BoyController resolves input moves against it.
-    const ScenePiece* roomPiece = fitPiece != nullptr ? fitPiece : &pieces.front();
+    // Collision ground truth for the walkable room: the _p1 room piece,
+    // regardless of camera fit. With --fit-macro the camera frames the union
+    // of all pieces but the ClipBridge must still rasterize the real floor
+    // (p1), not whatever piece happens to be first in the manifest.
+    const ScenePiece* roomPiece = nullptr;
+    for (const auto& sp : pieces) {
+        if (sp.name.find("_p1.") != std::string::npos) { roomPiece = &sp; break; }
+    }
+    if (roomPiece == nullptr) roomPiece = fitPiece != nullptr ? fitPiece : &pieces.front();
     ClipBridge clip;
     if (!clip.buildFromMesh(roomPiece->mesh.positions.data(),
                             roomPiece->mesh.vertexCount,
                             roomPiece->mesh.triangles.data(),
                             static_cast<u32>(roomPiece->mesh.triangles.size() / 3))) {
-        std::fprintf(stderr, "main: ClipBridge failed to build from %s\n",
-                     roomPiece->name.c_str());
-        return 1;
+        std::fprintf(stderr, "main: ClipBridge failed to build from %s; "
+                             "room renders viewer-only\n", roomPiece->name.c_str());
     }
     std::fprintf(stderr, "main: ClipBridge %s grid=%ux%u blocked=%u\n",
-                 roomPiece->name.c_str(), clip.gridWidth(), clip.gridHeight(),
+                 clip.isInitialized() ? "ok" : "unavailable",
+                 clip.gridWidth(), clip.gridHeight(),
                  clip.blockedCellCount());
 
+    // Only the walkable room gets a runtime player; rooms whose p1 piece does
+    // not rasterize a grid (or clip build failed) render viewer-only.
     IsysGObjRuntime gobjRuntime;
     if (!gobjRuntime.initialize(0x40, 0x40)) {
         std::fprintf(stderr, "main: gobj runtime failed to initialize\n");
         return 1;
     }
     ico::game::BoyController player;
-    if (!player.initialize(gobjRuntime, clip, 1u)) {
-        std::fprintf(stderr, "main: BoyController failed to initialize\n");
-        return 1;
+    bool playerSpawned = false;
+    if (clip.isInitialized()) {
+        if (!player.initialize(gobjRuntime, clip, 1u)) {
+            std::fprintf(stderr, "main: BoyController failed to initialize\n");
+            return 1;
+        }
+        playerSpawned = player.spawn(spawnX, spawnZ, player.halfExtent());
     }
-    bool playerSpawned = player.spawn(cx, cz, player.halfExtent());
     std::fprintf(stderr, "main: player spawn at (%g,%g) -> %s pos=(%g,%g,%g)\n",
-                 cx, cz, playerSpawned ? "ok" : "failed",
+                 spawnX, spawnZ, playerSpawned ? "ok" : "failed",
                  player.x(), player.y(), player.z());
     if (!playerSpawned) {
-        player.shutdown();
-        std::fprintf(stderr, "main: no walkable spawn point; aborting\n");
-        return 1;
+        // A room may fail the walkable-spawn probe (ClipBridge grid built from
+        // the p1 piece with no clear cell); keep rendering the room viewer-only
+        // (orbit camera fits the room) instead of aborting.
+        std::fprintf(stderr, "main: no walkable spawn point; room renders viewer-only "
+                             "(F camera follow disabled, WASD ignored)\n");
     }
 
     auto feedKey = [&](XKeyEvent& xk, bool down) {
@@ -516,6 +628,9 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         if (!dispV || !winU) return;
         ::Display* d = static_cast<::Display*>(dispV);
         ::Window w = static_cast<::Window>(winU);
+        const float mouseSens = 0.007f;      // rad per pixel (orbit)
+        float lastMX = 0.0f, lastMY = 0.0f;  // previous cursor pos for drag deltas
+        int btnDown = 0;                     // 0 none, 1 left (orbit), 3 right (pan)
         while (::XPending(d) > 0) {
             XEvent ev;
             ::XNextEvent(d, &ev);
@@ -532,6 +647,32 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                     curAngle += 0.06f;
                 } else if (ks == XK_Right) {
                     curAngle -= 0.06f;
+                } else if (ks == XK_Up) {
+                    curPitch = std::min(curPitch + 0.05f, 1.50f);
+                } else if (ks == XK_Down) {
+                    curPitch = std::max(curPitch - 0.05f, 0.02f);
+                } else if (ks == XK_i || ks == XK_I || ks == XK_Home) {
+                    // Pan the orbit target toward view-forward (deeper).
+                    panX -= std::cos(curAngle) * 60.0f;
+                    panZ -= std::sin(curAngle) * 60.0f;
+                } else if (ks == XK_k || ks == XK_K || ks == XK_End) {
+                    panX += std::cos(curAngle) * 60.0f;
+                    panZ += std::sin(curAngle) * 60.0f;
+                } else if (ks == XK_l || ks == XK_L) {
+                    // Strafe right: R = cross(up, forward) = (-sin, cos).
+                    panX -= std::sin(curAngle) * 60.0f;
+                    panZ += std::cos(curAngle) * 60.0f;
+                } else if (ks == XK_j || ks == XK_J) {
+                    panX += std::sin(curAngle) * 60.0f;
+                    panZ -= std::cos(curAngle) * 60.0f;
+                } else if (ks == XK_f || ks == XK_F) {
+                    followBoy = !followBoy;
+                    std::fprintf(stderr, "main: camera %s\n",
+                                 followBoy ? "following boy" : "free orbit");
+                } else if (ks == XK_r || ks == XK_R) {
+                    curDist = dist; curAngle = 0.0f; curPitch = 0.15f;
+                    panX = 0.0f; panZ = 0.0f; followBoy = false;
+                    std::fprintf(stderr, "main: camera reset\n");
                 } else if (ks == XK_q || ks == XK_Q || ks == XK_Escape) {
                     exit(0);
                 }
@@ -543,23 +684,70 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                     curDist *= 0.90f;
                 } else if (ev.xbutton.button == Button5) {   // wheel down = zoom out
                     curDist /= 0.90f;
+                } else if (ev.xbutton.button == Button1 ||
+                           ev.xbutton.button == Button2 ||
+                           ev.xbutton.button == Button3) {
+                    btnDown = static_cast<int>(ev.xbutton.button);
+                    lastMX = static_cast<float>(ev.xbutton.x);
+                    lastMY = static_cast<float>(ev.xbutton.y);
                 }
-                std::fprintf(stderr, "main: cam dist=%.1f ang=%.2f rad\n", curDist, curAngle);
+                if (ev.xbutton.button == Button4 || ev.xbutton.button == Button5)
+                    std::fprintf(stderr, "main: cam dist=%.1f ang=%.2f rad\n", curDist, curAngle);
+            } else if (ev.type == ButtonRelease) {
+                if (static_cast<int>(ev.xbutton.button) == btnDown) btnDown = 0;
+            } else if (ev.type == MotionNotify) {
+                const float mx = static_cast<float>(ev.xmotion.x);
+                const float my = static_cast<float>(ev.xmotion.y);
+                const float dx = mx - lastMX, dy = my - lastMY;
+                lastMX = mx; lastMY = my;
+                if (btnDown == Button1) {
+                    // Left drag orbits around the fitted target point.
+                    curAngle -= dx * mouseSens;
+                    curPitch = std::min(std::max(curPitch - dy * mouseSens, 0.02f), 1.50f);
+                } else if (btnDown == Button3) {
+                    // Right drag pans the target in the XZ plane; the step
+                    // scales with camera distance so the surface tracks the
+                    // cursor (Google-Maps style). Forward is -cos/-sin of the
+                    // yaw, right is (-sin, cos).
+                    const float panStep = curDist * 0.0016f;
+                    panX += (dx * std::sin(curAngle) - dy * std::cos(curAngle)) * panStep;
+                    panZ += (-dx * std::cos(curAngle) - dy * std::sin(curAngle)) * panStep;
+                }
+                if (btnDown) std::fprintf(stderr, "main: cam dist=%.1f ang=%.2f rad\n", curDist, curAngle);
             }
         }
     };
-    std::fprintf(stderr, "main: controls: Z/+/wheel-up zoom-in, X/-/wheel-down zoom-out, arrows orbit, Q/Esc quit\n");
+    std::fprintf(stderr, "main: controls: drag LEFT = orbit, drag RIGHT = pan, scroll = zoom, Z/+/X/- zoom, arrows orbit, IJKL pan, F follow boy, R reset, Q/Esc quit\n");
     std::fprintf(stderr, "main: WASD moves the player (collision-constrained)\n");
+
+    // Real room sky: the game paints the sky.tm2 gradient as a background
+    // quad. Sample its actual zenith/horizon colors and do the same.
+    const std::string texDirForSky = texDir;  // texture dir of the room
+    (void)texDirForSky;
+    bool hasSky = false;
+    unsigned char skyTop[4] = { 10, 12, 18, 255 };
+    unsigned char skyHorizon[4] = { 10, 12, 18, 255 };
+    hasSky = loadRoomSkyColors(texDir, skyTop, skyHorizon);
 
     for (u32 f = 0; frames == 0 || f < frames; ++f) {
         backend.beginFrame();
+
+        // Real game sky background: sample the room's sky.tm2 gradient and
+        // paint it as a full-screen background quad (depth Always/write off)
+        // so the scene composes on top of the room's actual sky colors.
         backend.clear(10, 12, 18, 255);
+        if (hasSky) {
+            backend.setDepthTest(GSDepthTest::Always, false);
+            backend.drawSkyGradient(skyTop, skyHorizon);
+            backend.setDepthTest(GSDepthTest::Less, true);
+        }
 
         // Top-of-frame key snapshot must precede the X11 pump so edge
         // queries compare against last frame's state (see input_test).
         input.update();
         pollDebugCameraInput();
 
+        if (playerSpawned) {
         // Player move vector from WASD (world units per frame; PS2 units are
         // cm-scale, so 25 units/frame is a comfortable walk pace relative to
         // the ~200+ unit room). Y is handled by the ClipBridge snap; the
@@ -572,18 +760,43 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         if (input.isKeyDown(KeyS)) moveDz -= step;
         if (input.isKeyDown(KeyA)) moveDx -= step;
         if (input.isKeyDown(KeyD)) moveDx += step;
-        if (moveDx != 0.0f || moveDz != 0.0f) player.setMove(moveDx, moveDz);
+        if (moveDx != 0.0f || moveDz != 0.0f) {
+            const float camAng = curAngle;
+            if (followBoy) {
+                // Camera-relative movement: W walks along the view direction
+                // (forward = -cos/-sin of yaw), D strafes camera-right
+                // (right = (-sin, cos)). Keeps the boy controllable from the
+                // third-person camera regardless of the orbit angle.
+                const float fx = -std::cos(camAng), fz = -std::sin(camAng);
+                const float rx = -std::sin(camAng), rz = std::cos(camAng);
+                player.setMove(moveDz * fx + moveDx * rx,
+                               moveDz * fz + moveDx * rz);
+            } else {
+                player.setMove(moveDx, moveDz);
+            }
+        }
         player.update();
-        const float markerX = player.x(), markerY = player.y(), markerZ = player.z();
+        }
+        const float markerX = playerSpawned ? player.x() : cx + panX;
+        const float markerY = playerSpawned ? player.y() : cy;
+        const float markerZ = playerSpawned ? player.z() : cz + panZ;
 
         const float ang = curAngle;
-        const float eyeX = cx + curDist * std::cos(ang);
-        const float eyeZ = cz + curDist * std::sin(ang);
-        const float eye[3] = { eyeX, cy + curDist * 0.15f, eyeZ };
+        const float pitch = followBoy ? 0.08f : curPitch;
+        // Target: follow mode tracks the boy (third-person); free orbit uses
+        // the fitted center plus the pan offset.
+        const float tgtX = followBoy ? markerX : (cx + panX);
+        const float tgtZ = followBoy ? markerZ : (cz + panZ);
+        const float tgtY = followBoy ? (markerY + 40.0f) : cy;
+        const float distXZ = curDist * std::cos(pitch);
+        const float eyeY = tgtY + curDist * std::sin(pitch);
+        const float eyeX = tgtX + distXZ * std::cos(ang);
+        const float eyeZ = tgtZ + distXZ * std::sin(ang);
+        const float eye[3] = { eyeX, eyeY, eyeZ };
         const Matrix4x4 proj2 = Matrix4x4::perspective(70.0f, 640.0f / 448.0f,
                                                        curDist * 0.01f,
                                                        curDist * 10.0f);
-        const float tgt[3] = { cx, cy, cz };
+        const float tgt[3] = { tgtX, tgtY, tgtZ };
         const float up[3] = { 0.0f, 1.0f, 0.0f };
         const Matrix4x4 view = Matrix4x4::lookAt(eye, tgt, up);
         const Matrix4x4 model = Matrix4x4::identity();
@@ -711,6 +924,7 @@ int runOpenGLDemo(int argc, char* argv[]) {
     const char* p2oPath = nullptr;
     const char* shotPath = nullptr;
     const char* sceneDir = nullptr;
+    const char* roomName = nullptr;
     const char* texDir = nullptr;
     bool uvTest = false;
     bool matTest = false;
@@ -727,6 +941,8 @@ int runOpenGLDemo(int argc, char* argv[]) {
             shotPath = argv[i + 1];
         } else if (std::strcmp(argv[i], "--scene") == 0 && i + 1 < argc) {
             sceneDir = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--room") == 0 && i + 1 < argc) {
+            roomName = argv[i + 1];
         } else if (std::strcmp(argv[i], "--tex-dir") == 0 && i + 1 < argc) {
             texDir = argv[i + 1];
         } else if (std::strcmp(argv[i], "--cam-angle") == 0 && i + 1 < argc) {
@@ -746,23 +962,46 @@ int runOpenGLDemo(int argc, char* argv[]) {
     // (stgst00a.manifest) is present next to the pieces, the mesh list is
     // taken from it via SceneAssetStore instead of the baked-in kOrder below,
     // so the composition is data-driven like the semantic loader expects.
-    if (sceneDir != nullptr) {
+    if (sceneDir != nullptr || roomName != nullptr) {
+        // Room/stage mode frames the FULL scene (playable p1 + real p2
+        // backdrop: sea/coast/horizon), never just the p1 interior.
+        if (roomName != nullptr) fitMacro = true;
         std::vector<std::string> pieces;
         const char* sceneCandidates[] = {
             "assets/scene/pieces/", "../native/assets/scene/pieces/", nullptr
         };
-        std::string dir = sceneDir;
-        if (std::strchr(sceneDir, '/') == nullptr) {
-            for (int c = 0; sceneCandidates[c] != nullptr; ++c) {
-                std::ifstream f(std::string(sceneCandidates[c]) + "169_door.p2o");
-                if (f.good()) { dir = sceneCandidates[c]; break; }
+        std::string dir;
+        if (roomName != nullptr) {
+            // Room mode: scene assets live per-room under assets/scene/rooms/<room>/.
+            const char* roomCandidates[] = {
+                "assets/scene/rooms/", "../native/assets/scene/rooms/", nullptr
+            };
+            std::string roomDir;
+            for (int c = 0; roomCandidates[c] != nullptr; ++c) {
+                std::string cand = std::string(roomCandidates[c]) + roomName + "/";
+                std::ifstream f((cand + roomName + ".manifest").c_str());
+                if (f.good()) { roomDir = cand; break; }
             }
-        } else if (!dir.empty() && dir.back() != '/') {
-            dir += '/';
+            if (roomDir.empty()) {
+                std::fprintf(stderr, "main: --room '%s': no manifest found under "
+                             "assets/scene/rooms/\n", roomName);
+                return 1;
+            }
+            dir = roomDir;
+        } else {
+            dir = sceneDir;
+            if (std::strchr(sceneDir, '/') == nullptr) {
+                for (int c = 0; sceneCandidates[c] != nullptr; ++c) {
+                    std::ifstream f(std::string(sceneCandidates[c]) + "169_door.p2o");
+                    if (f.good()) { dir = sceneCandidates[c]; break; }
+                }
+            } else if (!dir.empty() && dir.back() != '/') {
+                dir += '/';
+            }
         }
         std::string path = dir + "169_door.p2o";
         std::ifstream test(path);
-        if (!test.good()) {
+        if (!test.good() && roomName == nullptr) {
             std::fprintf(stderr, "main: --scene dir '%s' has no 169_door.p2o\n", dir.c_str());
             return 1;
         }
@@ -776,9 +1015,19 @@ int runOpenGLDemo(int argc, char* argv[]) {
             nullptr
         };
         std::string manifestPath;
-        for (int c = 0; manifestCandidates[c] != nullptr; ++c) {
-            std::ifstream f(manifestCandidates[c]);
-            if (f.good()) { manifestPath = manifestCandidates[c]; break; }
+        if (roomName != nullptr) {
+            manifestPath = dir + roomName + ".manifest";
+            std::ifstream f(manifestPath.c_str());
+            if (!f.good()) {
+                std::fprintf(stderr, "main: room manifest %s missing\n",
+                             manifestPath.c_str());
+                return 1;
+            }
+        } else {
+            for (int c = 0; manifestCandidates[c] != nullptr; ++c) {
+                std::ifstream f(manifestCandidates[c]);
+                if (f.good()) { manifestPath = manifestCandidates[c]; break; }
+            }
         }
         if (!manifestPath.empty() && store.parse(manifestPath.c_str())) {
             const u32 exhibitionScene = 0x0Fu;
@@ -836,11 +1085,37 @@ int runOpenGLDemo(int argc, char* argv[]) {
                 std::ifstream t(alt + "st0_a.tm2");
                 if (t.good()) texDirResolved = alt;
             }
-            std::ifstream t(texDirResolved + "st0_a.tm2");
-            if (!t.good()) {
-                std::fprintf(stderr, "main: --scene texture dir '%s' has no st0_a.tm2\n",
-                             texDirResolved.c_str());
-                return 1;
+            if (roomName != nullptr) {
+                // Room mode: any .tm2 present proves the texture dir resolved.
+                std::ifstream any(texDirResolved + "st0_a.tm2");
+                if (!any.good()) {
+                    std::string probe = texDirResolved + "st0_a.tm2";
+                    // The room's own first-referenced texture is room-specific;
+                    // accept the dir if it contains any .tm2 at all.
+                    bool hasAny = false;
+                    {
+                        namespace fs = std::filesystem;
+                        std::error_code ec;
+                        fs::directory_iterator it(texDirResolved, ec);
+                        if (!ec) {
+                            for (; it != fs::directory_iterator(); ++it) {
+                                if (it->path().extension() == ".tm2") { hasAny = true; break; }
+                            }
+                        }
+                    }
+                    if (!hasAny) {
+                        std::fprintf(stderr, "main: room texture dir '%s' has no .tm2\n",
+                                     texDirResolved.c_str());
+                        return 1;
+                    }
+                }
+            } else {
+                std::ifstream t(texDirResolved + "st0_a.tm2");
+                if (!t.good()) {
+                    std::fprintf(stderr, "main: --scene texture dir '%s' has no st0_a.tm2\n",
+                                 texDirResolved.c_str());
+                    return 1;
+                }
             }
         }
         return runSceneDemo(pieces, texDirResolved, frames, shotPath, uvTest,

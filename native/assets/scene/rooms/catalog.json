@@ -1,0 +1,322 @@
+[
+  {
+    "room": "st00a",
+    "df": "STGST00A.DF",
+    "p2o": 33,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st00a/st00a.manifest"
+  },
+  {
+    "room": "st01b",
+    "df": "STGST01B.DF",
+    "p2o": 10,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st01b/st01b.manifest"
+  },
+  {
+    "room": "st02a",
+    "df": "STGST02A.DF",
+    "p2o": 30,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st02a/st02a.manifest"
+  },
+  {
+    "room": "st03t",
+    "df": "STGST03T.DF",
+    "p2o": 14,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st03t/st03t.manifest"
+  },
+  {
+    "room": "st04a",
+    "df": "STG4A2ND.DF",
+    "p2o": 19,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st04a/st04a.manifest"
+  },
+  {
+    "room": "st04b",
+    "df": "STGST04B2.DF",
+    "p2o": 10,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st04b/st04b.manifest"
+  },
+  {
+    "room": "st04c",
+    "df": "STGST04L1.DF",
+    "p2o": 11,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st04c/st04c.manifest"
+  },
+  {
+    "room": "st04d",
+    "df": "STGST04L2.DF",
+    "p2o": 5,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st04d/st04d.manifest"
+  },
+  {
+    "room": "st04e",
+    "df": "STGST04L3.DF",
+    "p2o": 12,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st04e/st04e.manifest"
+  },
+  {
+    "room": "st04l",
+    "df": "STGST04L2.DF",
+    "p2o": 43,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st04l/st04l.manifest"
+  },
+  {
+    "room": "st04r",
+    "df": "STGST05C.DF",
+    "p2o": 4,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st04r/st04r.manifest"
+  },
+  {
+    "room": "st05b",
+    "df": "STGST04B1.DF",
+    "p2o": 9,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st05b/st05b.manifest"
+  },
+  {
+    "room": "st05c",
+    "df": "STGST05C.DF",
+    "p2o": 26,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st05c/st05c.manifest"
+  },
+  {
+    "room": "st05d",
+    "df": "STGST05D.DF",
+    "p2o": 5,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st05d/st05d.manifest"
+  },
+  {
+    "room": "st05e",
+    "df": "STGST05E.DF",
+    "p2o": 11,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st05e/st05e.manifest"
+  },
+  {
+    "room": "st06a",
+    "df": "STGST06A.DF",
+    "p2o": 34,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st06a/st06a.manifest"
+  },
+  {
+    "room": "st07a",
+    "df": "STGST07A.DF",
+    "p2o": 20,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st07a/st07a.manifest"
+  },
+  {
+    "room": "st08a",
+    "df": "STGST08D.DF",
+    "p2o": 17,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st08a/st08a.manifest"
+  },
+  {
+    "room": "st08b",
+    "df": "STGST08D.DF",
+    "p2o": 1,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st08b/st08b.manifest"
+  },
+  {
+    "room": "st09a",
+    "df": "STGST09A.DF",
+    "p2o": 16,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st09a/st09a.manifest"
+  },
+  {
+    "room": "st10l",
+    "df": "STGST10L.DF",
+    "p2o": 13,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st10l/st10l.manifest"
+  },
+  {
+    "room": "st10r",
+    "df": "STGST10R.DF",
+    "p2o": 26,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st10r/st10r.manifest"
+  },
+  {
+    "room": "st13a",
+    "df": "STGST13A.DF",
+    "p2o": 15,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st13a/st13a.manifest"
+  },
+  {
+    "room": "st13b",
+    "df": "STG13B3.DF",
+    "p2o": 37,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st13b/st13b.manifest"
+  },
+  {
+    "room": "st13c",
+    "df": "STGST13C.DF",
+    "p2o": 17,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st13c/st13c.manifest"
+  },
+  {
+    "room": "st13d",
+    "df": "STGST13D.DF",
+    "p2o": 4,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st13d/st13d.manifest"
+  },
+  {
+    "room": "st17a",
+    "df": "STGST17A.DF",
+    "p2o": 35,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st17a/st17a.manifest"
+  },
+  {
+    "room": "st17b",
+    "df": "STGST17B.DF",
+    "p2o": 20,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st17b/st17b.manifest"
+  },
+  {
+    "room": "st18a",
+    "df": "STGST18A.DF",
+    "p2o": 8,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st18a/st18a.manifest"
+  },
+  {
+    "room": "st19a",
+    "df": "STGST19A.DF",
+    "p2o": 28,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st19a/st19a.manifest"
+  },
+  {
+    "room": "st19b",
+    "df": "STGST19B.DF",
+    "p2o": 6,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st19b/st19b.manifest"
+  },
+  {
+    "room": "st20a",
+    "df": "STGST20A.DF",
+    "p2o": 26,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st20a/st20a.manifest"
+  },
+  {
+    "room": "st22a",
+    "df": "STGST22A.DF",
+    "p2o": 22,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st22a/st22a.manifest"
+  },
+  {
+    "room": "st24a",
+    "df": "STGST24A.DF",
+    "p2o": 16,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st24a/st24a.manifest"
+  },
+  {
+    "room": "st24b",
+    "df": "STGST24B.DF",
+    "p2o": 16,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st24b/st24b.manifest"
+  },
+  {
+    "room": "st25a",
+    "df": "STGST25A.DF",
+    "p2o": 23,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st25a/st25a.manifest"
+  },
+  {
+    "room": "st26a",
+    "df": "STGLOG.DF",
+    "p2o": 25,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st26a/st26a.manifest"
+  },
+  {
+    "room": "st26b",
+    "df": "STG26B.DF",
+    "p2o": 24,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st26b/st26b.manifest"
+  },
+  {
+    "room": "st27a",
+    "df": "STGST27A.DF",
+    "p2o": 29,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st27a/st27a.manifest"
+  },
+  {
+    "room": "st47a",
+    "df": "STGST47A.DF",
+    "p2o": 22,
+    "tm2": 0,
+    "tm2_fill": 1,
+    "manifest": "st47a/st47a.manifest"
+  }
+]

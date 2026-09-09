@@ -315,6 +315,14 @@ public:
                                    TextureHandle texture,
                                    const u8 cornerColors[4][4]) = 0;
 
+    // Real game sky backdrop: a full-screen vertical gradient using the
+    // colors sampled from the room's sky.tm2 (the PS2 sky texture is a tall
+    // 1-column-tiled gradient, drawn as a background quad before the scene).
+    // Drawn into the background list with depth test Always/write off so it
+    // sits behind every opaque surface without interacting with the Z buffer.
+    // topColor is the zenith color, bottomColor the horizon color.
+    virtual void drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4]) = 0;
+
     // VRAM region move (GS TRXDIR=2, matching GifPacket.moveImage).
     // Copies the w*h rect from (srcX, srcY) to (dstX, dstY) within VRAM.
     virtual void copyTexture(float srcX, float srcY, float dstX, float dstY,

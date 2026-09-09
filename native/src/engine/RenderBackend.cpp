@@ -282,6 +282,10 @@ void drawSpriteGouraud(float x, float y, float w, float h,
         (void)texture; (void)cornerColors;
     }
 
+    void drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4]) override {
+        (void)topColor; (void)bottomColor;
+    }
+
     void copyTexture(float srcX, float srcY, float dstX, float dstY,
                      float w, float h) override {
         /* Rev.134: the stub backend has no VRAM buffers to move; the command

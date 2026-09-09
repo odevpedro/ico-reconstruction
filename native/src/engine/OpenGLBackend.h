@@ -85,6 +85,8 @@ public:
                            TextureHandle texture,
                            const u8 cornerColors[4][4]) override;
 
+    void drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4]) override;
+
     void copyTexture(float srcX, float srcY, float dstX, float dstY,
                      float w, float h) override;
 

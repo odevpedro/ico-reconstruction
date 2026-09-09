@@ -69,9 +69,24 @@ void extractMaterialNames(const uint8_t* data, size_t size,
                 }
                 if (k2 == rl) {
                     // Word runs to the end of the printable run => followed by
-                    // a terminator (<0x20, normally NUL) in the file.
-                    const bool pref = (k == 0) ? (i == 0 || data[i - 1] == 0x00)
-                                               : (run[k - 1] == '?' || run[k - 1] == '>');
+                    // a terminator (<0x20, normally NUL) in the file. The
+                    // prefix must be a real name marker at the START of the
+                    // printable run whose preceding file byte is a table
+                    // delimiter (NUL, or the 0x80 record padding of the
+                    // material-name table, stride 0x90). A `?`/`>` sitting
+                    // mid-run (binary float bytes 0x3F/0x3E inside "t?f7k6")
+                    // is NOT a name marker.
+                    bool pref = false;
+                    if (k == 0) {
+                        // A bare word is a material name only directly after a
+                        // table delimiter (NUL or the 0x80 record padding) or
+                        // at file start — never after arbitrary float bytes.
+                        const unsigned char pre = (i == 0) ? 0u : data[i - 1];
+                        pref = (pre == 0x00 || pre == 0x80);
+                    } else if (k == 1 && (run[0] == '?' || run[0] == '>')) {
+                        const unsigned char pre = (i == 0) ? 0u : data[i - 1];
+                        pref = (pre == 0x00 || pre == 0x80);
+                    }
                     if (pref) { last = run.substr(k); accept = true; }
                 }
                 k = k2;

@@ -510,7 +510,8 @@ bool OpenGLBackend::initialize(u32 width, u32 height) {
     XSetWindowAttributes swa;
     swa.colormap = XCreateColormap(I.display, RootWindow(I.display, vi->screen),
                                    vi->visual, AllocNone);
-    swa.event_mask = ExposureMask | KeyPressMask | StructureNotifyMask;
+    swa.event_mask = ExposureMask | KeyPressMask | StructureNotifyMask |
+                     PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
 
     I.window = XCreateWindow(I.display, RootWindow(I.display, vi->screen),
                               0, 0, width, height, 0, vi->depth, InputOutput,
@@ -1539,6 +1540,78 @@ void OpenGLBackend::drawSpriteGouraud(float x, float y, float w, float h,
     I.batchIndices.push_back(base + 3);
 
     (void)texture;
+}
+
+void OpenGLBackend::drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4]) {
+    auto& I = *m_impl;
+    if (!I.initialized || !I.display) return;
+    if (!topColor || !bottomColor) return;
+
+    // Background pass must flush whatever opaque list is active first and
+    // switch to the background list (GS list 0, drawn before Opaque).
+    flushBatch();
+
+    // The quad is expressed in NDC; override the perspective scene matrices
+    // with identity so it stays full-screen, then restore them.
+    const Matrix4x4 savedProj = I.projMat;
+    const Matrix4x4 savedView = I.viewMat;
+    const Matrix4x4 savedModel = I.modelMat;
+    I.projMat = Matrix4x4::identity();
+    I.viewMat = Matrix4x4::identity();
+    I.modelMat = Matrix4x4::identity();
+    I.currentList = RenderList::Background;
+
+    if (I.batchVertexCount + 4 > kMaxBatchVertices) flushBatch();
+
+    // Full-screen quad in normalized device coordinates: [-1,1] x [-1,1].
+    // Drawn with depth test Always + write off (state set by the caller via
+    // setDepthTest) so it never occludes or is occluded by the scene.
+    u32 base = I.batchVertexCount;
+
+    // Bottom-left (v=0): bottom/horizon color.
+    BatchVertex v00{};
+    v00.x = -1.0f; v00.y = -1.0f; v00.z = 0.0f;
+    v00.u = 0.0f;  v00.v = 0.0f;
+    v00.r = bottomColor[0]; v00.g = bottomColor[1];
+    v00.b = bottomColor[2]; v00.a = bottomColor[3];
+    I.batchVertices[I.batchVertexCount++] = v00;
+
+    // Bottom-right.
+    BatchVertex v10{};
+    v10.x = 1.0f;  v10.y = -1.0f; v10.z = 0.0f;
+    v10.u = 1.0f;  v10.v = 0.0f;
+    v10.r = bottomColor[0]; v10.g = bottomColor[1];
+    v10.b = bottomColor[2]; v10.a = bottomColor[3];
+    I.batchVertices[I.batchVertexCount++] = v10;
+
+    // Top-right (v=1): top/zenith color.
+    BatchVertex v11{};
+    v11.x = 1.0f;  v11.y = 1.0f;  v11.z = 0.0f;
+    v11.u = 1.0f;  v11.v = 1.0f;
+    v11.r = topColor[0]; v11.g = topColor[1];
+    v11.b = topColor[2]; v11.a = topColor[3];
+    I.batchVertices[I.batchVertexCount++] = v11;
+
+    // Top-left.
+    BatchVertex v01{};
+    v01.x = -1.0f; v01.y = 1.0f;  v01.z = 0.0f;
+    v01.u = 0.0f;  v01.v = 1.0f;
+    v01.r = topColor[0]; v01.g = topColor[1];
+    v01.b = topColor[2]; v01.a = topColor[3];
+    I.batchVertices[I.batchVertexCount++] = v01;
+
+    I.batchIndices.push_back(base + 0);
+    I.batchIndices.push_back(base + 1);
+    I.batchIndices.push_back(base + 2);
+    I.batchIndices.push_back(base + 0);
+    I.batchIndices.push_back(base + 2);
+    I.batchIndices.push_back(base + 3);
+
+    flushBatch();
+    I.currentList = RenderList::Opaque;
+    I.projMat = savedProj;
+    I.viewMat = savedView;
+    I.modelMat = savedModel;
 }
 
 void OpenGLBackend::copyTexture(float srcX, float srcY, float dstX, float dstY,
