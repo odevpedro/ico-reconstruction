@@ -1,7 +1,7 @@
 # Backlog — ICO Reconstruction
 
 > Current project state and pending work. Updated in real-time during development.
-> Última atualização: 2026-09-09 (Rev.155: Passo 1 — per-GObj visual composition; render loop dirigido pelos GObjs ativos do isysGObj)
+> Última atualização: 2026-09-09 (Rev.156: GifPacket bridge fidelity + p2 family discriminator closed)
 > See `docs/architecture-log.md` for historical record of implemented features.
 
 ---
@@ -1000,6 +1000,7 @@ Call graph analysis
 | rev.153 | 2026-09-09 | SQUAD-PORT | **Unified GIF command/packet, kanban loader seam, strip synthesis.** Sky + strips ride one semantic GIF packet per frame; `KanbanSceneLoader` (kanban.c) wired for scene composition + runtime load; strip topology synthesized for strip-less pieces. Nota: research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md. |
 | rev.154 | 2026-09-09 | SQUAD-PORT | **Verified scene tables drive real GObj creation.** `tools/extract_scene_tables.py` → `GeneratedSceneTables.h` (68 descriptors 0x2A31B8, 97 scenes, scene-0x0F slice); entry table 3600 rows (valid idx 0..3590, not 512); `initSceneGObj` creates **25 host GObjs** for scene 0x0F (29 payload − 4 gate-0); 26/27 CTest. Nota: research/native/rev154-verified-scene-tables.md. |
 | rev.155 | 2026-09-09 | SQUAD-PORT | **Passo 1 — per-GObj visual composition.** Host-side `GObjAttachmentStore` (multi-register per (handle,meshPath); BoxMarker kind for boy) binds visual composition to GObjs without growing the byte-exact `IcoGObj` 0x174. `attachBoundAssetsToGObjs(0x0F)` → 28 assets over 25 host GObjs (round-robin HOST heuristic, NOT verified binding — PCSX2 capture pending). **Render loop now walks ACTIVE isysGObj primary lists (`head`→`next`) and draws what each GObj commands**, fallback to `stripBatches` only without store; boy = GObj-owned BoxMarker (controller writes transform, renderer reads it; no hardcoded box). `gobj_attachment_test`: 28 anexos, dedup (handle,meshPath), detach/find coherence, re-init clears. 27/28 CTest (only headless `opengl_backend` fails). Demo verified: room textured + boy box. Nota: research/native/rev155-per-gobj-visual-composition.md. |
+| rev.156 | 2026-09-09 | SQUAD-PORT | **GifPacket bridge fidelity + p2 family CLOSED.** `GifPacketBridge` agora captura `prim`/path (`currentPrim()`/`currentPath()`), honra viewport origin x/y de `setDrawEnvironment`, e expõe hook host-side de half-offset (`setHalfOffset`) aplicado aos variantes `*Offset` + `draw2DUVStripG` (default 0 = identity). Byte-exact `0x8000` verificado em base E Offset `.s` (`gif_MakeSprite`, `gif_Draw2DStripG`, `gif_Draw2DUVStripG`, `gif_SpriteSensitive`) — NÃO é discriminador Offset verificável; mantido como hook explícito, não claim byte. `tools/ps2o_family_analysis.py` + `test_two_strip_family_unified` (fixture flag u16[0]=0/1) provam que p2 decodifica pela REGRA canônica Rev.151 (p2: 3,562 headers / 15,005 records, max a 4,714 < nv 6,213, UV 4,844/4,844, f∈0..5, flag0=590/flag1=2,972, bnd_ratio 0.126 = Rev.144 M-A) — **open item Rev.151 CLOSED, sem mudança de decoder**. 27/27 CTest (só `opengl_backend` headless excluído); demo `--frames 1 --shot` OK (15031 tris). Nota: research/native/rev156-gifpacket-bridge-fidelity-and-p2-family-closed.md. |
 
 ---
 

@@ -87,7 +87,8 @@ A compelling scene is not technical evidence.
   All 7 `.tm2` materials (metal, wall_dec1, st0_a, broken, wall_fuchi2,
   isikabe, pole) now load from `native/assets/` and the castle room renders
   fully texturized (white pixels 7.1% -> 0.0%, colored 22.7% -> 30.1% in a
-  screenshot histogram). The p2 wall-family discriminator remains open.
+  screenshot histogram). The p2 wall-family discriminator, still open at
+  Rev.153/Rev.151, was CLOSED by Rev.156 (same canonical decode rule).
 - Rev.152 (2026-09-09): multi-room scene loading. `--room <name>` loads any of
   40 rooms from `assets/scene/rooms/<room>/` (manifest-driven), the room's real
   `sky.tm2` gradient is sampled for a `drawSkyGradient()` backdrop quad (depth
@@ -136,6 +137,19 @@ A compelling scene is not technical evidence.
   asserts 28 attachments, dedup by (handle,meshPath), detach/find coherence,
   re-init clearing. 27/28 CTest; demo `--frames 1 --shot` shows the textured
   room + the boy box driven by the GObj marker.
+- Rev.156 (2026-09-09): **GifPacket bridge fidelity + p2 family closed.** The
+  `GifPacketBridge` no longer drops the GIF `prim`/path registers (`currentPrim()`/
+  `currentPath()`), honors the `setDrawEnvironment` viewport origin (x/y), and
+  exposes a host-side half-offset hook (`setHalfOffset`) applied to every `*Offset`
+  emit variant plus `draw2DUVStripG`; the default 0 keeps Offset variants
+  identical to their base counterparts. The byte-exact `0x8000` in XYZ2 packing
+  appears in BOTH base and Offset `.s` (`gif_MakeSprite`, `gif_Draw2DStripG`,
+  `gif_Draw2DUVStripG`, `gif_SpriteSensitive`), so it is NOT treated as a verified
+  Offset discriminator — the hook is explicit, not a byte claim. The Rev.151 open
+  item "p2 wall family needs its own discriminator" is CLOSED: the p2 flags
+  u16[0]=0/1 decode with the same canonical rule as p1 (tool
+  `tools/ps2o_family_analysis.py` + fixture test) — p2: 3,562 headers / 15,005
+  records, UV 4,844/4,844, bnd_ratio 0.126. 27/27 CTest.
 
 ## Current runtime baseline (Rev.126)
 
@@ -172,6 +186,10 @@ drive **25 real host GObjs** for scene 0x0F (Rev.154), and those GObjs now
 **own their visual composition** through the host `GObjAttachmentStore`
 (Rev.155): the render loop iterates the active isysGObj lists and draws what
 each GObj commands (28 meshes across 25 GObjs, boy via a GObj-owned BoxMarker).
+The semantic GIF pipeline gained fidelity (Rev.156): `prim`/path are captured,
+`setDrawEnvironment` honors the viewport origin, the half-offset hook is
+explicit (not a byte claim), and the p2 wall family was proven to decode by
+the same canonical rule as p1 (the Rev.151 "p2 discriminator" item is closed).
 Next up is Passo 2 — a new PCSX2 runtime session that captures each GObj's
 `init_fn`/`processCallback` and its real model binding, replacing the
 round-robin HOST pairing — and capturing the per-room `init_fn` targets (the
@@ -183,27 +201,31 @@ real gameplay state sequence.
 
 ## Sources to prefer
 
-1. `research/native/rev155-per-gobj-visual-composition.md`
-2. `research/native/rev154-verified-scene-tables.md`
-3. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
-4. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
-5. `research/elf/rev135-gif-pipeline-window-milestone.md`
-6. `research/elf/rev134-moveimage-copytexture-plumbing.md`
-7. `research/elf/rev133-hotgap-semantic-bridges.md`
-8. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
-9. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
-10. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
-11. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
-12. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
-13. `research/elf/rev109-isysgobj-abi-consolidation.md`
-14. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
-15. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
-16. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
-17. Byte-exact sources under `src/core/asm/`
+1. `research/native/rev156-gifpacket-bridge-fidelity-and-p2-family-closed.md`
+2. `research/native/rev155-per-gobj-visual-composition.md`
+3. `research/native/rev154-verified-scene-tables.md`
+4. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
+5. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
+6. `research/elf/rev135-gif-pipeline-window-milestone.md`
+7. `research/elf/rev134-moveimage-copytexture-plumbing.md`
+8. `research/elf/rev133-hotgap-semantic-bridges.md`
+9. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
+10. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
+11. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
+12. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+13. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
+14. `research/elf/rev109-isysgobj-abi-consolidation.md`
+15. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+16. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+17. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+18. Byte-exact sources under `src/core/asm/`
 
 When an older note conflicts with Rev.131 on the `world_state_load` boundary
 (0x80 vs the earlier 0x248), use Rev.131. When an older note conflicts with
 Rev.109 on the four list tables, use Rev.109. When prose conflicts with raw
 instructions, use the instructions. Rev.155's GObj↔mesh pairing is an explicit
 HOST heuristic (round-robin), NOT verified ground truth — do not present it as
-the real PS2 model binding.
+the real PS2 model binding. Rev.156's half-offset hook (`setHalfOffset`) is an
+explicit HOST control whose byte-exact `0x8000` packing constant appears in
+BOTH base and Offset `.s` — it is NOT a verified Offset-vs-base discriminator
+and is not to be described as verified PS2 behavior.

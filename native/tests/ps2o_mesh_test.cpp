@@ -105,6 +105,105 @@ std::vector<uint8_t> makeBox() {
     return b;
 }
 
+// Builds a two-strip PS2O proving the Rev.156 family finding: the p2 wall
+// family uses the exact same canonical rule as p1. The only per-strip
+// attribute that varies is u16[0] (0 = long tri-strips a==b, 1 = short
+// quads/fans a!=b per Rev.142) -- but u16[0] is NOT a type discriminator;
+// both decode through header [N,0xFFFF x7] + records [1,0,a,s,m,b,u,f]
+// with m=u16[4] UV and f=u16[7] material (Rev.151 rule).
+std::vector<uint8_t> makeTwoStripBox() {
+    constexpr uint32_t kPosCount = 6;
+    constexpr uint32_t kUvCount = 4;
+    constexpr uint32_t kFaceOff = 0x20 + kPosCount * 16 + kUvCount * 16 + 16;
+    std::vector<uint8_t> b(kFaceOff + 2 * (16 + 4 * 16) + 16, 0);
+    std::memcpy(b.data(), "PS2O", 4);
+    putU32(b.data() + 4, 0);
+    putU32(b.data() + 8, 1);
+    std::memcpy(b.data() + 0x18, "SUM\0", 4);
+    putU32(b.data() + 0x1c, 0x01020304);
+
+    uint8_t* p = b.data() + 0x20;
+    const float positions[6][3] = {
+        { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f },
+        { 0.0f, 1.0f, 0.0f }, { 2.0f, 0.0f, 0.0f }, { 2.0f, 1.0f, 0.0f },
+    };
+    for (int v = 0; v < 6; ++v) {
+        p = putFloat(p, positions[v][0]);
+        p = putFloat(p, positions[v][1]);
+        p = putFloat(p, positions[v][2]);
+        p = putFloat(p, 1.0f);
+    }
+    const float uv[4][2] = {
+        { 0.00f, 0.00f }, { 0.25f, 0.00f }, { 0.25f, 0.25f }, { 0.00f, 0.25f },
+    };
+    uint8_t* q = p;
+    for (int e = 0; e < 4; ++e) {
+        q = putFloat(q, uv[e][0]);
+        q = putFloat(q, uv[e][1]);
+        q = putFloat(q, 0.0f);
+        q = putFloat(q, 0.0f);
+    }
+    q = putFloat(q, 0.0f); // UV-array terminator
+    q = putFloat(q, 0.0f);
+    q = putFloat(q, 1.0f);
+    q = putFloat(q, 0.0f);
+    assert(static_cast<size_t>(q - b.data()) == kFaceOff);
+
+    // Strip A: u16[0]=0 (type 0x00 long). Strip B: u16[0]=1 (type 0x01 short).
+    const uint16_t flags[2] = { 0, 1 };
+    const uint16_t mats[2] = { 1, 5 };
+    uint8_t* r = b.data() + kFaceOff;
+    for (int s = 0; s < 2; ++s) {
+        r = putU16(r, 4);
+        for (int k = 1; k < 8; ++k) r = putU16(r, 0xFFFF);
+        for (uint16_t k = 0; k < 4; ++k) {
+            r = putU16(r, flags[s]);       // u16[0] per-strip flag
+            r = putU16(r, 0x0000);
+            r = putU16(r, k + (uint16_t)(s * 2)); // u16[2] position index
+            r = putU16(r, 0x0000);         // u16[3] spine id
+            r = putU16(r, k);              // u16[4] UV index
+            r = putU16(r, k + (uint16_t)(s * 2)); // u16[5] mirror of a
+            r = putU16(r, 0x0000);
+            r = putU16(r, mats[s]);        // u16[7] material
+        }
+    }
+    putU32(b.data() + 4, static_cast<uint32_t>(b.size() - 16));
+    return b;
+}
+
+static void test_two_strip_family_unified() {
+    // Both flag 0x00 and flag 0x01 strips decode with the exact same Rev.151
+    // canonical rule: header [N, 0xFFFF x7] + N records, one Ps2oStrip with
+    // spine of N verts, N-2 cascade triangles (spine size 4 -> 2 triangles).
+    // u16[0] is a per-strip attribute (Rev.142 type), NOT a decoder branch.
+    std::vector<uint8_t> two = makeTwoStripBox();
+    Ps2oMesh mesh;
+    assert(loadPs2oMesh(two.data(), two.size(), mesh));
+    assert(mesh.strips.size() == 2);
+
+    const Ps2oStrip& stA = mesh.strips[0];
+    const Ps2oStrip& stB = mesh.strips[1];
+    assert(stA.spine.size() == 4);
+    assert(stB.spine.size() == 4);
+    // Same triangle topology for both flags.
+    assert(stA.spine[0] == 0 && stB.spine[0] == 2);
+    assert(stA.spine[1] == 1 && stB.spine[1] == 3);
+    assert(stA.spine[3] == 3 && stB.spine[3] == 5);
+    // Materials carried from u16[7], distinct per strip.
+    assert(stA.material == 1);
+    assert(stB.material == 5);
+    // Per-vertex UVs from u16[4]=m for both families.
+    assert(stA.uvs.size() == 8 && stB.uvs.size() == 8);
+    assert(stA.uvs[0] == 0.00f && stA.uvs[7] == 0.25f);
+    assert(stB.uvs[0] == 0.00f && stB.uvs[7] == 0.25f);
+    // Flat triangles cascade-constructed for both: 2 tris/strip -> 12 indices.
+    assert(mesh.triangles.size() == 12);
+    assert(mesh.triangles[0] == 0 && mesh.triangles[2] == 2);   // strip A tri0
+    assert(mesh.triangles[3] == 1 && mesh.triangles[5] == 3);   // strip A tri1
+    assert(mesh.triangles[6] == 2 && mesh.triangles[8] == 4);   // strip B tri0
+    assert(mesh.triangles[9] == 3 && mesh.triangles[11] == 5);  // strip B tri1
+}
+
 } // namespace
 
 static Ps2oMesh makeManualMesh(const std::vector<uint32_t>& tris,
@@ -218,6 +317,9 @@ int main() {
     // Rev.153 strip synthesis (front 3 — unified batch).
     test_fill_strips_guards();
     test_fill_strips_cascade();
+
+    // Rev.156 p2 family: flag u16[0] is not a decoder discriminator.
+    test_two_strip_family_unified();
 
     std::fprintf(stderr, "ps2o_mesh_test: OK (%u verts, %u tris)\n",
                  mesh.vertexCount, static_cast<unsigned>(mesh.triangles.size() / 3));

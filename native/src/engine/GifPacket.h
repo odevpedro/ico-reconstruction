@@ -23,6 +23,12 @@ public:
     void endPacket();
     void endPacketPath1();
 
+    /* GIF PRIM register captured by startPacketPri* (Rev.156). The byte-exact
+       gif_Init streams this value (prim<<6 | 0x406) as the GIF tag; the bridge
+       records it so the current primitive type is observable downstream. */
+    u32 currentPrim() const { return m_currentPrim; }
+    u32 currentPath() const { return m_currentPath; }
+
     void setGsReg(u32 addr, u64 value);
     void setAlpha(u32 abc, u32 abd, u32 abe, u32 abfix);
     void setZTest(u32 ate, u32 atst, u32 aref, u32 afail);
@@ -33,6 +39,15 @@ public:
        cannot represent. */
     void setDepthState(GSDepthTest test, bool write = true);
     void setDrawEnvironment(float x, float y, float w, float h, u32 fbp, u32 psm, u32 fbw);
+    /* Explicit half-offset hook (Rev.156). The byte-exact gif_* functions add
+       a constant 0x8000 to the X/Y fields of the packed XYZ2 in a subset of
+       primitives (gif_MakeSprite, gif_MakeSpriteOffset, gif_Draw2DStripG,
+       gif_Draw2DUVStripG, gif_SpriteSensitive, gif_MakePoint2DOffset,
+       gif_EndPacket). That 0x8000 is NOT a verified discriminator between
+       Offset and non-Offset variants (both families show it in some .s), so
+       the bridge does NOT claim a byte-verified translation. setHalfOffset
+       stores an explicit host-side offset applied to the Offset-* emit
+       functions; the default 0.0f preserves the previous behavior. */
     void setHalfOffset(u32 h, u32 v);
 
     void makeSprite(float x, float y, float w, float h, float u0, float v0, float u1, float v1);
@@ -118,6 +133,9 @@ private:
 
     u32 m_screenWidth;
     u32 m_screenHeight;
+    u32 m_currentPrim;
+    float m_offsetX; /* half-pixel offset X (Rev.156) */
+    float m_offsetY; /* half-pixel offset Y (Rev.156) */
 };
 
 } // namespace ico::engine

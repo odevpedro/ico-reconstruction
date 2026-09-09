@@ -13,6 +13,9 @@ GifPacketBridge::GifPacketBridge(RenderBackend& backend)
     , m_currentPath(0)
     , m_screenWidth(kPs2ScreenWidth)
     , m_screenHeight(kPs2ScreenHeight)
+    , m_currentPrim(0)
+    , m_offsetX(0.0f)
+    , m_offsetY(0.0f)
 {
 }
 
@@ -22,17 +25,23 @@ void GifPacketBridge::init(u32 screenWidth, u32 screenHeight) {
     m_buffer.setScreenSize(screenWidth, screenHeight);
     m_buffer.reset();
     m_packetOpen = false;
+    m_currentPrim = 0;
+    m_currentPath = 0;
+    m_offsetX = 0.0f;
+    m_offsetY = 0.0f;
 }
 
-void GifPacketBridge::startPacketPri(u32 /* prim */) {
+void GifPacketBridge::startPacketPri(u32 prim) {
     m_packetOpen = true;
     m_currentPath = 0;
+    m_currentPrim = prim;
     m_buffer.reset();
 }
 
-void GifPacketBridge::startPacketPriPath1(u32 /* prim */) {
+void GifPacketBridge::startPacketPriPath1(u32 prim) {
     m_packetOpen = true;
     m_currentPath = 1;
+    m_currentPrim = prim;
     m_buffer.reset();
 }
 
@@ -167,14 +176,14 @@ void GifPacketBridge::setDepthState(GSDepthTest test, bool write) {
     m_buffer.commands().push_back(cmd);
 }
 
-void GifPacketBridge::setDrawEnvironment(float /* x */, float /* y */, float w, float h,
+void GifPacketBridge::setDrawEnvironment(float x, float y, float w, float h,
                                          u32 fbp, u32 psm, u32 fbw) {
     if (!m_packetOpen) return;
 
     RenderCmd cmd{};
     cmd.type = RenderCommand::SetViewport;
-    cmd.viewport.x = 0;
-    cmd.viewport.y = 0;
+    cmd.viewport.x = static_cast<u32>(x);
+    cmd.viewport.y = static_cast<u32>(y);
     cmd.viewport.w = static_cast<u32>(w);
     cmd.viewport.h = static_cast<u32>(h);
     m_buffer.commands().push_back(cmd);
@@ -187,7 +196,9 @@ void GifPacketBridge::setDrawEnvironment(float /* x */, float /* y */, float w, 
     m_buffer.commands().push_back(frameCmd);
 }
 
-void GifPacketBridge::setHalfOffset(u32 /* h */, u32 /* v */) {
+void GifPacketBridge::setHalfOffset(u32 h, u32 v) {
+    m_offsetX = static_cast<float>(h);
+    m_offsetY = static_cast<float>(v);
 }
 
 void GifPacketBridge::makeSprite(float x, float y, float w, float h,
@@ -197,7 +208,8 @@ void GifPacketBridge::makeSprite(float x, float y, float w, float h,
 
 void GifPacketBridge::makeSpriteOffset(float x, float y, float w, float h,
                                        float u0, float v0, float u1, float v1) {
-    emitSpriteQuad(x, y, w, h, u0, v0, u1, v1, 128, 128, 128, 128, true, false);
+    emitSpriteQuad(x + m_offsetX, y + m_offsetY, w, h, u0, v0, u1, v1,
+                   128, 128, 128, 128, true, false);
 }
 
 void GifPacketBridge::makeSpriteWithStrip(float x, float y, float w, float h,
@@ -210,7 +222,8 @@ void GifPacketBridge::makeSpriteNoTexture(float x, float y, float w, float h) {
 }
 
 void GifPacketBridge::makeSpriteNoTextureOffset(float x, float y, float w, float h) {
-    emitSpriteQuad(x, y, w, h, 0, 0, 1, 1, 128, 128, 128, 128, false, false);
+    emitSpriteQuad(x + m_offsetX, y + m_offsetY, w, h, 0, 0, 1, 1,
+                   128, 128, 128, 128, false, false);
 }
 
 void GifPacketBridge::makeLine2D(float x0, float y0, float x1, float y1) {
@@ -218,7 +231,8 @@ void GifPacketBridge::makeLine2D(float x0, float y0, float x1, float y1) {
 }
 
 void GifPacketBridge::makeLine2DOffset(float x0, float y0, float x1, float y1) {
-    emitLine(x0, y0, x1, y1, 128, 128, 128, 128);
+    emitLine(x0 + m_offsetX, y0 + m_offsetY, x1 + m_offsetX, y1 + m_offsetY,
+             128, 128, 128, 128);
 }
 
 void GifPacketBridge::makePoint2D(float x, float y) {
@@ -226,7 +240,7 @@ void GifPacketBridge::makePoint2D(float x, float y) {
 }
 
 void GifPacketBridge::makePoint2DOffset(float x, float y) {
-    emitPoint(x, y, 128, 128, 128, 128);
+    emitPoint(x + m_offsetX, y + m_offsetY, 128, 128, 128, 128);
 }
 
 void GifPacketBridge::sprite(float x, float y, float w, float h,
@@ -238,7 +252,8 @@ void GifPacketBridge::sprite(float x, float y, float w, float h,
 void GifPacketBridge::spriteOffset(float x, float y, float w, float h,
                                    float u0, float v0, float u1, float v1,
                                    u8 r, u8 g, u8 b, u8 a) {
-    emitSpriteQuad(x, y, w, h, u0, v0, u1, v1, r, g, b, a, true, false);
+    emitSpriteQuad(x + m_offsetX, y + m_offsetY, w, h, u0, v0, u1, v1,
+                   r, g, b, a, true, false);
 }
 
 void GifPacketBridge::spriteOrg(float x, float y, float w, float h,
@@ -256,7 +271,8 @@ void GifPacketBridge::spriteSensitive(float x, float y, float w, float h,
 void GifPacketBridge::spriteSensitiveOffset(float x, float y, float w, float h,
                                             float u0, float v0, float u1, float v1,
                                             u8 r, u8 g, u8 b, u8 a) {
-    emitSpriteQuad(x, y, w, h, u0, v0, u1, v1, r, g, b, a, true, false);
+    emitSpriteQuad(x + m_offsetX, y + m_offsetY, w, h, u0, v0, u1, v1,
+                   r, g, b, a, true, false);
 }
 
 void GifPacketBridge::spriteSensitiveOrg(float x, float y, float w, float h,
@@ -322,7 +338,18 @@ void GifPacketBridge::draw2DStripG(const std::vector<std::array<float, 2>>& vert
 void GifPacketBridge::draw2DUVStripG(const std::vector<std::array<float, 2>>& vertices,
                                      const std::vector<std::array<float, 2>>& /* uvs */,
                                      const std::vector<std::array<u8, 4>>& colors) {
-    drawStripG(vertices, colors);
+    /* gif_Draw2DUVStripG applies the 0x8000 half-pixel offset to every
+       vertex before packing XYZ2 (verified in the byte-exact .s). The
+       native RenderCmd line model has no per-vertex UV carrier yet, so
+       UVs are a documented future limitation. */
+    if (vertices.size() < 2 || colors.size() < 2) return;
+
+    std::vector<std::array<float, 2>> offsetVerts;
+    offsetVerts.reserve(vertices.size());
+    for (const auto& v : vertices) {
+        offsetVerts.push_back({v[0] + m_offsetX, v[1] + m_offsetY});
+    }
+    drawStripG(offsetVerts, colors);
 }
 
 void GifPacketBridge::line(float x0, float y0, float x1, float y1,
@@ -332,7 +359,8 @@ void GifPacketBridge::line(float x0, float y0, float x1, float y1,
 
 void GifPacketBridge::lineOffset(float x0, float y0, float x1, float y1,
                                  u8 r, u8 g, u8 b, u8 a) {
-    emitLine(x0, y0, x1, y1, r, g, b, a);
+    emitLine(x0 + m_offsetX, y0 + m_offsetY, x1 + m_offsetX, y1 + m_offsetY,
+             r, g, b, a);
 }
 
 void GifPacketBridge::point(float x, float y, u8 r, u8 g, u8 b, u8 a) {
@@ -340,7 +368,7 @@ void GifPacketBridge::point(float x, float y, u8 r, u8 g, u8 b, u8 a) {
 }
 
 void GifPacketBridge::pointOffset(float x, float y, u8 r, u8 g, u8 b, u8 a) {
-    emitPoint(x, y, r, g, b, a);
+    emitPoint(x + m_offsetX, y + m_offsetY, r, g, b, a);
 }
 
 void GifPacketBridge::moveImage(float srcX, float srcY, float dstX, float dstY,

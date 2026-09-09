@@ -480,6 +480,145 @@ static void test_scene_bridge_commands() {
     assert(bridge.commandBuffer().stripVertexCount() == 0);
 }
 
+static void test_packet_prim_and_path() {
+    TestBackend backend;
+    backend.initialize(640, 448);
+    GifPacketBridge bridge(backend);
+    bridge.init(640, 448);
+
+    assert(bridge.currentPrim() == 0);
+    assert(bridge.currentPath() == 0);
+
+    bridge.startPacketPri(0x1F);
+    assert(bridge.currentPrim() == 0x1F);
+    assert(bridge.currentPath() == 0);
+
+    bridge.endPacket();
+    assert(bridge.currentPrim() == 0x1F);
+
+    bridge.startPacketPriPath1(0x0E);
+    assert(bridge.currentPrim() == 0x0E);
+    assert(bridge.currentPath() == 1);
+}
+
+static void test_draw_environment_viewport_origin() {
+    TestBackend backend;
+    backend.initialize(640, 448);
+    GifPacketBridge bridge(backend);
+    bridge.init(640, 448);
+    bridge.startPacketPri(0);
+
+    bridge.setDrawEnvironment(16.0f, 8.0f, 320.0f, 240.0f, 0x100, 2, 32);
+    assert(bridge.commandBuffer().commandCount() == 2);
+
+    const RenderCmd& vp = bridge.commandBuffer().command(0);
+    assert(vp.type == RenderCommand::SetViewport);
+    assert(vp.viewport.x == 16);
+    assert(vp.viewport.y == 8);
+    assert(vp.viewport.w == 320);
+    assert(vp.viewport.h == 240);
+
+    const RenderCmd& fb = bridge.commandBuffer().command(1);
+    assert(fb.type == RenderCommand::SetFramebuffer);
+    assert(fb.framebuffer.fbp == 0x100);
+    assert(fb.framebuffer.psm == 2);
+    assert(fb.framebuffer.fbw == 32);
+}
+
+static void test_half_offset_fidelity() {
+    TestBackend backend;
+    backend.initialize(640, 448);
+    GifPacketBridge bridge(backend);
+    bridge.init(640, 448);
+    bridge.startPacketPri(0);
+
+    /* Default: no host-side offset - Offset variants equal base variants. */
+    bridge.makeSpriteOffset(10.0f, 20.0f, 30.0f, 40.0f, 0, 0, 1, 1);
+    const RenderCmd& defCmd = bridge.commandBuffer().command(0);
+    assert(defCmd.type == RenderCommand::DrawSprite);
+    assert(defCmd.sprite.x == 10.0f);
+    assert(defCmd.sprite.y == 20.0f);
+    assert(defCmd.sprite.w == 30.0f);
+    assert(defCmd.sprite.h == 40.0f);
+    bridge.commandBuffer().reset();
+
+    /* setHalfOffset shifts every Offset-* emit on both axes. */
+    bridge.setHalfOffset(1, 2);
+    bridge.makeSpriteOffset(10.0f, 20.0f, 30.0f, 40.0f, 0, 0, 1, 1);
+    bridge.spriteOffset(1.0f, 2.0f, 4.0f, 8.0f, 0, 0, 1, 1, 9, 9, 9, 9);
+    bridge.pointOffset(5.0f, 6.0f, 1, 2, 3, 4);
+    bridge.lineOffset(0.0f, 0.0f, 4.0f, 8.0f, 5, 5, 5, 5);
+    bridge.makePoint2DOffset(7.0f, 9.0f);
+    bridge.makeLine2DOffset(2.0f, 4.0f, 10.0f, 12.0f);
+    bridge.makeSpriteNoTextureOffset(3.0f, 5.0f, 9.0f, 13.0f);
+    bridge.spriteSensitiveOffset(6.0f, 7.0f, 8.0f, 9.0f, 0, 0, 1, 1, 2, 3, 4, 5);
+
+    assert(bridge.commandBuffer().commandCount() == 8);
+
+    const RenderCmd& c0 = bridge.commandBuffer().command(0);
+    assert(c0.type == RenderCommand::DrawSprite);
+    assert(c0.sprite.x == 11.0f && c0.sprite.y == 22.0f);
+
+    const RenderCmd& c1 = bridge.commandBuffer().command(1);
+    assert(c1.type == RenderCommand::DrawSprite);
+    assert(c1.sprite.x == 2.0f && c1.sprite.y == 4.0f);
+
+    const RenderCmd& c2 = bridge.commandBuffer().command(2);
+    assert(c2.type == RenderCommand::DrawPoint);
+    assert(c2.point.x == 6.0f && c2.point.y == 8.0f);
+
+    const RenderCmd& c3 = bridge.commandBuffer().command(3);
+    assert(c3.type == RenderCommand::DrawLine);
+    assert(c3.line.x0 == 1.0f && c3.line.y0 == 2.0f);
+    assert(c3.line.x1 == 5.0f && c3.line.y1 == 10.0f);
+
+    const RenderCmd& c4 = bridge.commandBuffer().command(4);
+    assert(c4.type == RenderCommand::DrawPoint);
+    assert(c4.point.x == 8.0f && c4.point.y == 11.0f);
+
+    const RenderCmd& c5 = bridge.commandBuffer().command(5);
+    assert(c5.type == RenderCommand::DrawLine);
+    assert(c5.line.x0 == 3.0f && c5.line.y0 == 6.0f);
+    assert(c5.line.x1 == 11.0f && c5.line.y1 == 14.0f);
+
+    const RenderCmd& c6 = bridge.commandBuffer().command(6);
+    assert(c6.type == RenderCommand::DrawSprite);
+    assert(c6.sprite.x == 4.0f && c6.sprite.y == 7.0f);
+
+    const RenderCmd& c7 = bridge.commandBuffer().command(7);
+    assert(c7.type == RenderCommand::DrawSprite);
+    assert(c7.sprite.x == 7.0f && c7.sprite.y == 9.0f);
+}
+
+static void test_draw2duv_strip_offset() {
+    TestBackend backend;
+    backend.initialize(640, 448);
+    GifPacketBridge bridge(backend);
+    bridge.init(640, 448);
+    bridge.startPacketPri(0);
+
+    std::vector<std::array<float, 2>> verts = {{0.0f, 0.0f}, {4.0f, 8.0f}};
+    std::vector<std::array<float, 2>> uvs = {{0.0f, 0.0f}, {1.0f, 1.0f}};
+    std::vector<std::array<u8, 4>> colors = {{{255, 0, 0, 255}, {0, 255, 0, 255}}};
+
+    /* Default: identical to draw2DStripG (no host offset). */
+    bridge.draw2DUVStripG(verts, uvs, colors);
+    const RenderCmd& defCmd = bridge.commandBuffer().command(0);
+    assert(defCmd.type == RenderCommand::DrawLine);
+    assert(defCmd.line.x0 == 0.0f && defCmd.line.y0 == 0.0f);
+    assert(defCmd.line.x1 == 4.0f && defCmd.line.y1 == 8.0f);
+    bridge.commandBuffer().reset();
+
+    /* With setHalfOffset the UV strip shifts along with its vertices. */
+    bridge.setHalfOffset(2, 3);
+    bridge.draw2DUVStripG(verts, uvs, colors);
+    const RenderCmd& offCmd = bridge.commandBuffer().command(0);
+    assert(offCmd.type == RenderCommand::DrawLine);
+    assert(offCmd.line.x0 == 2.0f && offCmd.line.y0 == 3.0f);
+    assert(offCmd.line.x1 == 6.0f && offCmd.line.y1 == 11.0f);
+    assert(offCmd.line.gouraud);
+}
+
 static void test_screen_check() {
     TestBackend backend;
     backend.initialize(640, 448);
@@ -493,9 +632,13 @@ static void test_screen_check() {
 int main() {
     test_packet_lifecycle();
     test_closed_packet_is_noop();
+    test_packet_prim_and_path();
     test_state_mapping();
     test_set_gs_reg_expanded();
     test_geometry_mapping();
+    test_draw_environment_viewport_origin();
+    test_half_offset_fidelity();
+    test_draw2duv_strip_offset();
     test_move_image_guards();
     test_flush_executes();
     test_flush_empty_is_noop();
