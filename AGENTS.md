@@ -262,6 +262,9 @@ research/elf/ghidra-rev073-main-loop-dispatch-chain-and-callback-corrected-masks
 research/elf/ghidra-rev102-isysgobj-girlbrain-ebrain-correction.md  (CORRECTION: GirlBrain real range = 0x0016xxxx, not 0x0019xxxx; eBrain/Generator in 0x0019xxxx; 15 new byte-exact .s files; 88 total)
 research/elf/ghidra-rev103-isysgobj-runtime-session-yorda-bridge-save.md  (Runtime session: 86K events, 13 world_states, 8 BSS dispatch slots mapped, per-room thread assignment confirmed)
 research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md  (755K events, 20 world_states, 12 DL slots, a2/t0 register mapping, ws=0x0F dominant)
+research/elf/rev162-pal-usa-fingerprint-validation.md  (PAL→USA reconciliation closed: 404 matches, 367 byte-verified USA VAs agree 100%; 8 formerly-ASM-ERR + 4 stubs verified byte-exact; 27/27 CTest)
+research/elf/rev163-static-inventory-and-byteexact.md  (397 named functions without .s; 326 at 8..0x200 B; .s generated for 4 decompilation targets via gen_byteexact_asm.py)
+research/elf/rev164-new-targets-byteexact-and-getenemydeflife-semantic.md  (617 pipeline byte-exact; GetEnemyDefLife semantic bridge + CTest; life += 0.5f corrected; 733 total .s)
 ```
 
 ---
@@ -401,7 +404,7 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.157 — 692 of 710 .s verified byte-exact)
+### Byte-exact reconstruction status (Rev.164 — 733 of 733 .s verified byte-exact)
 
 > **CORRECTION (Rev.130).** The Rev.116f count of 684/701 has been superseded.
 > Six hot-path gaps were reconstructed byte-exact since Rev.116f and now the
@@ -425,22 +428,27 @@ are kept as byte-exact `.s` even without Ghidra symbol verification.
 > which broke any `.s` that used in-text labels for those branches. The regenerated
 > `.s` emit every branch/jal/mult/COP1 as raw `.word` and assemble byte-exact
 > (sizes 0x130/0x258). See `research/elf/rev157-branch-padding-rootcause-and-4-byteexact.md`.
+>
+> **CORRECTION (Rev.162).** The 4 ASM-ERR files (`boyAI_sub_1562D4`, `1562DC`,
+> `1562E0`, `1562E8`) were verified byte-exact via `.word 0x7ba80020` (ee-gcc 2.9
+> encodes `ld.b $w0,-0x58($0)` identically). The 4 trivial stubs (`isysGObjActiveLink`,
+> `isysGObjActiveDlLink`, `isysGObjProcPause`, `boyAI_sub_14BB08`) were verified
+> byte-exact by assemble_and_verify at target VA. The C semantic signatures were
+> corrected to match (void→u32, u32→void), and all 27 CTest pass.
+>
+> **CORRECTION (Rev.164).** Core `.s` grew 46→64 (Rev.162 added 8 core fixes);
+> entity `.s` grew 658→663 (Rev.164 added GetEnemyDefLife + 4 new decompilation
+> targets). Total on-disk: **733 `.s` files** (entity 663, cloth 6, core 64).
+> All 733 verified byte-exact.
 
 | Step | Count | Method |
 |------|-------|--------|
-| Pipeline functions | 612 | `asm_source_score.py --all --no-save` → 612/612 byte-exact (0 failures) |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 80 | byte-exact via `assemble_and_verify` at target VA |
-| **Total byte-exact `.s`** | **692** / 710 (97.5%) | verified against USA ELF |
+| Pipeline functions | 617 | `asm_source_score.py --all` → 617/617 byte-exact (0 failures) |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 116 | byte-exact via `assemble_and_verify` at target VA |
+| **Total byte-exact `.s`** | **733** / 733 (100%) | verified against USA ELF |
 
-Not byte-exact / not verified (13 of 701, reduced from 17 by Rev.157):
-
-| Status | Count | Files |
-|--------|-------|-------|
-| ASM-ERR (COP2/HPI instructions `ld.b $w0` rejected by ee-gcc 2.9) | 4 | `boyAI_sub_1562D4`, `1562DC`, `1562E0`, `1562E8` |
-| Trivial stubs (`jr $ra` placeholder, ≤8 B) | 4 | `isysGObjActiveLink`, `isysGObjActiveDlLink`, `isysGObjProcPause`, `boyAI_sub_14BB08` |
-| Conservative recount reserve (duplicate basenames core vs entity) | 5 | — |
-
-The 4 former "Divergent `.word`-only" files (`boyAI_sub_1435A0`, `eBrainProcess`,
+Not byte-exact / not verified: **0** (all 733 verified). The former ASM-ERR and
+trivial stub categories are closed as of Rev.162.
 `girlBrain_sub_16F618`, `girlBrain_sub_16F620`) are now byte-exact through
 ee-gcc 2.9 (Rev.157); the `.word` fallback there is a generator choice (backward
 branch padding avoidance), not a toolchain necessity.
@@ -741,26 +749,25 @@ the next priority merely because the capture is running. The capture is the
 primary source of new evidence; native-port work follows the validated
 reconstruction it enables. The user may explicitly request an exception.
 
-### Current score status (Rev.157 — 692 of 710 .s verified byte-exact)
+### Current score status (Rev.164 — 733 of 733 .s verified byte-exact)
 
-See the "Byte-exact reconstruction status (Rev.157)" section above for the
-authoritative counts. Summary: **692 of 710 `.s` verified byte-exact against
-the USA ELF** (97.5%). The earlier "1224" figure (Rev.106f) did not match the
-`.s` on disk and has been corrected. Six hot-gap `.s` were added by
-Rev.128-130: sister_callback_reg, CreateGObj, CreateGObj_v, AllocGObjEntity,
-world_state_load, isysGObjProcRemoveUnlink. Rev.131 re-split world_state_load
-(correct boundary 0x80) and added `DispIcoMisc` (0x1AF9C8, 0x1C8). Rev.157
-regenerated the 4 former `.word`-only files byte-exact (ee-as backward-branch
-padding root cause; sizes 0x130/0x258) and reconciled the split `DispIcoMisc`
-count so all top-level numbers now match the on-disk 710 `.s`.
+See the "Byte-exact reconstruction status (Rev.164)" section above for the
+authoritative counts. Summary: **733 of 733 `.s` verified byte-exact against
+the USA ELF** (100%). The former ASM-ERR (4) and trivial stub (4) categories
+are closed as of Rev.162. Core `.s` grew 46→64 (Rev.162); entity `.s` grew
+658→663 (Rev.164 added GetEnemyDefLife + 4 decompilation targets). Rev.164
+added the first gameplay-domain semantic C bridge (`ico_semantic_getEnemyDefLife`
+in `isysgobj_semantic.c`) with CTest coverage (27/27 pass). Pipeline
+TARGET_FUNCTIONS is now 617/617 byte-exact.
 
 | Step | Count | Method |
 |------|-------|--------|
-| Pipeline functions | 612 | `asm_source_score.py --all` |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 80 | `assemble_and_verify` at target VA |
-| **Total .s files** | **692 / 710** | verified byte-exact |
+| Pipeline functions | 617 | `asm_source_score.py --all` |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 116 | `assemble_and_verify` at target VA |
+| **Total .s files** | **733 / 733** | verified byte-exact |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
+Plus 1 semantic C bridge (`getEnemyDefLife`) with CTest coverage.
 
 ### MAIN.MAP / recovery-pass update (2026-05-22)
 

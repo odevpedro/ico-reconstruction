@@ -1,5 +1,6 @@
 #include "gobj_abi.h"
 
+#include <stdint.h>
 #include <string.h>
 
 static ico_ptr32 gobj_handle(const IcoGObjSemanticPool *pool,
@@ -846,4 +847,83 @@ ico_ptr32 ico_semantic_sisterCallbackReg(IcoSemanticProcAddFn proc_add,
         return 0;
     }
     return proc_add(a0, a0, a1, a2 & 0xff, a3, 0x1800);
+}
+
+/*
+ * Semantic reconstruction of getEnemyDefLife (0x001C11C0, 0x90 bytes).
+ * Probable original source: enemy(s).c. See gobj_abi.h for the confirmed
+ * access chain and hook contract. The type gate is 5; the float at
+ * work+0x134 is incremented by 0.5f (lui 0x3f00 + add.s), not doubled.
+ */
+/* Host pointer widths differ from the original 32-bit EE ABI. The memory
+   cells in this model keep the PS2 byte offsets (0x15c / 0x800 / 0x20 /
+   0x134) but store host-width pointers, so a truncated 32-bit round-trip
+   can never reach a bogus low address. */
+
+static u32 gdl_ld_u32(const void *address)
+{
+    u32 value;
+    memcpy(&value, address, sizeof(value));
+    return value;
+}
+
+static void gdl_st_u32(void *address, u32 value)
+{
+    memcpy(address, &value, sizeof(value));
+}
+
+static float gdl_ld_float(const void *address)
+{
+    float value;
+    memcpy(&value, address, sizeof(value));
+    return value;
+}
+
+static void gdl_st_float(void *address, float value)
+{
+    memcpy(address, &value, sizeof(value));
+}
+
+static const void *const *gdl_cell(const void *address)
+{
+    return (const void *const *)address;
+}
+
+static void *gdl_cell_w(void *address)
+{
+    return address;
+}
+
+int ico_semantic_getEnemyDefLife(const void *root, IcoSemanticTriFn prelude,
+                                 IcoSemanticTriFn stage,
+                                 IcoSemanticTriFn sched_own)
+{
+    const void *self = *gdl_cell((const u8 *)root + 0x00);
+    const void *work = *gdl_cell((const u8 *)self + 0x15c);
+    const void *sched = *gdl_cell((const u8 *)work + 0x800);
+    u8 scratch[0x50];
+    ico_ptr32 scratch_addr;
+
+    if (gdl_ld_u32((const u8 *)sched + 0x20) != 5u) {
+        return 0;
+    }
+
+    gdl_st_float(gdl_cell_w((u8 *)work + 0x134),
+                 gdl_ld_float((const u8 *)work + 0x134) + 0.5f);
+    memset(scratch, 0, sizeof(scratch));
+    scratch_addr = (ico_ptr32)(uintptr_t)scratch;
+
+    if (prelude != NULL) {
+        (void)prelude(scratch_addr + 0x10, (ico_ptr32)(uintptr_t)self, 0);
+    }
+    if (stage != NULL) {
+        const void *work_via_root = *gdl_cell((const u8 *)root + 0x15c);
+        (void)stage(scratch_addr,
+                    (ico_ptr32)((uintptr_t)work_via_root + 0xa0u), 0);
+    }
+    if (sched_own != NULL) {
+        ico_ptr32 sched_addr = (ico_ptr32)(uintptr_t)sched;
+        (void)sched_own(sched_addr + 0xd0, sched_addr + 0xd0, scratch_addr);
+    }
+    return 1;
 }

@@ -245,6 +245,31 @@ ico_ptr32 ico_semantic_sisterCallbackReg(IcoSemanticProcAddFn proc_add,
                                          ico_ptr32 a0, ico_ptr32 a1,
                                          ico_ptr32 a2, ico_ptr32 a3);
 
+/*
+ * getEnemyDefLife (0x001C11C0, 0x90 bytes, byte-exact):
+ * ground truth src/entity/asm/GetEnemyDefLife.s. Confirmed access chain and
+ * behavior:
+ *   self = *(root + 0x00)
+ *   work = *(self + 0x15c)
+ *   sched = *(work + 0x800)
+ *   if *(sched + 0x20) != 5  ->  return 0
+ *   life = *(work + 0x134); life += 0.5f; *(work + 0x134) = life
+ *   prelude : (addr &scratch[0x10], self, 0)         jal 0x104508
+ *   stage   : (addr &scratch[0x00], work + 0xa0, 0)  jal 0x105F00
+ *   sched_own: (sched + 0xd0, sched + 0xd0, &scratch) jal 0x243AD0
+ *   return 1
+ * The three targets have no host semantic yet; each is delegated to a hook
+ * (NULL skips the call). The pointer cells keep the PS2 byte offsets but
+ * store host-width pointers (a documented host adaptation; 32-bit truncation
+ * cannot round-trip on 64-bit hosts). The scratch frame is allocated on the
+ * host side and passed by address so hooks observe the same scaffolding.
+ */
+typedef ico_ptr32 (*IcoSemanticTriFn)(ico_ptr32 a0, ico_ptr32 a1,
+                                      ico_ptr32 a2);
+int ico_semantic_getEnemyDefLife(const void *root, IcoSemanticTriFn prelude,
+                                 IcoSemanticTriFn stage,
+                                 IcoSemanticTriFn sched_own);
+
 #ifdef __cplusplus
 }
 #endif

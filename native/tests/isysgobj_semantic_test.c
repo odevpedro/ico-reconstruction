@@ -18,6 +18,29 @@ static ico_ptr32 capture_proc_add(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2,
     return 0x7;
 }
 
+/* getEnemyDefLife hook capture (see the access-chain block in main). */
+static ico_ptr32 s_gdl[3][3];
+static int s_gdl_calls;
+
+static ico_ptr32 gdl_hook(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2)
+{
+    assert(s_gdl_calls + 1 <= 3);
+    s_gdl[s_gdl_calls][0] = a0;
+    s_gdl[s_gdl_calls][1] = a1;
+    s_gdl[s_gdl_calls][2] = a2;
+    ++s_gdl_calls;
+    return 0;
+}
+
+/* Write a host-width pointer into a byte buffer via a temporary (avoids the
+   memcpy(&array, n) semantic trap where memcpy copies CONTENTS not address). */
+#define STORE_PTR(dst, addr) \
+    do { void *_tmp = (addr); memcpy((dst), &_tmp, sizeof(void *)); } while (0)
+#define STORE_FLOAT(dst, f) do { \
+    float _f = (f); memcpy((dst), &_f, sizeof(float)); } while (0)
+#define STORE_U32(dst, v) do { \
+    u32 _v = (v); memcpy((dst), &_v, sizeof(u32)); } while (0)
+
 int main(void)
 {
     IcoGObj storage[8];
@@ -145,6 +168,79 @@ int main(void)
 
         /* a null hook short-circuits the forward */
         assert(ico_semantic_sisterCallbackReg(0, 1, 2, 3, 4) == 0);
+    }
+
+    /* getEnemyDefLife (0x001C11C0): access chain
+         root->self(+0) -> self+0x15c = work, work+0x800 = sched;
+         sched+0x20 = type (u32), work+0x134 = float life.
+       Flat buffers + STORE_PTR keep the PS2 byte offsets exact; pointer cells
+       store host-width pointers (documented adaptation). Confirmed:
+       type != 5 -> return 0 with no side effects; type == 5 -> life += 0.5f
+       and three hook calls. */
+    {
+        u8 root_b[0x170];
+        u8 self_b[0x170];
+        u8 work_b[0x820];
+        u8 sched_b[0xa0];
+        ico_ptr32 root = (ico_ptr32)(uintptr_t)root_b;
+        ico_ptr32 self = (ico_ptr32)(uintptr_t)self_b;
+        ico_ptr32 work = (ico_ptr32)(uintptr_t)work_b;
+        ico_ptr32 sched = (ico_ptr32)(uintptr_t)sched_b;
+
+        memset(root_b, 0, sizeof(root_b));
+        memset(self_b, 0, sizeof(self_b));
+        memset(work_b, 0, sizeof(work_b));
+        memset(sched_b, 0, sizeof(sched_b));
+        STORE_PTR(root_b + 0x00, self_b);
+        STORE_PTR(root_b + 0x15c, work_b);
+        STORE_PTR(self_b + 0x15c, work_b);
+        STORE_PTR(work_b + 0x800, sched_b);
+        STORE_FLOAT(work_b + 0x134, 2.0f);
+        STORE_U32(sched_b + 0x20, 5);
+
+        s_gdl_calls = 0;
+
+        {
+            int r = ico_semantic_getEnemyDefLife(root_b, gdl_hook, gdl_hook,
+                                                 gdl_hook);
+            float life;
+            memcpy(&life, work_b + 0x134, sizeof(life));
+            assert(r == 1);
+            assert(s_gdl_calls == 3);
+            assert(life == 2.5f);
+            /* prelude: a0 = &scratch[0x10] (nonzero), a1 = self */
+            assert(s_gdl[0][0] != 0);
+            assert(s_gdl[0][1] == self);
+            /* stage: a0 = &scratch[0], a1 = *(root+0x15c) + 0xa0 */
+            assert(s_gdl[1][0] != 0);
+            assert(s_gdl[1][1] == work + 0xa0);
+            /* sched_own: a0 = a1 = sched + 0xd0, a2 = &scratch */
+            assert(s_gdl[2][0] == sched + 0xd0);
+            assert(s_gdl[2][1] == sched + 0xd0);
+            assert(s_gdl[2][2] != 0);
+        }
+
+        /* non-matching type: return 0, no hooks, no life write */
+        s_gdl_calls = 0;
+        STORE_U32(sched_b + 0x20, 6);
+        STORE_FLOAT(work_b + 0x134, 3.0f);
+        assert(ico_semantic_getEnemyDefLife(root_b, gdl_hook, gdl_hook,
+                                            gdl_hook) == 0);
+        assert(s_gdl_calls == 0);
+        {
+            float life;
+            memcpy(&life, work_b + 0x134, sizeof(life));
+            assert(life == 3.0f);
+        }
+
+        /* explicit NULL hooks on the type==5 path are allowed */
+        STORE_U32(sched_b + 0x20, 5);
+        assert(ico_semantic_getEnemyDefLife(root_b, 0, 0, 0) == 1);
+        {
+            float life;
+            memcpy(&life, work_b + 0x134, sizeof(life));
+            assert(life == 3.5f);
+        }
     }
 
     return 0;
