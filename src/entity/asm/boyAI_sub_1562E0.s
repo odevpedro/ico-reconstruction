@@ -25,7 +25,7 @@ loc_001562f4:
 	.word	0x7fa50010
 	jal	0x001a6e28
 	.word	0x7fa80020
-	ld.b	$w0,-0x58($0)
+	.word	0x7ba80020
 	.word	0x7ba50010
 	addiu	$16,$16,0x18
 loc_00156324:

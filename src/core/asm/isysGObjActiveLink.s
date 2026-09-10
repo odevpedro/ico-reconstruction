@@ -9,6 +9,7 @@ isysGObjActiveLink:
 	.set	noreorder
 	.set	nomacro
 	jr	$31
+	move	$2,$5
 	.set	macro
 	.set	reorder
 	.end	isysGObjActiveLink

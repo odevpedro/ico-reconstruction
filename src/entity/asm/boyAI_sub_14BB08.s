@@ -10,6 +10,10 @@ boyAI_sub_14BB08:
 	.set	nomacro
 	.set	noat
 	mtc1	$1,$f0
+	lw	$3,0x670($2)
+	swc1	$f0,0x58($3)
+	jr	$31
+	sw	$0,0x54($3)
 	.set	macro
 	.set	reorder
 	.end	boyAI_sub_14BB08

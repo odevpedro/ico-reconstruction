@@ -9,6 +9,7 @@ isysGObjActiveDlLink:
 	.set	noreorder
 	.set	nomacro
 	jr	$31
+	nop
 	.set	macro
 	.set	reorder
 	.end	isysGObjActiveDlLink

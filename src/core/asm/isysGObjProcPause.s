@@ -9,6 +9,7 @@ isysGObjProcPause:
 	.set	noreorder
 	.set	nomacro
 	jr	$31
+	sw	$0,0x18($4)
 	.set	macro
 	.set	reorder
 	.end	isysGObjProcPause

@@ -213,7 +213,9 @@ void ico_semantic_isysGObjLinkCameraDL(IcoGObjSemanticPool *pool,
                                        IcoGObj *gobj, ico_ptr32 callback,
                                        u8 type_id, u32 sort_key,
                                        u32 type_bits);
-void ico_semantic_isysGObjActiveLink(void);
+u32 ico_semantic_isysGObjActiveLink(u32 value);
+void ico_semantic_isysGObjActiveDlLink(void);
+void ico_semantic_isysGObjProcPause(IcoProcessNode *process);
 
 /*
  * isysGObjProcRemoveUnlink (0x0013F638, 0x80 bytes):

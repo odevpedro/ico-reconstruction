@@ -1,0 +1,53 @@
+	.text
+	.p2align 3
+	.globl	GetEnemyDefLife
+	.ent	GetEnemyDefLife
+GetEnemyDefLife:
+	.frame	$sp,80,$31
+	.mask	0x00000000,0
+	.fmask	0x00000000,0
+	.set	noreorder
+	.set	nomacro
+	.set	noat
+	addiu	$29,$29,-0x50
+	addiu	$3,$0,5
+	sd	$17,0x30($29)
+	sd	$31,0x40($29)
+	sd	$16,0x20($29)
+	lw	$4,0($4)
+	lw	$6,0x15c($4)
+	lw	$16,0x800($6)
+	lw	$2,0x20($16)
+	beq	$2,$3,$L_def
+	move	$17,$5
+	b	$L_out
+	move	$2,$0
+$L_def:
+	lwc1	$f0,0x134($6)
+	move	$5,$4
+	lui	$1,0x3f00
+	.word	0x44810800
+	addiu	$4,$29,0x10
+	.word	0x46010000
+	.word	0x0C041142
+	swc1	$f0,0x134($6)
+	lw	$5,0x15c($17)
+	move	$4,$29
+	.word	0x0C0417C0
+	addiu	$5,$5,0xa0
+	addiu	$4,$16,0xd0
+	sw	$0,4($29)
+	move	$6,$29
+	.word	0x0C090EB4
+	move	$5,$4
+	addiu	$2,$0,1
+$L_out:
+	ld	$31,0x40($29)
+	ld	$17,0x30($29)
+	ld	$16,0x20($29)
+	jr	$31
+	addiu	$29,$29,0x50
+	.set	macro
+	.set	reorder
+	.set	at
+	.end	GetEnemyDefLife

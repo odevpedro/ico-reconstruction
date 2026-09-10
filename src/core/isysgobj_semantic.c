@@ -610,13 +610,39 @@ void ico_semantic_isysGObjKindTableRemove(IcoGObjSemanticPool *pool,
 }
 
 /*
- * Semantic reconstruction of isysGObjActiveLink (0x0013FA30 region).
- * Ground truth: src/core/asm/isysGObjActiveLink.s consists of a single
- * `jr $31` -- a no-op stub. Confirmed: the function returns immediately and
- * performs no observable work. It is preserved to document the empty symbol.
+ * Semantic reconstruction of isysGObjActiveLink (0x0013EC40, 8 bytes,
+ * byte-exact). Ground truth: src/core/asm/isysGObjActiveLink.s.
+ * Confirmed: `jr $31; move $v0, $a1` -- pure accessor that returns its
+ * second argument unchanged.
  */
-void ico_semantic_isysGObjActiveLink(void)
+u32 ico_semantic_isysGObjActiveLink(u32 value)
 {
+    return value;
+}
+
+/*
+ * Semantic reconstruction of isysGObjActiveDlLink (0x00141160, 8 bytes,
+ * byte-exact). Ground truth: src/core/asm/isysGObjActiveDlLink.s.
+ * Confirmed: `jr $31; nop` -- a literal no-op; returns whatever the caller
+ * left in $v0 (typically the matching DL link, hence the Ghidra "returns a0"
+ * remark when a0 is also v0).
+ */
+void ico_semantic_isysGObjActiveDlLink(void)
+{
+}
+
+/*
+ * Semantic reconstruction of isysGObjProcPause (0x0013F808, 8 bytes,
+ * byte-exact). Ground truth: src/core/asm/isysGObjProcPause.s.
+ * Confirmed: `jr $31; sw $zero, 0x18($a0)` -- clears the ProcessNode active
+ * flag (+0x18). A paused process is skipped by iosOm dispatch. This is the
+ * per-process counterpart of isysGObjProcPauseAll / isysGObjProcPausePtr.
+ */
+void ico_semantic_isysGObjProcPause(IcoProcessNode *process)
+{
+    if (process != NULL) {
+        process->active = 0;
+    }
 }
 
 /*
