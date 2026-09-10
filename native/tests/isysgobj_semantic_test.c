@@ -1,6 +1,8 @@
 #include "core/gobj_abi.h"
 
 #include <assert.h>
+#include <math.h>
+#include <string.h>
 
 static ico_ptr32 s_sister_args[6];
 static int s_sister_calls;
@@ -30,6 +32,30 @@ static ico_ptr32 gdl_hook(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2)
     s_gdl[s_gdl_calls][2] = a2;
     ++s_gdl_calls;
     return 0;
+}
+
+/* GirlForceFieldGeo hook capture: block_a→record[0], block_b→record[1],
+   block_c/final→record[2]. The final output hook overrides record[2]. */
+static ico_ptr32 s_gff[3][3];
+static int s_gff_calls;
+
+static ico_ptr32 gff_block0(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2)
+{
+    s_gff[0][0] = a0; s_gff[0][1] = a1; s_gff[0][2] = a2;
+    ++s_gff_calls;
+    return 1;
+}
+static ico_ptr32 gff_block1(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2)
+{
+    s_gff[1][0] = a0; s_gff[1][1] = a1; s_gff[1][2] = a2;
+    ++s_gff_calls;
+    return 0;
+}
+static ico_ptr32 gff_block2(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2)
+{
+    s_gff[2][0] = a0; s_gff[2][1] = a1; s_gff[2][2] = a2;
+    ++s_gff_calls;
+    return 1;
 }
 
 /* Write a host-width pointer into a byte buffer via a temporary (avoids the
@@ -240,6 +266,179 @@ int main(void)
             float life;
             memcpy(&life, work_b + 0x134, sizeof(life));
             assert(life == 3.5f);
+        }
+    }
+
+    /* ── HoldRope tests ──────────────────────────────────────────────── */
+    {
+        /* Setup: gp-0x53A4 = spring cell, gp-0x53B0 = entity cell
+           (a pointer cell that holds the entity pointer) → entity → work */
+        u8 spring_b[4];
+        u8 entity_cell_b[sizeof(void *)];
+        u8 entity_b[0x170];
+        u8 work_b[0x100];
+        float spring_val;
+        u16 work_f0;
+        float work_f4;
+
+        memset(spring_b, 0, sizeof(spring_b));
+        memset(entity_cell_b, 0, sizeof(entity_cell_b));
+        memset(entity_b, 0, sizeof(entity_b));
+        memset(work_b, 0, sizeof(work_b));
+        STORE_PTR(entity_cell_b, entity_b);   /* gp-0x53B0 → entity */
+        STORE_PTR(entity_b + 0x15c, work_b);  /* entity→work */
+        STORE_FLOAT(spring_b, 0.5f);          /* initial spring */
+
+        /* Test 1: no flags set → work_f0=0, work_f4=1.0, spring unchanged */
+        ico_semantic_holdRope(spring_b, entity_cell_b, 0, 0,
+                              0, 0, 0, 0, 0);
+        memcpy(&work_f4, work_b + 0xF4, sizeof(float));
+        memcpy(&work_f0, work_b + 0xF0, sizeof(u16));
+        memcpy(&spring_val, spring_b, sizeof(float));
+        assert(work_f4 == 1.0f);
+        assert(work_f0 == 0);
+        assert(spring_val == 0.5f);  /* no bit 3 → spring unchanged */
+
+        /* Test 2: bit 3 (0x08) set → spring = 1.0 - (input_111 / 255.0)
+           input_111 = 127 → 127/255 ≈ 0.498 → spring ≈ 0.502 */
+        STORE_FLOAT(spring_b, 0.0f);
+        ico_semantic_holdRope(spring_b, entity_cell_b, 0x08, 0,
+                              127, 0, 0, 0, 0);
+        memcpy(&spring_val, spring_b, sizeof(float));
+        assert(spring_val > 0.50f && spring_val < 0.51f);
+
+        /* Test 3: bit 1 (0x02) set → work_f4 = 1.0 - (input_113 * 0.0078125)
+           input_113 = 64 → 64 * 0.0078125 = 0.5 → work_f4 = 0.5 */
+        STORE_FLOAT(spring_b, 0.0f);
+        ico_semantic_holdRope(spring_b, entity_cell_b, 0, 0x02,
+                              0, 64, 0, 0, 0);
+        memcpy(&work_f4, work_b + 0xF4, sizeof(float));
+        assert(work_f4 == 0.5f);
+
+        /* Test 4: bit 1 NOT set → work_f4 = 1.0 */
+        STORE_FLOAT(work_b + 0xF4, 0.0f);  /* clear prior */
+        ico_semantic_holdRope(spring_b, entity_cell_b, 0, 0,
+                              0, 0, 0, 0, 0);
+        memcpy(&work_f4, work_b + 0xF4, sizeof(float));
+        assert(work_f4 == 1.0f);
+
+        /* Test 5: bit 0x8000 → work_f0 = (input_109 / 255.0) * 8192
+           input_109 = 255 → 1.0 * 8192 = 8192 */
+        ico_semantic_holdRope(spring_b, entity_cell_b, 0x8000, 0,
+                              0, 0, 255, 0, 0);
+        memcpy(&work_f0, work_b + 0xF0, sizeof(u16));
+        assert(work_f0 == 8192);
+
+        /* Test 6: bit 0x2000 → work_f0 = (input_108 / 255.0) * (-8192)
+           input_108 = 128 → 0.501961 * (-8192) ≈ -4112 */
+        ico_semantic_holdRope(spring_b, entity_cell_b, 0x2000, 0,
+                              0, 0, 0, 128, 0);
+        memcpy(&work_f0, work_b + 0xF0, sizeof(u16));
+        /* u16 wraps: -4112 → 0xEFE0 = 61424 */
+        assert(work_f0 == 61424);
+
+        /* Test 7: bit 0x8000 takes priority over 0x2000 (both set) */
+        ico_semantic_holdRope(spring_b, entity_cell_b, 0x8000 | 0x2000, 0,
+                              0, 0, 128, 0, 0);
+        memcpy(&work_f0, work_b + 0xF0, sizeof(u16));
+        assert(work_f0 == 4112);  /* 128/255 * 8192 = 4112 */
+
+        /* Test 8: NULL entity cell → no crash */
+        ico_semantic_holdRope(spring_b, 0, 0, 0, 0, 0, 0, 0, 0);
+
+        /* Test 9: NULL spring_addr → no crash */
+        ico_semantic_holdRope(0, entity_cell_b, 0, 0, 0, 0, 0, 0, 0);
+    }
+
+    /* ── subEnemyCollision tests ─────────────────────────────────────── */
+    {
+        u8 entity_b[0x170];
+        u8 work_b[0x500];
+        int r;
+
+        memset(entity_b, 0, sizeof(entity_b));
+        memset(work_b, 0, sizeof(work_b));
+        STORE_PTR(entity_b + 0x15c, work_b);
+
+        /* Test 1: mask bit 0 clear → returns 0, no hooks called */
+        r = ico_semantic_subEnemyCollision(entity_b, 0x00, 0,
+                                            0, 0, 0, 0, 0);
+        assert(r == 0);
+
+        /* Test 2: mask bit 0 set, NULL hooks → returns 1, no crash */
+        r = ico_semantic_subEnemyCollision(entity_b, 0x01, 0,
+                                            0, 0, 0, 0, 0);
+        assert(r == 1);
+
+        /* Test 3: NULL entity → returns 0 */
+        r = ico_semantic_subEnemyCollision(0, 0x01, 0,
+                                            0, 0, 0, 0, 0);
+        assert(r == 0);
+
+        /* Test 4: entity with NULL work → returns 0 */
+        {
+            u8 bad_entity[0x170] = {0};
+            r = ico_semantic_subEnemyCollision(bad_entity, 0x01, 0,
+                                                0, 0, 0, 0, 0);
+            assert(r == 0);
+        }
+    }
+
+    /* ── GirlForceFieldGeo tests ────────────────────────────────────── */
+    {
+        /* Confirmed pipeline: int_part=(int)f12, frac=f12-int,
+           result = 1.0 - frac, then jal 0x243AA8 (hooks in order). */
+
+        /* Test 1: f12 = 3.7 → frac=0.7 → result = 0.3 */
+        {
+            float out = ico_semantic_girlForceFieldGeo(
+                3.7f, 0x1111, 0x2222, 0x3333, 0, 0, 0, 0);
+            assert(fabsf(out - 0.3f) < 1e-5f);
+        }
+
+        /* Test 2: f12 = 1.0 → frac=0.0 → result = 1.0 */
+        {
+            float out = ico_semantic_girlForceFieldGeo(
+                1.0f, 0, 0, 0, 0, 0, 0, 0);
+            assert(fabsf(out - 1.0f) < 1e-6f);
+        }
+
+        /* Test 3: f12 = 0.0 → frac=0.0 → result = 1.0 */
+        {
+            float out = ico_semantic_girlForceFieldGeo(
+                0.0f, 0, 0, 0, 0, 0, 0, 0);
+            assert(fabsf(out - 1.0f) < 1e-6f);
+        }
+
+        /* Test 4: negative f12 = -2.5 → (int)=-2, frac=-0.5,
+           result = 1.0 - (-0.5) = 1.5 */
+        {
+            float out = ico_semantic_girlForceFieldGeo(
+                -2.5f, 0, 0, 0, 0, 0, 0, 0);
+            assert(fabsf(out - 1.5f) < 1e-6f);
+        }
+
+        /* Test 5: hooks called in order; final_output receives out_a0/a1/a2.
+           block_* return 1/0/1 (unused by the model — branches are host-side). */
+        memset(s_gff, 0, sizeof(s_gff));
+        s_gff_calls = 0;
+        {
+            float out = ico_semantic_girlForceFieldGeo(
+                2.25f, 0xAAAA, 0xBBBB, 0xCCCC,
+                gff_block0, gff_block1, gff_block2, gff_block2);
+            assert(fabsf(out - 0.75f) < 1e-6f);
+            assert(s_gff_calls == 4);      /* 3 blocks + 1 final */
+            assert(s_gff[0][0] == 0xCCCC); /* block_* receives out_a2 */
+            assert(s_gff[2][0] == 0xAAAA); /* final receives out_a0 */
+            assert(s_gff[2][1] == 0xBBBB);
+            assert(s_gff[2][2] == 0xCCCC);
+        }
+
+        /* Test 6: NULL hooks on every slot — base rounding still returns */
+        {
+            float out = ico_semantic_girlForceFieldGeo(
+                7.5f, 0, 0, 0, 0, 0, 0, 0);
+            assert(fabsf(out - 0.5f) < 1e-6f);
         }
     }
 

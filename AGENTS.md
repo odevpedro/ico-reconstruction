@@ -265,6 +265,7 @@ research/elf/ghidra-rev104-extended-runtime-session-dl-slots.md  (755K events, 2
 research/elf/rev162-pal-usa-fingerprint-validation.md  (PAL→USA reconciliation closed: 404 matches, 367 byte-verified USA VAs agree 100%; 8 formerly-ASM-ERR + 4 stubs verified byte-exact; 27/27 CTest)
 research/elf/rev163-static-inventory-and-byteexact.md  (397 named functions without .s; 326 at 8..0x200 B; .s generated for 4 decompilation targets via gen_byteexact_asm.py)
 research/elf/rev164-new-targets-byteexact-and-getenemydeflife-semantic.md  (617 pipeline byte-exact; GetEnemyDefLife semantic bridge + CTest; life += 0.5f corrected; 733 total .s)
+research/elf/rev165-three-semantic-bridges.md  (3 more semantic bridges: holdRope, subEnemyCollision, girlForceFieldGeo; 4 semantic bridges total; 8192.0f constant correction; GFFG rounding pipeline confirmed, invented output write removed; 27/28 CTest)
 ```
 
 ---
@@ -460,6 +461,8 @@ automated scoring pipeline because the pipeline emits labels for in-range
 branches, which the ee-as backward padding would corrupt.
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
+Plus 4 semantic C bridges (`getEnemyDefLife`, `holdRope`, `subEnemyCollision`,
+`girlForceFieldGeo`) with CTest coverage.
 
 Files in `src/entity/asm/` (658), `src/cloth/asm/` (6), `src/core/asm/` (46).
 
@@ -749,7 +752,7 @@ the next priority merely because the capture is running. The capture is the
 primary source of new evidence; native-port work follows the validated
 reconstruction it enables. The user may explicitly request an exception.
 
-### Current score status (Rev.164 — 733 of 733 .s verified byte-exact)
+### Current score status (Rev.165 — 733 of 733 .s verified byte-exact + 4 semantic bridges)
 
 See the "Byte-exact reconstruction status (Rev.164)" section above for the
 authoritative counts. Summary: **733 of 733 `.s` verified byte-exact against
@@ -757,7 +760,10 @@ the USA ELF** (100%). The former ASM-ERR (4) and trivial stub (4) categories
 are closed as of Rev.162. Core `.s` grew 46→64 (Rev.162); entity `.s` grew
 658→663 (Rev.164 added GetEnemyDefLife + 4 decompilation targets). Rev.164
 added the first gameplay-domain semantic C bridge (`ico_semantic_getEnemyDefLife`
-in `isysgobj_semantic.c`) with CTest coverage (27/27 pass). Pipeline
+in `isysgobj_semantic.c`) with CTest coverage (27/27 pass); Rev.165 added
+three more (`ico_semantic_holdRope`, `ico_semantic_subEnemyCollision`,
+`ico_semantic_girlForceFieldGeo`) with CTest coverage (27/28, only headless
+`opengl_backend` fails — the pre-existing baseline). Pipeline
 TARGET_FUNCTIONS is now 617/617 byte-exact.
 
 | Step | Count | Method |
@@ -767,7 +773,8 @@ TARGET_FUNCTIONS is now 617/617 byte-exact.
 | **Total .s files** | **733 / 733** | verified byte-exact |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
-Plus 1 semantic C bridge (`getEnemyDefLife`) with CTest coverage.
+Plus 4 semantic C bridges (`getEnemyDefLife`, `holdRope`, `subEnemyCollision`,
+`girlForceFieldGeo`) with CTest coverage.
 
 ### MAIN.MAP / recovery-pass update (2026-05-22)
 

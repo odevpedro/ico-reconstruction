@@ -265,10 +265,67 @@ ico_ptr32 ico_semantic_sisterCallbackReg(IcoSemanticProcAddFn proc_add,
  * host side and passed by address so hooks observe the same scaffolding.
  */
 typedef ico_ptr32 (*IcoSemanticTriFn)(ico_ptr32 a0, ico_ptr32 a1,
-                                      ico_ptr32 a2);
+                                       ico_ptr32 a2);
 int ico_semantic_getEnemyDefLife(const void *root, IcoSemanticTriFn prelude,
-                                 IcoSemanticTriFn stage,
-                                 IcoSemanticTriFn sched_own);
+                                  IcoSemanticTriFn stage,
+                                  IcoSemanticTriFn sched_own);
+
+/*
+ * HoldRope (0x001E59A0, 0x154 bytes, byte-exact):
+ * ground truth src/entity/asm/HoldRope.s. Rope/chain spring physics.
+ * Confirmed access chain and behavior:
+ *   spring_addr = gp-0x53A4 (float, processed via hook)
+ *   entity_addr = gp-0x53B0 → *(entity+0x15c) = work GObj
+ *   player_flags_1 = *(s1+0x5250), player_flags_2 = *(s2+0x5250)
+ *   Flag branches:
+ *     bit 3 (0x08): spring = 1.0 - (input_111 / 255.0)
+ *     bit 1 (0x02): work->+0xF4 = 1.0 - (input_113 * 0.0078125)
+ *     bit 0x8000:   work->+0xF0 = (input_109 / 255.0) * 8192
+ *     bit 0x2000:   work->+0xF0 = (input_108 / 255.0) * (-8192)
+ *   Hook: process_spring (jal 0x1E4980) — NULL skips.
+ */
+void ico_semantic_holdRope(void *spring_addr, void *entity_addr,
+                            u32 player_flags_1, u32 player_flags_2,
+                            u8 input_111, u8 input_113,
+                            u8 input_109, u8 input_108,
+                            IcoSemanticTriFn process_spring);
+
+/*
+ * subEnemyCollision (0x0015E2C8, 0xB8 bytes, byte-exact):
+ * ground truth src/entity/asm/subEnemyCollision.s. Collision polling loop.
+ * Confirmed access chain:
+ *   entity → work = *(entity+0x15c)
+ *   entity_list = *(work+0x4A0), stride 0x190
+ *   entity_mask bits (bit 0 = active gate)
+ *   Five hook calls delegated: setup_a, setup_b, collision_check,
+ *   collision_response, counter_inc. Returns 1 if gate active, 0 if skipped.
+ */
+int ico_semantic_subEnemyCollision(const void *entity, u32 entity_mask,
+                                    ico_ptr32 entity_list,
+                                    IcoSemanticTriFn setup_a,
+                                    IcoSemanticTriFn setup_b,
+                                    IcoSemanticTriFn collision_check,
+                                    IcoSemanticTriFn collision_response,
+                                    IcoSemanticTriFn counter_inc);
+
+/*
+ * GirlForceFieldGeo (0x001C3C90, 0x178 bytes, byte-exact):
+ * ground truth src/entity/asm/GirlForceFieldGeo.s. Cloth force-field geometry.
+ * Sub-range of SetGirlClothDispSwitch (0x001C3C38).
+ *
+ * CONFIRMED tail path (byte-identical): $f12 rounded via cvt.w.s, frac
+ * subtracted from $f1=1.0 → result = 1.0 - frac; then jal 0x243AA8
+ * (a0=s2, a1=model+s5, a2=model+s6). The threshold-gated blocks before the
+ * tail are delegated to block_a/b/c hooks (each returns nonzero when its
+ * force settled), and the 0x243AA8 call is delegated to final_output.
+ * Returns the confirmed tail result.
+ */
+float ico_semantic_girlForceFieldGeo(float f12_input, ico_ptr32 out_a0,
+                                     ico_ptr32 out_a1, ico_ptr32 out_a2,
+                                     IcoSemanticTriFn block_a,
+                                     IcoSemanticTriFn block_b,
+                                     IcoSemanticTriFn block_c,
+                                     IcoSemanticTriFn final_output);
 
 #ifdef __cplusplus
 }

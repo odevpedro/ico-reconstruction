@@ -894,6 +894,46 @@ static void *gdl_cell_w(void *address)
     return address;
 }
 
+/* ── HoldRope helpers ────────────────────────────────────────────────── */
+
+static u16 hr_ld_u16(const void *address)
+{
+    u16 value;
+    memcpy(&value, address, sizeof(value));
+    return value;
+}
+
+static void hr_st_u16(void *address, u16 value)
+{
+    memcpy(address, &value, sizeof(value));
+}
+
+static float hr_ld_float(const void *address)
+{
+    float value;
+    memcpy(&value, address, sizeof(value));
+    return value;
+}
+
+static void hr_st_float(void *address, float value)
+{
+    memcpy(address, &value, sizeof(value));
+}
+
+/* ── subEnemyCollision helpers ───────────────────────────────────────── */
+
+static u32 sec_ld_u32(const void *address)
+{
+    u32 value;
+    memcpy(&value, address, sizeof(value));
+    return value;
+}
+
+static void *sec_cell(const void *address)
+{
+    return *(void *const *)address;
+}
+
 int ico_semantic_getEnemyDefLife(const void *root, IcoSemanticTriFn prelude,
                                  IcoSemanticTriFn stage,
                                  IcoSemanticTriFn sched_own)
@@ -926,4 +966,288 @@ int ico_semantic_getEnemyDefLife(const void *root, IcoSemanticTriFn prelude,
         (void)sched_own(sched_addr + 0xd0, sched_addr + 0xd0, scratch_addr);
     }
     return 1;
+}
+
+/*
+ * Semantic reconstruction of HoldRope (0x001E59A0, 0x154 bytes).
+ * Probable original source: rope/chain physics handler.
+ * Ground truth: src/entity/asm/HoldRope.s (byte-exact).
+ *
+ * Access chain (confirmed from disassembly):
+ *   gp-0x53A4  = spring coefficient (float, processed via hook)
+ *   gp-0x53B0  = entity cell (holds the entity pointer) →
+ *                *(entity+0x15c) = work GObj
+ *   *(s1+0x5250) = player_flags_1 (bitmask)
+ *   *(s2+0x5250) = player_flags_2 (bitmask)
+ *   sp+0x108..0x113 = input bytes (stack scratch from prior computation)
+ *
+ * Core semantic behavior (flag→value transformation):
+ *   1. process_spring(gp-0x53A4)                           jal 0x1E4980
+ *   2. if (player_flags_1 & 0x08):
+ *        spring = 1.0 - (input_111 / 255.0)               div.s + sub.s
+ *        process_spring(spring)                            jal 0x1E4980
+ *   3. if (player_flags_2 & 0x02):
+ *        work->+0xF4 = 1.0 - (input_113 * 0.0078125)     mul.s + sub.s
+ *      else:
+ *        work->+0xF4 = 1.0f                               lui 0x3F80
+ *   4. if (player_flags_1 & 0x8000):
+ *        work->+0xF0 = (input_109 / 255.0) * 8192.0       div.s + mul.s + cvt.w.s
+ *      elif (player_flags_1 & 0x2000):
+ *        work->+0xF0 = (input_108 / 255.0) * (-8192.0)    div.s + mul.s + cvt.w.s
+ *      else:
+ *        work->+0xF0 = 0                                  sw $zero
+ *
+ * Float constants from the disassembly:
+ *   0x437F0000 = 255.0f
+ *   0x3F800000 = 1.0f
+ *   0x3C000000 = 0.0078125f  (1/128)
+ *   0x46000000 = 8192.0f
+ *   0xC6000000 = -8192.0f
+ *
+ * The three hook calls (process_spring ×2, read_state ×1) are delegated;
+ * NULL hooks are allowed (skips the call). The semantic function does NOT
+ * model the bc1f entry or the 0x24E578 call — those are caller-specific
+ * integration points.
+ */
+void ico_semantic_holdRope(void *spring_addr,      /* gp-0x53A4 cell */
+                           void *entity_cell,       /* gp-0x53B0 cell → entity */
+                           u32 player_flags_1,      /* *(s1+0x5250) */
+                           u32 player_flags_2,      /* *(s2+0x5250) */
+                           u8 input_111,            /* sp+0x111 byte */
+                           u8 input_113,            /* sp+0x113 byte */
+                           u8 input_109,            /* sp+0x109 byte */
+                           u8 input_108,            /* sp+0x108 byte */
+                           IcoSemanticTriFn process_spring)
+{
+    void *entity;
+    void *work;
+    float spring;
+    float byte_f;
+    ico_ptr32 spring_value;
+
+    if (spring_addr == NULL || entity_cell == NULL) {
+        return;
+    }
+
+    /* Step 1: process existing spring coefficient. The original passes the
+     * value in $f12 (lwc1 $f12, -0x53a4($gp)); the hook receives the bit
+     * pattern of that float in a0. */
+    spring = hr_ld_float(spring_addr);
+    memcpy(&spring_value, &spring, sizeof(spring_value));
+    if (process_spring != NULL) {
+        (void)process_spring(spring_value, 0, 0);
+    }
+
+    /* Step 2: bit 3 of player_flags_1 — update spring */
+    if (player_flags_1 & 0x08) {
+        byte_f = (float)input_111 / 255.0f;
+        spring = 1.0f - byte_f;
+        hr_st_float(spring_addr, spring);
+        memcpy(&spring_value, &spring, sizeof(spring_value));
+        if (process_spring != NULL) {
+            (void)process_spring(spring_value, 0, 0);
+        }
+    }
+
+    /* Resolve entity → work GObj (gp-0x53B0 holds the entity pointer) */
+    entity = sec_cell(entity_cell);
+    if (entity == NULL) {
+        return;
+    }
+    work = sec_cell((const u8 *)entity + 0x15c);
+    if (work == NULL) {
+        return;
+    }
+
+    /* Step 3: bit 1 of player_flags_2 — set work->+0xF4 */
+    if (player_flags_2 & 0x02) {
+        byte_f = (float)input_113;
+        hr_st_float((u8 *)work + 0xF4, 1.0f - (byte_f * 0.0078125f));
+    } else {
+        hr_st_float((u8 *)work + 0xF4, 1.0f);
+    }
+
+    /* Step 4: bits 0x8000 / 0x2000 of player_flags_1 — set work->+0xF0 */
+    if (player_flags_1 & 0x8000) {
+        byte_f = (float)input_109 / 255.0f;
+        hr_st_u16((u8 *)work + 0xF0, (u16)(int)(byte_f * 8192.0f));
+    } else if (player_flags_1 & 0x2000) {
+        byte_f = (float)input_108 / 255.0f;
+        hr_st_u16((u8 *)work + 0xF0, (u16)(int)(byte_f * (-8192.0f)));
+    } else {
+        hr_st_u16((u8 *)work + 0xF0, 0);
+    }
+}
+
+/*
+ * Semantic reconstruction of subEnemyCollision (0x0015E2C8, 0xB8 bytes).
+ * Probable original source: enemy collision polling loop.
+ * Ground truth: src/entity/asm/subEnemyCollision.s (byte-exact).
+ *
+ * Access chain (confirmed from disassembly):
+ *   a0 = entity
+ *   *(entity+0x15c) = work GObj
+ *   *(work+0x4A0) = entity_list_start
+ *   entity stride = 0x190 (mult ac2, v1, 0x190)
+ *   *(work + 0x565060 + 0x188) = entity_mask_bits (bit 0 = active)
+ *     (0x565060 = GP-relative global structure base)
+ *
+ * Core semantic behavior (gate check + collision delegation):
+ *   1. work = *(entity+0x15c)
+ *   2. entity_list = *(work+0x4A0)
+ *   3. mask = *(work + GLOBAL_OFFSET + 0x188)  — GP-relative, modeled as parameter
+ *   4. if (mask & 1) == 0 → skip (return 0)
+ *   5. setup_a(sp+0x10, entity, 0x2C)            jal 0x14A100
+ *   6. setup_b(sp+0x20, entity, 0x33)            jal 0x14A100
+ *   7. collision_result = collision_check(sp+0x10) jal 0x168538
+ *   8. if (result != 0) → response(entity, 0x9D)  jal 0x15BCC8
+ *   9. counter_inc(1)                             jal 0x203AA0
+ *  10. loop back to step 1
+ *
+ * The semantic function models ONE iteration of the loop (the infinite
+ * back-edge is the caller's responsibility in the original; here we
+ * process a single entity). DIVERGENCE: in the original counter_inc fires
+ * at the end of EVERY iteration (0x15E374, jal 0x203AA0), including the
+ * gate-fail path; in this single-iteration model counter_inc runs only on
+ * the gate-active path and the host wrapper is responsible for it on the
+ * skipped (return 0) path. The five hook calls are delegated; NULL
+ * hooks skip the call. The function returns 1 if the gate was active
+ * (mask & 1), 0 if skipped.
+ */
+int ico_semantic_subEnemyCollision(const void *entity,
+                                   u32 entity_mask,       /* gate: bit 0 */
+                                   ico_ptr32 entity_list,  /* from *(work+0x4A0) */
+                                   IcoSemanticTriFn setup_a,
+                                   IcoSemanticTriFn setup_b,
+                                   IcoSemanticTriFn collision_check,
+                                   IcoSemanticTriFn collision_response,
+                                   IcoSemanticTriFn counter_inc)
+{
+    void *work;
+    ico_ptr32 entity_p;
+    ico_ptr32 scratch_a;
+    ico_ptr32 scratch_b;
+    u8 scratch_area[0xB0];   /* covers sp+0x00..0xA4 slots of the 0x120 frame */
+
+    (void)entity_list;
+
+    if (entity == NULL) {
+        return 0;
+    }
+
+    work = sec_cell((const u8 *)entity + 0x15c);
+    if (work == NULL) {
+        return 0;
+    }
+
+    /* Gate check: bit 0 of entity mask */
+    if ((entity_mask & 1) == 0) {
+        return 0;
+    }
+
+    entity_p = (ico_ptr32)(uintptr_t)entity;
+    memset(scratch_area, 0, sizeof(scratch_area));
+    scratch_a = (ico_ptr32)(uintptr_t)(scratch_area + 0x10);
+    scratch_b = (ico_ptr32)(uintptr_t)(scratch_area + 0x20);
+
+    /* setup_a: (&sp[0x10], entity, 0x2C) */
+    if (setup_a != NULL) {
+        (void)setup_a(scratch_a, entity_p, 0x2C);
+    }
+
+    /* setup_b: (&sp[0x20], entity, 0x33) — a1 stayed an entity throughout */
+    if (setup_b != NULL) {
+        (void)setup_b(scratch_b, entity_p, 0x33);
+    }
+
+    /* collision_check: (&sp[0x10]) → result. Registers at the call site:
+     * a0=&sp[0x10], a1=entity, a2=0x33 (carried from setup_b). The original
+     * reads the caller outcome from sp+0xA4 after the call; the host hook
+     * returns it. */
+    if (collision_check != NULL) {
+        u32 result = collision_check(scratch_a, entity_p, 0x33);
+        if (result != 0) {
+            /* collision_response: (entity, 0x9D, 0) */
+            if (collision_response != NULL) {
+                (void)collision_response(entity_p, 0x9D, 0);
+            }
+        }
+    }
+
+    /* counter_inc: (1) — the original fires this on every completed pass */
+    if (counter_inc != NULL) {
+        (void)counter_inc(1, 0, 0);
+    }
+
+    return 1;
+}
+
+/*
+ * Semantic reconstruction of GirlForceFieldGeo (0x001C3C90, 0x178 bytes).
+ * Probable original source: cloth/force-field geometry computation.
+ * Ground truth: src/entity/asm/GirlForceFieldGeo.s (byte-exact).
+ *
+ * This is a sub-range of SetGirlClothDispSwitch (0x001C3C38, 0x1D0 bytes).
+ * Both functions share the same prologue/epilogue and register save frame;
+ * GirlForceFieldGeo begins at the div.s instruction inside the parent and
+ * handles the later threshold comparison blocks.
+ *
+ * Confirmed from the disassembly (byte-identical tail path):
+ *   lui 0x3f80; mtc1 ...            $f1 = 1.0
+ *   cvt.w.s $f0, $f12               $f0 = (int)f12          (round-to-zero)
+ *   mfc1 $v0, $f0                   integer part
+ *   mtc1 $v0, $f0; cvt.s.w $f0,$f0  back to float
+ *   sub.s $f12, $f12, $f0           frac = f12 - (float)int
+ *   sub.s $f12, $f1, $f12           $f12 = 1.0 - frac
+ *   jal 0x243AA8 (a0=s2, a1=model+s5, a2=model+s6)
+ *   jr $ra
+ *
+ * Unconfirmed / delegated to hooks: the threshold-gated blocks that lead to
+ * this tail. Each block in the original follows the pattern
+ *   compute_dist → compute_mag → c.olt (compare) → force_path
+ * where compute_dist is one of 0x243AE8/0x243AA8/0x243AD0, compute_mag is
+ * 0x106028, and the force path calls 0x117C20 and 0x244448. These calls are
+ * delegated to three block hooks; each hook returns nonzero when its force
+ * settled (>$fN), matching the branching the semantic cannot reproduce
+ * without the real magnitude values.
+ *
+ * The returned value IS the confirmed tail result: 1.0 - frac($f12). The
+ * final 0x243AA8 call is delegated to final_output(out_a0, out_a1, out_a2).
+ * NOTE: block_a/b/c argument registers are UNVERIFIED (the unknown
+ * subroutines use s1/s2/sp+0x30 etc.); passing out_a2 is a modeling choice.
+ * NOTE: cvt.w.s rounding mode is unconfirmed (assumed truncation toward
+ * zero, matching the (int) cast); the original may round per FCSR.
+ */
+float ico_semantic_girlForceFieldGeo(float f12_input,     /* value rounded */
+                                     ico_ptr32 out_a0,    /* s2 context */
+                                     ico_ptr32 out_a1,    /* model+s5 */
+                                     ico_ptr32 out_a2,    /* model+s6 */
+                                     IcoSemanticTriFn block_a,
+                                     IcoSemanticTriFn block_b,
+                                     IcoSemanticTriFn block_c,
+                                     IcoSemanticTriFn final_output)
+{
+    int int_part;
+    float frac;
+    float result;
+
+    if (block_a != NULL) {
+        (void)block_a(out_a2, 0, 0);
+    }
+    if (block_b != NULL) {
+        (void)block_b(out_a2, 0, 0);
+    }
+    if (block_c != NULL) {
+        (void)block_c(out_a2, 0, 0);
+    }
+
+    int_part = (int)f12_input;               /* cvt.w.s (round-to-zero) */
+    frac = f12_input - (float)int_part;      /* sub.s */
+    result = 1.0f - frac;                    /* sub.s with $f1 = 1.0 */
+
+    if (final_output != NULL) {
+        (void)final_output(out_a0, out_a1, out_a2);   /* jal 0x243AA8 */
+    }
+
+    return result;
 }
