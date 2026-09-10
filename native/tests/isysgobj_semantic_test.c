@@ -58,6 +58,14 @@ static ico_ptr32 gff_block2(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2)
     return 1;
 }
 
+/* fn_14A100 idx lookup returning index 1 (Rev.166). */
+static ico_ptr32 sec_test_lookup_index_1(ico_ptr32 a0, ico_ptr32 a1,
+                                         ico_ptr32 a2)
+{
+    (void)a0; (void)a1; (void)a2;
+    return (ico_ptr32)1u;
+}
+
 /* Write a host-width pointer into a byte buffer via a temporary (avoids the
    memcpy(&array, n) semantic trap where memcpy copies CONTENTS not address). */
 #define STORE_PTR(dst, addr) \
@@ -439,6 +447,135 @@ int main(void)
             float out = ico_semantic_girlForceFieldGeo(
                 7.5f, 0, 0, 0, 0, 0, 0, 0);
             assert(fabsf(out - 0.5f) < 1e-6f);
+        }
+    }
+
+    /* ── subEnemyCollision delegables tests (Rev.166) ─────────────────── */
+    {
+        u8 entity_b[0x170];
+        u8 work_b[0x510];
+        u8 target_b[0x500];
+        u8 preamble[0x800];
+        u32 counter_b[2];
+
+        memset(entity_b, 0, sizeof(entity_b));
+        memset(work_b, 0, sizeof(work_b));
+        memset(target_b, 0, sizeof(target_b));
+        memset(preamble, 0, sizeof(preamble));
+        counter_b[0] = 0;
+        counter_b[1] = 60;
+
+        /* Test 1: fn_14A100 setup — idx 0, base = *(work+0xC), angle floats
+           from +0x30/0x34/0x38 land in dst[0..3) */
+        {
+            float angles[3] = {1.5f, 2.5f, 3.5f};
+            u8 dst[12];
+            memset(dst, 0, sizeof(dst));
+            memset(preamble, 0, sizeof(preamble));
+            memcpy(preamble + 0x30, angles, sizeof(angles));
+            STORE_PTR(preamble + 0x0C, preamble);   /* base points at table */
+            STORE_PTR(entity_b + 0x15c, work_b);
+            STORE_PTR(work_b + 0x0c, preamble);
+            ico_semantic_fun14A100(dst, entity_b, 0x2C, 0);
+            assert(*(float *)(dst + 0) == 1.5f);
+            assert(*(float *)(dst + 4) == 2.5f);
+            assert(*(float *)(dst + 8) == 3.5f);
+        }
+
+        /* Test 2: fn_14A100 with an idx lookup hook → base advances idx<<6 */
+        {
+            float angles[3] = {9.0f, 8.0f, 7.0f};
+            IcoSemanticTriFn idx_lookup = sec_test_lookup_index_1;
+            u8 dst2[12];
+            u8 idx_entity[0x170];
+            memset(dst2, 0, sizeof(dst2));
+            memset(idx_entity, 0, sizeof(idx_entity));
+            STORE_PTR(idx_entity + 0x15c, work_b);
+            STORE_PTR(work_b + 0x0c, preamble);
+            memcpy(preamble + 0x70, angles, sizeof(angles));
+            ico_semantic_fun14A100(dst2, idx_entity, 0x33, idx_lookup);
+            assert(*(float *)(dst2 + 0) == 9.0f);
+            assert(*(float *)(dst2 + 4) == 8.0f);
+            assert(*(float *)(dst2 + 8) == 7.0f);
+        }
+
+        /* Test 3: fn_15BCC8 — incoming outside {0xA8,0xAD} stays */
+        {
+            STORE_PTR(entity_b + 0x164, target_b);
+            STORE_U32(entity_b + 0x0C, 1);
+            assert(ico_semantic_fun15BCC8(entity_b, 0x9D) == 0x9D);
+        }
+
+        /* Test 4: fn_15BCC8 — bit29 set on both u64 halves → 0xA9 */
+        {
+            u64 f1 = (u64)1 << 29;
+            u64 f2 = (u64)1 << 29;
+            memcpy(target_b + 0x470, &f1, sizeof(f1));
+            memcpy(target_b + 0x480, &f2, sizeof(f2));
+            assert(ico_semantic_fun15BCC8(entity_b, 0xA8) == 0xA9);
+        }
+
+        /* Test 5: fn_15BCC8 — only bit27 pair set → 0xAA */
+        {
+            u64 f1 = (u64)1 << 27;
+            u64 f2 = (u64)1 << 27;
+            memset(target_b + 0x470, 0, 0x20);
+            memcpy(target_b + 0x470, &f1, sizeof(f1));
+            memcpy(target_b + 0x480, &f2, sizeof(f2));
+            assert(ico_semantic_fun15BCC8(entity_b, 0xAD) == 0xAA);
+        }
+
+        /* Test 6: fn_15BCC8 — single bit29 (not both) → incoming unchanged */
+        {
+            u64 f1 = (u64)1 << 29;
+            u64 f2 = 0;
+            memset(target_b + 0x470, 0, 0x20);
+            memcpy(target_b + 0x470, &f1, sizeof(f1));
+            memcpy(target_b + 0x480, &f2, sizeof(f2));
+            assert(ico_semantic_fun15BCC8(entity_b, 0xA8) == 0xA8);
+        }
+
+        /* Test 7: fn_15BCC8 — state != 1 → unchanged even with bits set */
+        {
+            STORE_U32(entity_b + 0x0C, 0);
+            assert(ico_semantic_fun15BCC8(entity_b, 0xA8) == 0xA8);
+            STORE_U32(entity_b + 0x0C, 1);
+        }
+
+        /* Test 8: fn_203AA0 — divisor 0 → trap sentinel 0 */
+        {
+            u32 c[2] = {0, 0};
+            assert(ico_semantic_fun203AA0(1, c) == 0);
+        }
+
+        /* Test 9: fn_203AA0 — count=30, divisor=60 → (60-30)/60/60 = 0 →
+           frame_count!=0 clamps to 1; frame_count==0 returns 0 (infinite) */
+        {
+            u32 c[2] = {30, 60};
+            assert(ico_semantic_fun203AA0(1, c) == 1);
+            assert(ico_semantic_fun203AA0(0, c) == 0);
+        }
+
+        /* Test 10: fn_203AA0 — count=0, divisor=60 → 60/60/60 = 0 →
+           frame_count 1 → 1; larger frame_count still 1 (a0 unused in math) */
+        {
+            u32 c[2] = {0, 60};
+            assert(ico_semantic_fun203AA0(160, c) == 1);
+        }
+
+        /* Test 11: fn_203AA0 — count=0, divisor=1 → 60/1/60 = 1 → spin 1 */
+        {
+            u32 c[2] = {0, 1};
+            assert(ico_semantic_fun203AA0(1, c) == 1);
+            assert(ico_semantic_fun203AA0(0, c) == 1);
+        }
+
+        /* Test 12: subEnemyCollision NULL-hook path now uses built-ins and
+           the verified -=5.0f on scratch_b[4]; active gate returns 1 */
+        {
+            int r = ico_semantic_subEnemyCollision(entity_b, 0x01, 0,
+                                                     0, 0, 0, 0, 0);
+            assert(r == 1);
         }
     }
 

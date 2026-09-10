@@ -934,6 +934,18 @@ static void *sec_cell(const void *address)
     return *(void *const *)address;
 }
 
+static void sec_st_float(void *address, float value)
+{
+    memcpy(address, &value, sizeof(value));
+}
+
+static u64 sec_ld_u64(const void *address)
+{
+    u64 value;
+    memcpy(&value, address, sizeof(value));
+    return value;
+}
+
 int ico_semantic_getEnemyDefLife(const void *root, IcoSemanticTriFn prelude,
                                  IcoSemanticTriFn stage,
                                  IcoSemanticTriFn sched_own)
@@ -1150,15 +1162,26 @@ int ico_semantic_subEnemyCollision(const void *entity,
     scratch_a = (ico_ptr32)(uintptr_t)(scratch_area + 0x10);
     scratch_b = (ico_ptr32)(uintptr_t)(scratch_area + 0x20);
 
-    /* setup_a: (&sp[0x10], entity, 0x2C) */
+    /* setup_a: (&sp[0x10], entity, 0x2C) — built-in delegate fn_14A100.
+     * The idx lookup (jal 0x109F10) is NULL here → idx 0 read. */
     if (setup_a != NULL) {
         (void)setup_a(scratch_a, entity_p, 0x2C);
+    } else {
+        ico_semantic_fun14A100(scratch_area + 0x10, entity, 0x2C, NULL);
     }
 
     /* setup_b: (&sp[0x20], entity, 0x33) — a1 stayed an entity throughout */
     if (setup_b != NULL) {
         (void)setup_b(scratch_b, entity_p, 0x33);
+    } else {
+        ico_semantic_fun14A100(scratch_area + 0x20, entity, 0x33, NULL);
     }
+
+    /* Verified in subEnemyCollision.s between setup_b and collision_check:
+     *   lwc1 $f0, 0x24($sp); sub.s $f0, $f0, $f20; swc1 $f0, 0x24($sp)
+     * where $f20 = 0x40A00000 = 5.0f (mtc1 at entry). scratch_b[4] -= 5.0f. */
+    sec_st_float((void *)(scratch_area + 0x24),
+                 *(float *)(scratch_area + 0x24) - 5.0f);
 
     /* collision_check: (&sp[0x10]) → result. Registers at the call site:
      * a0=&sp[0x10], a1=entity, a2=0x33 (carried from setup_b). The original
@@ -1167,9 +1190,13 @@ int ico_semantic_subEnemyCollision(const void *entity,
     if (collision_check != NULL) {
         u32 result = collision_check(scratch_a, entity_p, 0x33);
         if (result != 0) {
-            /* collision_response: (entity, 0x9D, 0) */
+            /* collision_response: (entity, 0x9D, 0) — built-in fn_15BCC8.
+             * Incoming 0x9D is outside its select set {0xA8,0xAD}, so the
+             * built-in validates *(entity+0xC)==1 and returns 0x9D. */
             if (collision_response != NULL) {
                 (void)collision_response(entity_p, 0x9D, 0);
+            } else {
+                (void)ico_semantic_fun15BCC8(entity, 0x9D);
             }
         }
     }
@@ -1180,6 +1207,131 @@ int ico_semantic_subEnemyCollision(const void *entity,
     }
 
     return 1;
+}
+
+/* ── subEnemyCollision delegables (Rev.166) ─────────────────────────── */
+
+/*
+ * fn_14A100 (0x14A100, 0x74 B) — setup delegate used by subEnemyCollision at
+ * call sites (&sp+0x10, key=0x2C) and (&sp+0x20, key=0x33). Confirmed from
+ * src/core/asm/fn_14A100.s:
+ *   move a0, s0; move a1, a2; jal 0x109F10   → v0 = lookup(entity, key)
+ *   sll  v0, v0, 6                            → idx << 6  (idx stride 0x40)
+ *   lw   a0, 0x15c(s0)                        → work = *(entity+0x15C)
+ *   lw   v1, 0xc(a0); addu v1, v0, v1         → base = *(work+0xC) + idx*64
+ *   lwc1 f0, 0x30(v1); swc1 f0, ($s1)         dst[0]  = f32(base+0x30)
+ *   lwc1 f0, 0x34(v1); swc1 f0, 4($s1)        dst[4]  = f32(base+0x34)
+ *   lwc1 f0, 0x38(v1); swc1 f0, 8($s1)        dst[8]  = f32(base+0x38)
+ * Angle floats written from base+0x30/0x34/0x38 (no -1 adjustment).
+ */
+void ico_semantic_fun14A100(void *dst, const void *entity, u32 key,
+                            IcoSemanticTriFn lookup)
+{
+    void *work;
+    u8 *base;
+    u32 idx;
+
+    if (dst == NULL || entity == NULL) {
+        return;
+    }
+    idx = (lookup != NULL)
+              ? (u32)lookup((ico_ptr32)(uintptr_t)entity, key, 0)
+              : 0u;
+    work = sec_cell((const u8 *)entity + 0x15c);
+    if (work == NULL) {
+        return;
+    }
+    /* EE `lw $v1, 0x0c($a0)` — pointer cell modeled host-width. */
+    base = sec_cell((const u8 *)work + 0x0c);
+    if (base == (u8 *)0) {
+        return;
+    }
+    base += (idx << 6);
+
+    sec_st_float((u8 *)dst + 0,
+                 *(float *)(base + 0x30));
+    sec_st_float((u8 *)dst + 4,
+                 *(float *)(base + 0x34));
+    sec_st_float((u8 *)dst + 8,
+                 *(float *)(base + 0x38));
+}
+
+/*
+ * fn_15BCC8 (0x15BCC8, 0x7C B) — collision-select delegate. Confirmed from
+ * src/core/asm/fn_15BCC8.s:
+ *   only incoming a1 == 0xA8 or 0xAD enter the select (else tail with a1)
+ *   a2 = *(entity+0x164) ; state = *(entity+0xC); state != 1 → tail
+ *   f1 = u64 @a2+0x470 ; f2 = u64 @a2+0x480
+ *   if b29(f1) && b29(f2)        → a1 = 0xA9   (dsrl32 0x1D; andi 1)
+ *   else if b27(f1) && b27(f2)   → a1 = 0xAA   (movn $a1,$v1,b27($f2))
+ *   else → a1 unchanged
+ * The tail `j 0x13FF88` is the shared response sink; this model returns the
+ * selected byte and leaves the sink to the host.
+ */
+u32 ico_semantic_fun15BCC8(const void *entity, u32 incoming)
+{
+    u32 state;
+    const void *target;
+    u64 f1;
+    u64 f2;
+
+    if (entity == NULL) {
+        return incoming;
+    }
+    if (incoming != 0xA8u && incoming != 0xADu) {
+        return incoming;
+    }
+    state = sec_ld_u32((const u8 *)entity + 0x0c);
+    if (state != 1u) {
+        return incoming;
+    }
+    target = sec_cell((const u8 *)entity + 0x164);
+    if (target == NULL) {
+        return incoming;
+    }
+    f1 = sec_ld_u64((const u8 *)target + 0x470);
+    f2 = sec_ld_u64((const u8 *)target + 0x480);
+    if (((f1 >> 29) & 1u) && ((f2 >> 29) & 1u)) {
+        return 0xA9u;
+    }
+    if (((f1 >> 27) & 1u) && ((f2 >> 27) & 1u)) {
+        return 0xAAu;
+    }
+    return incoming;
+}
+
+/*
+ * fn_203AA0 (0x203AA0, 0xA0 B) — frame-delay delegate. Confirmed from
+ * src/core/asm/fn_203AA0.s:
+ *   v0 = lw 0x4EC0(0x27)          count  = *(0x274EC0)
+ *   a1 = lw 4(v1)                 divisor= *(0x274EC4)
+ *   v0 = 60 - count ; div v0,a1 ; div v0,60
+ *   a0==0 → v1 = v0; else v1 = (v0 ? v0 : 1) (movz)
+ *   v1>0  → spin: n=set v1; while(n) { jal 0x13D3F0; n-- }
+ *   v1==0 (a0==0 && v0==0) → infinite jal 0x13D3F0 loop (never returns)
+ *   a1(divisor)==0 → break 0,7 (trap)
+ * Returns the yield count polynomial; 0 signals the infinite-wait/trap path.
+ */
+u32 ico_semantic_fun203AA0(u32 frame_count, const void *counters)
+{
+    u32 count;
+    u32 divisor;
+    u32 v;
+
+    if (counters == NULL) {
+        return 0;
+    }
+    count = sec_ld_u32((const u8 *)counters + 0x00);
+    divisor = sec_ld_u32((const u8 *)counters + 0x04);
+    if (divisor == 0u) {
+        return 0u;   /* beql+break 0,7 trap on divisor==0 */
+    }
+    /* signed div [$zero] to match ps2 `div` semantics */
+    v = (u32)(((int)(60u - count) / (int)divisor) / 60);
+    if (frame_count == 0u) {
+        return (v != 0u) ? v : 0u;   /* 0 → infinite wait path */
+    }
+    return (v != 0u) ? v : 1u;
 }
 
 /*

@@ -201,24 +201,25 @@ real gameplay state sequence.
 
 ## Sources to prefer
 
-1. `research/native/rev156-gifpacket-bridge-fidelity-and-p2-family-closed.md`
-2. `research/native/rev155-per-gobj-visual-composition.md`
-3. `research/native/rev154-verified-scene-tables.md`
-4. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
-5. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
-6. `research/elf/rev135-gif-pipeline-window-milestone.md`
-7. `research/elf/rev134-moveimage-copytexture-plumbing.md`
-8. `research/elf/rev133-hotgap-semantic-bridges.md`
-9. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
-10. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
-11. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
-12. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
-13. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
-14. `research/elf/rev109-isysgobj-abi-consolidation.md`
-15. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
-16. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
-17. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
-18. Byte-exact sources under `src/core/asm/`
+1. `research/elf/rev166-delegables-three-semantic-bridges.md`
+2. `research/native/rev156-gifpacket-bridge-fidelity-and-p2-family-closed.md`
+3. `research/native/rev155-per-gobj-visual-composition.md`
+4. `research/native/rev154-verified-scene-tables.md`
+5. `research/native/rev153-unified-gif-command-packet-kanban-loader-seam-strip-synthesis.md`
+6. `research/native/rev151-p1-face-uv-decode-and-texturized-castle.md`
+7. `research/elf/rev135-gif-pipeline-window-milestone.md`
+8. `research/elf/rev134-moveimage-copytexture-plumbing.md`
+9. `research/elf/rev133-hotgap-semantic-bridges.md`
+10. `research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md`
+11. `research/elf/rev130-hot-gaps-3-4-5-byte-exact.md`
+12. `research/elf/ghidra-rev126-finish-session-58-worldstates-and-credits-sequence.md`
+13. `research/elf/ghidra-rev125-extended-session-36-worldstates-yorda-escape-probes.md`
+14. `research/elf/rev124-runtime-probe-prep-and-game-loop-scene-bridge.md`
+15. `research/elf/rev109-isysgobj-abi-consolidation.md`
+16. `research/elf/ghidra-rev099-isysgobj-lifecycle-and-ios-thread.md`
+17. `research/elf/ghidra-rev098-isysgobj-process-registration-and-dispatch.md`
+18. `research/elf/ghidra-rev097-isysgobj-clip-girlbrain-consolidation.md`
+19. Byte-exact sources under `src/core/asm/`
 
 When an older note conflicts with Rev.131 on the `world_state_load` boundary
 (0x80 vs the earlier 0x248), use Rev.131. When an older note conflicts with
@@ -229,3 +230,26 @@ the real PS2 model binding. Rev.156's half-offset hook (`setHalfOffset`) is an
 explicit HOST control whose byte-exact `0x8000` packing constant appears in
 BOTH base and Offset `.s` — it is NOT a verified Offset-vs-base discriminator
 and is not to be described as verified PS2 behavior.
+
+## Semantic reconstruction truth (Rev.164-166)
+
+- The semantic C bridges in `src/core/isysgobj_semantic.c` are byte-exact
+  **companions**, not byte-exact C: the `.s` in `src/core/asm/` and
+  `src/entity/asm/` remain the ground truth for PS2 behavior; the C models and
+  their CTest coverage are auditable reconstructions of that truth.
+- Rev.164-166 built 7 verified semantic functions with CTest: `getEnemyDefLife`,
+  `holdRope`, `subEnemyCollision`, `girlForceFieldGeo`, and the three
+  subEnemyCollision **delegables** `fn_14A100` (setup: 3-float angle copy from
+  `*(work+0xC) + idx*64`), `fn_15BCC8` (collision select: bit29→0xA9 / bit27→0xAA,
+  only for incoming 0xA8/0xAD, requires state==1), `fn_203AA0` (VBlank
+  0x274EC0 countdown `((60-count)/divisor)/60`, trap on divisor 0, yield-count
+  return). All three are byte-exact `.s` (736 total) plus semantics.
+- Hooks/variables the semantic cannot yet resolve are kept as delegables with
+  explicit "unknown" status: `0x109F10` (idx lookup), `gp-0x64FC` (collision
+  check trampoline), the `0x13FF88` response sink, the `0x13D3F0` yield, and
+  the VU/COP2 pair `0x243AA8`/`0x244448`. Do not upgrade any of these to
+  conclusions without runtime/byte evidence.
+- Avoid attributing invented behavior to any bridge: the Rev.165
+  GirlForceFieldGeo `*255/u16` output write was removed because it was not in
+  the disassembly. Semantics must trace to the verified disassembly or be
+  marked as modeling choices.

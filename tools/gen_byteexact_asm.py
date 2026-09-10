@@ -119,13 +119,18 @@ def gen(name, va, size, module):
 
 if __name__ == '__main__':
     targets = [
-        ('subEnemyCollision',       0x15E2C8, 0xB8),
-        ('HoldRope',                0x1E59A0, 0x154),
-        ('SetGirlClothDispSwitch',  0x1C3C38, 0x1D0),
-        ('GirlForceFieldGeo',       0x1C3C90, 0x178),
+        # Rev.164 decompilation targets (entity)
+        ('subEnemyCollision',       0x15E2C8, 0xB8,  'entity'),
+        ('HoldRope',                0x1E59A0, 0x154, 'entity'),
+        ('SetGirlClothDispSwitch',  0x1C3C38, 0x1D0, 'entity'),
+        ('GirlForceFieldGeo',       0x1C3C90, 0x178, 'entity'),
+        # Rev.166 subEnemyCollision delegables (core)
+        ('fn_14A100',               0x14A100, 0x74,  'core'),
+        ('fn_15BCC8',               0x15BCC8, 0x7C,  'core'),
+        ('fn_203AA0',               0x203AA0, 0xA0,  'core'),
     ]
-    for name, va, size in targets:
-        txt = gen(name, va, size, 'entity')
-        path = f'src/entity/asm/{name}.s'
+    for name, va, size, module in targets:
+        txt = gen(name, va, size, module)
+        path = f'src/{module}/asm/{name}.s'
         open(path, 'w').write(txt)
         print(f"wrote {path} ({size} B)")

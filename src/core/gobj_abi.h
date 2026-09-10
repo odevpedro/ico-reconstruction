@@ -7,6 +7,7 @@
 typedef uint8_t  u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
+typedef uint64_t u64;
 typedef int32_t  s32;
 
 /* A pointer stored in the original EE ABI is always one 32-bit word. */
@@ -307,6 +308,35 @@ int ico_semantic_subEnemyCollision(const void *entity, u32 entity_mask,
                                     IcoSemanticTriFn collision_check,
                                     IcoSemanticTriFn collision_response,
                                     IcoSemanticTriFn counter_inc);
+
+/*
+ * Delegables of subEnemyCollision (Rev.166). Byte-exact ground truth:
+ *   src/core/asm/fn_14A100.s  (0x14A100, 0x74 B)
+ *   src/core/asm/fn_15BCC8.s  (0x15BCC8, 0x7C B)
+ *   src/core/asm/fn_203AA0.s  (0x203AA0, 0xA0 B)
+ *
+ * fn_14A100 = setup:
+ *   idx  = lookup(entity, key)              (jal 0x109F10: a0=entity, a1=key)
+ *   work = *(entity+0x15C)
+ *   base = *(work+0xC) + (idx << 6)
+ *   copies f32(+0x30/+0x34/+0x38) of base into dst[0..3)
+ *
+ * fn_15BCC8 = collision select (returns the decided message byte):
+ *   requires *(entity+0xC) == 1
+ *   a2 = *(entity+0x164); if bit29 of u64@a2+0x470 AND bit29 of u64@a2+0x480
+ *   → 0xA9; else bit27 of both → 0xAA; else incoming. Original tail-jumps to
+ *   0x13FF88 with the selected byte; this model returns the selection.
+ *
+ * fn_203AA0 = frame-delay so far (vblank counter 0x274EC0/0x274EC4):
+ *   count=ld32(0x274EC0), divisor=ld32(0x274EC4)
+ *   v = ((60 - count) / divisor) / 60  (integer div per ps2 MIPS)
+ *   a0==0 ? (v? v : INFINITE) : (v ? v : 1)
+ *   Trap (break 0,7) on divisor==0. Infinite wait returned as 0.
+ */
+void ico_semantic_fun14A100(void *dst, const void *entity, u32 key,
+                            IcoSemanticTriFn lookup);
+u32 ico_semantic_fun15BCC8(const void *entity, u32 incoming);
+u32 ico_semantic_fun203AA0(u32 frame_count, const void *counters);
 
 /*
  * GirlForceFieldGeo (0x001C3C90, 0x178 bytes, byte-exact):
