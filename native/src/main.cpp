@@ -350,6 +350,68 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         }
     }
 
+    // Rev.161: the real ICO boy character mesh (boymodel.p2c, multi-OBJH .p2c
+    // family) replaces the BoxMarker placeholder. Auto-loaded when present;
+    // skipped when the piece list already contains the boy (standalone .p2c
+    // demo, where the piece renders itself at native scale).
+    //
+    // Scale: the world is PS2 cm-scale (BoyController halfExtent_=12 cm; the
+    // room stretches ~1700 units). The native bind-pose mesh is ~124 units
+    // tall, so ~1.2x makes ICO a ~1.4 m boy next to the ~20 m castle room.
+    // (Rev.161 first shipped 12x -> the boy towered over the castle and the
+    // 64 px textures stretched into a "melting" smear.)
+    const float kBoyScale = 1.2f;
+    const float kBoyFootOffset = 0.65f * kBoyScale; // native feet at y ~ -0.65
+    bool hasBoyMesh = false;
+    Ps2oMesh boyMesh;
+    std::vector<TextureHandle> boyTexByMat;
+    {
+        bool boyAlreadyPiece = false;
+        for (const auto& p : pieces) {
+            if (p.name.find("boymodel") != std::string::npos) boyAlreadyPiece = true;
+        }
+        if (!boyAlreadyPiece) {
+            const char* boyCandidates[] = {
+                "assets/boy/boymodel.p2c",
+                "native/assets/boy/boymodel.p2c",
+                "../native/assets/boy/boymodel.p2c",
+                "../assets/boy/boymodel.p2c",
+                nullptr
+            };
+            for (int c = 0; boyCandidates[c] != nullptr; ++c) {
+                std::ifstream f(boyCandidates[c], std::ios::binary);
+                if (!f.good()) continue;
+                if (!loadPs2oMeshFromFile(boyCandidates[c], boyMesh)) continue;
+                const std::string bpath = boyCandidates[c];
+                const size_t slash = bpath.find_last_of('/');
+                const std::string btexDir = (slash != std::string::npos)
+                    ? bpath.substr(0, slash) + "/texture/" : "texture/";
+                std::vector<std::pair<std::string, TextureHandle>> boyTexCache;
+                auto boyTexForName = [&](const std::string& name) -> TextureHandle {
+                    for (const auto& kv : boyTexCache) if (kv.first == name) return kv.second;
+                    TextureHandle h = loadTm2Tex(backend, btexDir + name + ".tm2");
+                    boyTexCache.emplace_back(name, h);
+                    if (h == kNullTexture)
+                        std::fprintf(stderr, "main: missing boy texture %s%s.tm2\n",
+                                     btexDir.c_str(), name.c_str());
+                    return h;
+                };
+                boyTexByMat.reserve(boyMesh.materialNames.size());
+                for (const auto& nm : boyMesh.materialNames)
+                    boyTexByMat.push_back(boyTexForName(nm));
+                hasBoyMesh = !boyMesh.strips.empty();
+                std::fprintf(stderr, "main: boy mesh %s: %u verts, %u strips, "
+                                     "%u submeshes, %u materials\n",
+                             boyCandidates[c],
+                             static_cast<u32>(boyMesh.positions.size() / 3),
+                             static_cast<u32>(boyMesh.strips.size()),
+                             boyMesh.subMeshCount,
+                             static_cast<u32>(boyMesh.materialNames.size()));
+                break;
+            }
+        }
+    }
+
     // UV-validation checkerboard (see --uv-test). Created before the geometry
     // pre-pass so untextured materials can be tinted with it when enabled.
     TextureHandle checkerTex = kNullTexture;
@@ -988,7 +1050,9 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         // the fitted center plus the pan offset.
         const float tgtX = followBoy ? markerX : (cx + panX);
         const float tgtZ = followBoy ? markerZ : (cz + panZ);
-        const float tgtY = followBoy ? (markerY + 40.0f) : cy;
+        const float tgtY = followBoy
+            ? (markerY + (hasBoyMesh ? 60.0f * kBoyScale : 40.0f))
+            : cy;
         const float distXZ = curDist * std::cos(pitch);
         const float eyeY = tgtY + curDist * std::sin(pitch);
         const float eyeX = tgtX + distXZ * std::cos(ang);
@@ -1057,6 +1121,52 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                                       sb.texture, 255, 255, 255, 255);
                 }
             }
+
+            // Rev.161: the boy's own GObj commands the reconstructed character
+            // mesh (multi-OBJH .p2c) instead of the placeholder box. Strips
+            // are re-emitted each frame transformed by the BoyController's
+            // world placement (markerX/Y/Z), scaled into room units.
+            if (hasBoyMesh) {
+                int maxBoyMat = 0;
+                for (const auto& st : boyMesh.strips)
+                    if ((int)st.material > maxBoyMat) maxBoyMat = st.material;
+                for (int f = 0; f <= maxBoyMat; ++f) {
+                    std::vector<RenderVertex> bv;
+                    std::vector<u32> firsts;
+                    std::vector<u32> counts;
+                    for (const auto& st : boyMesh.strips) {
+                        if ((int)st.material != f) continue;
+                        const u32 n = static_cast<u32>(st.spine.size());
+                        if (n < 3) continue;
+                        firsts.push_back(static_cast<u32>(bv.size()));
+                        counts.push_back(n);
+                        bv.reserve(bv.size() + n);
+                        for (u32 k = 0; k < n; ++k) {
+                            const u32 vi = st.spine[k];
+                            RenderVertex v{};
+                            v.x = boyMesh.positions[vi * 3 + 0] * kBoyScale + markerX;
+                            v.y = boyMesh.positions[vi * 3 + 1] * kBoyScale +
+                                  markerY + kBoyFootOffset;
+                            v.z = boyMesh.positions[vi * 3 + 2] * kBoyScale + markerZ;
+                            if (st.uvs.size() >= n * 2) {
+                                v.u = st.uvs[k * 2 + 0];
+                                v.v = st.uvs[k * 2 + 1];
+                            }
+                            v.r = 255; v.g = 255; v.b = 255; v.a = 255;
+                            bv.push_back(v);
+                        }
+                    }
+                    if (bv.empty()) continue;
+                    const TextureHandle tex = uvTest
+                        ? checkerTex
+                        : ((f < (int)boyTexByMat.size()) ? boyTexByMat[f] : kNullTexture);
+                    bridge.drawStrips(RenderList::Opaque, bv.data(),
+                                      static_cast<u32>(bv.size()),
+                                      firsts.data(), counts.data(),
+                                      static_cast<u32>(counts.size()),
+                                      tex, 255, 255, 255, 255);
+                }
+            }
             bridge.endPacket();
         } else {
             // Flat fallback (pre-front-3): direct backend calls, unchanged.
@@ -1078,12 +1188,10 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
             }
         }
 
-        // Player placeholder (Passo 1): now a GObj-owned BoxMarker. The renderer
-        // draws what the boy's GObj commands — its transform was set this frame
-        // by BoyController (markerX/Y/Z world placement). When the boy has no
-        // GObj (unbound/spawn-failed path) the marker falls back to the
-        // previously hardcoded values but still goes through the same draw.
-        {
+        // Player visual (Rev.161): with the reconstructed character mesh the
+        // boy is drawn inside the scene packet above; the placeholder box only
+        // falls back when no boy model is available.
+        if (!hasBoyMesh) {
             const GObjRenderAttachment* m = boyStore.find(boyHandle);
             if (m != nullptr && m->kind == ico::engine::GObjAttachmentKind::BoxMarker &&
                 m->active) {

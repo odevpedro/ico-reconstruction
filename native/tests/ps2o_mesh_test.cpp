@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
+#include <string>
 #include <vector>
 
 using namespace ico::engine;
@@ -237,6 +239,137 @@ static void test_fill_strips_guards() {
     assert(synthesizeTriangleStrips(tooBig) == 0);
 }
 
+static void test_character_family() {
+    // Character-family (.p2c) synthetic fixture: 2 OBJH-delimited submeshes
+    // sharing one bind space. Each region carries positions (w==1.0), UVs
+    // (u,v,0,0), a stride-0x90 material table (name at record+8, header
+    // 0xFF 0xFF 0xFF 0x80) and then strips [N, 0xFFFF x7]. The forward header
+    // scan must skip the material table and the skinning gap.
+    std::vector<uint8_t> ch(0x570, 0);
+    std::memcpy(ch.data(), "PS2O", 4);
+    putU32(ch.data() + 8, 2);                 // subMeshCount = 2
+    std::memcpy(ch.data() + 0x18, "SUM\0", 4);
+    putU32(ch.data() + 0x1c, 0x01020304);
+
+    auto putPositionsUVs = [](uint8_t* p) -> uint8_t* {
+        const float pos[4][3] = { {0,0,0},{1,0,0},{1,1,0},{0,1,0} };
+        for (int v = 0; v < 4; ++v) {
+            p = putFloat(p, pos[v][0]); p = putFloat(p, pos[v][1]);
+            p = putFloat(p, pos[v][2]); p = putFloat(p, 1.0f);
+        }
+        const float uv[4][2] = { {0,0},{0.25f,0},{0.25f,0.25f},{0,0.25f} };
+        for (int e = 0; e < 4; ++e) {
+            p = putFloat(p, uv[e][0]); p = putFloat(p, uv[e][1]);
+            p = putFloat(p, 0.0f);       p = putFloat(p, 0.0f);
+        }
+        return p;
+    };
+    auto putMaterialTable = [](uint8_t* base, const char* const* names, int count) {
+        for (int n = 0; n < count; ++n) {
+            uint8_t* rec = base + (size_t)n * 0x90;
+            rec[0] = 0xFF; rec[1] = 0xFF; rec[2] = 0xFF; rec[3] = 0x80;
+            std::memcpy(rec + 8, names[n], std::strlen(names[n]));
+        }
+    };
+    auto putStrip = [](uint8_t* f, uint16_t matF) {
+        uint8_t* h = f;
+        h = putU16(h, 4);
+        for (int k = 1; k < 8; ++k) h = putU16(h, 0xFFFF);
+        uint8_t* r = f + 16;
+        for (uint16_t k = 0; k < 4; ++k) {
+            r = putU16(r, 0x0001); r = putU16(r, 0x0000); r = putU16(r, k);
+            r = putU16(r, 0x0000); r = putU16(r, k);      r = putU16(r, k);
+            r = putU16(r, 0x0000); r = putU16(r, matF);
+        }
+    };
+
+    // Region 0 @ 0x20..0x190 | table @ 0xA0, strip @ 0x140 -> OBJH0 @ 0x1A0.
+    putPositionsUVs(ch.data() + 0x20);
+    const char* names0[1] = { "b_mantle" };
+    putMaterialTable(ch.data() + 0xA0, names0, 1);
+    putStrip(ch.data() + 0x140, 0);
+    std::memcpy(ch.data() + 0x1A0, "OBJH", 4);
+    // 26 rows x 16 B submesh table @ 0x1B0..0x350 stays zero.
+
+    // Region 1 @ 0x350..0x550 | table @ 0x3D0 (b_mantle shared + eye02),
+    // strip @ 0x500 -> OBJH1 @ 0x560. Dedup must keep b_mantle global idx 0.
+    putPositionsUVs(ch.data() + 0x350);
+    const char* names1[2] = { "b_mantle", "eye02" };
+    putMaterialTable(ch.data() + 0x3D0, names1, 2);
+    putStrip(ch.data() + 0x500, 1);
+    std::memcpy(ch.data() + 0x560, "OBJH", 4);
+
+    putU32(ch.data() + 4, static_cast<uint32_t>(ch.size() - 16));
+
+    Ps2oMesh mesh;
+    assert(loadPs2oMesh(ch.data(), ch.size(), mesh));
+    assert(mesh.valid);
+    assert(mesh.subMeshCount == 2);
+    assert(mesh.vertexCount == 8);               // 4 + 4 concatenated
+    assert(mesh.positions.size() == 24);
+    assert(mesh.uvs.size() == 16);               // 8 UV pairs
+    assert(mesh.strips.size() == 2);
+    assert(mesh.triangles.size() == 12);         // 4 tris x 3
+    assert(mesh.materialNames.size() == 2);
+    assert(mesh.materialNames[0] == "b_mantle");
+    assert(mesh.materialNames[1] == "eye02");
+
+    const Ps2oStrip& s0 = mesh.strips[0];
+    const Ps2oStrip& s1 = mesh.strips[1];
+    assert(s0.material == 0);
+    assert(s1.material == 1);
+    assert(s0.spine.size() == 4 && s1.spine.size() == 4);
+    // Global vertex rebase across submeshes.
+    assert(s0.spine[0] == 0 && s0.spine[3] == 3);
+    assert(s1.spine[0] == 4 && s1.spine[3] == 7);
+    // Flat cascade triangles carry the rebased indices.
+    assert(mesh.triangles[0] == 0 && mesh.triangles[2] == 2);
+    assert(mesh.triangles[3] == 1 && mesh.triangles[5] == 3);
+    assert(mesh.triangles[6] == 4 && mesh.triangles[8] == 6);
+    assert(mesh.triangles[9] == 5 && mesh.triangles[11] == 7);
+    // UVs resolve from the rebased global m.
+    assert(s0.uvs[0] == 0.00f && s0.uvs[1] == 0.00f);
+    assert(s1.uvs[4] == 0.25f && s1.uvs[5] == 0.25f);
+    assert(s1.uvs[6] == 0.00f && s1.uvs[7] == 0.25f);
+}
+
+static void test_real_boymodel(const char* const* candidates, int n) {
+    const char* path = nullptr;
+    for (int i = 0; i < n; ++i) {
+        std::ifstream t(candidates[i], std::ios::binary);
+        if (t.good()) { path = candidates[i]; break; }
+    }
+    if (!path) {
+        std::fprintf(stderr, "boymodel.p2c not found; skipping real-asset check\n");
+        return;
+    }
+    Ps2oMesh mesh;
+    assert(loadPs2oMeshFromFile(path, mesh));
+    const unsigned npos = static_cast<unsigned>(mesh.positions.size() / 3);
+    const unsigned nuv = static_cast<unsigned>(mesh.uvs.size() / 2);
+    const unsigned ntris = static_cast<unsigned>(mesh.triangles.size() / 3);
+    std::fprintf(stderr,
+                 "boymodel.p2c: %u verts, %u uvs, %u strips, %u submeshes, "
+                 "%u tris, %zu mats\n",
+                 npos, nuv, static_cast<unsigned>(mesh.strips.size()),
+                 static_cast<unsigned>(mesh.subMeshCount), ntris,
+                 mesh.materialNames.size());
+    assert(mesh.valid);
+    assert(mesh.subMeshCount == 5);
+    assert(npos == 3210);
+    assert(nuv == 1560);
+    assert(mesh.strips.size() == 526);
+    assert(mesh.materialNames.size() == 15);
+    const char* expect[15] = {
+        "b_mantle",      "test_small_ref", "eye02",  "b_arm",   "b_shoes",
+        "b_suit",        "b_head_top",     "b_pants", "b_face2", "b_lashe2",
+        "eye_inner",     "toothU01",       "toothD01", "tape_b", "tape_boro",
+    };
+    for (int i = 0; i < 15; ++i)
+        assert(mesh.materialNames[i] == expect[i]);
+    assert(ntris >= 2600 && ntris <= 2725);
+}
+
 static void test_fill_strips_cascade() {
     // Two triangles sharing the (1,2) edge -> one strip, spine (0,1,2,3).
     Ps2oMesh m = makeManualMesh({0, 1, 2, 1, 2, 3}, 12);
@@ -321,7 +454,21 @@ int main() {
     // Rev.156 p2 family: flag u16[0] is not a decoder discriminator.
     test_two_strip_family_unified();
 
+    // Rev.161 character family: multi-OBJH submesh decode + global rebase +
+    // local->global material remap.
+    test_character_family();
+
+    // Real character asset, validated against the p2c byte-level layout.
+    const char* boyCandidates[] = {
+        "assets/boy/boymodel.p2c",
+        "native/assets/boy/boymodel.p2c",
+        "../native/assets/boy/boymodel.p2c",
+        "../assets/boy/boymodel.p2c",
+    };
+    test_real_boymodel(boyCandidates, 4);
+
     std::fprintf(stderr, "ps2o_mesh_test: OK (%u verts, %u tris)\n",
-                 mesh.vertexCount, static_cast<unsigned>(mesh.triangles.size() / 3));
+                 static_cast<unsigned>(mesh.vertexCount),
+                 static_cast<unsigned>(mesh.triangles.size() / 3));
     return 0;
 }

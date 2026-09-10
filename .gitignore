@@ -32,7 +32,9 @@ temp/
 
 # Extracted game assets (proprietary: never track/commit)
 *.p2o
+*.p2c
 *.tm2
+*.skb
 native/native/
 
 # Local build trees (never track generated artifacts)

@@ -129,6 +129,224 @@ void extractMaterialNames(const uint8_t* data, size_t size,
     out = std::move(names);
 }
 
+// Position of every "OBJH" dispatch/tag record in the file. A single OBJH
+// cluster at the very END is the room/static-mesh family (p1/p2: dispatch tags
+// after the face region, e.g. p1 at 0x101620/0x103d20/0x1040b0 of 0x1041c0).
+// Multiple OBJH scattered THROUGHOUT the file delimit per-bone submeshes of a
+// CHARACTER family (.p2c): each OBJH owns a 26-row x 16-B submesh table and is
+// preceded by a data region (positions + UVs + material-name table + strips).
+std::vector<size_t> findObjs(const uint8_t* data, size_t size) {
+    std::vector<size_t> pos;
+    static const uint8_t kObjs[4] = { 'O', 'B', 'J', 'H' };
+    for (size_t i = 0; i + 4 <= size; ++i)
+        if (std::memcmp(data + i, kObjs, 4) == 0) pos.push_back(i);
+    return pos;
+}
+
+// Returns true when data[at] starts a [a-z0-9A-Z_]{4,40} word that is
+// NUL-terminated and contains at least one ASCII letter (so pure bone/float
+// suffixes are rejected); lenOut = word length on success.
+bool isNameAt(const uint8_t* data, size_t size, size_t at, size_t& lenOut) {
+    if (at >= size) return false;
+    auto isWord = [](unsigned char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+               (c >= '0' && c <= '9') || c == '_';
+    };
+    if (!isWord(data[at])) return false;
+    size_t j = at, letters = 0;
+    while (j < size && isWord(data[j])) {
+        if ((data[j] >= 'a' && data[j] <= 'z') || (data[j] >= 'A' && data[j] <= 'Z'))
+            ++letters;
+        ++j;
+    }
+    const size_t len = j - at;
+    if (len < 4 || len > 40 || letters == 0) return false;
+    if (j < size && data[j] != 0) return false;
+    lenOut = len;
+    return true;
+}
+
+// Character-family loader (multi-OBJH .p2c, e.g. boymodel.p2c). Each OBJH
+// region is an independent bone-local submesh sharing ONE bind/T-pose space:
+//   region k start = (k==0) ? 0x20 : objh[k-1] + 0x10 + 26*16
+//   region k end   = objh[k] - 0x10
+// Within a region: positions (16-B x,y,z,1.0 until w != 1.0), then UVs
+// (16-B u,v,0,0), then per-submesh material-name records (stride 0x90, name at
+// record+8, first record header 0xFF 0xFF 0xFF 0x80), then a skinning block,
+// then the face region. Faces follow the SAME canonical p1 rule (Rev.151):
+// header [N, 0xFFFF x7]; records [flag,0,a,a,m,0xFFFF,0,f] with a = u16[2]
+// vertex index, m = u16[4] UV index, f = u16[7] LOCAL material index.
+// Vertices are shared: the array holds 2x the used count (used mesh half then
+// unused bone rest half), and faces only reference the first half. Concatenated
+// output rebases vertex/UV indices and remaps f through the region name tables
+// to one deduplicated global list, so the result renders dock to the p1 path.
+bool loadCharacterMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh,
+                       const std::vector<size_t>& objh) {
+    mesh.positions.clear();
+    mesh.uvs.clear();
+    mesh.triangles.clear();
+    mesh.strips.clear();
+    mesh.triMaterials.clear();
+    mesh.triVertUVs.clear();
+    mesh.materialNames.clear();
+    mesh.subMeshCount = 0;
+    mesh.vertexCount = 0;
+    mesh.valid = false;
+
+    std::vector<std::string> globalNames;
+    auto globalIndexOf = [&](const std::string& n) -> uint16_t {
+        for (size_t i = 0; i < globalNames.size(); ++i)
+            if (globalNames[i] == n) return static_cast<uint16_t>(i);
+        globalNames.push_back(n);
+        return static_cast<uint16_t>(globalNames.size() - 1);
+    };
+
+    auto isStripHeader = [&](size_t at, size_t end) -> bool {
+        if (at + kVertexStrideBytes > end) return false;
+        const uint16_t n0 = rd16(data + at);
+        if (n0 < 2 || n0 > 64) return false;
+        for (int k = 1; k < 8; ++k)
+            if (rd16(data + at + 2 * k) != 0xFFFF) return false;
+        return true;
+    };
+
+    for (size_t k = 0; k < objh.size(); ++k) {
+        const size_t s = (k == 0) ? kPositionsOffset : objh[k - 1] + 0x10 + 26 * 16;
+        const size_t e = objh[k] - 0x10;
+        if (s >= e || e > size) return false;
+
+        // Positions.
+        const size_t baseVert = mesh.positions.size() / 3;
+        size_t o = s, v = 0;
+        while (o + kVertexStrideBytes <= e) {
+            const uint32_t wBits = rd16(data + o + 12) |
+                                   (static_cast<uint32_t>(rd16(data + o + 14)) << 16);
+            if (wBits != 0x3F800000u) break;
+            const size_t b = mesh.positions.size();
+            mesh.positions.resize(b + 3);
+            std::memcpy(&mesh.positions[b], data + o, 3 * sizeof(float));
+            ++v;
+            o += kVertexStrideBytes;
+        }
+        const uint32_t nvLocal = static_cast<uint32_t>(v);
+        if (nvLocal == 0) return false;
+
+        // UVs.
+        const size_t baseUV = mesh.uvs.size() / 2;
+        while (o + kVertexStrideBytes <= e) {
+            const uint32_t w3 = rd16(data + o + 12) |
+                                (static_cast<uint32_t>(rd16(data + o + 14)) << 16);
+            const uint32_t w4 = rd16(data + o + 8) |
+                                (static_cast<uint32_t>(rd16(data + o + 10)) << 16);
+            if (w3 != 0u || w4 != 0u) break;
+            const size_t b = mesh.uvs.size();
+            mesh.uvs.resize(b + 2);
+            std::memcpy(&mesh.uvs[b], data + o, 2 * sizeof(float));
+            o += kVertexStrideBytes;
+        }
+
+        // Per-submesh material-name table: first record starts with the
+        // 0..FF 0..FF 0..FF 0x80 signature and a valid name 8 bytes in;
+        // subsequent records follow at stride 0x90 while their +8 slot holds
+        // a valid NUL-terminated name. Scan all candidates and keep the first
+        // whose stride walk yields at least one name (defensive against a
+        // signature-ish byte combo inside the skinning block).
+        std::vector<std::string> regionNames;
+        for (size_t x = s; x + 16 <= e; ++x) {
+            if ((data[x] & 0xF0u) != 0xF0u) continue;
+            size_t len = 0;
+            if (!isNameAt(data, size, x + 8, len)) continue;
+            std::vector<std::string> candidate;
+            for (size_t t = x; t + 16 <= e; t += 0x90) {
+                size_t l2 = 0;
+                if (!isNameAt(data, size, t + 8, l2)) break;
+                candidate.emplace_back(
+                    reinterpret_cast<const char*>(data + t + 8), l2);
+            }
+            if (!candidate.empty()) {
+                regionNames = std::move(candidate);
+                break;
+            }
+        }
+        std::vector<uint16_t> localToGlobal;
+        localToGlobal.reserve(regionNames.size());
+        for (const auto& nm : regionNames) localToGlobal.push_back(globalIndexOf(nm));
+
+        // Face region: forward-scan past the skinning block to the first
+        // [N, 0xFFFF x7] strip header, then parse strips within this region.
+        size_t i = (o + kVertexStrideBytes - 1) & ~(size_t)(kVertexStrideBytes - 1);
+        while (i + kVertexStrideBytes <= e && !isStripHeader(i, e)) i += kVertexStrideBytes;
+        if (i + kVertexStrideBytes > e) return false;
+
+        const size_t uvLimit = mesh.uvs.size() / 2;
+        while (i + kVertexStrideBytes <= e && isStripHeader(i, e)) {
+            const uint16_t n = rd16(data + i);
+            const size_t recStart = i + kVertexStrideBytes;
+            if (recStart + (size_t)n * kVertexStrideBytes > e) break;
+            bool bad = false;
+            for (size_t r = 0; r < n; ++r)
+                if (rd16(data + recStart + r * kVertexStrideBytes + 4) >= nvLocal) {
+                    bad = true; break;
+                }
+            if (bad) break;
+
+            const uint16_t localF = rd16(data + recStart + 14);
+            const uint16_t stripMat =
+                (localF < localToGlobal.size()) ? localToGlobal[localF] : 0;
+
+            Ps2oStrip strip;
+            strip.material = stripMat;
+            strip.spine.reserve(n);
+            strip.uvs.reserve(n * 2);
+            for (size_t r = 0; r < n; ++r) {
+                const size_t ro = recStart + r * kVertexStrideBytes;
+                const uint16_t a = rd16(data + ro + 4);
+                const uint16_t mm = rd16(data + ro + 8);
+                strip.spine.push_back(static_cast<uint16_t>(baseVert + a));
+                const size_t gUV = baseUV + mm;
+                if (gUV < uvLimit) {
+                    strip.uvs.push_back(mesh.uvs[gUV * 2 + 0]);
+                    strip.uvs.push_back(mesh.uvs[gUV * 2 + 1]);
+                } else {
+                    strip.uvs.push_back(0.0f);
+                    strip.uvs.push_back(0.0f);
+                }
+            }
+            for (size_t r = 0; r + 2 < n; ++r) {
+                const uint16_t s0 = strip.spine[r];
+                const uint16_t s1 = strip.spine[r + 1];
+                const uint16_t s2 = strip.spine[r + 2];
+                if (s0 == s1 || s1 == s2) continue;
+                mesh.triangles.push_back(s0);
+                mesh.triangles.push_back(s1);
+                mesh.triangles.push_back(s2);
+                mesh.triMaterials.push_back(stripMat);
+                mesh.triVertUVs.reserve(mesh.triVertUVs.size() + 6);
+                for (size_t kk = 0; kk < 3; ++kk) {
+                    const size_t ro = recStart + (r + kk) * kVertexStrideBytes;
+                    const uint16_t mm = rd16(data + ro + 8);
+                    const size_t gUV = baseUV + mm;
+                    if (gUV < uvLimit) {
+                        mesh.triVertUVs.push_back(mesh.uvs[gUV * 2 + 0]);
+                        mesh.triVertUVs.push_back(mesh.uvs[gUV * 2 + 1]);
+                    } else {
+                        mesh.triVertUVs.push_back(0.0f);
+                        mesh.triVertUVs.push_back(0.0f);
+                    }
+                }
+            }
+            if (strip.spine.size() >= 3) mesh.strips.push_back(std::move(strip));
+            i = recStart + (size_t)n * kVertexStrideBytes;
+        }
+        mesh.subMeshCount = static_cast<uint32_t>(k + 1);
+    }
+
+    mesh.vertexCount = static_cast<uint32_t>(mesh.positions.size() / 3);
+    mesh.materialNames = std::move(globalNames);
+    mesh.valid = !mesh.strips.empty();
+    return mesh.valid;
+}
+
 } // namespace
 
 bool loadPs2oMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh) {
@@ -138,6 +356,13 @@ bool loadPs2oMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh) {
     const uint32_t payload = rd16(data + 4) | (static_cast<uint32_t>(rd16(data + 6)) << 16);
     const uint32_t subMeshes = rd16(data + 8) | (static_cast<uint32_t>(rd16(data + 10)) << 16);
     mesh.subMeshCount = subMeshes;
+
+    // Character-family auto-detect: multiple OBJH tags with the FIRST in the
+    // first half of the file (delimiting submesh regions throughout), unlike
+    // the room family whose OBJH tags cluster at the very end.
+    const std::vector<size_t> objh = findObjs(data, size);
+    if (objh.size() >= 2 && objh[0] < size / 2)
+        return loadCharacterMesh(data, size, mesh, objh);
 
     // Vertex positions: contiguous 16-byte records of (x,y,z,1.0).
     // The array ends at the first record whose w is not 1.0.
