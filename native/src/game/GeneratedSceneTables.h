@@ -7,7 +7,7 @@
 // Descriptors: 0x2a31b8 stride 0x64 (68).
 // Entries:     0x2a4c48 stride 0x4c.
 // World range: 0x5f2fb8 + scene*0x194, [+0x128 start, +0x12C end).
-// Entries emitted for scene(s): 0x0F.
+// Entries emitted for scene(s): 0x0F, 0x2B.
 #pragma once
 
 #include "core/gobj_abi.h"
@@ -214,7 +214,7 @@ constexpr VerifiedSceneRange kVerifiedSceneRanges[] = {
     {0x5A, 3444, 3453},
 };
 
-constexpr std::size_t kVerifiedScenePayloadCount = 29;
+constexpr std::size_t kVerifiedScenePayloadCount = 54;
 // Payload entries are grouped per scene in ascending scene id.
 constexpr VerifiedSceneEntry kVerifiedScenePayload[] = {
     // scene 0x0F entry 847 desc 44 (DYNAMICMOTIONDAT) list 7 type 0
@@ -275,6 +275,56 @@ constexpr VerifiedSceneEntry kVerifiedScenePayload[] = {
     {874, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
     // scene 0x0F entry 875 desc 44 (DYNAMICMOTIONDAT) list 7 type 0
     {875, 44, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2151 desc 7 (SOBJ) list 7 type 0
+    {2151, 7, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2152 desc 7 (SOBJ) list 7 type 0
+    {2152, 7, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2153 desc 7 (SOBJ) list 7 type 0
+    {2153, 7, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2154 desc 7 (SOBJ) list 7 type 0
+    {2154, 7, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2155 desc 22 (FLEVER) list 7 type 0
+    {2155, 22, 7, 0, 0x0000, 0x00000000u, 0x00000002u, 0x0000},
+    // scene 0x2B entry 2156 desc 6 (DEMOMOTCTRL) list 7 type 0
+    {2156, 6, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2157 desc 6 (DEMOMOTCTRL) list 7 type 0
+    {2157, 6, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2158 desc 6 (DEMOMOTCTRL) list 7 type 0
+    {2158, 6, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2159 desc 11 (PARTICLE) list 7 type 0
+    {2159, 11, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2160 desc 39 (POOL) list 7 type 0
+    {2160, 39, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2161 desc 30 (BGA) list 7 type 0
+    {2161, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2162 desc 30 (BGA) list 7 type 0
+    {2162, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2163 desc 30 (BGA) list 7 type 0
+    {2163, 30, 7, 0, 0x0000, 0x0020F688u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2164 desc 30 (BGA) list 7 type 0
+    {2164, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2165 desc 30 (BGA) list 7 type 0
+    {2165, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2166 desc 30 (BGA) list 7 type 0
+    {2166, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2167 desc 30 (BGA) list 7 type 0
+    {2167, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2168 desc 30 (BGA) list 7 type 0
+    {2168, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2169 desc 30 (BGA) list 7 type 0
+    {2169, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2170 desc 30 (BGA) list 7 type 0
+    {2170, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2171 desc 30 (BGA) list 7 type 0
+    {2171, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2172 desc 30 (BGA) list 7 type 0
+    {2172, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2173 desc 44 (DYNAMICMOTIONDAT) list 7 type 0
+    {2173, 44, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2174 desc 54 (STAGESETTING) list 7 type 0
+    {2174, 54, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
+    // scene 0x2B entry 2175 desc 30 (BGA) list 7 type 0
+    {2175, 30, 7, 0, 0x0000, 0x00000000u, 0x00000015u, 0x0000},
 };
 
 }  // namespace ico::engine

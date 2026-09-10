@@ -2,6 +2,7 @@
 
 #include "engine/GObjAttachment.h"
 #include "engine/SceneAssetStore.h"
+#include "game/GeneratedRoomRoleTables.h"
 #include "game/GeneratedSceneTables.h"
 #include "game/IsysGObj.h"
 
@@ -177,12 +178,37 @@ public:
      * reconstruction of the original GObj↔model link; a future PCSX2 runtime
      * capture that binds each GObj to its model would replace it.
      *
+     * Rev.159 (Passo 1): when a verified room role plan exists for sceneId
+     * (RegisteredRoomRoleTables generated from the runtime isys_gobj_proc_add
+     * capture, Rev.158), the scene GObjs are assigned handler roles first and
+     * every bound asset is paired to the GObj of its matching role. Scenes
+     * without a plan (e.g. 0x0F demo room) keep the round-robin fallback.
+     * The layer is still a HOST heuristic, but the per-room handler multiset
+     * it consumes is runtime-verified.
+     *
      * Returns the number of attachments recorded.
      */
     std::size_t attachBoundAssetsToGObjs(u32 sceneId);
     /* Host-side per-GObj visual composition registry (Passo 1). */
     const ico::engine::GObjAttachmentStore& attachmentStore() const;
     ico::engine::GObjAttachmentStore& attachmentStore();
+
+    /* Rev.159: verified per-room primary-handler repertoires collected from
+       the runtime capture (tools/extract_room_role_tables.py). They feed
+       attachBoundAssetsToGObjs() so the host re-links each GObj to the room's
+       handler roles instead of a blind round-robin. */
+    bool applyVerifiedRoomRolePlans(
+        const ico::engine::VerifiedRoomRolePlan* plans, std::size_t planCount);
+    bool hasRoomRolePlan(u32 sceneId) const;
+    /* Rev.159 (Passo 2): re-pairs the current scene's assets onto its GObjs
+       using the verified per-room handler repertoire. Called by execute()
+       after every scene transition, so the host re-links per world-state
+       change instead of only at initial load. Returns attachments recorded. */
+    std::size_t relinkAttachmentsForCurrentScene();
+    /* Rev.159: verified runtime handler (ico_ptr32) the i-th scene GObj was
+       bound to by the last relink; 0 when the room has no plan or the GObj
+       index is out of range. Order matches sceneGObjHandle(). */
+    ico_ptr32 gobjHandlerRole(u32 index) const;
 
     bool execute();
     std::size_t initSceneGObj(u32 sceneId);
@@ -229,5 +255,15 @@ private:
         std::vector<ico::engine::SceneAssetEntry> assets;
     };
     std::vector<SceneAssetBinding> m_assetBindings;
+
+    /* Rev.159: per-scene plans copied from the generated room-role tables. */
+    struct RoomRolePlan {
+        u32 sceneId;
+        std::vector<ico::engine::VerifiedRoomRole> roles;
+    };
+    std::vector<RoomRolePlan> m_roomRolePlans;
+    /* Rev.159: GObjHandle→handler binding the last attach relinked. */
+    std::vector<std::pair<ico::engine::GObjHandle, ico_ptr32>> m_gobjHandlers;
+
     ico::engine::GObjAttachmentStore m_attachments;
 };

@@ -271,6 +271,55 @@ std::size_t KanbanSceneLoader::attachBoundAssetsToGObjs(u32 sceneId) {
         return 0;
     }
 
+    // Rev.159: when a verified room role plan exists for this room, tag each
+    // scene GObj with a handler from the runtime repertoire and pair the
+    // bound assets round-robin onto the tagged GObjs (asset label -> verified
+    // handler attachment is NOT byte-verified; the per-room multiset is).
+    const RoomRolePlan* plan = nullptr;
+    for (const RoomRolePlan& candidate : m_roomRolePlans) {
+        if (candidate.sceneId == sceneId) {
+            plan = &candidate;
+            break;
+        }
+    }
+    m_gobjHandlers.clear();
+    if (plan != nullptr && !plan->roles.empty()) {
+        // Build the expanded role-slot iterator: each role contributes
+        // roleCount slots (one per distinct runtime GObj). Walk the scene
+        // GObjs in creation order and tag each to the next slot.
+        std::vector<ico_ptr32> slots;
+        for (const ico::engine::VerifiedRoomRole& role : plan->roles) {
+            for (u16 i = 0; i < role.roleCount; ++i) {
+                slots.push_back(role.handlerAddr);
+            }
+        }
+        if (!slots.empty()) {
+            std::size_t slotIndex = 0;
+            for (const ico::engine::GObjHandle handle : m_sceneGObjs) {
+                m_gobjHandlers.emplace_back(handle,
+                                            slots[slotIndex++ % slots.size()]);
+            }
+        }
+
+        std::size_t attached = 0;
+        for (const ico::engine::SceneAssetEntry& asset : binding->assets) {
+            // Round-robin over the role-tagged GObjs (host heuristic; the
+            // asset label -> handler association is NOT verified).
+            const ico::engine::GObjHandle owner =
+                m_gobjHandlers[attached % m_gobjHandlers.size()].first;
+            ico::engine::GObjRenderAttachment att{};
+            att.handle = owner;
+            att.kind = ico::engine::GObjAttachmentKind::Mesh;
+            att.meshPath = asset.meshPath;
+            att.meshLabel = asset.label;
+            att.transform = ico::engine::Matrix4x4::identity();
+            att.active = true;
+            m_attachments.attach(att);
+            ++attached;
+        }
+        return attached;
+    }
+
     // Best-effort HOST pairing: round-robin the scene's allowed payload over
     // the GObjs the verified entry table actually created. Not a verified
     // original GObj<->model link (see header comment).
@@ -297,12 +346,57 @@ std::size_t KanbanSceneLoader::attachBoundAssetsToGObjs(u32 sceneId) {
     return bound;
 }
 
+bool KanbanSceneLoader::applyVerifiedRoomRolePlans(
+    const ico::engine::VerifiedRoomRolePlan* plans, std::size_t planCount) {
+    if (!m_initialized || (plans == nullptr && planCount != 0)) {
+        return false;
+    }
+    m_roomRolePlans.clear();
+    for (std::size_t i = 0; i < planCount; ++i) {
+        if (plans[i].roles == nullptr && plans[i].roleCount != 0) {
+            return false;
+        }
+        RoomRolePlan plan;
+        plan.sceneId = plans[i].sceneId;
+        for (u16 r = 0; r < plans[i].roleCount; ++r) {
+            plan.roles.push_back(plans[i].roles[r]);
+        }
+        m_roomRolePlans.push_back(std::move(plan));
+    }
+    return true;
+}
+
+bool KanbanSceneLoader::hasRoomRolePlan(u32 sceneId) const {
+    for (const RoomRolePlan& plan : m_roomRolePlans) {
+        if (plan.sceneId == sceneId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::size_t KanbanSceneLoader::relinkAttachmentsForCurrentScene() {
+    m_attachments.clear();
+    const u32 sceneId = m_currentSceneId;
+    if (!hasBoundAssets(sceneId)) {
+        return 0;
+    }
+    return attachBoundAssetsToGObjs(sceneId);
+}
+
 const ico::engine::GObjAttachmentStore& KanbanSceneLoader::attachmentStore() const {
     return m_attachments;
 }
 
 ico::engine::GObjAttachmentStore& KanbanSceneLoader::attachmentStore() {
     return m_attachments;
+}
+
+ico_ptr32 KanbanSceneLoader::gobjHandlerRole(u32 index) const {
+    if (index >= m_gobjHandlers.size()) {
+        return 0;
+    }
+    return m_gobjHandlers[index].second;
 }
 
 bool KanbanSceneLoader::execute() {
@@ -313,7 +407,14 @@ bool KanbanSceneLoader::execute() {
     const u32 sceneId = m_requests.front();
     m_requests.erase(m_requests.begin());
     m_currentSceneId = sceneId;
-    return initSceneGObj(sceneId) != 0;
+    const bool ok = initSceneGObj(sceneId) != 0;
+    if (ok) {
+        // Rev.159 (Passo 2): re-link every room transition, not only the
+        // first load. New world-state loads pick the room's verified handler
+        // repertoire and re-pair assets onto the (reallocated) GObjs.
+        relinkAttachmentsForCurrentScene();
+    }
+    return ok;
 }
 
 std::size_t KanbanSceneLoader::initSceneGObj(u32 sceneId) {
@@ -322,6 +423,16 @@ std::size_t KanbanSceneLoader::initSceneGObj(u32 sceneId) {
     }
 
     std::size_t created = 0;
+    // Rev.159: the GObj pool is reused across rooms (Rev.158 runtime capture:
+    // a pool address changes owner between scenes). Release the previous
+    // scene's GObjs so a new room starts from free slots and the active-count
+    // invariant holds per scene instead of accumulating.
+    for (const ico::engine::GObjHandle handle : m_sceneGObjs) {
+        ico::engine::GObj* gobj = m_runtime->pool().get(handle);
+        if (gobj != nullptr) {
+            m_runtime->remove(*gobj);
+        }
+    }
     m_sceneGObjs.clear();
     m_sceneGObjSources.clear();
     m_attachments.clear();

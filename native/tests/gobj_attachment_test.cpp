@@ -152,11 +152,136 @@ int main() {
     assert(loader.initSceneGObj(0x0Fu) == created);
     assert(loader.attachmentStore().count() == 0);
 
+    /*
+     * Rev.159 (Passo 3) — verified per-room handler repertoire drives the
+     * GObjHandle->handler binding (scene 0x2B role plan).
+     *
+     * Scene 0x2B has a runtime-verified plan in GeneratedRoomRoleTables.h
+     * (Rev.158): 26 slots / 8 handlers (flag_hB x5, torch_hB x5, type36_hB x5,
+     * type60_hB x5, type6_hB x3, type39_hB x1, type22_hB x1, boy_hB x1).
+     * initSceneGObj(0x2B) creates 23 GObjs (25 payload rows minus 2 gate-0
+     * descriptors: DYNAMICMOTIONDAT, STAGESETTING). The loader must:
+     *   - consume the generated plans and recognize the room;
+     *   - tag each created GObj with a handler from the room's repertoire
+     *     (the GObjHandle->handler map = role slots expanded in order);
+     *   - pair the bound assets while keeping the round-robin within the
+     *     tagged set (asset label -> handler is still a HOST heuristic);
+     *   - re-pair on every execute() transition (Passo 2), not only once.
+     */
+    assert(loader.applyVerifiedRoomRolePlans(
+        ico::engine::kVerifiedRoomRolePlans,
+        ico::engine::kVerifiedRoomRolePlanCount));
+    assert(loader.hasRoomRolePlan(0x2Bu));
+    /* 0x0F (demo room) is not in the runtime capture: no plan, round-robin
+       fallback stays the documented behavior for it. */
+    assert(!loader.hasRoomRolePlan(0x0Fu));
+
+    /* Verify the 0x2B plan contents we are about to assert against. */
+    const ico::engine::VerifiedRoomRolePlan* plan2B = nullptr;
+    for (std::size_t i = 0; i < ico::engine::kVerifiedRoomRolePlanCount; ++i) {
+        if (ico::engine::kVerifiedRoomRolePlans[i].sceneId == 0x2Bu) {
+            plan2B = &ico::engine::kVerifiedRoomRolePlans[i];
+            break;
+        }
+    }
+    assert(plan2B != nullptr);
+    assert(plan2B->roleCount == 8);
+    std::size_t planSlots2B = 0;
+    for (u16 r = 0; r < plan2B->roleCount; ++r) {
+        planSlots2B += plan2B->roles[r].roleCount;
+    }
+    assert(planSlots2B == 26);
+
+    /* Bind the 0x2B block (host test data reusing the room piece library). */
+    assert(store.sceneAssetCount(0x2Bu) == 28);
+    assert(loader.bindSceneAssets(store, 0x2Bu));
+    assert(loader.hasBoundAssets(0x2Bu));
+
+    assert(loader.requestScene(0x2Bu));
+    const std::size_t created2B = loader.initSceneGObj(0x2Bu);
+    assert(created2B == 23);
+
+    const std::size_t attached2B = loader.attachBoundAssetsToGObjs(0x2Bu);
+    assert(attached2B == 28);
+    assert(loader.attachmentStore().count() == 28);
+
+    /*
+     * Every created GObj must carry a handler tag taken from the 0x2B
+     * repertoire. The tags are the role-slot expansion cycling the plan order
+     * (flag x5, torch x5, type36 x5, type60 x5, type6 x3, ...) over the 23
+     * host GObjs: slot 0..22 of the expanded 26-slot list. Assert the exact
+     * resulting multiset — a concrete, deterministic binding.
+     */
+    struct ExpectedRole {
+        ico_ptr32 addr;
+        std::size_t tagCount;
+    };
+    const ExpectedRole kExpected2B[] = {
+        {0x001D00F8u, 5},
+        {0x001F1CF0u, 5},
+        {0x001F44C8u, 5},
+        {0x0023D518u, 5},
+        {0x001CE6F0u, 3},
+        {0x0010D070u, 0},
+        {0x001BC1A8u, 0},
+        {0x001C1DD8u, 0},
+    };
+    std::size_t taggedTotal = 0;
+    for (std::size_t i = 0; i < created2B; ++i) {
+        const ico_ptr32 handler = loader.gobjHandlerRole(i);
+        assert(handler != 0);
+        bool inRepertoire = false;
+        for (u16 r = 0; r < plan2B->roleCount; ++r) {
+            if (plan2B->roles[r].handlerAddr == handler) {
+                inRepertoire = true;
+                break;
+            }
+        }
+        assert(inRepertoire);
+        ++taggedTotal;
+    }
+    assert(taggedTotal == 23);
+
+    /* Multiset check: count how many GObjs carry each plan handler. */
+    for (const ExpectedRole& e : kExpected2B) {
+        std::size_t n = 0;
+        for (std::size_t i = 0; i < created2B; ++i) {
+            if (loader.gobjHandlerRole(i) == e.addr) {
+                ++n;
+            }
+        }
+        assert(n == e.tagCount);
+    }
+
+    /* Passo 2: execute() re-pairs on transition — a fresh scene load re-links
+       attachments without an explicit attach call after initSceneGObj.
+       clearRequests() first: requestScene() enqueues and execute() pops the
+       front; the earlier scene-0x0F request must not be consumed here. */
+    loader.clearRequests();
+    assert(loader.requestScene(0x2Bu));
+    assert(loader.execute());
+    assert(loader.attachmentStore().count() == 28);
+    assert(loader.sceneGObjCount() == 23);
+
+    /* The attachment owners from the relink are the freshly created GObjs. */
+    std::size_t relinkedOwners = 0;
+    loader.attachmentStore().forEach(
+        [&](const ico::engine::GObjRenderAttachment& att) {
+            ico::engine::GObj* gobj = runtime.pool().get(att.handle);
+            assert(gobj != nullptr);
+            ++relinkedOwners;
+        });
+    assert(relinkedOwners == 28);
+
+    /* A role plan for a room with no bound assets must stay inert. */
+    assert(!loader.bindSceneAssets(store, 0x07u) ||
+           loader.attachmentStore().count() == 28);
+
     loader.shutdown();
     runtime.shutdown();
 
     std::printf("gobj_attachment_test: all passed (%zu assets paired onto %zu "
-                "GObjs, %zu double-owned)\n",
-                attached, created, doubleOwned);
+                "GObjs, %zu double-owned; %zu tagged onto %zu GObjs)\n",
+                attached, created, doubleOwned, attached2B, created2B);
     return 0;
 }
