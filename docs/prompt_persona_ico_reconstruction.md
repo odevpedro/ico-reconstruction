@@ -224,6 +224,22 @@ A compelling scene is not technical evidence.
   `research/native/rev171-st02a-p1-decode-and-two-way-door.md`. Archaeology
   next (still open): the 12 flat `w==0` "strstop" regions, and a PCSX2 capture
   of st02a to replace the host round-robin GObj↔mesh pairing.
+- Rev.172 (2026-09-11): **the two-room door pipeline generalizes (heatless
+  matrix, 12/12).** No code change — the `--room <primary> --pair <companion>`
+  CLI was already data-driven since Rev.170. Verification only: every directed
+  pair among st00a/st02a/st13b/st18a crosses the door and performs the real
+  `requestScene(0x2B)` resident-set swap (`DOOR OPEN X -> Y` + `transition
+  execute ok (scene 0x2B, 23 host GObjs)` in all 12 runs). st13b↔st18a works
+  without st00a in the store, proving the swap keys on `sceneId`, not learned
+  pairs. Door snap (5-corner standable floor, radius 400): st00a (16.67,15.29),
+  st02a (-210,-265), st13b (1287.83,-958.462), st18a (~0,70.34). Catalog of the
+  10 extracted rooms that contain a door piece: 4 functional, 5 that never
+  snap within radius 400 (st03t/st04b/st06a/st13c/st22a — the door piece's AABB
+  center sits far from the interior's standable5 floor; note st03t/st13c/st22a
+  centers ARE inside the global p1 vertex bounds, so their floor gaps are
+  interior, not bounds-clipping), st05b untested. The next real PORT step
+  remains Item 1 (PCSX2 capture of room 0x0F) or Item 3 (history cleanup). Ver
+  nota `research/native/rev172-room-transition-multi-room-matrix.md`.
 
 ## Current runtime baseline (Rev.126)
 
