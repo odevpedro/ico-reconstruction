@@ -27,12 +27,12 @@ bool BoyController::initialize(ico::engine::IsysGObjRuntime& runtime,
         return false;
     }
     this->runtime = &runtime;
-    this->bridge = &bridge;
+    this->bridge_ = &bridge;
 
     ico::engine::GObj* g = runtime.add(listId, 0u, 0);
     if (g == nullptr) {
         this->runtime = nullptr;
-        this->bridge = nullptr;
+        this->bridge_ = nullptr;
         return false;
     }
     gobj = g;
@@ -49,7 +49,7 @@ bool BoyController::initialize(ico::engine::IsysGObjRuntime& runtime,
         runtime.remove(*gobj);
         gobj = nullptr;
         this->runtime = nullptr;
-        this->bridge = nullptr;
+        this->bridge_ = nullptr;
         return false;
     }
     return true;
@@ -61,13 +61,13 @@ void BoyController::shutdown() {
     }
     gobj = nullptr;
     runtime = nullptr;
-    bridge = nullptr;
+    bridge_ = nullptr;
     moveDx = moveDz = 0.0f;
     velX = velZ = 0.0f;
 }
 
 bool BoyController::spawn(float x, float z, float halfExtent) {
-    if (bridge == nullptr) {
+    if (bridge_ == nullptr) {
         return false;
     }
     const float ext = std::max(halfExtent, 0.0f);
@@ -79,7 +79,7 @@ bool BoyController::spawn(float x, float z, float halfExtent) {
                  std::array<float, 2>{px + ext, pz - ext},
                  std::array<float, 2>{px - ext, pz + ext},
                  std::array<float, 2>{px + ext, pz + ext}}) {
-            if (!bridge->floorHeightAt(pt[0], pt[1], h)) {
+            if (!bridge_->floorHeightAt(pt[0], pt[1], h)) {
                 return false;
             }
         }
@@ -89,12 +89,12 @@ bool BoyController::spawn(float x, float z, float halfExtent) {
         x_ = x;
         z_ = z;
         y_ = 0.0f;
-        return bridge->floorHeightAt(x, z, y_);
+        return bridge_->floorHeightAt(x, z, y_);
     }
     // Outward spiral scan for the nearest walkable surface, bounded to a few
     // cells so a requested point far outside the room fails instead of
     // teleporting the character.
-    const float cell = bridge->cellSize();
+    const float cell = bridge_->cellSize();
     const int maxRing = 2;
     for (int ring = 1; ring <= maxRing; ++ring) {
         const float step = static_cast<float>(ring) * cell;
@@ -116,7 +116,7 @@ bool BoyController::spawn(float x, float z, float halfExtent) {
                     x_ = pt.first;
                     z_ = pt.second;
                     y_ = 0.0f;
-                    return bridge->floorHeightAt(x_, z_, y_);
+                    return bridge_->floorHeightAt(x_, z_, y_);
                 }
             }
         }
@@ -131,7 +131,7 @@ void BoyController::setMove(f32 dx, f32 dz) {
 
 void BoyController::onProcessDispatch(ico::engine::GObj& g) {
     (void)g;
-    if (bridge == nullptr) {
+    if (bridge_ == nullptr) {
         return;
     }
 
@@ -161,7 +161,7 @@ void BoyController::onProcessDispatch(ico::engine::GObj& g) {
     // Resolve the integrated velocity through the clip bridge (the native
     // sweep of `_Clip`), axis-separated, snapping to the floor.
     const float hx = velX, hz = velZ;
-    const bool progressed = bridge->move(x_, y_, z_, hx, hz,
+    const bool progressed = bridge_->move(x_, y_, z_, hx, hz,
                                          halfExtent_, stepHeight_);
 
     // hA: two-path controller. Moving input (or residual velocity)  → Path A

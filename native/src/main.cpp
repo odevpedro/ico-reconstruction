@@ -34,6 +34,9 @@
 #include <cstring>
 #include <filesystem>
 #include <algorithm>
+#include <array>
+#include <functional>
+#include <memory>
 #include <string>
 #include <fstream>
 #include <thread>
@@ -53,6 +56,29 @@ struct ScenePiece {
     ico::engine::Ps2oMesh mesh;
     std::string name;
     std::vector<ico::engine::TextureHandle> texByMat;
+    int room = 0;   // index into the DemoRoom list (Rev.170)
+};
+
+// Rev.170 (PORT): one room bundle = one composable scene. A demo can host
+// several rooms; the door transition switches the ACTIVE room (geometry,
+// clip, sky, spawn) while both stay resident so the swap is inexpensive.
+struct DemoRoom {
+    std::string name;
+    std::vector<std::string> piecePaths;
+    std::string texDir;
+    const ico::engine::SceneAssetStore* store = nullptr;
+    u32 sceneId = 0x0Fu;
+};
+
+// Per-room camera/spawn facts precomputed at load. Pieces are in world space
+// (Rev.170 composition probe: the 0str/p1/p2/umi stages compose by
+// coordinates, sea sheets span tens of thousands of units), so the fit is a
+// bbox union resolved per room and the p1 room piece supplies the walkable
+// spawn anchor.
+struct RoomFit {
+    float cx = 0.0f, cy = 0.0f, cz = 0.0f;
+    float spawnX = 0.0f, spawnZ = 0.0f;
+    float extent = 1.0f, dist = 1.0f;
 };
 
 // Pre-computed per-texture draw geometry. All triangles that share a texture
@@ -195,73 +221,105 @@ bool loadRoomSkyColors(const std::string& texDir,
     return true;
 }
 
-// Per-piece scene render: draws every piece every frame, binding the texture
-// that the piece's material name table maps to material index f.
+// Multi-room scene render (Rev.170): draws every piece of every room every
+// frame, binding the texture that each piece's material name table maps to
+// material index f. The ACTIVE room drives camera/sky/collision/spawn; a door
+// transition swaps the active room through the semantic requestScene/execute
+// seam (the previous rooms stay resident in the same store).
+//
+// teleport (optional [x,z]) seeds the player at a fixed point in the START
+// room instead of the fitted p1 center — used to land the boy inside a door
+// zone for headless transition verification.
+int runMultiRoomDemo(const std::vector<DemoRoom>& rooms, u32 startRoom,
+                     u32 frames, const char* shotPath, bool uvTest,
+                     float camAngleRad, bool fitMacro,
+                     const float* teleport = nullptr);
+
 int runSceneDemo(const std::vector<std::string>& piecePaths,
                  const std::string& texDir,
                  u32 frames, const char* shotPath, bool uvTest,
                  float camAngleRad, bool fitMacro,
-                 const ico::engine::SceneAssetStore* store = nullptr) {
+                 const ico::engine::SceneAssetStore* store = nullptr);
+
+int runMultiRoomDemo(const std::vector<DemoRoom>& rooms, u32 startRoom,
+                     u32 frames, const char* shotPath, bool uvTest,
+                     float camAngleRad, bool fitMacro,
+                     const float* teleport) {
     using namespace ico::engine;
 
-    // Load all pieces.
+    if (rooms.empty()) {
+        std::fprintf(stderr, "main: no rooms to render\n");
+        return 1;
+    }
+
+    // Load all pieces (each tagged with its owning room index).
     std::vector<ScenePiece> pieces;
-    for (const auto& path : piecePaths) {
-        ScenePiece sp;
-        sp.name = path;
-        if (!loadPs2oMeshFromFile(path.c_str(), sp.mesh)) {
-            std::fprintf(stderr, "main: failed to load PS2O mesh %s\n", path.c_str());
-            continue;
+    for (std::size_t ri = 0; ri < rooms.size(); ++ri) {
+        for (const auto& path : rooms[ri].piecePaths) {
+            ScenePiece sp;
+            sp.name = path;
+            sp.room = static_cast<int>(ri);
+            if (!loadPs2oMeshFromFile(path.c_str(), sp.mesh)) {
+                std::fprintf(stderr, "main: failed to load PS2O mesh %s\n", path.c_str());
+                continue;
+            }
+            const std::size_t synthesized = synthesizeTriangleStrips(sp.mesh);
+            if (synthesized != 0) {
+                std::fprintf(stderr,
+                    "main:   strip synthesis: %zu strips from %u flat triangles "
+                    "(unified GL_TRIANGLE_STRIP path)\n",
+                    synthesized,
+                    static_cast<uint32_t>(sp.mesh.triangles.size() / 3));
+            }
+            uint32_t maxMat = 0;
+            for (auto m : sp.mesh.triMaterials) if (m > maxMat) maxMat = m;
+            sp.texByMat.assign(maxMat + 1, kNullTexture);
+            std::fprintf(stderr, "main: piece %s: %u verts, %u tris, %u submeshes, "
+                                 "%u material names, fmax=%u\n",
+                         path.c_str(),
+                         static_cast<uint32_t>(sp.mesh.vertexCount),
+                         static_cast<uint32_t>(sp.mesh.triangles.size() / 3),
+                         sp.mesh.subMeshCount,
+                         static_cast<uint32_t>(sp.mesh.materialNames.size()), maxMat);
+            for (size_t i = 0; i < sp.mesh.materialNames.size(); ++i) {
+                std::fprintf(stderr, "main:   material[%zu] -> %s.tm2\n",
+                             i, sp.mesh.materialNames[i].c_str());
+            }
+            pieces.push_back(std::move(sp));
         }
-        const std::size_t synthesized = synthesizeTriangleStrips(sp.mesh);
-        if (synthesized != 0) {
-            std::fprintf(stderr,
-                "main:   strip synthesis: %zu strips from %u flat triangles "
-                "(unified GL_TRIANGLE_STRIP path)\n",
-                synthesized,
-                static_cast<uint32_t>(sp.mesh.triangles.size() / 3));
-        }
-        uint32_t maxMat = 0;
-        for (auto m : sp.mesh.triMaterials) if (m > maxMat) maxMat = m;
-        sp.texByMat.assign(maxMat + 1, kNullTexture);
-        std::fprintf(stderr, "main: piece %s: %u verts, %u tris, %u submeshes, "
-                             "%u material names, fmax=%u\n",
-                     path.c_str(),
-                     static_cast<uint32_t>(sp.mesh.vertexCount),
-                     static_cast<uint32_t>(sp.mesh.triangles.size() / 3),
-                     sp.mesh.subMeshCount,
-                     static_cast<uint32_t>(sp.mesh.materialNames.size()), maxMat);
-        for (size_t i = 0; i < sp.mesh.materialNames.size(); ++i) {
-            std::fprintf(stderr, "main:   material[%zu] -> %s.tm2\n",
-                         i, sp.mesh.materialNames[i].c_str());
-        }
-        pieces.push_back(std::move(sp));
     }
     if (pieces.empty()) {
         std::fprintf(stderr, "main: no pieces loaded\n");
         return 1;
     }
 
-    // Camera fit target. Default orbits the room piece (p1). With --fit-macro
-    // the camera centers the union bbox of ALL loaded pieces, so the whole
-    // stage (p2 backdrop included) is framed from afar.
-    const ScenePiece* fitPiece = nullptr;
-    if (!fitMacro) {
-        fitPiece = &pieces.front();
-        for (const auto& sp : pieces) {
-            if (sp.name.find("170_st00a_p1") != std::string::npos ||
-                sp.name.find("_p1.") != std::string::npos) {
-                fitPiece = &sp;
-                break;
+    // Per-room camera fit. Default orbits the room's p1 piece; with --fit-macro
+    // the camera centers the union bbox of ALL pieces of that room (p2
+    // backdrop and the sea included) so the whole stage is framed from afar.
+    std::vector<RoomFit> fits(rooms.size());
+    for (std::size_t ri = 0; ri < rooms.size(); ++ri) {
+        RoomFit& fit = fits[ri];
+        const ScenePiece* fitPiece = nullptr;
+        if (!fitMacro) {
+            for (const auto& sp : pieces) {
+                if (sp.room != static_cast<int>(ri)) continue;
+                if (sp.name.find("_p1.") != std::string::npos) { fitPiece = &sp; break; }
+            }
+            if (fitPiece == nullptr) {
+                // Rev.170: rooms whose _p1 failed to parse should not frame a
+                // decorative first piece; fit the largest loaded mesh instead.
+                std::size_t bestTris = 0;
+                for (const auto& sp : pieces) {
+                    if (sp.room != static_cast<int>(ri)) continue;
+                    const std::size_t t = sp.mesh.triangles.size() / 3;
+                    if (t > bestTris) { bestTris = t; fitPiece = &sp; }
+                }
             }
         }
-    }
-    float minX = 1e30f, maxX = -1e30f;
-    float minY = 1e30f, maxY = -1e30f;
-    float minZ = 1e30f, maxZ = -1e30f;
-    if (fitMacro) {
-        for (const auto& sp : pieces) {
-            const auto& m = sp.mesh;
+        float minX = 1e30f, maxX = -1e30f;
+        float minY = 1e30f, maxY = -1e30f;
+        float minZ = 1e30f, maxZ = -1e30f;
+        auto accumMesh = [&](const Ps2oMesh& m) {
             for (uint32_t i = 0; i < m.triangles.size(); ++i) {
                 const uint32_t vi = m.triangles[i];
                 minX = std::min(minX, m.positions[vi * 3 + 0]);
@@ -271,30 +329,39 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                 minZ = std::min(minZ, m.positions[vi * 3 + 2]);
                 maxZ = std::max(maxZ, m.positions[vi * 3 + 2]);
             }
+        };
+        if (fitMacro) {
+            for (const auto& sp : pieces) {
+                if (sp.room == static_cast<int>(ri)) accumMesh(sp.mesh);
+            }
+        } else if (fitPiece != nullptr) {
+            accumMesh(fitPiece->mesh);
         }
-    } else {
-        const auto& fitMesh = fitPiece->mesh;
-        for (uint32_t i = 0; i < fitMesh.triangles.size(); ++i) {
-            const uint32_t vi = fitMesh.triangles[i];
-            minX = std::min(minX, fitMesh.positions[vi * 3 + 0]);
-            maxX = std::max(maxX, fitMesh.positions[vi * 3 + 0]);
-            minY = std::min(minY, fitMesh.positions[vi * 3 + 1]);
-            maxY = std::max(maxY, fitMesh.positions[vi * 3 + 1]);
-            minZ = std::min(minZ, fitMesh.positions[vi * 3 + 2]);
-            maxZ = std::max(maxZ, fitMesh.positions[vi * 3 + 2]);
-        }
-    }
-    const float cx = (minX + maxX) * 0.5f;
-    const float cy = (minY + maxY) * 0.5f;
-    const float cz = (minZ + maxZ) * 0.5f;
+        fit.cx = (minX + maxX) * 0.5f;
+        fit.cy = (minY + maxY) * 0.5f;
+        fit.cz = (minZ + maxZ) * 0.5f;
 
-    // Spawn anchor: the walkable room piece's XZ center (the _p1 room mesh),
-    // independent of the camera fit. With --fit-macro the camera frames the
-    // union of all pieces but the boy must still spawn on the real floor.
-    float spawnX = cx, spawnZ = cz;
-    for (const auto& sp : pieces) {
-        if (sp.name.find("_p1.") != std::string::npos) {
-            const auto& m = sp.mesh;
+        // Spawn anchor: the walkable p1 room mesh's XZ center (independent of
+        // the camera fit). With --fit-macro the camera frames the union of all
+        // pieces but the boy must still spawn on the real floor. Falls back to
+        // the largest loaded mesh of the room when _p1 failed to parse.
+        fit.spawnX = fit.cx;
+        fit.spawnZ = fit.cz;
+        const ScenePiece* anchor = nullptr;
+        for (const auto& sp : pieces) {
+            if (sp.room != static_cast<int>(ri)) continue;
+            if (sp.name.find("_p1.") != std::string::npos) { anchor = &sp; break; }
+        }
+        if (anchor == nullptr) {
+            std::size_t bestTris = 0;
+            for (const auto& sp : pieces) {
+                if (sp.room != static_cast<int>(ri)) continue;
+                const std::size_t t = sp.mesh.triangles.size() / 3;
+                if (t > bestTris) { bestTris = t; anchor = &sp; }
+            }
+        }
+        if (anchor != nullptr) {
+            const auto& m = anchor->mesh;
             float mnX = 1e30f, mxX = -1e30f, mnZ = 1e30f, mxZ = -1e30f;
             for (uint32_t i = 0; i < m.triangles.size(); ++i) {
                 const uint32_t vi = m.triangles[i];
@@ -303,16 +370,22 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                 mnZ = std::min(mnZ, m.positions[vi * 3 + 2]);
                 mxZ = std::max(mxZ, m.positions[vi * 3 + 2]);
             }
-            spawnX = (mnX + mxX) * 0.5f;
-            spawnZ = (mnZ + mxZ) * 0.5f;
-            break;
+            fit.spawnX = (mnX + mxX) * 0.5f;
+            fit.spawnZ = (mnZ + mxZ) * 0.5f;
         }
+        fit.extent = std::max({maxX - minX, maxY - minY, maxZ - minZ, 1.0f});
+        fit.dist = fit.extent * 1.15f;
+        std::fprintf(stderr, "main: room %s camera fit %s: cx=%g cy=%g cz=%g extent=%g dist=%g\n",
+                     rooms[ri].name.c_str(), fitMacro ? "macro(union)" : "p1(room)",
+                     fit.cx, fit.cy, fit.cz, fit.extent, fit.dist);
     }
-    const float extent = std::max({maxX - minX, maxY - minY, maxZ - minZ, 1.0f});
-    const float dist = extent * 1.15f;
-    std::fprintf(stderr, "main: camera fit %s: cx=%g cy=%g cz=%g extent=%g dist=%g\n",
-                 fitMacro ? "macro(union)" : "p1(room)",
-                 cx, cy, cz, extent, dist);
+    u32 activeRoom = (startRoom < rooms.size()) ? startRoom : 0;
+    float cx = fits[activeRoom].cx, cy = fits[activeRoom].cy, cz = fits[activeRoom].cz;
+    float extent = fits[activeRoom].extent, dist = fits[activeRoom].dist;
+    float spawnX = fits[activeRoom].spawnX, spawnZ = fits[activeRoom].spawnZ;
+    std::fprintf(stderr, "main: active room %u (%s), scene 0x%02X\n",
+                 static_cast<unsigned>(activeRoom), rooms[activeRoom].name.c_str(),
+                 static_cast<unsigned>(rooms[activeRoom].sceneId));
 
     OpenGLBackend backend;
     if (!backend.initialize(kPs2ScreenWidth, kPs2ScreenHeight)) {
@@ -330,10 +403,12 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     // Rev.169 shared-bundle fallback: resolve a material texture from the room
     // texture dir first, then the shared scene/texture bundle (many rooms
     // reference stock tiles like st0_a/torch/window that only exist there).
-    auto texForName = [&](const std::string& name) -> TextureHandle {
-        for (const auto& kv : texCache) if (kv.first == name) return kv.second;
+    auto texForName = [&](const std::string& name, int ri) -> TextureHandle {
+        const std::string key = std::to_string(ri) + ":" + name;
+        for (const auto& kv : texCache) if (kv.first == key) return kv.second;
         std::vector<std::string> candidates;
-        if (!texDir.empty()) candidates.push_back(texDir + "/" + name + ".tm2");
+        const std::string& roomTex = rooms[ri].texDir;
+        if (!roomTex.empty()) candidates.push_back(roomTex + "/" + name + ".tm2");
         else candidates.push_back(name + ".tm2");
         const char* sharedCandidates[] = {
             "assets/scene/texture/", "../native/assets/scene/texture/", nullptr
@@ -346,7 +421,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
             h = loadTm2Tex(backend, cand);
             if (h != kNullTexture) break;
         }
-        texCache.emplace_back(name, h);
+        texCache.emplace_back(key, h);
         if (h == kNullTexture) {
             const bool isNew =
                 std::find(missingLogged.begin(), missingLogged.end(), name) ==
@@ -368,13 +443,13 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         const size_t matCount = sp.texByMat.size();
         if (sp.mesh.materialNames.empty()) {
             if (matCount > 0) {
-                const TextureHandle stage = texForName("st0_a");
+                const TextureHandle stage = texForName("st0_a", sp.room);
                 for (size_t f = 0; f < matCount; ++f) sp.texByMat[f] = stage;
             }
             continue;
         }
         for (size_t f = 0; f < sp.mesh.materialNames.size() && f < matCount; ++f) {
-            sp.texByMat[f] = texForName(sp.mesh.materialNames[f]);
+            sp.texByMat[f] = texForName(sp.mesh.materialNames[f], sp.room);
         }
     }
 
@@ -474,9 +549,10 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     // ordered so that repeated binds of the same texture are adjacent, and
     // texture-identical primitives across pieces/footprints share one block.
     using namespace ico::engine;
-    auto buildBatches = [&](TextureHandle fallbackTex) -> std::vector<TextureBatch> {
+    auto buildBatches = [&](TextureHandle fallbackTex, int roomFilter) -> std::vector<TextureBatch> {
         std::vector<TextureBatch> batch;
         for (const auto& sp : pieces) {
+            if (roomFilter >= 0 && sp.room != roomFilter) continue;
             const auto& mesh = sp.mesh;
             if (mesh.triangles.empty()) continue;
             const uint32_t triCount = static_cast<uint32_t>(mesh.triangles.size() / 3);
@@ -585,9 +661,10 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
 
     // Pre-built global per-texture strip batches (single room draw path,
     // used when no GObj attachment composition is available).
-    auto buildStripBatches = [&](TextureHandle fallbackTex) -> std::vector<StripBatch> {
+    auto buildStripBatches = [&](TextureHandle fallbackTex, int roomFilter) -> std::vector<StripBatch> {
         std::vector<StripBatch> batch;
         for (const auto& sp : pieces) {
+            if (roomFilter >= 0 && sp.room != roomFilter) continue;
             if (sp.mesh.strips.empty()) continue;
             appendStripsOfPiece(sp, fallbackTex, batch);
         }
@@ -597,9 +674,9 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     // Checkerboard is applied only when --uv-test is set; otherwise the loop
     // assigns kNullTexture for untextured batches (white).
     const std::vector<TextureBatch> textureBatches = buildBatches(
-        uvTest ? checkerTex : kNullTexture);
-    const std::vector<StripBatch> stripBatches = buildStripBatches(
-        uvTest ? checkerTex : kNullTexture);
+        uvTest ? checkerTex : kNullTexture, static_cast<int>(activeRoom));
+    std::vector<StripBatch> stripBatches = buildStripBatches(
+        uvTest ? checkerTex : kNullTexture, static_cast<int>(activeRoom));
     const bool useStrips = !stripBatches.empty();
 
     // Batch instrumentation: per-texture source triangles vs emitted
@@ -674,30 +751,67 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     Input input;
     input.initialize();
 
-    // Collision ground truth for the walkable room: the _p1 room piece,
-    // regardless of camera fit. With --fit-macro the camera frames the union
-    // of all pieces but the ClipBridge must still rasterize the real floor
-    // (p1), not whatever piece happens to be first in the manifest.
-    const ScenePiece* roomPiece = nullptr;
-    for (const auto& sp : pieces) {
-        if (sp.name.find("_p1.") != std::string::npos) { roomPiece = &sp; break; }
+    // Collision ground truth per room: the _p1 room piece, regardless of
+    // camera fit (falling back to the room's LARGEST piece that actually
+    // loaded). Each room keeps its own ClipBridge; the door transition
+    // re-points the player onto the freshly entered room's grid instead of
+    // reusing the previous room's collision.
+    //
+    // Rev.170 (PORT): the first-piece fallback was wrong — several rooms load
+    // a decorative flare/emitter first (st02a's 02a_flare1.p2o produced a
+    // useless 8x7 grid of ~1 cell). And st02a_p1.p2o currently FAILS to parse:
+    // it is a 67-submesh p2-family variant that the p1 cascade decoder (Rev.151)
+    // rejects — a separate open decode item. So the fallback now picks the
+    // largest successfully-parsed mesh of the room (st02a -> st02a_p2.p2o,
+    // 21k tris) so the room keeps real collision.
+    std::vector<std::unique_ptr<ClipBridge>> roomClips(rooms.size());
+    for (std::size_t ri = 0; ri < rooms.size(); ++ri) {
+        const ScenePiece* roomPiece = nullptr;
+        for (const auto& sp : pieces) {
+            if (sp.room == static_cast<int>(ri) &&
+                sp.name.find("_p1.") != std::string::npos) { roomPiece = &sp; break; }
+        }
+        if (roomPiece == nullptr) {
+            std::size_t bestTris = 0;
+            for (const auto& sp : pieces) {
+                if (sp.room != static_cast<int>(ri)) continue;
+                const std::size_t t = sp.mesh.triangles.size() / 3;
+                if (t > bestTris) { bestTris = t; roomPiece = &sp; }
+            }
+            if (roomPiece != nullptr) {
+                std::fprintf(stderr,
+                    "main: room %s has no loadable _p1 piece; collision from largest mesh (%zu tris)\n",
+                    rooms[ri].name.c_str(), bestTris);
+            }
+        }
+        if (roomPiece == nullptr) continue;
+        roomClips[ri] = std::make_unique<ClipBridge>();
+        if (!roomClips[ri]->buildFromMesh(roomPiece->mesh.positions.data(),
+                                          roomPiece->mesh.vertexCount,
+                                          roomPiece->mesh.triangles.data(),
+                                          static_cast<u32>(roomPiece->mesh.triangles.size() / 3))) {
+            std::fprintf(stderr,
+                "main: room %s ClipBridge failed to build from %s; room renders viewer-only\n",
+                rooms[ri].name.c_str(), roomPiece->name.c_str());
+        } else {
+            std::fprintf(stderr, "main: room %s ClipBridge %s grid=%ux%u blocked=%u (from %s)\n",
+                         rooms[ri].name.c_str(),
+                         roomClips[ri]->isInitialized() ? "ok" : "unavailable",
+                         roomClips[ri]->gridWidth(), roomClips[ri]->gridHeight(),
+                         roomClips[ri]->blockedCellCount(), roomPiece->name.c_str());
+        }
     }
-    if (roomPiece == nullptr) roomPiece = fitPiece != nullptr ? fitPiece : &pieces.front();
-    ClipBridge clip;
-    if (!clip.buildFromMesh(roomPiece->mesh.positions.data(),
-                            roomPiece->mesh.vertexCount,
-                            roomPiece->mesh.triangles.data(),
-                            static_cast<u32>(roomPiece->mesh.triangles.size() / 3))) {
-        std::fprintf(stderr, "main: ClipBridge failed to build from %s; "
-                             "room renders viewer-only\n", roomPiece->name.c_str());
+    ClipBridge* activeClip = nullptr;
+    if (activeRoom < roomClips.size() && roomClips[activeRoom] &&
+        roomClips[activeRoom]->isInitialized()) {
+        activeClip = roomClips[activeRoom].get();
     }
-    std::fprintf(stderr, "main: ClipBridge %s grid=%ux%u blocked=%u\n",
-                 clip.isInitialized() ? "ok" : "unavailable",
-                 clip.gridWidth(), clip.gridHeight(),
-                 clip.blockedCellCount());
 
-    // Only the walkable room gets a runtime player; rooms whose p1 piece does
-    // not rasterize a grid (or clip build failed) render viewer-only.
+    // Only the walkable room gets a runtime player (rooms whose p1 piece does
+    // not rasterize a grid render viewer-only). Respawn is shared by the
+    // initial seed and every door transition: the SAME BoyController keeps its
+    // GObj/process and only re-points its collision bridge (no re-registration,
+    // no process leak), then re-runs the walkable spawn probe.
     IsysGObjRuntime gobjRuntime;
     if (!gobjRuntime.initialize(0x40, 0x40)) {
         std::fprintf(stderr, "main: gobj runtime failed to initialize\n");
@@ -706,38 +820,55 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     ico::game::BoyController player;
     bool playerSpawned = false;
     std::string spawnAnchor = "room center";
-    if (clip.isInitialized()) {
-        if (!player.initialize(gobjRuntime, clip, 1u)) {
-            std::fprintf(stderr, "main: BoyController failed to initialize\n");
-            return 1;
+    auto respawnPlayer = [&](float sx, float sz) -> bool {
+        spawnX = sx;
+        spawnZ = sz;
+        if (activeClip == nullptr) return false;
+        if (!player.isInitialized()) {
+            if (!player.initialize(gobjRuntime, *activeClip, 1u)) {
+                std::fprintf(stderr, "main: BoyController failed to initialize\n");
+                return false;
+            }
+        } else {
+            player.setBridge(*activeClip);
         }
-        playerSpawned = player.spawn(spawnX, spawnZ, player.halfExtent());
-    }
-    if (!playerSpawned && clip.isInitialized()) {
+        if (player.spawn(sx, sz, player.halfExtent())) {
+            playerSpawned = true;
+            spawnAnchor = "room center";
+            return true;
+        }
         // Rev.169 spawn fallback: room bbox centres (st02a) can land in a
         // courtyard void / well mouth with no floor samples, and the p1 grid
         // may be tiny. Re-anchor the player on the highest walkable floor
         // cell found by the ClipBridge (wall-tip 1-cell floors excluded).
         float bx = 0.0f, by = 0.0f, bz = 0.0f;
-        if (clip.bestFloorPoint(bx, by, bz) &&
+        if (activeClip->bestFloorPoint(bx, by, bz) &&
             player.spawn(bx, bz, player.halfExtent())) {
             playerSpawned = true;
             spawnAnchor = "highest walkable floor";
             spawnX = bx;
             spawnZ = bz;
             (void)by;
+            return true;
         }
+        std::fprintf(stderr,
+            "main: no walkable spawn point at (%g,%g); room renders viewer-only\n",
+            sx, sz);
+        playerSpawned = false;
+        return false;
+    };
+    if (teleport != nullptr) {
+        spawnX = teleport[0];
+        spawnZ = teleport[1];
+        respawnPlayer(spawnX, spawnZ);
+        std::fprintf(stderr, "main: teleport override active at (%g,%g)\n",
+                     spawnX, spawnZ);
+    } else {
+        respawnPlayer(fits[activeRoom].spawnX, fits[activeRoom].spawnZ);
     }
     std::fprintf(stderr, "main: player spawn at (%g,%g) [%s] -> %s pos=(%g,%g,%g)\n",
                  spawnX, spawnZ, spawnAnchor.c_str(), playerSpawned ? "ok" : "failed",
                  player.x(), player.y(), player.z());
-    if (!playerSpawned) {
-        // A room may fail the walkable-spawn probe (ClipBridge grid built from
-        // the p1 piece with no clear cell); keep rendering the room viewer-only
-        // (orbit camera fits the room) instead of aborting.
-        std::fprintf(stderr, "main: no walkable spawn point; room renders viewer-only "
-                             "(F camera follow disabled, WASD ignored)\n");
-    }
 
     // Rev.155 (Passo 1): the boy's visual is ALSO a GObj-owned composition.
     // The BoyController's GObj receives a BoxMarker attachment; the render
@@ -788,23 +919,43 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         std::fprintf(stderr, "main: failed to apply verified scene tables\n");
         return 1;
     }
-    if (store != nullptr) {
-        if (sceneLoader.bindSceneAssets(*store, 0x0Fu)) {
-            std::fprintf(stderr,
-                "main: loader bound scene 0x0F: %zu assets (first=%s)\n",
-                sceneLoader.boundAssetCount(0x0Fu),
-                sceneLoader.boundAsset(0x0Fu, 0)->label.c_str());
+    // Rev.159 (PORT): verified per-room primary-handler repertoires from the
+    // runtime capture (tools/extract_room_role_tables.py). Feeding them makes
+    // attachBoundAssetsToGObjs() re-link each GObj to its room's handler roles
+    // instead of a blind round-robin, and execute() re-links on every scene
+    // transition.
+    sceneLoader.applyVerifiedRoomRolePlans(
+        ico::engine::kVerifiedRoomRolePlans,
+        ico::engine::kVerifiedRoomRolePlanCount);
+
+    // Bind every room's store/scene pair. The same SceneAssetStore may carry
+    // several scenes (Rev.170 parseRoom) or each room may supply its own.
+    if (!rooms.empty()) {
+        for (const DemoRoom& r : rooms) {
+            if (r.store == nullptr) continue;
+            if (sceneLoader.bindSceneAssets(*r.store, r.sceneId)) {
+                std::fprintf(stderr,
+                    "main: loader bound scene 0x%02X (%s): %zu assets (first=%s)\n",
+                    static_cast<unsigned>(r.sceneId), r.name.c_str(),
+                    sceneLoader.boundAssetCount(r.sceneId),
+                    sceneLoader.boundAsset(r.sceneId, 0)
+                        ? sceneLoader.boundAsset(r.sceneId, 0)->label.c_str()
+                        : "?");
+            }
         }
-        sceneLoader.requestScene(0x0Fu);
+        const u32 requestSceneId = rooms[activeRoom].sceneId;
+        sceneLoader.requestScene(requestSceneId);
         const bool loaded = sceneLoader.execute();
         const std::size_t createdGObjs = sceneLoader.sceneGObjCount();
         std::fprintf(stderr,
-            "main: scene 0x0F semantic load via requestScene/execute: %s "
+            "main: scene 0x%02X semantic load via requestScene/execute: %s "
             "(currentSceneId=0x%02X, %zu host GObjs)\n",
-            loaded ? "ok" : "no-op", sceneLoader.currentSceneId(), createdGObjs);
+            static_cast<unsigned>(requestSceneId),
+            loaded ? "ok" : "no-op",
+            static_cast<unsigned>(sceneLoader.currentSceneId()), createdGObjs);
     } else {
         std::fprintf(stderr,
-            "main: no SceneAssetStore supplied; KanbanSceneLoader runs "
+            "main: no SceneAssetStore(s) supplied; KanbanSceneLoader runs "
             "unbound (viewer path)\n");
     }
 
@@ -854,82 +1005,223 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                          static_cast<unsigned>(kv.first), d.labels.size(), d.batches.size());
         }
     };
-    if (store != nullptr) {
-        std::size_t attached = sceneLoader.attachBoundAssetsToGObjs(0x0Fu);
+    if (rooms[activeRoom].store != nullptr) {
+        const u32 sceneId = rooms[activeRoom].sceneId;
+        std::size_t attached = sceneLoader.attachBoundAssetsToGObjs(sceneId);
         std::fprintf(stderr,
             "main: Passo 1 per-GObj composition: %zu attachments for %zu host "
-            "GObjs of scene 0x0F\n",
-            attached, sceneLoader.sceneGObjCount());
+            "GObjs of scene 0x%02X\n",
+            attached, sceneLoader.sceneGObjCount(),
+            static_cast<unsigned>(sceneId));
         rebuildGObjDraws();
     }
 
-    // Rev.168 (PORT): door-triggered room transition. The door zone is fitted
-    // from the real 169_door.p2o piece; the target spawn sits 60 units past
-    // the door along the (door − room-center) axis. Firing the transition
-    // drives requestScene/execute() (kanban.c seam): it releases the current
-    // room's GObjs, loads the target scene's (verified isysGObj tables,
-    // Rev.154/159), re-links attachments, rebuilds the per-GObj draw set and
-    // re-seeds the boy at the walkable spawn probe. Zone/spawn values are HOST
-    // heuristics, not byte-verified original door data.
-    ico::game::RoomTransitions roomTransitions;
-    {
-        const ScenePiece* doorPiece = nullptr;
-        for (const auto& sp : pieces) {
-            if (sp.name.find("169_door") != std::string::npos) {
-                doorPiece = &sp;
-                break;
-            }
-        }
-        if (doorPiece != nullptr) {
-            float mnX = 1e30f, mxX = -1e30f, mnZ = 1e30f, mxZ = -1e30f;
-            const auto& m = doorPiece->mesh;
-            for (uint32_t i = 0; i < m.triangles.size(); ++i) {
-                const uint32_t vi = m.triangles[i];
-                mnX = std::min(mnX, m.positions[vi * 3 + 0]);
-                mxX = std::max(mxX, m.positions[vi * 3 + 0]);
-                mnZ = std::min(mnZ, m.positions[vi * 3 + 2]);
-                mxZ = std::max(mxZ, m.positions[vi * 3 + 2]);
-            }
-            const float doorX = (mnX + mxX) * 0.5f;
-            const float doorZ = (mnZ + mxZ) * 0.5f;
-            float ax = doorX - spawnX, az = doorZ - spawnZ;
-            const float len = std::sqrt(ax * ax + az * az);
-            const float nx = (len > 1e-3f) ? ax / len : 1.0f;
-            const float nz = (len > 1e-3f) ? az / len : 0.0f;
-            ico::game::RoomTransitionZone zone;
-            zone.sceneId = 0x0Fu;
-            zone.name = "169_door";
-            zone.x = doorX;
-            zone.z = doorZ;
-            zone.radius = 40.0f;
-            zone.targetSceneId = 0x2Bu;
-            zone.spawnX = doorX + nx * 60.0f;
-            zone.spawnZ = doorZ + nz * 60.0f;
-            std::fprintf(stderr,
-                "main: door zone at (%g,%g) r=40 -> scene 0x2B, spawn(%g,%g)\n",
-                doorX, doorZ, zone.spawnX, zone.spawnZ);
-            roomTransitions.initialize(&zone, 1,
-                [&](const ico::game::RoomTransitionZone& z) {
-                    std::fprintf(stderr,
-                        "main: DOOR OPEN -> load scene 0x%02X, spawn(%g,%g)\n",
-                        static_cast<unsigned>(z.targetSceneId), z.spawnX, z.spawnZ);
-                    sceneLoader.requestScene(z.targetSceneId);
-                    const bool swapped = sceneLoader.execute();
-                    std::fprintf(stderr,
-                        "main:   transition execute: %s (scene 0x%02X, %zu host GObjs)\n",
-                        swapped ? "ok" : "no-op",
-                        static_cast<unsigned>(sceneLoader.currentSceneId()),
-                        sceneLoader.sceneGObjCount());
-                    rebuildGObjDraws();
-                    if (!player.spawn(z.spawnX, z.spawnZ, player.halfExtent())) {
-                        std::fprintf(stderr, "main:   next-room spawn probe failed; boy stays put\n");
-                    }
-                });
-            roomTransitions.setOpenDelay(1.0f);
+    // Real room sky per room: sample each room's sky.tm2 gradient; rooms without
+    // one fall back to a daylight haze placeholder (Rev.169, host
+    // presentation). The door-transition callback switches these arrays.
+    std::vector<bool> roomHasSky(rooms.size(), false);
+    std::vector<std::array<unsigned char, 4>> roomSkyTop(rooms.size());
+    std::vector<std::array<unsigned char, 4>> roomSkyHorizon(rooms.size());
+    for (std::size_t ri = 0; ri < rooms.size(); ++ri) {
+        roomSkyTop[ri] = {{10, 12, 18, 255}};
+        roomSkyHorizon[ri] = {{10, 12, 18, 255}};
+        if (loadRoomSkyColors(rooms[ri].texDir, roomSkyTop[ri].data(),
+                              roomSkyHorizon[ri].data())) {
+            roomHasSky[ri] = true;
         } else {
-            std::fprintf(stderr, "main: no 169_door piece; room transitions disabled\n");
+            // Rev.169 host presentation: rooms without an extracted sky.tm2
+            // render as a daylight haze (pale-blue zenith, pale horizon) so
+            // exterior vistas do not read as a black void. Explicitly host-
+            // side; the original room may tint its backdrop differently.
+            roomSkyTop[ri] = {{0x78, 0x98, 0xC8, 255}};
+            roomSkyHorizon[ri] = {{0xC4, 0xD2, 0xDC, 255}};
         }
     }
+    bool hasSky = roomHasSky[activeRoom];
+    unsigned char skyTop[4];
+    unsigned char skyHorizon[4];
+    for (int q = 0; q < 4; ++q) {
+        skyTop[q] = roomSkyTop[activeRoom][q];
+        skyHorizon[q] = roomSkyHorizon[activeRoom][q];
+    }
+
+    // Rev.168/170 (PORT): door-triggered room transition. Each room declares
+    // its own door piece (`2a_door1.p2o` st02a / `door.p2o` st00a / 169_door
+    // scene mode); the zone is fitted from the piece AABB and the target spawn
+    // sits 60 units past the door along the (door − room-center) axis. Firing
+    // the transition drives requestScene/execute() (kanban.c seam): it releases
+    // the current room's GObjs, loads the target scene's (verified isysGObj
+    // tables, Rev.154/159), re-links attachments, rebuilds the per-GObj draw
+    // set, re-points the boy onto the new room's ClipBridge and re-seeds him at
+    // the walkable spawn probe. Zone/spawn values are HOST heuristics, not
+    // byte-verified original door data.
+    struct RoomDoor {
+        bool present = false;
+        float x = 0.0f, z = 0.0f;
+        float spawnX = 0.0f, spawnZ = 0.0f;
+        u32 targetScene = 0;
+    };
+    std::vector<RoomDoor> roomDoors(rooms.size());
+    for (std::size_t ri = 0; ri < rooms.size(); ++ri) {
+        const ScenePiece* doorPiece = nullptr;
+        for (const auto& sp : pieces) {
+            if (sp.room != static_cast<int>(ri)) continue;
+            if (sp.name.find("door") != std::string::npos) { doorPiece = &sp; break; }
+        }
+        if (doorPiece == nullptr || doorPiece->mesh.triangles.empty()) continue;
+        float mnX = 1e30f, mxX = -1e30f, mnZ = 1e30f, mxZ = -1e30f;
+        const auto& m = doorPiece->mesh;
+        for (uint32_t i = 0; i < m.triangles.size(); ++i) {
+            const uint32_t vi = m.triangles[i];
+            mnX = std::min(mnX, m.positions[vi * 3 + 0]);
+            mxX = std::max(mxX, m.positions[vi * 3 + 0]);
+            mnZ = std::min(mnZ, m.positions[vi * 3 + 2]);
+            mxZ = std::max(mxZ, m.positions[vi * 3 + 2]);
+        }
+        RoomDoor& d = roomDoors[ri];
+        d.present = true;
+        d.x = (mnX + mxX) * 0.5f;
+        d.z = (mnZ + mxZ) * 0.5f;
+
+        // Rev.170 (PORT): a door trigger only works if the player can STAND on
+        // it. The door piece AABB centre (2a_door1 = (-210,25)) had NO walkable
+        // floor sample on st02a's p1 ClipBridge, so a spawn probe there failed
+        // and the boy fell back far from the zone — the door never opened.
+        // Snap the zone to the nearest world-space point with real floor
+        // support (spiral search up to 150 units) via the room's ClipBridge.
+        if (ri < roomClips.size() && roomClips[ri] && roomClips[ri]->isInitialized()) {
+            const ClipBridge* cb = roomClips[ri].get();
+            // Same 5-corner standable test BoyController::spawn uses
+            // (center + 4 corners at halfExtent 12) so the zone centre is a
+            // point the player can actually stand on — a single floor sample
+            // (floorHeightAt) was not enough and the boy teleported ~60 units
+            // off the door.
+            const float ext = 12.0f;
+            auto standable5 = [&](float px, float pz) -> bool {
+                float h = 0.0f;
+                const std::array<std::array<float, 2>, 5> pts{
+                    std::array<float, 2>{px, pz},
+                    std::array<float, 2>{px - ext, pz - ext},
+                    std::array<float, 2>{px + ext, pz - ext},
+                    std::array<float, 2>{px - ext, pz + ext},
+                    std::array<float, 2>{px + ext, pz + ext}};
+                for (const auto& pt : pts) {
+                    if (!cb->floorHeightAt(pt[0], pt[1], h)) return false;
+                }
+                return true;
+            };
+            bool found = false;
+            for (float r = 0.0f; r <= 150.0f && !found; r += 10.0f) {
+                for (int k = 0; k < 32; ++k) {
+                    const float a = static_cast<float>(k) * 6.28318530718f / 32.0f;
+                    const float px = d.x + r * std::cos(a);
+                    const float pz = d.z + r * std::sin(a);
+                    if (standable5(px, pz)) {
+                        std::fprintf(stderr,
+                            "main:   door %s snapped to standable floor at (%g,%g)\n",
+                            rooms[ri].name.c_str(), px, pz);
+                        d.x = px;
+                        d.z = pz;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        float ax = d.x - fits[ri].spawnX, az = d.z - fits[ri].spawnZ;
+        const float len = std::sqrt(ax * ax + az * az);
+        const float nx = (len > 1e-3f) ? ax / len : 1.0f;
+        const float nz = (len > 1e-3f) ? az / len : 0.0f;
+        d.spawnX = d.x + nx * 60.0f;
+        d.spawnZ = d.z + nz * 60.0f;
+        // 2-room demo: the door targets the OTHER room's scene id.
+        d.targetScene = rooms[(ri + 1) % rooms.size()].sceneId;
+        std::fprintf(stderr,
+            "main: room %s door '%s' at (%g,%g) r=40 -> scene 0x%02X, spawn(%g,%g)\n",
+            rooms[ri].name.c_str(), doorPiece->name.c_str(), d.x, d.z,
+            static_cast<unsigned>(d.targetScene), d.spawnX, d.spawnZ);
+    }
+
+    ico::game::RoomTransitions roomTransitions;
+    std::function<void(u32)> installRoomTransitions = [&](u32 ri) {
+        roomTransitions.reset();
+        if (rooms.size() < 2) {
+            std::fprintf(stderr, "main: single room; door transitions disabled\n");
+            return;
+        }
+        const RoomDoor& d = roomDoors[ri];
+        if (!d.present) {
+            std::fprintf(stderr, "main: room %s has no door piece; transitions from it disabled\n",
+                         rooms[ri].name.c_str());
+            return;
+        }
+        ico::game::RoomTransitionZone zone;
+        zone.sceneId = rooms[ri].sceneId;
+        zone.name = rooms[ri].name.c_str();
+        zone.x = d.x;
+        zone.z = d.z;
+        zone.radius = 40.0f;
+        zone.targetSceneId = d.targetScene;
+        zone.spawnX = d.spawnX;
+        zone.spawnZ = d.spawnZ;
+        std::fprintf(stderr, "main: door zone %s at (%g,%g) -> scene 0x%02X\n",
+                     rooms[ri].name.c_str(), d.x, d.z,
+                     static_cast<unsigned>(d.targetScene));
+        roomTransitions.initialize(&zone, 1,
+            [&](const ico::game::RoomTransitionZone& z) {
+                std::size_t target = rooms.size();
+                for (std::size_t k = 0; k < rooms.size(); ++k) {
+                    if (rooms[k].sceneId == z.targetSceneId) { target = k; break; }
+                }
+                if (target >= rooms.size()) {
+                    std::fprintf(stderr,
+                        "main: DOOR OPEN target scene 0x%02X unknown; aborting\n",
+                        static_cast<unsigned>(z.targetSceneId));
+                    return;
+                }
+                std::fprintf(stderr,
+                    "main: DOOR OPEN %s -> %s, spawn(%g,%g)\n",
+                    rooms[activeRoom].name.c_str(), rooms[target].name.c_str(),
+                    z.spawnX, z.spawnZ);
+                activeRoom = static_cast<u32>(target);
+                const RoomFit& f2 = fits[activeRoom];
+                cx = f2.cx; cy = f2.cy; cz = f2.cz;
+                extent = f2.extent; dist = f2.dist;
+                // sky switch
+                hasSky = roomHasSky[activeRoom];
+                for (int q = 0; q < 4; ++q) {
+                    skyTop[q] = roomSkyTop[activeRoom][q];
+                    skyHorizon[q] = roomSkyHorizon[activeRoom][q];
+                }
+                // collision: point the player at the new room's grid first.
+                activeClip = (activeRoom < roomClips.size() && roomClips[activeRoom] &&
+                              roomClips[activeRoom]->isInitialized())
+                    ? roomClips[activeRoom].get() : nullptr;
+                if (activeClip != nullptr) {
+                    respawnPlayer(z.spawnX, z.spawnZ);
+                } else {
+                    playerSpawned = false;
+                }
+                // scene swap (kanban seam)
+                sceneLoader.requestScene(z.targetSceneId);
+                const bool swapped = sceneLoader.execute();
+                std::fprintf(stderr,
+                    "main:   transition execute: %s (scene 0x%02X, %zu host GObjs)\n",
+                    swapped ? "ok" : "no-op",
+                    static_cast<unsigned>(sceneLoader.currentSceneId()),
+                    sceneLoader.sceneGObjCount());
+                sceneLoader.attachBoundAssetsToGObjs(sceneLoader.currentSceneId());
+                rebuildGObjDraws();
+                // per-room strip fallback switch (no GObj composition path)
+                stripBatches = buildStripBatches(
+                    uvTest ? checkerTex : kNullTexture, static_cast<int>(activeRoom));
+                // reinstall the door of the room we just entered
+                installRoomTransitions(activeRoom);
+            });
+        roomTransitions.setOpenDelay(1.0f);
+    };
+    installRoomTransitions(activeRoom);
 
     auto feedKey = [&](XKeyEvent& xk, bool down) {
         const ::KeySym ks = ::XLookupKeysym(&xk, 0);
@@ -1043,24 +1335,6 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     };
     std::fprintf(stderr, "main: controls: drag LEFT = orbit, drag RIGHT = pan, scroll = zoom, Z/+/X/- zoom, arrows orbit, IJKL pan, F follow boy, R reset, Q/Esc quit\n");
     std::fprintf(stderr, "main: WASD moves the player (collision-constrained)\n");
-
-    // Real room sky: the game paints the sky.tm2 gradient as a background
-    // quad. Sample its actual zenith/horizon colors and do the same.
-    bool hasSky = false;
-    unsigned char skyTop[4] = { 10, 12, 18, 255 };
-    unsigned char skyHorizon[4] = { 10, 12, 18, 255 };
-    hasSky = loadRoomSkyColors(texDir, skyTop, skyHorizon);
-    if (!hasSky) {
-        // Rev.169 host presentation: rooms without an extracted sky.tm2
-        // (st00a/st02a/...) render as a daylight haze (pale-blue zenith,
-        // pale horizon) so exterior vistas (sea/coast) do not read as a
-        // black void. Explicitly host-side: the original room may tint its
-        // backdrop differently (fog/storm). Reversible presentation, not a
-        // reconstruction claim.
-        skyTop[0] = 0x78; skyTop[1] = 0x98; skyTop[2] = 0xC8;
-        skyHorizon[0] = 0xC4; skyHorizon[1] = 0xD2; skyHorizon[2] = 0xDC;
-        skyHorizon[3] = skyTop[3] = 255;
-    }
 
     // GIF command bridge (front 1): the semantic packet pipeline shares one
     // executor with the renderer. The sky backdrop and every strip batch ride
@@ -1364,9 +1638,28 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         if (kv.second != kNullTexture) backend.destroyTexture(kv.second);
     player.shutdown();
     gobjRuntime.shutdown();
-    clip.shutdown();
+    for (const auto& rc : roomClips)
+        if (rc) rc->shutdown();
     backend.shutdown();
     return 0;
+}
+
+// Single-room wrapper (kept for --p2o/--scene viewers and the mesh demo).
+int runSceneDemo(const std::vector<std::string>& piecePaths,
+                 const std::string& texDir,
+                 u32 frames, const char* shotPath, bool uvTest,
+                 float camAngleRad, bool fitMacro,
+                 const ico::engine::SceneAssetStore* store) {
+    std::vector<DemoRoom> rooms;
+    rooms.push_back(DemoRoom{});
+    DemoRoom& room = rooms.back();
+    room.name = "scene";
+    room.piecePaths = piecePaths;
+    room.texDir = texDir;
+    room.store = store;
+    room.sceneId = 0x0Fu;
+    return runMultiRoomDemo(rooms, 0u, frames, shotPath, uvTest,
+                            camAngleRad, fitMacro);
 }
 
 int runMeshDemo(const char* p2oPath, const std::string& texDir,
@@ -1384,7 +1677,10 @@ int runOpenGLDemo(int argc, char* argv[]) {
     const char* shotPath = nullptr;
     const char* sceneDir = nullptr;
     const char* roomName = nullptr;
+    const char* pairName = nullptr;
     const char* texDir = nullptr;
+    float teleport[2] = { 0.0f, 0.0f };
+    bool hasTeleport = false;
     bool uvTest = false;
     bool matTest = false;
     bool fitMacro = false;
@@ -1402,6 +1698,18 @@ int runOpenGLDemo(int argc, char* argv[]) {
             sceneDir = argv[i + 1];
         } else if (std::strcmp(argv[i], "--room") == 0 && i + 1 < argc) {
             roomName = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--pair") == 0 && i + 1 < argc) {
+            pairName = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--teleport") == 0 && i + 1 < argc) {
+            const char* tp = argv[i + 1];
+            char* end = nullptr;
+            teleport[0] = std::strtof(tp, &end);
+            if (end != nullptr && *end == ',') {
+                teleport[1] = std::strtof(end + 1, &end);
+                hasTeleport = true;
+            } else {
+                std::fprintf(stderr, "main: --teleport expects 'x,z'\n");
+            }
         } else if (std::strcmp(argv[i], "--tex-dir") == 0 && i + 1 < argc) {
             texDir = argv[i + 1];
         } else if (std::strcmp(argv[i], "--cam-angle") == 0 && i + 1 < argc) {
@@ -1592,9 +1900,67 @@ int runOpenGLDemo(int argc, char* argv[]) {
                 }
             }
         }
-        return runSceneDemo(pieces, texDirResolved, frames, shotPath, uvTest,
-                            camAngleRad, fitMacro,
-                            manifestPath.empty() ? nullptr : &store);
+        // Rev.170 (PORT -- pair): two-room door demo. The primary room (from
+        // --room/--scene) is kept under scene 0x0F; --pair <room> parses the
+        // companion manifest into the SAME store under scene 0x2B
+        // (SceneAssetStore::parseRoom), so KanbanSceneLoader holds BOTH rooms'
+        // resident sets and requestScene(0x2B) swaps real geometry (different
+        // pieces/camera/ClipBridge/sky) instead of reloading the same room.
+        std::vector<DemoRoom> rooms;
+        rooms.push_back(DemoRoom{});
+        DemoRoom& primary = rooms.back();
+        primary.name = roomName ? roomName : "scene";
+        primary.piecePaths = pieces;
+        primary.texDir = texDirResolved;
+        primary.store = manifestPath.empty() ? nullptr : &store;
+        primary.sceneId = 0x0Fu;
+
+        if (pairName != nullptr) {
+            const char* pairCandidates[] = {
+                "assets/scene/rooms/", "../native/assets/scene/rooms/", nullptr
+            };
+            std::string pairDir;
+            for (int c = 0; pairCandidates[c] != nullptr; ++c) {
+                std::string cand = std::string(pairCandidates[c]) + pairName + "/";
+                std::ifstream f((cand + pairName + ".manifest").c_str());
+                if (f.good()) { pairDir = cand; break; }
+            }
+            if (pairDir.empty()) {
+                std::fprintf(stderr, "main: --pair '%s': no manifest under assets/scene/rooms/\n",
+                             pairName);
+                return 1;
+            }
+            const std::string pairManifest = pairDir + pairName + ".manifest";
+            const u32 pairScene = 0x2Bu;
+            if (!store.parseRoom(pairManifest.c_str(), pairScene)) {
+                std::fprintf(stderr, "main: --pair '%s': parseRoom(scene 0x2B) failed\n",
+                             pairName);
+                return 1;
+            }
+            rooms.push_back(DemoRoom{});
+            DemoRoom& companion = rooms.back();
+            companion.name = pairName;
+            companion.texDir = pairDir + "texture/";
+            companion.store = &store;
+            companion.sceneId = pairScene;
+            const std::size_t cnt = store.sceneAssetCount(pairScene);
+            std::fprintf(stderr, "main: pair room %s under scene 0x%02X: %zu assets\n",
+                         pairName, static_cast<unsigned>(pairScene), cnt);
+            for (std::size_t i = 0; i < cnt; ++i) {
+                const SceneAssetEntry* e = store.sceneAsset(pairScene, i);
+                if (e == nullptr) continue;
+                std::ifstream f(e->meshPath.c_str());
+                if (f.good()) companion.piecePaths.push_back(e->meshPath);
+            }
+            if (companion.piecePaths.empty()) {
+                std::fprintf(stderr, "main: --pair resolved 0 pieces; ignoring pair\n");
+                rooms.pop_back();
+            }
+        }
+
+        return runMultiRoomDemo(rooms, 0u, frames, shotPath, uvTest,
+                                camAngleRad, fitMacro,
+                                hasTeleport ? teleport : nullptr);
     }
 
     // Auto-discover .p2o mesh in native/assets/ if not provided.

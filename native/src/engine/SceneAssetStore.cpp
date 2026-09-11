@@ -30,15 +30,38 @@ bool SceneAssetStore::parse(const char* manifestPath) {
         return false;
     }
 
-    m_scenes.clear();
-    m_textureDir.clear();
-    m_piecesDir.clear();
-
-    /* Directory containing the manifest, used as the base for relative paths. */
     const std::string manifest = manifestPath;
     const size_t slash = manifest.find_last_of('/');
     const std::string base = (slash == std::string::npos)
         ? std::string() : manifest.substr(0, slash + 1);
+    return parseInto(f, base, -1, /*reset=*/true);
+}
+
+bool SceneAssetStore::parseRoom(const char* manifestPath, u32 sceneId) {
+    if (manifestPath == nullptr || *manifestPath == '\0') {
+        return false;
+    }
+
+    std::ifstream f(manifestPath);
+    if (!f) {
+        return false;
+    }
+
+    const std::string manifest = manifestPath;
+    const size_t slash = manifest.find_last_of('/');
+    const std::string base = (slash == std::string::npos)
+        ? std::string() : manifest.substr(0, slash + 1);
+    return parseInto(f, base, static_cast<int>(sceneId), /*reset=*/false);
+}
+
+bool SceneAssetStore::parseInto(std::istream& f, const std::string& base,
+                                int forcedSceneId, bool reset) {
+    if (reset) {
+        m_scenes.clear();
+        m_textureDir.clear();
+        m_piecesDir.clear();
+    }
+    const std::size_t firstNewBlock = m_scenes.size();
 
     SceneBlock* currentScene = nullptr;
     std::string line;
@@ -91,6 +114,27 @@ bool SceneAssetStore::parse(const char* manifestPath) {
                                              ? std::string::npos : lastDot - start);
             currentScene->assets.push_back(std::move(entry));
         }
+    }
+
+    /* In parseRoom mode the caller forces a scene id; the manifest's own
+       `scene` blocks are ignored. Only the blocks created by THIS call are
+       merged, so a previous room's assets are never absorbed. */
+    if (forcedSceneId >= 0 && firstNewBlock < m_scenes.size()) {
+        std::vector<SceneAssetEntry> merged;
+        for (std::size_t i = firstNewBlock; i < m_scenes.size(); ++i) {
+            for (SceneAssetEntry& e : m_scenes[i].assets) {
+                merged.push_back(std::move(e));
+            }
+        }
+        m_scenes.resize(firstNewBlock);
+        if (merged.empty()) return false;
+        for (SceneBlock& block : m_scenes) {
+            if (block.sceneId == static_cast<u32>(forcedSceneId)) {
+                block.assets = std::move(merged);   /* dedupe into existing id */
+                return true;
+            }
+        }
+        m_scenes.push_back({static_cast<u32>(forcedSceneId), std::move(merged)});
     }
 
     if (m_textureDir.empty() || m_piecesDir.empty() || m_scenes.empty()) {

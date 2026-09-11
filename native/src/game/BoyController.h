@@ -76,6 +76,11 @@ public:
     void shutdown();
     bool isInitialized() const { return gobj != nullptr; }
 
+    // Rev.170 (PORT): re-points the collision bridge when a room transition
+    // swaps the walkable room. The BoyController keeps its own GObj/process
+    // (no re-registration); only the collision context changes.
+    void setBridge(const ico::engine::ClipBridge& bridge) { bridge_ = &bridge; }
+
     // Seeds the world position; spawns only on a walkable surface.
     bool spawn(float x, float z, float halfExtent);
 
@@ -151,7 +156,7 @@ private:
     };
 
     ico::engine::IsysGObjRuntime* runtime = nullptr;
-    const ico::engine::ClipBridge* bridge = nullptr;
+    const ico::engine::ClipBridge* bridge_ = nullptr;
     ico::engine::GObj* gobj = nullptr;
 
     // Motion state.

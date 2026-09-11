@@ -189,6 +189,21 @@ A compelling scene is not technical evidence.
   spawns the boy at `(750,1075) [highest walkable floor]`. All host-side
   presentation, reversible, not a reconstruction claim. CTest 28/29. Ver nota
   `research/native/rev169-atmosphere-texture-fallback-and-coastal-spawn.md`.
+- Rev.170 (2026-09-10): **two-room door demo with a REAL resident-set swap
+  (PORT P2 milestone).** The demo goes data-driven: `--room <primary> --pair
+  <companion>` loads a second room (st02a) into the SAME `SceneAssetStore` via
+  `parseRoom` and, when the boy crosses the snapped door zone
+  (`door.p2o` in st00a, 5-corner-standable floor, radius 40),
+  `requestScene(0x2B)` swaps the real resident set: scene 0x0F (25 host GObjs)
+  → 0x2B (23), rendering 68 draw calls / 29,462 tris → 54 / 34,195 sustained,
+  with per-room ClipBridge / camera fit / sky / door zone and the reverse zone
+  reinstalled after crossing. Room collision/split/spawn fallbacks now pick the
+  LARGEST loaded mesh (st02a → `st02a_p2.p2o`, 73×72 grid) instead of the first
+  decorative piece (the old 8×7 flare grid — that is why st02a's coast was so
+  cramped). Open: `st02a_p1.p2o` is a p2-family variant that still does not
+  parse (face region at 0x1150 ≠ `[N,ffff×7]` of Rev.151) so this demo is
+  one-way and st02a's real interior/decode is the next archaeology. CTest 29/30.
+  Ver nota `research/native/rev170-two-room-door-transition.md`.
 
 ## Current runtime baseline (Rev.126)
 
