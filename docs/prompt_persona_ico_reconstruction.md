@@ -150,6 +150,31 @@ A compelling scene is not technical evidence.
   u16[0]=0/1 decode with the same canonical rule as p1 (tool
   `tools/ps2o_family_analysis.py` + fixture test) — p2: 3,562 headers / 15,005
   records, UV 4,844/4,844, bnd_ratio 0.126. 27/27 CTest.
+- Rev.157/158/159 (2026-09-09, PORT): four formerly "Divergent `.word`-only"
+  files became byte-exact through ee-gcc 2.9 (root cause: ee-as injects nop
+  padding into short backward branches); PCSX2 "Yorda cage" capture correlated
+  per-room `isys_gobj_proc_add` callbacks (29 named handlers resolved via
+  TARGET_FUNCTIONS, `a3` distinguishes main handler from layer/init, GObj pool
+  reused across rooms); verified room-role tables (11 scenes, 240 slots)
+  role-tag 23 host GObjs, re-linked per transition.
+- Rev.160-167 (2026-09-10, DECOMP as reactive): 4 "ASM-ERR" + 4 trivial stubs
+  verified byte-exact (category closed); 4 new byte-exact targets + the first
+  gameplay-domain semantic bridges (`GetEnemyDefLife`, `holdRope`,
+  `subEnemyCollision`, `girlForceFieldGeo`, the 3 subEnemyCollision delegables,
+  and the first Rev.163-inventory batch `actEnemyFlagOnDead`/`AP1JumpReq`/
+  `actSt04bEne1Chk`) with CTest — **739/739 `.s` byte-exact, 10 bridges**.
+  [Record: Rev.166 & Rev.167 subjects say `[TRILHA: PORT]`; correction:
+  they are `[TRILHA: DECOMP]` (see Rev.168 note).]
+- Rev.168 (2026-09-10): **door-triggered room transition (PORT item 2).** A
+  host `RoomTransitions` layer (Idle→Opening→Transitioning, cancel on leave,
+  per-zone cooldown, reset; 8 CTest scenarios) fits a door zone from the real
+  `169_door.p2o` in scene mode and, when the door opens, drives
+  `requestScene(0x2B)`+`execute()` on the verified KanbanSceneLoader seam
+  (releases old GObjs → loads new, re-links) → rebuilds the per-GObj draw set
+  → re-seeds the boy past the door via the walkable probe. Real wall-clock dt.
+  Headless scene run: `door zone at (0,-9.6585) r=40 -> scene 0x2B`. CTest
+  28/29. The demo room can now leave its room — door timing/trigger values are
+  host heuristics, not byte-verified original data.
 
 ## Current runtime baseline (Rev.126)
 

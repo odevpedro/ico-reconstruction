@@ -15,6 +15,7 @@ set(ICO_ENGINE_SOURCES
     src/game/KanbanSceneLoader.cpp
     src/game/GirlBrainSemantic.cpp
     src/game/BoyController.cpp
+    src/game/RoomTransitions.cpp
     src/engine/ClipBridge.cpp
     src/engine/GObj.cpp
     src/engine/GObjPool.cpp
@@ -190,6 +191,9 @@ target_link_libraries(clip_bridge_test PRIVATE ico_engine_core)
 add_executable(boy_controller_test tests/boy_controller_test.cpp)
 target_link_libraries(boy_controller_test PRIVATE ico_engine_core)
 
+add_executable(room_transitions_test tests/room_transitions_test.cpp)
+target_link_libraries(room_transitions_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
@@ -214,6 +218,7 @@ add_test(NAME gobj_factory COMMAND gobj_factory_test)
 add_test(NAME gobj_entity_allocator COMMAND gobj_entity_allocator_test)
 add_test(NAME clip_bridge COMMAND clip_bridge_test)
 add_test(NAME boy_controller COMMAND boy_controller_test)
+add_test(NAME room_transitions COMMAND room_transitions_test)
 add_test(NAME input COMMAND input_test)
 add_test(NAME ps2o_mesh COMMAND ps2o_mesh_test)
 add_test(NAME scene_asset_store COMMAND scene_asset_store_test)

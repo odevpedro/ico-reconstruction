@@ -26,6 +26,7 @@
 #include "engine/Tm2Format.h"
 #include "game/KanbanSceneLoader.h"
 #include "game/BoyController.h"
+#include "game/RoomTransitions.h"
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -773,12 +774,13 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     std::vector<GObjDraw> gobjDraws;
     std::unordered_map<GObjHandle, std::size_t> gobjDrawByHandle;
     const TextureHandle gObjFallbackTex = uvTest ? checkerTex : kNullTexture;
-    if (store != nullptr) {
-        std::size_t attached = sceneLoader.attachBoundAssetsToGObjs(0x0Fu);
-        std::fprintf(stderr,
-            "main: Passo 1 per-GObj composition: %zu attachments for %zu host "
-            "GObjs of scene 0x0F\n",
-            attached, sceneLoader.sceneGObjCount());
+    // Rev.168 (PORT): the per-GObj draw set is rebuilt after every room
+    // transition, because initSceneGObj() releases the previous scene's GObjs
+    // and re-links the attachments (Rev.159). Extract the build so both the
+    // initial load and the transition path consume the same logic.
+    auto rebuildGObjDraws = [&]() {
+        gobjDraws.clear();
+        gobjDrawByHandle.clear();
         // MeshPath → loaded ScenePiece lookup (paths come from the same store).
         std::unordered_map<std::string, std::size_t> pieceByPath;
         for (std::size_t i = 0; i < pieces.size(); ++i)
@@ -807,6 +809,82 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
             const auto& d = gobjDraws[kv.second];
             std::fprintf(stderr, "main:   GObj %u draws %zu labels, %zu strip batches\n",
                          static_cast<unsigned>(kv.first), d.labels.size(), d.batches.size());
+        }
+    };
+    if (store != nullptr) {
+        std::size_t attached = sceneLoader.attachBoundAssetsToGObjs(0x0Fu);
+        std::fprintf(stderr,
+            "main: Passo 1 per-GObj composition: %zu attachments for %zu host "
+            "GObjs of scene 0x0F\n",
+            attached, sceneLoader.sceneGObjCount());
+        rebuildGObjDraws();
+    }
+
+    // Rev.168 (PORT): door-triggered room transition. The door zone is fitted
+    // from the real 169_door.p2o piece; the target spawn sits 60 units past
+    // the door along the (door − room-center) axis. Firing the transition
+    // drives requestScene/execute() (kanban.c seam): it releases the current
+    // room's GObjs, loads the target scene's (verified isysGObj tables,
+    // Rev.154/159), re-links attachments, rebuilds the per-GObj draw set and
+    // re-seeds the boy at the walkable spawn probe. Zone/spawn values are HOST
+    // heuristics, not byte-verified original door data.
+    ico::game::RoomTransitions roomTransitions;
+    {
+        const ScenePiece* doorPiece = nullptr;
+        for (const auto& sp : pieces) {
+            if (sp.name.find("169_door") != std::string::npos) {
+                doorPiece = &sp;
+                break;
+            }
+        }
+        if (doorPiece != nullptr) {
+            float mnX = 1e30f, mxX = -1e30f, mnZ = 1e30f, mxZ = -1e30f;
+            const auto& m = doorPiece->mesh;
+            for (uint32_t i = 0; i < m.triangles.size(); ++i) {
+                const uint32_t vi = m.triangles[i];
+                mnX = std::min(mnX, m.positions[vi * 3 + 0]);
+                mxX = std::max(mxX, m.positions[vi * 3 + 0]);
+                mnZ = std::min(mnZ, m.positions[vi * 3 + 2]);
+                mxZ = std::max(mxZ, m.positions[vi * 3 + 2]);
+            }
+            const float doorX = (mnX + mxX) * 0.5f;
+            const float doorZ = (mnZ + mxZ) * 0.5f;
+            float ax = doorX - spawnX, az = doorZ - spawnZ;
+            const float len = std::sqrt(ax * ax + az * az);
+            const float nx = (len > 1e-3f) ? ax / len : 1.0f;
+            const float nz = (len > 1e-3f) ? az / len : 0.0f;
+            ico::game::RoomTransitionZone zone;
+            zone.sceneId = 0x0Fu;
+            zone.name = "169_door";
+            zone.x = doorX;
+            zone.z = doorZ;
+            zone.radius = 40.0f;
+            zone.targetSceneId = 0x2Bu;
+            zone.spawnX = doorX + nx * 60.0f;
+            zone.spawnZ = doorZ + nz * 60.0f;
+            std::fprintf(stderr,
+                "main: door zone at (%g,%g) r=40 -> scene 0x2B, spawn(%g,%g)\n",
+                doorX, doorZ, zone.spawnX, zone.spawnZ);
+            roomTransitions.initialize(&zone, 1,
+                [&](const ico::game::RoomTransitionZone& z) {
+                    std::fprintf(stderr,
+                        "main: DOOR OPEN -> load scene 0x%02X, spawn(%g,%g)\n",
+                        static_cast<unsigned>(z.targetSceneId), z.spawnX, z.spawnZ);
+                    sceneLoader.requestScene(z.targetSceneId);
+                    const bool swapped = sceneLoader.execute();
+                    std::fprintf(stderr,
+                        "main:   transition execute: %s (scene 0x%02X, %zu host GObjs)\n",
+                        swapped ? "ok" : "no-op",
+                        static_cast<unsigned>(sceneLoader.currentSceneId()),
+                        sceneLoader.sceneGObjCount());
+                    rebuildGObjDraws();
+                    if (!player.spawn(z.spawnX, z.spawnZ, player.halfExtent())) {
+                        std::fprintf(stderr, "main:   next-room spawn probe failed; boy stays put\n");
+                    }
+                });
+            roomTransitions.setOpenDelay(1.0f);
+        } else {
+            std::fprintf(stderr, "main: no 169_door piece; room transitions disabled\n");
         }
     }
 
@@ -991,7 +1069,12 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
                             marker.boxColor[2], marker.boxColor[3]);
     };
 
+    auto lastFrameTp = std::chrono::steady_clock::now();
     for (u32 f = 0; frames == 0 || f < frames; ++f) {
+        const auto nowTp = std::chrono::steady_clock::now();
+        float dt = std::chrono::duration<float>(nowTp - lastFrameTp).count();
+        lastFrameTp = nowTp;
+        if (dt <= 0.0f || dt > 0.25f) dt = 1.0f / 60.0f;
         backend.beginFrame();
 
         backend.clear(10, 12, 18, 255);
@@ -1034,6 +1117,12 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         const float markerX = playerSpawned ? player.x() : cx + panX;
         const float markerY = playerSpawned ? player.y() : cy;
         const float markerZ = playerSpawned ? player.z() : cz + panZ;
+
+        // Rev.168 (PORT): door-triggered room transition driver. Feeds the
+        // boy's world position and advances the door state machine; the
+        // callback (installed above) performs the requestScene/execute swap.
+        roomTransitions.setBoyPosition(markerX, markerZ);
+        roomTransitions.update(dt);
 
         // Passo 1: BoyController drives the GObj's BoxMarker transform (world
         // placement read by the renderer below).

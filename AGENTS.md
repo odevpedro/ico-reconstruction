@@ -243,6 +243,7 @@ When there is a conflict between the AI context file and a later validated resea
 At the current stage, the most important validated research notes are:
 
 ```txt
+research/native/rev168-door-room-transition.md  (PORT P2: door-triggered room transition host mechanics; RoomTransitions Idle→Opening→Transitioning + cooldown; CTest room_transitions; CANONICAL correction record: Rev.166/167 = [TRILHA: DECOMP], not [TRILHA: PORT])
 research/elf/rev109-isysgobj-abi-consolidation.md  (canonical 32-bit GObj/ProcessNode ABI; four 8-entry head/tail tables; 32-bit mask-loop distinction; semantic C bridge)
 research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md  (CANONICAL BOUNDARY of world_state_load=0x80 + DispIcoMisc=0x1C8 split; byte-exact .s; native WorldStateLoader semantic bridge + CTest)
 research/elf/rev130-hot-gaps-3-4-5-byte-exact.md  (all 5 hot-path gaps closed byte-exact: sister_callback_reg, CreateGObj, AllocGObjEntity, world_state_load, isysGObjProcRemoveUnlink; allocator contract + world_state dispatch table 0x5F2FB8)
@@ -571,6 +572,15 @@ Rev.023 rejected them as the current dispatcher targets.
 
 The dispatcher `0x001d37c8` and its 5 internal state blocks are **cloth animation state transitions** (verified via ICO-decomp symbol names: `clothAnimation.c` range), not entity/gameplay state management. All earlier speculative names (Yorda, capture, menu, etc.) are incorrect for these functions. The 5 states likely represent cloth vertex simulation phases (e.g., idle, wind, collision, constraint solve, post-process).
 
+### Rev.168 correction — commit labels Rev.166/Rev.167
+
+The commits `82a6911` (Rev.166) and `c2d938f` (Rev.167) were pushed with
+`[TRILHA: PORT]` in the subject, but both are pure reconstruction work
+(byte-exact `.s` + semantic bridges, no `native/` change). Per
+`instrucoes-agente-prioridade-port-vs-decomp.md`, their canonical labels are
+**`[TRILHA: DECOMP]`**. No history rewrite; `research/native/rev168-door-room-transition.md`
+("Label correction") is the canonical correction record.
+
 ### 2026-05-15 tooling correction
 
 The independent Rabbitizer check confirms the corrected instruction and table:
@@ -764,7 +774,7 @@ the next priority merely because the capture is running. The capture is the
 primary source of new evidence; native-port work follows the validated
 reconstruction it enables. The user may explicitly request an exception.
 
-### Current score status (Rev.167 — 739 of 739 .s verified byte-exact + 10 semantic bridges)
+### Current score status (Rev.168 — 739 of 739 .s verified byte-exact + 10 semantic bridges; PORT item 2 active)
 
 See the "Byte-exact reconstruction status" section above for the authoritative
 counts. Summary: **739 of 739 `.s` verified byte-exact against the USA ELF**
@@ -779,8 +789,11 @@ closed the subEnemyCollision delegables (`ico_semantic_fun14A100`,
 semantics + CTest); Rev.167 added the first Rev.163-inventory batch
 (`ico_semantic_actEnemyFlagOnDead`, `ico_semantic_AP1JumpReq`,
 `ico_semantic_actSt04bEne1Chk`). Pipeline TARGET_FUNCTIONS is now 617/617
-byte-exact. CTest: 27/28 (only headless `opengl_backend` fails — the
-pre-existing baseline).
+byte-exact. CTest: 28/29 (only headless `opengl_backend` fails — the
+pre-existing baseline; Rev.168 added `room_transitions`). On the native
+front, Rev.168 landed the host door-triggered room transition component
+(`native/src/game/RoomTransitions.{h,cpp}` + CTest) — see
+`research/native/rev168-door-room-transition.md`.
 
 | Step | Count | Method |
 |------|-------|--------|
@@ -914,6 +927,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 50. ~~**Rev.156: `GifPacket.*` bridge fidelity + p2 family closed** — `GifPacketBridge` captures `prim`/path (`currentPrim()`/`currentPath()`), honors `setDrawEnvironment` viewport origin x/y, exposes documented host half-offset hook (`setHalfOffset`) applied to all `*Offset` emit variants + `draw2DUVStripG` (default 0 = identity); byte-exact `0x8000` verified in BOTH base and Offset `.s` (`gif_MakeSprite`, `gif_Draw2DStripG`, `gif_Draw2DUVStripG`, `gif_SpriteSensitive`, `gif_MakePoint2DOffset`, `gif_EndPacket`) — NOT a verified Offset discriminator, kept explicit/host-only. `tools/ps2o_family_analysis.py` + `test_two_strip_family_unified` fixture prove p2 flags u16[0]=0/1 decode with the SAME canonical Rev.151 rule (p2: 3,562 headers / 15,005 records, max a 4,714 < nv 6,213, UV 4,844/4,844, f∈0..5, flag0=590/flag1=2,972, bnd_ratio 0.126 = Rev.144 M-A) — **Rev.151 open item CLOSED, no decoder change**. 27/27 CTest (only headless `opengl_backend` excluded). Nota: `research/native/rev156-gifpacket-bridge-fidelity-and-p2-family-closed.md`.~~ **DONE (2026-09-09)**
 51. ~~**Rev.158 (native-port, P2 — runtime GObj↔processCallback binding):** captura PCSX2 "gaiola da Yorda" (13 world_state_load, 94K eventos) correlaciona `isys_gobj_proc_add` (0x13F3F0) por sala: **29 callbacks nomeados resolvidos via `TARGET_FUNCTIONS`** (boy_hB 0x1C1DD8, girl_hB 0x1D17F8, boy_init, enemy1_hB/hD/init, generator_hB, bird_hB, torch_hB, flag_hB, chain_hB, seffect_hB, ap1_hB, woodbox0_hB, ItemGeo, type6/15/22/24/36/39/55/60_hB, subGirlBrain_Idle/Hesitate/Busy/PulledUp). **`a3` distingue handler principal (1) de layer/init (0)** — corrreção da leitura "add/remove". Piscina GObj é REUSADA entre salas (mesma casa muda de dono: ex 0x831C58 type6_hB→torch_hB→seffect_hB); vínculo por sala, não por init único. `type60_hB` (0x23D518) é o handler mais frequente (5/sala; 9 no seg11). Nota: `research/native/rev158-runtime-gobj-handler-binding.md`. Host ainda usa round-robin — próximo passo é ligar estes handlers aos meshes por sala.~~ **DONE (2026-09-09)**
 52. ~~**Native engine: re-link GObj→mesh por sala (Passo 1-3, Rev.159)**~~ — `applyVerifiedRoomRolePlans`/`hasRoomRolePlan`/`gobjHandlerRole`; `attachBoundAssetsToGObjs` role-tags 23 host GObjs from the verified 26-slot/8-handler 0x2B repertoire (runtime, not descriptors); `execute()` auto-relinks every scene transition; `initSceneGObj` releases prior-room GObjs (pool reuse). `tools/extract_room_role_tables.py` + `GeneratedRoomRoleTables.h` (11 scenes, 240 slots). Verified payload extended 29→54 (0x0F+0x2B). Nota: `research/native/rev159-verified-room-role-binding.md`. **DONE (2026-09-09)**
+53. ~~**PORT item 2, Rev.168: door-triggered room transition (host)**~~ — `RoomTransitions.{h,cpp}` (Idle→Opening→Transitioning, cancel on leave, per-zone cooldown, reset; `room_transitions_test`); main.cpp wiring: door zone from `169_door.p2o` AABB (scene 0x0F), `rebuildGObjDraws` lambda reusable on swap, callback → requestScene(0x2B)+execute → rebuild → boy respawn via walkable probe; real wall-clock dt. Headless scene run verified (`door zone at (0,-9.6585) r=40`). CTest 28/29. CARRIES the Rev.166/167 `[TRILHA: DECOMP]` label correction record. Nota: `research/native/rev168-door-room-transition.md`. **DONE (2026-09-10)**
 
 ---
 
