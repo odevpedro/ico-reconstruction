@@ -87,6 +87,13 @@ public:
     u32 gridHeight() const { return gridH; }
     u32 blockedCellCount() const { return blockedCount; }
 
+    // Rev.169 spawn fallback: returns the highest walkable floor point in the
+    // grid. A cell qualifies only when it has floor samples, is not wall-
+    // blocked, and has at least one walkable 4-neighbor (so a 1-cell wall tip
+    // is never picked as a spawn anchor). Returns false when no such cell
+    // exists. ox/oz/oy hold the cell centre XZ and floor height on success.
+    bool bestFloorPoint(float& ox, float& oy, float& oz) const;
+
     // True when a wall blocks the given world point (debug/inspection).
     bool isBlocked(float x, float z) const {
         if (!initialized) return false;

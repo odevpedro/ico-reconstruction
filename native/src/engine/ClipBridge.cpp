@@ -309,6 +309,59 @@ void ClipBridge::rasterizeWall(float x0, float y0, float z0,
     }
 }
 
+bool ClipBridge::bestFloorPoint(float& ox, float& oy, float& oz) const {
+    if (!initialized) {
+        return false;
+    }
+    float bestY = std::numeric_limits<float>::lowest();
+    bool found = false;
+    for (u32 cz = 0; cz < gridH; ++cz) {
+        for (u32 cx = 0; cx < gridW; ++cx) {
+            const std::size_t cell = static_cast<std::size_t>(cz) * gridW + cx;
+            const HeightCell& hc = heightCells[cell];
+            if (hc.samples == 0) {
+                continue;
+            }
+            if (wallBlocking_ && blockedCells[cell].blocked) {
+                continue;
+            }
+            const int ncx[4] = {static_cast<int>(cx) - 1, static_cast<int>(cx) + 1,
+                                static_cast<int>(cx), static_cast<int>(cx)};
+            const int ncz[4] = {static_cast<int>(cz), static_cast<int>(cz),
+                                static_cast<int>(cz) - 1, static_cast<int>(cz) + 1};
+            bool hasNeighbor = false;
+            for (int k = 0; k < 4; ++k) {
+                if (ncx[k] < 0 || ncz[k] < 0 ||
+                    static_cast<u32>(ncx[k]) >= gridW ||
+                    static_cast<u32>(ncz[k]) >= gridH) {
+                    continue;
+                }
+                const std::size_t ni =
+                    static_cast<std::size_t>(ncz[k]) * gridW + ncx[k];
+                if (heightCells[ni].samples == 0) {
+                    continue;
+                }
+                if (wallBlocking_ && blockedCells[ni].blocked) {
+                    continue;
+                }
+                hasNeighbor = true;
+                break;
+            }
+            if (!hasNeighbor) {
+                continue;
+            }
+            if (hc.height > bestY) {
+                bestY = hc.height;
+                ox = minX_ + (static_cast<float>(cx) + 0.5f) * cellSize_;
+                oz = minZ_ + (static_cast<float>(cz) + 0.5f) * cellSize_;
+                oy = hc.height;
+                found = true;
+            }
+        }
+    }
+    return found;
+}
+
 bool ClipBridge::floorHeightAt(float x, float z, float& outY) const {
     if (!initialized) {
         return false;

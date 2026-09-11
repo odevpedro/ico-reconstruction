@@ -33,6 +33,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <algorithm>
+#include <string>
 #include <fstream>
 #include <thread>
 #include <unordered_map>
@@ -324,13 +326,38 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
 
     // Texture cache keyed by material name (shared across pieces).
     std::vector<std::pair<std::string, TextureHandle>> texCache;
+    std::vector<std::string> missingLogged;
+    // Rev.169 shared-bundle fallback: resolve a material texture from the room
+    // texture dir first, then the shared scene/texture bundle (many rooms
+    // reference stock tiles like st0_a/torch/window that only exist there).
     auto texForName = [&](const std::string& name) -> TextureHandle {
         for (const auto& kv : texCache) if (kv.first == name) return kv.second;
-        std::string path = texDir.empty() ? (name + ".tm2") : (texDir + "/" + name + ".tm2");
-        TextureHandle h = loadTm2Tex(backend, path);
+        std::vector<std::string> candidates;
+        if (!texDir.empty()) candidates.push_back(texDir + "/" + name + ".tm2");
+        else candidates.push_back(name + ".tm2");
+        const char* sharedCandidates[] = {
+            "assets/scene/texture/", "../native/assets/scene/texture/", nullptr
+        };
+        for (int c = 0; sharedCandidates[c] != nullptr; ++c) {
+            candidates.push_back(std::string(sharedCandidates[c]) + name + ".tm2");
+        }
+        TextureHandle h = kNullTexture;
+        for (const auto& cand : candidates) {
+            h = loadTm2Tex(backend, cand);
+            if (h != kNullTexture) break;
+        }
         texCache.emplace_back(name, h);
-        if (h == kNullTexture)
-            std::fprintf(stderr, "main: missing texture %s\n", path.c_str());
+        if (h == kNullTexture) {
+            const bool isNew =
+                std::find(missingLogged.begin(), missingLogged.end(), name) ==
+                missingLogged.end();
+            if (isNew) {
+                missingLogged.push_back(name);
+                std::fprintf(stderr,
+                    "main: missing texture %s (room dir + shared scene/texture)\n",
+                    name.c_str());
+            }
+        }
         return h;
     };
 
@@ -678,6 +705,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
     }
     ico::game::BoyController player;
     bool playerSpawned = false;
+    std::string spawnAnchor = "room center";
     if (clip.isInitialized()) {
         if (!player.initialize(gobjRuntime, clip, 1u)) {
             std::fprintf(stderr, "main: BoyController failed to initialize\n");
@@ -685,8 +713,23 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         }
         playerSpawned = player.spawn(spawnX, spawnZ, player.halfExtent());
     }
-    std::fprintf(stderr, "main: player spawn at (%g,%g) -> %s pos=(%g,%g,%g)\n",
-                 spawnX, spawnZ, playerSpawned ? "ok" : "failed",
+    if (!playerSpawned && clip.isInitialized()) {
+        // Rev.169 spawn fallback: room bbox centres (st02a) can land in a
+        // courtyard void / well mouth with no floor samples, and the p1 grid
+        // may be tiny. Re-anchor the player on the highest walkable floor
+        // cell found by the ClipBridge (wall-tip 1-cell floors excluded).
+        float bx = 0.0f, by = 0.0f, bz = 0.0f;
+        if (clip.bestFloorPoint(bx, by, bz) &&
+            player.spawn(bx, bz, player.halfExtent())) {
+            playerSpawned = true;
+            spawnAnchor = "highest walkable floor";
+            spawnX = bx;
+            spawnZ = bz;
+            (void)by;
+        }
+    }
+    std::fprintf(stderr, "main: player spawn at (%g,%g) [%s] -> %s pos=(%g,%g,%g)\n",
+                 spawnX, spawnZ, spawnAnchor.c_str(), playerSpawned ? "ok" : "failed",
                  player.x(), player.y(), player.z());
     if (!playerSpawned) {
         // A room may fail the walkable-spawn probe (ClipBridge grid built from
@@ -1003,12 +1046,21 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
 
     // Real room sky: the game paints the sky.tm2 gradient as a background
     // quad. Sample its actual zenith/horizon colors and do the same.
-    const std::string texDirForSky = texDir;  // texture dir of the room
-    (void)texDirForSky;
     bool hasSky = false;
     unsigned char skyTop[4] = { 10, 12, 18, 255 };
     unsigned char skyHorizon[4] = { 10, 12, 18, 255 };
     hasSky = loadRoomSkyColors(texDir, skyTop, skyHorizon);
+    if (!hasSky) {
+        // Rev.169 host presentation: rooms without an extracted sky.tm2
+        // (st00a/st02a/...) render as a daylight haze (pale-blue zenith,
+        // pale horizon) so exterior vistas (sea/coast) do not read as a
+        // black void. Explicitly host-side: the original room may tint its
+        // backdrop differently (fog/storm). Reversible presentation, not a
+        // reconstruction claim.
+        skyTop[0] = 0x78; skyTop[1] = 0x98; skyTop[2] = 0xC8;
+        skyHorizon[0] = 0xC4; skyHorizon[1] = 0xD2; skyHorizon[2] = 0xDC;
+        skyHorizon[3] = skyTop[3] = 255;
+    }
 
     // GIF command bridge (front 1): the semantic packet pipeline shares one
     // executor with the renderer. The sky backdrop and every strip batch ride
@@ -1077,7 +1129,7 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         if (dt <= 0.0f || dt > 0.25f) dt = 1.0f / 60.0f;
         backend.beginFrame();
 
-        backend.clear(10, 12, 18, 255);
+        backend.clear(skyHorizon[0], skyHorizon[1], skyHorizon[2], 255);
 
         // Top-of-frame key snapshot must precede the X11 pump so edge
         // queries compare against last frame's state (see input_test).
@@ -1168,9 +1220,11 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         // duplication never reaches the driver.
         if (useStrips) {
             bridge.startPacketPri(0);
-            if (hasSky) {
+            {
                 // Sky backdrop: depth Always / write off within the same
-                // packet (setZWrite/setZTest cannot express this pair).
+                // packet (setZWrite/setZTest cannot express this pair). Drawn
+                // for every room: sampled sky.tm2 gradient when present, host
+                // daylight placeholder otherwise (Rev.169).
                 bridge.setDepthState(GSDepthTest::Always, false);
                 bridge.drawSkyGradient(skyTop, skyHorizon);
                 bridge.setDepthState(GSDepthTest::Less, true);
@@ -1263,11 +1317,9 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
             bridge.endPacket();
         } else {
             // Flat fallback (pre-front-3): direct backend calls, unchanged.
-            if (hasSky) {
-                backend.setDepthTest(GSDepthTest::Always, false);
-                backend.drawSkyGradient(skyTop, skyHorizon);
-                backend.setDepthTest(GSDepthTest::Less, true);
-            }
+            backend.setDepthTest(GSDepthTest::Always, false);
+            backend.drawSkyGradient(skyTop, skyHorizon);
+            backend.setDepthTest(GSDepthTest::Less, true);
             for (const auto& tb : textureBatches) {
                 if (tb.indices.empty()) continue;
                 TextureHandle tex = (tb.texture != kNullTexture) ? tb.texture

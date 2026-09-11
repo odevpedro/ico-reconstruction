@@ -137,6 +137,15 @@ int main() {
     bridge.setWallBlocking(true);
     assert(!bridge.floorHeightAt(0, 0, h));
 
+    /* ---- Rev.169 bestFloorPoint: the highest walkable floor that still has a
+       walkable neighbor is the elevated tier (y=100); the pedestal wall tips
+       and the wall band are excluded. ---- */
+    float fx = 0, fy = 0, fz = 0;
+    assert(bridge.bestFloorPoint(fx, fy, fz));
+    assert(std::fabs(fy - 100.0f) < kEps);
+    assert(fx >= 100.0f && fx <= 300.0f);
+    assert(fz >= 100.0f && fz <= 300.0f);
+
     /* ---- Repeated move walking into a wall returns false with zero
        progress (blocked). ---- */
     x = 0; y = 0; z = 495;
@@ -148,6 +157,7 @@ int main() {
     assert(!empty.isInitialized());
     assert(!empty.floorHeightAt(0, 0, h));
     assert(!empty.move(x, y, z, 1, 0, 10.0f, 45.0f));
+    assert(!empty.bestFloorPoint(fx, fy, fz));
     empty.shutdown();
     assert(!empty.isInitialized());
 

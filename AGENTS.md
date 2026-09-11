@@ -244,6 +244,7 @@ At the current stage, the most important validated research notes are:
 
 ```txt
 research/native/rev168-door-room-transition.md  (PORT P2: door-triggered room transition host mechanics; RoomTransitions Idle→Opening→Transitioning + cooldown; CTest room_transitions; CANONICAL correction record: Rev.166/167 = [TRILHA: DECOMP], not [TRILHA: PORT])
+research/native/rev169-atmosphere-texture-fallback-and-coastal-spawn.md  (PORT P1/P2 host presentation: daylight placeholder sky when no sky.tm2, shared scene/texture fallback + dedupe, ClipBridge::bestFloorPoint spawn fallback making st02a playable; 5 st02a textures still absent on disk)
 research/elf/rev109-isysgobj-abi-consolidation.md  (canonical 32-bit GObj/ProcessNode ABI; four 8-entry head/tail tables; 32-bit mask-loop distinction; semantic C bridge)
 research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md  (CANONICAL BOUNDARY of world_state_load=0x80 + DispIcoMisc=0x1C8 split; byte-exact .s; native WorldStateLoader semantic bridge + CTest)
 research/elf/rev130-hot-gaps-3-4-5-byte-exact.md  (all 5 hot-path gaps closed byte-exact: sister_callback_reg, CreateGObj, AllocGObjEntity, world_state_load, isysGObjProcRemoveUnlink; allocator contract + world_state dispatch table 0x5F2FB8)
@@ -793,7 +794,12 @@ byte-exact. CTest: 28/29 (only headless `opengl_backend` fails — the
 pre-existing baseline; Rev.168 added `room_transitions`). On the native
 front, Rev.168 landed the host door-triggered room transition component
 (`native/src/game/RoomTransitions.{h,cpp}` + CTest) — see
-`research/native/rev168-door-room-transition.md`.
+`research/native/rev168-door-room-transition.md`. Rev.169 (2026-09-10) landed
+the host presentation pass: `ClipBridge::bestFloorPoint()` spawn fallback
+(st02a coast is now walkable, was viewer-only), shared `scene/texture` fallback
++ deduped missing-texture logs, and a daylight placeholder sky when a room has
+no `sky.tm2` (reversible host presentation, not a reconstruction claim) — see
+`research/native/rev169-atmosphere-texture-fallback-and-coastal-spawn.md`.
 
 | Step | Count | Method |
 |------|-------|--------|

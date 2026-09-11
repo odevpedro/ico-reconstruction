@@ -175,6 +175,20 @@ A compelling scene is not technical evidence.
   Headless scene run: `door zone at (0,-9.6585) r=40 -> scene 0x2B`. CTest
   28/29. The demo room can now leave its room — door timing/trigger values are
   host heuristics, not byte-verified original data.
+- Rev.169 (2026-09-10): **atmosphere + coastal-room spawn (PORT P1/P2).** When
+  a room has no `sky.tm2` (st00a, st02a), the host renders a daylight haze
+  placeholder (pale-blue zenith → pale horizon) with the frame clear set to
+  the horizon; rooms with a real sky texture (st17a: top (140,139,158),
+  horizon (203,199,203)) keep the sampled gradient. `texForName` asks the room
+  texture dir then the shared `assets/scene/texture/` bundle and logs each
+  genuinely missing material once; st02a still lacks 5 textures on disk
+  (`a01_d a02_d abe2 abe3 block1` → a future `STGST02A.DF` re-extraction).
+  `ClipBridge::bestFloorPoint()` (highest walkable floor cell with a walkable
+  4-neighbour, wall tips excluded) backs the spawn probe, so the st02a coast,
+  previously viewer-only (8x7 grid, all probes on `samples==0` cells), now
+  spawns the boy at `(750,1075) [highest walkable floor]`. All host-side
+  presentation, reversible, not a reconstruction claim. CTest 28/29. Ver nota
+  `research/native/rev169-atmosphere-texture-fallback-and-coastal-spawn.md`.
 
 ## Current runtime baseline (Rev.126)
 
