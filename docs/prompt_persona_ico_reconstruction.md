@@ -204,6 +204,26 @@ A compelling scene is not technical evidence.
   parse (face region at 0x1150 ≠ `[N,ffff×7]` of Rev.151) so this demo is
   one-way and st02a's real interior/decode is the next archaeology. CTest 29/30.
   Ver nota `research/native/rev170-two-room-door-transition.md`.
+- Rev.171 (2026-09-11): **room-family variant decode + TWO-WAY door.** The
+  `st02a_p1.p2o` decode puzzle was solved as a loader bug, not a format
+  problem: the file is 67 OBJH regions and, in the character loader the
+  auto-detect routes it to, `nv==0` regions (pure material-name records such as
+  `47a_block3`/`sabi01` — footprints without geometry) and regions with no
+  face-header **aborted the whole load**. `loadCharacterMesh` now skips those
+  regions (`continue`) instead of failing → `st02a_p1.p2o` (15,552 verts /
+  19,652 tris / 67 submeshes) and `st02a_p3.p2o` (2,488/2,851/16) both load,
+  and st02a's ClipBridge now comes from the REAL interior mesh (54×65 grid /
+  2,033 blocked; render 57 calls / 56,698 tris vs 54/34,195 fallback-p2).
+  Because the st02a door piece `2a_door1.p2o` (AABB center (-210,25), a cliff
+  tier 300 units above/north of the nearest standable floor) sat outside the
+  150-unit snap spiral of Rev.170, the snap radius grew to 400 (documented host
+  heuristic, still 5-corner predicate). Result: **the demo is now two-way** —
+  `DOOR OPEN st00a -> st02a` AND `DOOR OPEN st02a -> st00a` both verified
+  headless, each with `transition execute ok (scene 0x2B, 23 host GObjs)` and
+  the reverse zone reinstalled. CTest 29/30. Ver nota
+  `research/native/rev171-st02a-p1-decode-and-two-way-door.md`. Archaeology
+  next (still open): the 12 flat `w==0` "strstop" regions, and a PCSX2 capture
+  of st02a to replace the host round-robin GObj↔mesh pairing.
 
 ## Current runtime baseline (Rev.126)
 

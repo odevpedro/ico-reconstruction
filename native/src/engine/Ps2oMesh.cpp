@@ -229,7 +229,13 @@ bool loadCharacterMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh,
             o += kVertexStrideBytes;
         }
         const uint32_t nvLocal = static_cast<uint32_t>(v);
-        if (nvLocal == 0) return false;
+        // Skip empty/auxiliary regions instead of failing the whole mesh.
+        // Rev.171: st02a_p1.p2o / st02a_p3.p2o are room-family files that the
+        // auto-detect routes to the character loader; among their scattered
+        // OBJH submeshes several carry NO position data (pure material-name
+        // records such as "47a_block3"/"sabi01", or 2-D footprints). Those
+        // regions contribute nothing to the scene and must not abort the load.
+        if (nvLocal == 0) continue;
 
         // UVs.
         const size_t baseUV = mesh.uvs.size() / 2;
@@ -276,7 +282,9 @@ bool loadCharacterMesh(const uint8_t* data, size_t size, Ps2oMesh& mesh,
         // [N, 0xFFFF x7] strip header, then parse strips within this region.
         size_t i = (o + kVertexStrideBytes - 1) & ~(size_t)(kVertexStrideBytes - 1);
         while (i + kVertexStrideBytes <= e && !isStripHeader(i, e)) i += kVertexStrideBytes;
-        if (i + kVertexStrideBytes > e) return false;
+        // A region may legitimately lack face data (metadata-only submesh);
+        // skip it rather than aborting the whole mesh load.
+        if (i + kVertexStrideBytes > e) continue;
 
         const size_t uvLimit = mesh.uvs.size() / 2;
         while (i + kVertexStrideBytes <= e && isStripHeader(i, e)) {

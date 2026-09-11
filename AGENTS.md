@@ -245,7 +245,8 @@ At the current stage, the most important validated research notes are:
 ```txt
 research/native/rev168-door-room-transition.md  (PORT P2: door-triggered room transition host mechanics; RoomTransitions Idle→Opening→Transitioning + cooldown; CTest room_transitions; CANONICAL correction record: Rev.166/167 = [TRILHA: DECOMP], not [TRILHA: PORT])
 research/native/rev169-atmosphere-texture-fallback-and-coastal-spawn.md  (PORT P1/P2 host presentation: daylight placeholder sky when no sky.tm2, shared scene/texture fallback + dedupe, ClipBridge::bestFloorPoint spawn fallback making st02a playable; 5 st02a textures re-extracted from DATA.DF and now resolved, zero missing-texture logs)
-research/native/rev170-two-room-door-transition.md  (PORT P2 milestone: data-driven two-room demo --room/--pair; door crossing performs a REAL requestScene(0x2B) resident-set swap — 68/29,462 tris (st00a) → 54/34,195 (st02a); shared SceneAssetStore with parseRoom merge; per-room ClipBridge/fit/sky/door; door zones snap to 5-corner standable floor; room-clip fallback = LARGEST loaded mesh (not first piece); st02a_p1.p2o decode open — p2-family, one-way demo only)
+research/native/rev171-st02a-p1-decode-and-two-way-door.md  (PORT P1/P2: room-family variant decode — st02a_p1.p2o/ st02a_p3.p2o now parse (skip nv==0 + no-face-header OBJH regions; st02a_p1 = 15,552 verts/19,652 tris/67 submeshes); st02a ClipBridge now from the REAL interior mesh (54x65 / 2,033 blocked; render 57 calls/56,698 tris vs 54/34,195 fallback-p2); door-snap radius 150→400 (host heuristic: st02a door AABB is ~300 units from the nearest standable floor, two cliff tiers); TWO-WAY door transition verified both directions (st00a→st02a and st02a→st00a, DOOR OPEN + requestScene(0x2B) + zone reinstall); CTest 29/30)
+research/native/rev170-two-room-door-transition.md  (PORT P2 milestone: data-driven two-room demo --room/--pair; door crossing performs a REAL requestScene(0x2B) resident-set swap — 68/29,462 tris (st00a) → 54/34,195 (st02a); shared SceneAssetStore with parseRoom merge; per-room ClipBridge/fit/sky/door; door zones snap to 5-corner standable floor; room-clip fallback = LARGEST loaded mesh (not first piece); st02a_p1.p2o decode open — p2-family, one-way demo only; superseded by Rev.171 for the two-way door and st02a_p1 decode)
 research/elf/rev109-isysgobj-abi-consolidation.md  (canonical 32-bit GObj/ProcessNode ABI; four 8-entry head/tail tables; 32-bit mask-loop distinction; semantic C bridge)
 research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md  (CANONICAL BOUNDARY of world_state_load=0x80 + DispIcoMisc=0x1C8 split; byte-exact .s; native WorldStateLoader semantic bridge + CTest)
 research/elf/rev130-hot-gaps-3-4-5-byte-exact.md  (all 5 hot-path gaps closed byte-exact: sister_callback_reg, CreateGObj, AllocGObjEntity, world_state_load, isysGObjProcRemoveUnlink; allocator contract + world_state dispatch table 0x5F2FB8)
@@ -802,16 +803,26 @@ the host presentation pass: `ClipBridge::bestFloorPoint()` spawn fallback
 no `sky.tm2` (reversible host presentation, not a reconstruction claim) — see
 `research/native/rev169-atmosphere-texture-fallback-and-coastal-spawn.md`.
 Rev.170 (2026-09-10) landed the PORT P2 two-room door milestone: a data-driven
-`--room <primary> --pair <companion>` demo where crossing a door piece performs
-a REAL `requestScene(0x2B)` resident-set swap (68/29,462 tris st00a →
+`--room <primary> --pair <companion>` demo where crossing a door piece performs a
+REAL `requestScene(0x2B)` resident-set swap (68/29,462 tris st00a →
 54/34,195 st02a; 25 → 23 host GObjs) in one shared `SceneAssetStore`
 (`parseRoom` merge), with per-room ClipBridge / camera fit / sky / door zones,
 door zones snapped to the same 5-corner standable floor the player needs, and
-room-collision/split fallbacks now using the LARGEST loaded mesh instead of the
-first decorative piece (`st02a_p1.p2o` is a p2-family variant that does not
-parse yet → st02a collision falls back to `st02a_p2.p2o`; one-way demo). CTest
-29/30 (only headless `opengl_backend`). See
-`research/native/rev170-two-room-door-transition.md`.
+room-collision/split/spawn-anchor fallbacks now using the LARGEST loaded mesh
+instead of the first decorative piece. That milestone was **one-way**: st02a_p1
+(p2-family variant) did not parse, so st02a collided on the p2 fallback and its
+door (AABB center 300 units from any floor) never snapped. **Rev.171 (2026-09-11)
+closed both gaps**: `loadCharacterMesh` now skips `nv==0` and no-face-header OBJH
+regions instead of aborting the file → `st02a_p1.p2o` (15,552 verts / 19,652 tris
+/ 67 submeshes) and `st02a_p3.p2o` (2,488/2,851/16) load, st02a ClipBridge now
+comes from the REAL interior mesh (grid 54x65 / 2,033 blocked; render
+57 calls / 56,698 tris vs 54/34,195 fallback-p2), and the door-snap spiral radius
+grew 150→400 (host heuristic) so the st02a door snaps to the nearest 5-corner
+standable floor. **TWO-WAY transition now verified in both directions**
+(st00a→st02a and st02a→st00a: DOOR OPEN + `requestScene(0x2B)` + reverse zone
+reinstall). CTest 29/30. See `research/native/rev171-st02a-p1-decode-and-two-way-door.md`.
+
+| Step | Count | Method |
 
 | Step | Count | Method |
 |------|-------|--------|
@@ -947,6 +958,7 @@ The old C-based compiler flag investigation is archived. All 26 asm functions by
 52. ~~**Native engine: re-link GObj→mesh por sala (Passo 1-3, Rev.159)**~~ — `applyVerifiedRoomRolePlans`/`hasRoomRolePlan`/`gobjHandlerRole`; `attachBoundAssetsToGObjs` role-tags 23 host GObjs from the verified 26-slot/8-handler 0x2B repertoire (runtime, not descriptors); `execute()` auto-relinks every scene transition; `initSceneGObj` releases prior-room GObjs (pool reuse). `tools/extract_room_role_tables.py` + `GeneratedRoomRoleTables.h` (11 scenes, 240 slots). Verified payload extended 29→54 (0x0F+0x2B). Nota: `research/native/rev159-verified-room-role-binding.md`. **DONE (2026-09-09)**
 53. ~~**PORT item 2, Rev.168: door-triggered room transition (host)**~~ — `RoomTransitions.{h,cpp}` (Idle→Opening→Transitioning, cancel on leave, per-zone cooldown, reset; `room_transitions_test`); main.cpp wiring: door zone from `169_door.p2o` AABB (scene 0x0F), `rebuildGObjDraws` lambda reusable on swap, callback → requestScene(0x2B)+execute → rebuild → boy respawn via walkable probe; real wall-clock dt. Headless scene run verified (`door zone at (0,-9.6585) r=40`). CTest 28/29. CARRIES the Rev.166/167 `[TRILHA: DECOMP]` label correction record. Nota: `research/native/rev168-door-room-transition.md`. **DONE (2026-09-10)**
 54. ~~**PORT item 2b, Rev.170: two-room REAL door swap (st00a 0x0F ↔ st02a 0x2B)**~~ — data-driven `--room <primary> --pair <companion>` in main.cpp; shared `SceneAssetStore` via `parseRoom` (multi-bundle `parse()` reset preserved); tengo per-room ClipBridge/fit/sky/door; `runSceneDemo` single-room wrapper; `--teleport x,z` override. Door zones snap to the **5-corner standable floor** (BoyController-spawn predicate; a single `floorHeightAt` sample left the boy ~60 units off the door). Room-collision/split/spawn-anchor fallback now uses the **LARGEST loaded mesh** (st02a_p1.p2o fails parse — p2-family variant → st02a falls back to st02a_p2.p2o 21,586 tris; old first-piece fallback gave a useless 8×7 flare grid). Verified real swap: `DOOR OPEN st00a -> st02a`, `transition execute ok (scene 0x2B, 23 host GObjs)`, render 68/29,462 tris → 54/34,195 tris sustained, reverse zone reinstalled post-swap, `/tmp/rev170-swap3.ppm`. One-way (st02a door unsnapped). CTest 29/30. Nota: `research/native/rev170-two-room-door-transition.md`. **DONE (2026-09-10)**
+55. ~~**PORT item 2c, Rev.171: room-family variant decode + two-way door**~~ — `loadCharacterMesh` skips `nv==0` and no-face-header OBJH regions instead of aborting → `st02a_p1.p2o` (15,552 verts / 19,652 tris / 67 submeshes) and `st02a_p3.p2o` (2,488/2,851/16) load; st02a ClipBridge now from the REAL interior mesh (54x65 / 2,033 blocked; render 57 calls / 56,698 tris vs 54/34,195 fallback-p2); door-snap spiral radius 150→400 (host heuristic; st02a door AABB center is ~300 units from nearest standable floor = two cliff tiers, no floor at center). **TWO-WAY verified both directions**: st00a→st02a (unchanged) AND st02a→st00a (`DOOR OPEN st02a -> st00a` + `transition execute ok (scene 0x2B, 23 host GObjs)` + st00a zone reinstalled, `/tmp/rev171-final-a.ppm`/`-b.ppm`). CTest 29/30 (only headless opengl_backend). Nota: `research/native/rev171-st02a-p1-decode-and-two-way-door.md`. **DONE (2026-09-11)**
 
 ---
 

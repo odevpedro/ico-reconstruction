@@ -1111,7 +1111,7 @@ int runMultiRoomDemo(const std::vector<DemoRoom>& rooms, u32 startRoom,
                 return true;
             };
             bool found = false;
-            for (float r = 0.0f; r <= 150.0f && !found; r += 10.0f) {
+            for (float r = 0.0f; r <= 400.0f && !found; r += 10.0f) {
                 for (int k = 0; k < 32; ++k) {
                     const float a = static_cast<float>(k) * 6.28318530718f / 32.0f;
                     const float px = d.x + r * std::cos(a);
