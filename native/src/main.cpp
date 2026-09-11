@@ -1142,14 +1142,18 @@ int runSceneDemo(const std::vector<std::string>& piecePaths,
         const float tgtY = followBoy
             ? (markerY + (hasBoyMesh ? 60.0f * kBoyScale : 40.0f))
             : cy;
-        const float distXZ = curDist * std::cos(pitch);
-        const float eyeY = tgtY + curDist * std::sin(pitch);
+        // Rev.168 follow cam: a full-room fit (dist ~2300 in scene mode) makes
+        // the ~1.5 m boy a sub-100-px blob. In follow mode clamp to a close
+        // third-person distance; scroll still zooms it further if needed.
+        const float followDist = followBoy ? std::min(curDist, 480.0f) : curDist;
+        const float distXZ = followDist * std::cos(pitch);
+        const float eyeY = tgtY + followDist * std::sin(pitch);
         const float eyeX = tgtX + distXZ * std::cos(ang);
         const float eyeZ = tgtZ + distXZ * std::sin(ang);
         const float eye[3] = { eyeX, eyeY, eyeZ };
         const Matrix4x4 proj2 = Matrix4x4::perspective(70.0f, 640.0f / 448.0f,
-                                                       curDist * 0.01f,
-                                                       curDist * 10.0f);
+                                                       followDist * 0.01f,
+                                                       followDist * 10.0f);
         const float tgt[3] = { tgtX, tgtY, tgtZ };
         const float up[3] = { 0.0f, 1.0f, 0.0f };
         const Matrix4x4 view = Matrix4x4::lookAt(eye, tgt, up);
