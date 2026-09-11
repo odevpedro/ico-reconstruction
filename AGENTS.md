@@ -244,7 +244,7 @@ At the current stage, the most important validated research notes are:
 
 ```txt
 research/native/rev168-door-room-transition.md  (PORT P2: door-triggered room transition host mechanics; RoomTransitions Idle→Opening→Transitioning + cooldown; CTest room_transitions; CANONICAL correction record: Rev.166/167 = [TRILHA: DECOMP], not [TRILHA: PORT])
-research/native/rev169-atmosphere-texture-fallback-and-coastal-spawn.md  (PORT P1/P2 host presentation: daylight placeholder sky when no sky.tm2, shared scene/texture fallback + dedupe, ClipBridge::bestFloorPoint spawn fallback making st02a playable; 5 st02a textures still absent on disk)
+research/native/rev169-atmosphere-texture-fallback-and-coastal-spawn.md  (PORT P1/P2 host presentation: daylight placeholder sky when no sky.tm2, shared scene/texture fallback + dedupe, ClipBridge::bestFloorPoint spawn fallback making st02a playable; 5 st02a textures re-extracted from DATA.DF and now resolved, zero missing-texture logs)
 research/elf/rev109-isysgobj-abi-consolidation.md  (canonical 32-bit GObj/ProcessNode ABI; four 8-entry head/tail tables; 32-bit mask-loop distinction; semantic C bridge)
 research/elf/rev131-worldstate-boundary-dispicomisc-and-native-bridge.md  (CANONICAL BOUNDARY of world_state_load=0x80 + DispIcoMisc=0x1C8 split; byte-exact .s; native WorldStateLoader semantic bridge + CTest)
 research/elf/rev130-hot-gaps-3-4-5-byte-exact.md  (all 5 hot-path gaps closed byte-exact: sister_callback_reg, CreateGObj, AllocGObjEntity, world_state_load, isysGObjProcRemoveUnlink; allocator contract + world_state dispatch table 0x5F2FB8)

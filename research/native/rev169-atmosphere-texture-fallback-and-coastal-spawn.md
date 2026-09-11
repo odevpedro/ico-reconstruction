@@ -135,3 +135,47 @@ change any reconstruction artifact; it makes the already-extracted 40-room
 world presentable (sky per room + shared texture resolution) and turns the
 previously viewer-only st02a coast into a walkable room. All claims above are
 either byte-logged or reproducible via `--room/--scene` headless runs.
+
+---
+
+## Addendum — st02a missing textures resolved (2026-09-10, same session)
+
+The 5 genuinely-missing st02a textures were **re-extracted out of
+`DFDATAS/DATA.DF`** in the PAL ISO (`.local/iso/Ico (PAL).iso`) and installed
+into `native/assets/scene/rooms/st02a/texture/` under the short material
+names the p2o table expects:
+
+| Installed (short) | Source entry in STGST02A.DF container | bytes |
+|-------------------|----------------------------------------|-------|
+| `block1.tm2` | `object/sdf/st02a/model/../texture/06a_block1.tm2` | 10 400 |
+| `abe3.tm2` | `.../2b_kabe3.tm2` | 10 400 |
+| `abe2.tm2` | `.../2b_kabe2.tm2` | 21 600 |
+| `a02_d.tm2` | `.../renga02_d.tm2` | 2 176 |
+| `a01_d.tm2` | `.../renga01_d.tm2` | 2 176 |
+
+### Extraction recipe (reproducible)
+
+1. PAL ISO9660 tree: `DFDATAS/DATA.DF` at **LBA 19771** (payload file offset
+   `0x269D800`), size 867 184 640.
+2. DATA.DF's own head directory = `[u32 count=193][40-byte records]` starting
+   at +4. For the `STGST*` room entries the record's **offset u32 is at +0x20
+   and size u32 at +0x24** (verified at the byte level: the payload at that
+   offset begins with `0xEC`; other rooms such as `STG13A2` differ — its pair
+   sits at +0x1C/+0x20, so treat the position as per-file, not universal).
+   `STGST02A.DF`: off `0x05702000`, size `0x4231D3` (4.1 MB).
+3. The subfile payload is **raw deflate** (decodes to an 11 MB container:
+   header `[u32 count=518]` (at 0x18 the header area `06 02 00 00` then
+   `08 25 08 00`), entries of `0x224` B: name at +0x10, size at +0x0C,
+   gid at +0x210, offset at +0x214). 496 named entries parsed.
+4. The five source entries live under
+   `object/sdf/st02a/model/../texture/<name>.tm2` (ranges pointing `..` up to
+   the room texture subdir), all with the `TI` (`0x5449`) TM2 magic.
+
+The complete container is saved at `/tmp/stgst02a/` during the extraction run.
+The `.tm2` files themselves are gitignored (never committed).
+
+### Result
+
+`ico_native --room st02a` now logs **zero** missing textures; the former
+"massive white block" (`block1`) and the kabe/renga walls resolve from disk.
+Headless run: spawn `[highest walkable floor]` OK, CTest unchanged 28/29.
