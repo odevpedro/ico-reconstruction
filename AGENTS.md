@@ -267,6 +267,7 @@ research/elf/rev163-static-inventory-and-byteexact.md  (397 named functions with
 research/elf/rev164-new-targets-byteexact-and-getenemydeflife-semantic.md  (617 pipeline byte-exact; GetEnemyDefLife semantic bridge + CTest; life += 0.5f corrected; 733 total .s)
 research/elf/rev165-three-semantic-bridges.md  (3 more semantic bridges: holdRope, subEnemyCollision, girlForceFieldGeo; 4 semantic bridges total; 8192.0f constant correction; GFFG rounding pipeline confirmed, invented output write removed; 27/28 CTest)
 research/elf/rev166-delegables-three-semantic-bridges.md  (subEnemyCollision delegables CLOSED: fn_14A100/fn_15BCC8/fn_203AA0 byte-exact .s + semantics + CTest; bit29/bit27 select table; VBlank 0x274EC0 countdown; dead mult stores; 736 total .s; 7 semantic bridges)
+research/elf/rev167-first-inventory-semantic-bridges.md  (Rev.163 inventory first batch: actEnemyFlagOnDead/AP1JumpReq/actSt04bEne1Chk byte-exact .s + semantics + CTest; AP1 mask -2 clears bit0 not bit1; actSt04bEne1Chk 32-bit adjacent cells; 0x13FF88 shared sink path; 739 .s; 10 semantic bridges)
 ```
 
 ---
@@ -406,7 +407,7 @@ Ghidra symbols verified via PAL→USA reconciliation show:
 8 speculative eBrain functions (`eBrainGetStatus` through `eBrainTargetGenerator` at `0x191D20-0x192380`)
 are kept as byte-exact `.s` even without Ghidra symbol verification.
 
-### Byte-exact reconstruction status (Rev.166 — 736 of 736 .s verified byte-exact)
+### Byte-exact reconstruction status (Rev.167 — 739 of 739 .s verified byte-exact)
 
 > **CORRECTION (Rev.130).** The Rev.116f count of 684/701 has been superseded.
 > Six hot-path gaps were reconstructed byte-exact since Rev.116f and now the
@@ -445,14 +446,19 @@ are kept as byte-exact `.s` even without Ghidra symbol verification.
 > **CORRECTION (Rev.166).** Core `.s` grew 64→67 (3 new `fn_14A100`, `fn_15BCC8`,
 > `fn_203AA0` — the subEnemyCollision delegables, all byte-exact). Total on-disk:
 > **736 `.s` files** (entity 663, cloth 6, core 67). All 736 verified byte-exact.
+>
+> **CORRECTION (Rev.167).** Entity `.s` grew 663→666 (3 new named functions
+> from the Rev.163 inventory: `actEnemyFlagOnDead` 0x15D5F0, `AP1JumpReq`
+> 0x1AE3B0, `actSt04bEne1Chk` 0x203A10, all byte-exact). Total on-disk:
+> **739 `.s` files** (entity 666, cloth 6, core 67). All 739 verified byte-exact.
 
 | Step | Count | Method |
 |------|-------|--------|
 | Pipeline functions | 617 | `asm_source_score.py --all` → 617/617 byte-exact (0 failures) |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 119 | byte-exact via `assemble_and_verify` at target VA |
-| **Total byte-exact `.s`** | **736** / 736 (100%) | verified against USA ELF |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 122 | byte-exact via `assemble_and_verify` at target VA |
+| **Total byte-exact `.s`** | **739** / 739 (100%) | verified against USA ELF |
 
-Not byte-exact / not verified: **0** (all 736 verified). The former ASM-ERR and
+Not byte-exact / not verified: **0** (all 739 verified). The former ASM-ERR and
 trivial stub categories are closed as of Rev.162.
 `girlBrain_sub_16F618`, `girlBrain_sub_16F620`) are now byte-exact through
 ee-gcc 2.9 (Rev.157); the `.word` fallback there is a generator choice (backward
@@ -465,9 +471,10 @@ automated scoring pipeline because the pipeline emits labels for in-range
 branches, which the ee-as backward padding would corrupt.
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
-Plus 4 semantic C bridges (`getEnemyDefLife`, `holdRope`, `subEnemyCollision`,
-`girlForceFieldGeo`) + 3 delegable semantics (`fn_14A100`, `fn_15BCC8`,
-`fn_203AA0` — Rev.166) with CTest coverage.
+Plus 10 semantic C bridges with CTest coverage: `getEnemyDefLife`, `holdRope`,
+`subEnemyCollision`, `girlForceFieldGeo`, the 3 subEnemyCollision delegables
+(`fn_14A100`, `fn_15BCC8`, `fn_203AA0` — Rev.166), and the 3 Rev.167
+inventoried handlers (`actEnemyFlagOnDead`, `AP1JumpReq`, `actSt04bEne1Chk`).
 
 Files in `src/entity/asm/` (663), `src/cloth/asm/` (6), `src/core/asm/` (67).
 
@@ -757,31 +764,32 @@ the next priority merely because the capture is running. The capture is the
 primary source of new evidence; native-port work follows the validated
 reconstruction it enables. The user may explicitly request an exception.
 
-### Current score status (Rev.166 — 736 of 736 .s verified byte-exact + 7 semantic bridges)
+### Current score status (Rev.167 — 739 of 739 .s verified byte-exact + 10 semantic bridges)
 
 See the "Byte-exact reconstruction status" section above for the authoritative
-counts. Summary: **736 of 736 `.s` verified byte-exact against the USA ELF**
+counts. Summary: **739 of 739 `.s` verified byte-exact against the USA ELF**
 (100%). The former ASM-ERR (4) and trivial stub (4) categories are closed as
 of Rev.162. Core `.s` grew 46→64 (Rev.162), 64→67 (Rev.166); entity `.s` grew
-658→663 (Rev.164). Rev.164 added the first gameplay-domain semantic C bridge
-(`ico_semantic_getEnemyDefLife`) with CTest coverage; Rev.165 added three more
-(`ico_semantic_holdRope`, `ico_semantic_subEnemyCollision`,
-`ico_semantic_girlForceFieldGeo`); Rev.166 closed the subEnemyCollision
-delegables (`ico_semantic_fun14A100`, `ico_semantic_fun15BCC8`,
-`ico_semantic_fun203AA0` — byte-exact `.s` + semantics + CTest). Pipeline
-TARGET_FUNCTIONS is now 617/617 byte-exact. CTest: 27/28 (only headless
-`opengl_backend` fails — the pre-existing baseline).
+658→663 (Rev.164), 663→666 (Rev.167). Rev.164 added the first gameplay-domain
+semantic C bridge (`ico_semantic_getEnemyDefLife`) with CTest coverage;
+Rev.165 added three more (`ico_semantic_holdRope`,
+`ico_semantic_subEnemyCollision`, `ico_semantic_girlForceFieldGeo`); Rev.166
+closed the subEnemyCollision delegables (`ico_semantic_fun14A100`,
+`ico_semantic_fun15BCC8`, `ico_semantic_fun203AA0` — byte-exact `.s` +
+semantics + CTest); Rev.167 added the first Rev.163-inventory batch
+(`ico_semantic_actEnemyFlagOnDead`, `ico_semantic_AP1JumpReq`,
+`ico_semantic_actSt04bEne1Chk`). Pipeline TARGET_FUNCTIONS is now 617/617
+byte-exact. CTest: 27/28 (only headless `opengl_backend` fails — the
+pre-existing baseline).
 
 | Step | Count | Method |
 |------|-------|--------|
 | Pipeline functions | 617 | `asm_source_score.py --all` |
-| Other `.s` (outside `TARGET_FUNCTIONS`) | 119 | `assemble_and_verify` at target VA |
-| **Total .s files** | **736 / 736** | verified byte-exact |
+| Other `.s` (outside `TARGET_FUNCTIONS`) | 122 | `assemble_and_verify` at target VA |
+| **Total .s files** | **739 / 739** | verified byte-exact |
 
 Plus entity/cloth functions as byte-exact C source (`.c` files).
-Plus 4 semantic C bridges (`getEnemyDefLife`, `holdRope`, `subEnemyCollision`,
-`girlForceFieldGeo`) + 3 delegable semantics (`fn_14A100`, `fn_15BCC8`,
-`fn_203AA0`) with CTest coverage.
+Plus 10 semantic C bridges with CTest coverage (see the score-status section).
 
 ### MAIN.MAP / recovery-pass update (2026-05-22)
 

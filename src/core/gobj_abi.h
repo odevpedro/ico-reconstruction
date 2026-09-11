@@ -339,6 +339,33 @@ u32 ico_semantic_fun15BCC8(const void *entity, u32 incoming);
 u32 ico_semantic_fun203AA0(u32 frame_count, const void *counters);
 
 /*
+ * Rev.167 — first batch of inventoried named functions (Rev.163) with new
+ * byte-exact .s ground truth:
+ *   src/entity/asm/actEnemyFlagOnDead.s  (0x15D5F0, 0x2C B)
+ *   src/entity/asm/AP1JumpReq.s          (0x1AE3B0, 0x34 B)
+ *   src/entity/asm/actSt04bEne1Chk.s     (0x203A10, 0x48 B)
+ *
+ * actEnemyFlagOnDead:
+ *   jal 0x1A6E28 (a0 = 0x5588C0)       send enemy-dead flag
+ *   jal 0x203AA0 (a0 = 0)              frame delay (built-in fn_203AA0)
+ *   flag_send hook models 0x1A6E28 (NULL skips).
+ *
+ * AP1JumpReq:
+ *   clears bit0 of count (0xB5) consecutive u64 at &0x4B3D10 stride 0x40:
+ *   for i in 0..count-1: *(u64*)(base + i*0x40) &= -2   (a1=-2, 64-bit and)
+ *
+ * actSt04bEne1Chk:
+ *   m = *(entity+0x164); if *(m+0x12C) != 0 → return 0 (slot busy)
+ *   *(m+0x130) = a2 ; *(m+0x12C) = entity
+ *   sink hook models the 0x13FF88 dispatch: sink(entity, a2, a1); return 1
+ */
+void ico_semantic_actEnemyFlagOnDead(IcoSemanticTriFn flag_send,
+                                     const void *counters);
+void ico_semantic_AP1JumpReq(void *round_base, u32 count);
+int ico_semantic_actSt04bEne1Chk(const void *entity, u32 arg_b, u32 arg_c,
+                                 IcoSemanticTriFn sink);
+
+/*
  * GirlForceFieldGeo (0x001C3C90, 0x178 bytes, byte-exact):
  * ground truth src/entity/asm/GirlForceFieldGeo.s. Cloth force-field geometry.
  * Sub-range of SetGirlClothDispSwitch (0x001C3C38).

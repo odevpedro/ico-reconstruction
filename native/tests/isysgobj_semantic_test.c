@@ -66,6 +66,18 @@ static ico_ptr32 sec_test_lookup_index_1(ico_ptr32 a0, ico_ptr32 a1,
     return (ico_ptr32)1u;
 }
 
+/* actEnemyFlagOnDead flag_send capture (Rev.167). */
+static u32 s_efd_args[3];
+static int s_efd_calls;
+
+static ico_ptr32 efd_flag_send(ico_ptr32 a0, ico_ptr32 a1, ico_ptr32 a2)
+{
+    (void)a1; (void)a2;
+    s_efd_args[0] = a0;
+    ++s_efd_calls;
+    return 0;
+}
+
 /* Write a host-width pointer into a byte buffer via a temporary (avoids the
    memcpy(&array, n) semantic trap where memcpy copies CONTENTS not address). */
 #define STORE_PTR(dst, addr) \
@@ -74,6 +86,12 @@ static ico_ptr32 sec_test_lookup_index_1(ico_ptr32 a0, ico_ptr32 a1,
     float _f = (f); memcpy((dst), &_f, sizeof(float)); } while (0)
 #define STORE_U32(dst, v) do { \
     u32 _v = (v); memcpy((dst), &_v, sizeof(u32)); } while (0)
+static u32 load_u32(const void *src)
+{
+    u32 _v = 0;
+    memcpy(&_v, src, sizeof(u32));
+    return _v;
+}
 
 int main(void)
 {
@@ -576,6 +594,65 @@ int main(void)
             int r = ico_semantic_subEnemyCollision(entity_b, 0x01, 0,
                                                      0, 0, 0, 0, 0);
             assert(r == 1);
+        }
+
+        /* Test 13: AP1JumpReq clears bit0 (>a1 = -2, 64-bit and) of count u64
+           entries, stride 0x40 (base + i*0x40), leaves other bits intact */
+        {
+            u8 area[0x40 * 3];
+            void *base = area;
+            memset(area, 0, sizeof(area));
+            STORE_U32(area + 0x00, 0xFFFFFFFF);
+            STORE_U32(area + 0x04, 0xFFFFFFFF);
+            STORE_U32(area + 0x40, 0xFFFFFFFE);
+            STORE_U32(area + 0x44, 0xFFFFFFFF);
+            STORE_U32(area + 0x80, 0x00000007);
+            STORE_U32(area + 0x84, 0x00000000);
+            ico_semantic_AP1JumpReq(base, 3);
+            assert(load_u32(area + 0x00) == 0xFFFFFFFE);
+            assert(load_u32(area + 0x04) == 0xFFFFFFFF);
+            assert(load_u32(area + 0x40) == 0xFFFFFFFE);
+            assert(load_u32(area + 0x44) == 0xFFFFFFFF);
+            assert(load_u32(area + 0x80) == 0x00000006);
+            assert(load_u32(area + 0x84) == 0x00000000);
+            ico_semantic_AP1JumpReq(NULL, 7);   /* NULL-guard */
+        }
+
+/* Test 14: actSt04bEne1Chk busy/empty slot + sink dispatch + cell
+           stores (0x164 → m, 0x12C busy, 0x130 payload) */
+        {
+            u8 entity_buf[0x170];
+            u8 m[0x140];
+            STORE_PTR(entity_buf + 0x164, m);
+            STORE_U32(m + 0x12c, 0u);           /* slot free */
+            s_efd_args[0] = 0; s_efd_calls = 0;
+            assert(ico_semantic_actSt04bEne1Chk(entity_buf, 0x1B, 0x2C,
+                                                efd_flag_send) == 1);
+            assert(s_efd_calls == 1);
+            assert(s_efd_args[0] == (u32)(uintptr_t)entity_buf);
+            assert(load_u32(m + 0x130) == 0x2C);
+            assert(load_u32(m + 0x12c) == (u32)(uintptr_t)entity_buf);
+
+            STORE_U32(m + 0x12c, 1u);           /* slot busy */
+            s_efd_calls = 0;
+            assert(ico_semantic_actSt04bEne1Chk(entity_buf, 0x1B, 0x2C,
+                                                efd_flag_send) == 0);
+            assert(s_efd_calls == 0);
+            assert(ico_semantic_actSt04bEne1Chk(NULL, 0x1B, 0x2C,
+                                                efd_flag_send) == 0);
+        }
+
+        /* Test 15: actEnemyFlagOnDead fires flag_send(0x5588C0) then the
+           built-in fn_203AA0 delay (count=160 → 1 frame, a0==0 path) */
+        {
+            u32 c[2] = {160, 60};
+            s_efd_calls = 0; s_efd_args[0] = 0;
+            ico_semantic_actEnemyFlagOnDead(efd_flag_send, c);
+            assert(s_efd_calls == 1);
+            assert(s_efd_args[0] == 0x5588C0u);
+            s_efd_calls = 0;
+            ico_semantic_actEnemyFlagOnDead(NULL, c);   /* hook-less path */
+            assert(s_efd_calls == 0);
         }
     }
 

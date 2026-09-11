@@ -939,6 +939,11 @@ static void sec_st_float(void *address, float value)
     memcpy(address, &value, sizeof(value));
 }
 
+static void sec_st_u32(void *address, u32 value)
+{
+    memcpy(address, &value, sizeof(value));
+}
+
 static u64 sec_ld_u64(const void *address)
 {
     u64 value;
@@ -1332,6 +1337,82 @@ u32 ico_semantic_fun203AA0(u32 frame_count, const void *counters)
         return (v != 0u) ? v : 0u;   /* 0 → infinite wait path */
     }
     return (v != 0u) ? v : 1u;
+}
+
+/* ── Rev.167 inventoried named functions ────────────────────────────── */
+
+/*
+ * actEnemyFlagOnDead (0x15D5F0, 0x2C B) — confirmed from
+ * src/entity/asm/actEnemyFlagOnDead.s:
+ *   jal 0x1A6E28  (a0 = 0x560000 - 0x7740 = 0x5588C0)   enemy-dead flag send
+ *   jal 0x203AA0  (a0 = 0)                               frame delay (a0==0)
+ * The flag-send target 0x1A6E28 is an unmodelled delegable; flag_send hook
+ * receives the 0x5588C0 store address. The delay uses the fn_203AA0 built-in.
+ */
+void ico_semantic_actEnemyFlagOnDead(IcoSemanticTriFn flag_send,
+                                     const void *counters)
+{
+    if (flag_send != NULL) {
+        (void)flag_send(0x5588C0u, 0, 0);
+    }
+    (void)ico_semantic_fun203AA0(0u, counters);
+}
+
+/*
+ * AP1JumpReq (0x1AE3B0, 0x34 B) — confirmed from
+ * src/entity/asm/AP1JumpReq.s:
+ *   base = 0x4B3D10 ; a1 = -2 (0xFFFF...FFFE) ; a0 = 0xB4..0 (0xB5 iters)
+ *   loop: *(u64*)(base + i*0x40) &= -2      (64-bit `and`; clears bit0)
+ * Clears the low bit of every AP1 round state entry.
+ */
+void ico_semantic_AP1JumpReq(void *round_base, u32 count)
+{
+    u32 i;
+    void *p;
+
+    if (round_base == NULL) {
+        return;
+    }
+    for (i = 0; i < count; ++i) {
+        p = (u8 *)round_base + (i * 0x40u);
+        *(u64 *)p &= (u64)-2;
+    }
+}
+
+/*
+ * actSt04bEne1Chk (0x203A10, 0x48 B) — confirmed from
+ * src/entity/asm/actSt04bEne1Chk.s:
+ *   v1 = *(entity+0x164) ; v0 = *(v1+0x12C)
+ *   v0 != 0 → return 0 (slot busy)
+ *   *(v1+0x130) = a2 ; *(v1+0x12C) = entity
+ *   jal 0x13FF88 (a0=entity, a1=old a2, a2=old a1)   sink (host hook)
+ *   return 1
+ * The sink 0x13FF88 is the same shared response dispatch that fn_15BCC8
+ * tail-jumps to; modelled as an optional host hook.
+ */
+int ico_semantic_actSt04bEne1Chk(const void *entity, u32 arg_b, u32 arg_c,
+                                 IcoSemanticTriFn sink)
+{
+    void *m;
+
+    if (entity == NULL) {
+        return 0;
+    }
+    m = sec_cell((const u8 *)entity + 0x164);
+    if (m == NULL) {
+        return 0;
+    }
+    if (sec_ld_u32((const u8 *)m + 0x12c) != 0u) {
+        return 0;
+    }
+    sec_st_u32((u8 *)m + 0x130, arg_c);
+    sec_st_u32((u8 *)m + 0x12c, (u32)(uintptr_t)entity);   /* 32-bit slot
+        (EE `sw`): +0x12c and +0x130 are adjacent 4-byte fields, so an
+        8-byte host cell at 0x12c would clobber +0x130. */
+    if (sink != NULL) {
+        (void)sink((ico_ptr32)(uintptr_t)entity, arg_c, arg_b);
+    }
+    return 1;
 }
 
 /*

@@ -128,6 +128,10 @@ if __name__ == '__main__':
         ('fn_14A100',               0x14A100, 0x74,  'core'),
         ('fn_15BCC8',               0x15BCC8, 0x7C,  'core'),
         ('fn_203AA0',               0x203AA0, 0xA0,  'core'),
+        # Rev.167 new named functions (entity)
+        ('actEnemyFlagOnDead',      0x15D5F0, 0x2C,  'entity'),
+        ('AP1JumpReq',              0x1AE3B0, 0x34,  'entity'),
+        ('actSt04bEne1Chk',         0x203A10, 0x48,  'entity'),
     ]
     for name, va, size, module in targets:
         txt = gen(name, va, size, module)

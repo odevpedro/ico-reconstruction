@@ -201,7 +201,8 @@ real gameplay state sequence.
 
 ## Sources to prefer
 
-1. `research/elf/rev166-delegables-three-semantic-bridges.md`
+1. `research/elf/rev167-first-inventory-semantic-bridges.md`
+2. `research/elf/rev166-delegables-three-semantic-bridges.md`
 2. `research/native/rev156-gifpacket-bridge-fidelity-and-p2-family-closed.md`
 3. `research/native/rev155-per-gobj-visual-composition.md`
 4. `research/native/rev154-verified-scene-tables.md`
@@ -231,24 +232,35 @@ explicit HOST control whose byte-exact `0x8000` packing constant appears in
 BOTH base and Offset `.s` — it is NOT a verified Offset-vs-base discriminator
 and is not to be described as verified PS2 behavior.
 
-## Semantic reconstruction truth (Rev.164-166)
+## Semantic reconstruction truth (Rev.164-167)
 
 - The semantic C bridges in `src/core/isysgobj_semantic.c` are byte-exact
   **companions**, not byte-exact C: the `.s` in `src/core/asm/` and
   `src/entity/asm/` remain the ground truth for PS2 behavior; the C models and
   their CTest coverage are auditable reconstructions of that truth.
-- Rev.164-166 built 7 verified semantic functions with CTest: `getEnemyDefLife`,
-  `holdRope`, `subEnemyCollision`, `girlForceFieldGeo`, and the three
+- Rev.164-167 built 10 verified semantic functions with CTest: `getEnemyDefLife`,
+  `holdRope`, `subEnemyCollision`, `girlForceFieldGeo`, the three
   subEnemyCollision **delegables** `fn_14A100` (setup: 3-float angle copy from
   `*(work+0xC) + idx*64`), `fn_15BCC8` (collision select: bit29→0xA9 / bit27→0xAA,
   only for incoming 0xA8/0xAD, requires state==1), `fn_203AA0` (VBlank
   0x274EC0 countdown `((60-count)/divisor)/60`, trap on divisor 0, yield-count
-  return). All three are byte-exact `.s` (736 total) plus semantics.
+  return), and the first Rev.163-inventory batch `actEnemyFlagOnDead` (flag
+  send 0x5588C0 via 0x1A6E28 + fn_203AA0(0) delay), `AP1JumpReq` (clears bit0
+  of 0xB5 u64 at 0x4B3D10 stride 0x40 — mask `-2`, NOT bit1),
+  `actSt04bEne1Chk` (register-busy slot at +0x12C/+0x130 → shared 0x13FF88
+  sink). All ten are byte-exact `.s` (739 total) plus semantics.
+- 0x13FF88 is the confirmed SHARED response sink for both the Rev.166 select
+  path and the Rev.167 register-busy path; still unmodeled.
 - Hooks/variables the semantic cannot yet resolve are kept as delegables with
   explicit "unknown" status: `0x109F10` (idx lookup), `gp-0x64FC` (collision
-  check trampoline), the `0x13FF88` response sink, the `0x13D3F0` yield, and
-  the VU/COP2 pair `0x243AA8`/`0x244448`. Do not upgrade any of these to
-  conclusions without runtime/byte evidence.
+  check trampoline), `0x1A6E28` (enemy-dead flag send), the `0x13FF88`
+  response sink, the `0x13D3F0` yield, and the VU/COP2 pair `0x243AA8`/
+  `0x244448`. Do not upgrade any of these to conclusions without runtime/byte
+  evidence.
+- 32-bit vs host-width cells: fields the EE accesses with `lw/sw` that are
+  adjacent to other fields must be modeled as 32-bit cells on the host (an
+  8-byte host pointer cell at +0x12C would clobber +0x130). Always check the
+  actual load/store width in the `.s` before choosing sec_cell vs sec_st_u32.
 - Avoid attributing invented behavior to any bridge: the Rev.165
   GirlForceFieldGeo `*255/u16` output write was removed because it was not in
   the disassembly. Semantics must trace to the verified disassembly or be
