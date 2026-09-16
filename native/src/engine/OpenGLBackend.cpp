@@ -1551,6 +1551,14 @@ void OpenGLBackend::drawSkyGradient(const u8 topColor[4], const u8 bottomColor[4
     // switch to the background list (GS list 0, drawn before Opaque).
     flushBatch();
 
+    // The background quad is an untextured colour gradient. Force the
+    // untextured path: otherwise flushBatch() reuses I.boundTexture, which is
+    // still the last piece texture from the previous frame, and stretches it
+    // across the full screen as a static "cloud". Setting kNullTexture makes
+    // flushBatch() bind the solid white texture so only the per-vertex
+    // gradient colours show.
+    I.boundTexture = kNullTexture;
+
     // The quad is expressed in NDC; override the perspective scene matrices
     // with identity so it stays full-screen, then restore them.
     const Matrix4x4 savedProj = I.projMat;

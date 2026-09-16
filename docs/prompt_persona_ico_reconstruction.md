@@ -240,6 +240,19 @@ A compelling scene is not technical evidence.
   interior, not bounds-clipping), st05b untested. The next real PORT step
   remains Item 1 (PCSX2 capture of room 0x0F) or Item 3 (history cleanup). Ver
   nota `research/native/rev172-room-transition-multi-room-matrix.md`.
+- Rev.173 (2026-09-16): **the static sky "cloud" was a stale texture bind.** The
+  background gradient quad (`OpenGLBackend::drawSkyGradient`) is emitted in NDC
+  (screen-space, hence static and zoom-invariant) but never bound a texture;
+  `flushBatch()` only falls back to the solid white texture when
+  `I.boundTexture == kNullTexture`, so from frame 2 on the quad reused the last
+  piece texture of the previous frame, stretched full-screen. Fix:
+  `I.boundTexture = kNullTexture;` before flushing the gradient. Host-renderer
+  fix only; it makes no claim about the original st00a sky, whose sky/cloud
+  asset is not present in the extracted st00a set (only other rooms carry
+  `sky*.tm2`/`cloud*.tm2`). The "melting" castle symptom the user had reported
+  earlier was **not reproducible** in the current st00a scene — it belonged to a
+  previous whole-map-connected configuration (user-validated). Ver nota
+  `research/native/rev173-sky-gradient-quad-stale-texture.md`.
 
 ## Current runtime baseline (Rev.126)
 
