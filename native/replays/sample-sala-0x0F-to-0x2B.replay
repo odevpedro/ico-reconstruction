@@ -1,0 +1,24 @@
+# Deterministic multi-room replay fixture v1 — resident scene swap mid-replay.
+# The runner consumes the E5 WORLD event on frame 5: world_state and resident
+# scene become 0x2B (st02a host) while pads keep driving +x. Synthetic; the
+# PCSX2 recorder uses the same grammar for real room transitions.
+VERSION 1
+ISO_SHA1 -
+SAVE_STATE -
+WORLD_STATE_INIT 0x0F
+FRAME_REF 0
+# pad nibble: bit0=+x bit1=-x bit2=+z bit3=-z; magnitude 15 (walk tier)
+F0 P00000000
+F1 P00000000
+F2 P00000000
+F3 P00000001
+F4 P00000001
+# mid-replay room swap 0x0F -> 0x2B (st02a). Event order in file is free.
+E5 WORLD 0x2B 0x2B
+F5 P00000001
+F6 P00000001
+F7 P00000001
+F8 P00000000
+F9 P00000000
+F10 P00000000
+F11 P00000000

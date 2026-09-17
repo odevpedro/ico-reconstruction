@@ -106,6 +106,25 @@ std::vector<std::string> runReplayDeterministic(const ReplayData& data,
 
     const std::size_t frames = std::max<std::size_t>(1, ReplayFile::estimatedFrameCount(data));
     for (std::size_t f = 0; f < frames; ++f) {
+        // A world event consumed on frame <f> swaps the resident scene and
+        // re-groups the boy on the (new) room floor — host deterministic
+        // semantic, mirroring the Rev.170 door-transition swap (setBridge +
+        // walkable respawn). The GL demo and the future PCSX2 golden share
+        // this path.
+        if (const ReplayWorldEvent* ev = ReplayFile::eventAtFrame(data, static_cast<uint32_t>(f))) {
+            if (!loader.requestScene(ev->sceneId) || !loader.execute()) {
+                error = "world event F" + std::to_string(f) +
+                        ": requestScene/execute failed (scene " + std::to_string(ev->sceneId) + ")";
+                return std::vector<std::string>();
+            }
+            boy.setWorldState(ev->worldState);
+            boy.setBridge(bridge);
+            if (!boy.spawn(boy.x(), boy.z(), boy.halfExtent())) {
+                error = "world event F" + std::to_string(f) + ": boy re-spawn failed";
+                return std::vector<std::string>();
+            }
+        }
+
         const uint32_t pad = ReplayFile::padForFrame(data, static_cast<uint32_t>(f));
         float dx = 0.0f, dz = 0.0f;
         padToMove(pad, dx, dz);

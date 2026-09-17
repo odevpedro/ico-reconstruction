@@ -72,8 +72,20 @@ int main() {
     const ico::engine::SceneAssetEntry* firstB = store.sceneAsset(0x2Bu, 0);
     assert(firstA != nullptr && firstB != nullptr);
     assert(firstA->meshPath != firstB->meshPath);
-    assert(firstA->meshPath.find("door") != std::string::npos ||
-           firstB->meshPath.find("door") != std::string::npos);
+    /* A door piece exists in at least one bundle. The check scans the WHOLE
+       bundle (not just the first entry): st00a currently leads with
+       169_door.p2o, but a manifest regroup (e.g. p1-family variants promoted
+       by Rev.171) can reorder the first asset without losing the door. */
+    bool aHasDoor = false, bHasDoor = false;
+    for (std::size_t i = 0; i < store.sceneAssetCount(0x0Fu); ++i) {
+        std::string p = store.sceneAsset(0x0Fu, i)->meshPath;
+        aHasDoor = aHasDoor || p.find("door") != std::string::npos;
+    }
+    for (std::size_t i = 0; i < store.sceneAssetCount(0x2Bu); ++i) {
+        std::string p = store.sceneAsset(0x2Bu, i)->meshPath;
+        bHasDoor = bHasDoor || p.find("door") != std::string::npos;
+    }
+    assert(aHasDoor || bHasDoor);
     std::fprintf(stderr, "rev170: store scenes 0x0F=%zu / 0x2B=%zu assets\n",
                  primaryCount, companionCount);
 

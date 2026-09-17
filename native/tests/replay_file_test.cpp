@@ -21,18 +21,15 @@ namespace {
 
 // Replay directory relative to the CTest build dir; try several layouts so the
 // test does not depend on one workspace shape.
-bool locateSample(std::string& path) {
-    const char* candidates[] = {
-        "../native/replays/sample-sala-0x0F.replay",
-        "native/replays/sample-sala-0x0F.replay",
-        "../../native/replays/sample-sala-0x0F.replay",
-        "../replays/sample-sala-0x0F.replay",
-        nullptr,
-    };
-    for (int i = 0; candidates[i] != nullptr; ++i) {
-        std::ifstream f(candidates[i]);
+bool locateReplay(const char* name, std::string& path) {
+    const std::string rel = std::string("../native/replays/") + name;
+    const std::string rel2 = std::string("native/replays/") + name;
+    const std::string rel3 = std::string("../../native/replays/") + name;
+    const std::string rel4 = std::string("../replays/") + name;
+    for (const std::string& c : {rel, rel2, rel3, rel4}) {
+        std::ifstream f(c);
         if (f.good()) {
-            path = candidates[i];
+            path = c;
             return true;
         }
     }
@@ -43,7 +40,7 @@ bool locateSample(std::string& path) {
 
 int main() {
     std::string samplePath;
-    CHECK(locateSample(samplePath));
+    CHECK(locateReplay("sample-sala-0x0F.replay", samplePath));
 
     ReplayData parsed;
     std::string err;
@@ -61,6 +58,30 @@ int main() {
     CHECK(ReplayFile::padForFrame(parsed, 0) == 0x0u);
     CHECK(ReplayFile::padForFrame(parsed, 200) == 0x0u);  // gap → 0
     CHECK(ReplayFile::estimatedFrameCount(parsed) == 12);
+
+    /* World events are addressable per frame (base fixture: E0 WORLD 0x0F). */
+    const ico::replay::ReplayWorldEvent* e0 = ReplayFile::eventAtFrame(parsed, 0);
+    CHECK(e0 != nullptr);
+    CHECK(e0->worldState == 0x0Fu);
+    CHECK(e0->sceneId == 0x0Fu);
+    CHECK(ReplayFile::eventAtFrame(parsed, 1) == nullptr);
+    CHECK(ReplayFile::eventAtFrame(parsed, 40) == nullptr);
+
+    /* Multi-room fixture: event at frame 5 → scene swap mid-replay. */
+    std::string multiPath;
+    CHECK(locateReplay("sample-sala-0x0F-to-0x2B.replay", multiPath));
+    ReplayData multi;
+    CHECK(ReplayFile::parse(multiPath, multi, err));
+    CHECK(multi.header.worldStateInit == 0x0Fu);
+    CHECK(multi.pads.size() == 12);
+    CHECK(multi.events.size() == 1);
+    CHECK(multi.events[0].frame == 5);
+    CHECK(ReplayFile::estimatedFrameCount(multi) == 12);
+    const ico::replay::ReplayWorldEvent* e5 = ReplayFile::eventAtFrame(multi, 5);
+    CHECK(e5 != nullptr);
+    CHECK(e5->worldState == 0x2Bu);
+    CHECK(e5->sceneId == 0x2Bu);
+    CHECK(ReplayFile::eventAtFrame(multi, 4) == nullptr);
 
     /* Round-trip through the writer. */
     const std::string tmp = "/tmp/replay_rt_test.replay";

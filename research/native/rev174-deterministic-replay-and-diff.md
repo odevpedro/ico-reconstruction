@@ -82,6 +82,51 @@ standable floor) still requires the GL demo or the PCSX2 golden. No code change.
 1. PCSX2-side recorder producing the same digest grammar (runtime-dependent).
 2. First golden replay from the Rev.155-priority scene (sala 0x0F):
    `recorder → .replay file → native --replay → replay_diff gold vs native`.
-3. Decide the with-assert CI configuration so every existing test validates in
-   CI (project-wide, needs user call).
+3. ~~Decide the with-assert CI configuration~~ **DONE (2026-09-17, follow-up).**
+   CI now builds headless `Debug` so every test's `assert()` validates on each
+   push. Unblocked by fixing the one stale assertion
+   (`multi_room_transition_test`: door presence now scanned across the whole
+   bundle instead of the first entry) — after the fix the FULL suite passes
+   32/32 with asserts ON (Debug). Golden digest verified byte-identical
+   Debug==Release, so the replay CI steps are unchanged by the build type.
 4. Door snap for st05b via the GL pair demo when a display session is available.
+
+## Follow-up 2026-09-17 — world events are CONSUMED; golden pinned
+
+Same revision, same day: the runner now consumes `E<frame> WORLD <ws> <scene>`
+events mid-replay (runtime-independent conclusion of the format contract).
+
+- `ReplayFile::eventAtFrame(data, frame)` added; `estimatedFrameCount` counts
+  events too (a pads-gap replay with an event tail is not truncated).
+- `ReplayRunner` checks `eventAtFrame` before each frame: on hit it runs
+  `requestScene(sceneId) + execute()` (real resident-set swap), mirrors
+  `worldState` into BoyController, and re-grounds the boy via the Rev.170
+  contract (`setBridge` + walkable `spawn` at the current x/z — no teleport).
+- Fixture `native/replays/sample-sala-0x0F-to-0x2B.replay`: pads F3..F7 drive
+  +x and a single `E5 WORLD 0x2B 0x2B` swaps the resident scene on frame 5.
+- Verified CLI timeline (12 frames): `scene=15 gobj=26` on F0..F4 →
+  `scene=43 gobj=24` on F5..F11. `gobj 26→24` is exactly the st02a resident
+  set shrinking (25→23 host GObjs + the boy; Rev.159/170 numbers). Position is
+  continuous across the swap frame. Determinism holds (two runs identical).
+- `native/replays/sample-sala-0x0F.digest.expected`: committed 12-line digest
+  golden for the base fixture, compared in CI against fresh `--replay` stdout
+  (pins the digest contract across machines/compilers; regenerate deliberately,
+  never silently).
+- CI reproducibility step now covers both fixtures (single- and multi-room);
+  new golden-diff step compares stdout against the pinned file.
+
+Corrections from this pass:
+- **Pad-magnitude doc drift.** The grammar comment said "magnitude 25 (walk
+  tier)"; the real constant is `BoyController::kWalkSpeed = 15.0f`. Comments in
+  `ReplayFile.h` and both fixtures fixed to 15. Digest `pad=` fields and
+  position deltas were always correct (15-driven), only the prose was wrong.
+- **NDEBUG hazard, closed:** the with-assert (Debug) run of the FULL suite
+  surfaced `multi_room_transition_test.cpp:75` aborting — its assertion
+  `firstA->meshPath.find("door") != npos || firstB->meshPath.find("door") != npos`
+  no longer held once role-based attachment ordering (Rev.159/171) stopped
+  guaranteeing the FIRST bundle entry is the door. Fixed by scanning the whole
+  bundle for a door piece (intent preserved, order-independent). After the fix
+  the entire suite is healthy under asserts: **32/32 Debug (asserts ON)** and
+  **32/32 Release**. CI now builds `Debug` so the whole suite validates on
+  every push instead of under NDEBUG. The three replay tests are always-on
+  CHECK regardless.

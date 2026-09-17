@@ -25,18 +25,15 @@ using ico::replay::runReplayDeterministic;
 
 namespace {
 
-bool locateSample(std::string& path) {
-    const char* candidates[] = {
-        "../native/replays/sample-sala-0x0F.replay",
-        "native/replays/sample-sala-0x0F.replay",
-        "../../native/replays/sample-sala-0x0F.replay",
-        "../replays/sample-sala-0x0F.replay",
-        nullptr,
-    };
-    for (int i = 0; candidates[i] != nullptr; ++i) {
-        std::ifstream f(candidates[i]);
+bool locateReplay(const char* name, std::string& path) {
+    const std::string rel = std::string("../native/replays/") + name;
+    const std::string rel2 = std::string("native/replays/") + name;
+    const std::string rel3 = std::string("../../native/replays/") + name;
+    const std::string rel4 = std::string("../replays/") + name;
+    for (const std::string& c : {rel, rel2, rel3, rel4}) {
+        std::ifstream f(c);
         if (f.good()) {
-            path = candidates[i];
+            path = c;
             return true;
         }
     }
@@ -59,7 +56,7 @@ ReplayData withPadAt(ReplayData d, uint32_t frame, uint32_t pad) {
 
 int main() {
     std::string samplePath;
-    CHECK(locateSample(samplePath));
+    CHECK(locateReplay("sample-sala-0x0F.replay", samplePath));
 
     ReplayData data;
     std::string err;
@@ -87,6 +84,29 @@ int main() {
     CHECK(!turnedLines.empty() && err.empty());
     CHECK(turnedLines[3] != lines1[3]);
     CHECK(turnedLines[0] == lines1[0]);  // no input yet on frame 0
+
+    /* Multi-room fixture: scene swap mid-replay (0x0F -> 0x2B on frame 5). */
+    std::string multiPath;
+    CHECK(locateReplay("sample-sala-0x0F-to-0x2B.replay", multiPath));
+    ReplayData multi;
+    CHECK(ReplayFile::parse(multiPath, multi, err));
+    std::vector<std::string> mlines1 =
+        runReplayDeterministic(multi, ReplayRunnerConfig{multiPath, "/tmp/replay_multi1.txt"}, err);
+    CHECK(!mlines1.empty() && err.empty());
+    std::vector<std::string> mlines2 =
+        runReplayDeterministic(multi, ReplayRunnerConfig{multiPath, "/tmp/replay_multi2.txt"}, err);
+    CHECK(!mlines2.empty() && err.empty());
+    CHECK(mlines1.size() == 12);
+    CHECK(mlines1 == mlines2);  // scene swap is reproducible
+
+    auto sceneField = [](const std::string& l) {
+        const std::size_t p = l.find("scene=");
+        return l.substr(p + 6, l.find(' ', p) - (p + 6));
+    };
+    CHECK(sceneField(mlines1[0]) == "15");
+    CHECK(sceneField(mlines1[4]) == "15");
+    CHECK(sceneField(mlines1[5]) == "43");   // E5 consumed → st02a resident
+    CHECK(sceneField(mlines1[11]) == "43");
 
     std::printf("replay_runner_test: OK (12 frames, deterministic, sensitive)\n");
     return 0;

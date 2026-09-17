@@ -20,7 +20,8 @@ namespace ico::replay {
 //   E<frame> WORLD <0xNN> <sceneId>
 //
 // Pad word v1 (host-defined; the PS2 recorder maps real pad to this nibble):
-//   bit 0 = +x, bit 1 = -x, bit 2 = +z, bit 3 = -z; magnitude 25 (walk tier).
+//   bit 0 = +x, bit 1 = -x, bit 2 = +z, bit 3 = -z; magnitude is the walk tier
+//   BoyController::kWalkSpeed (= 15.0f), diagonal normalized by 1/sqrt(2).
 inline constexpr uint32_t kReplayFormatVersion = 1;
 
 struct ReplayHeader {
@@ -57,6 +58,10 @@ public:
 
     // Convenience: pad for a given logical frame, 0 when absent.
     static uint32_t padForFrame(const ReplayData& data, uint32_t frame);
+
+    // First world event consumed ON frame (<frame>), or null when none. A
+    // replay may carry zero, one, or several world events.
+    static const ReplayWorldEvent* eventAtFrame(const ReplayData& data, uint32_t frame);
 
     // Serializes data back; used by tests to round-trip and to generate the
     // sample fixture.

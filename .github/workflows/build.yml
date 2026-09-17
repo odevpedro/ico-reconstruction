@@ -16,8 +16,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build g++
 
-      - name: Configure (headless, no OpenGL)
-        run: cmake -S native -B build -G Ninja -DICO_ENABLE_OPENGL=OFF -DCMAKE_BUILD_TYPE=Release
+      # Debug keeps NDEBUG unset, so every test's assert() actually validates.
+      # (Release/NDEBUG compiled the whole suite's asserts out until Rev.174.)
+      - name: Configure (headless, no OpenGL, asserts ON)
+        run: cmake -S native -B build -G Ninja -DICO_ENABLE_OPENGL=OFF -DCMAKE_BUILD_TYPE=Debug
 
       - name: Build
         run: cmake --build build -j2
@@ -25,11 +27,19 @@ jobs:
       - name: Test (headless; opengl_backend is excluded at configure time)
         run: ctest --test-dir build --output-on-failure
 
-      - name: Replay — capture is reproducible (two runs must be identical)
+      - name: Replay — captures are reproducible (single- and multi-room, byte-identical)
         run: |
           ./build/ico_native --replay native/replays/sample-sala-0x0F.replay --capture /tmp/cap1.txt
           ./build/ico_native --replay native/replays/sample-sala-0x0F.replay --capture /tmp/cap2.txt
           diff -u /tmp/cap1.txt /tmp/cap2.txt
+          ./build/ico_native --replay native/replays/sample-sala-0x0F-to-0x2B.replay --capture /tmp/mcap1.txt
+          ./build/ico_native --replay native/replays/sample-sala-0x0F-to-0x2B.replay --capture /tmp/mcap2.txt
+          diff -u /tmp/mcap1.txt /tmp/mcap2.txt
+
+      - name: Replay — digest golden is pinned (stdout must match committed file)
+        run: |
+          ./build/ico_native --replay native/replays/sample-sala-0x0F.replay > /tmp/digest.out
+          diff -u native/replays/sample-sala-0x0F.digest.expected /tmp/digest.out
 
       - name: Replay — replay_diff self-test (stdlib-only, no build needed)
         run: python3 tools/replay_diff.py --selftest

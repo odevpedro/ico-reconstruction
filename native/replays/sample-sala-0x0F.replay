@@ -7,7 +7,7 @@ ISO_SHA1 -
 SAVE_STATE -
 WORLD_STATE_INIT 0x0F
 FRAME_REF 0
-# pad nibble: bit0=+x bit1=-x bit2=+z bit3=-z; magnitude 25 (walk tier)
+# pad nibble: bit0=+x bit1=-x bit2=+z bit3=-z; magnitude 15 (walk tier)
 F0 P00000000
 F1 P00000000
 F2 P00000000

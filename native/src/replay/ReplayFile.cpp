@@ -207,6 +207,14 @@ uint32_t ReplayFile::padForFrame(const ReplayData& data, uint32_t frame) {
     return 0;
 }
 
+const ReplayWorldEvent* ReplayFile::eventAtFrame(const ReplayData& data, uint32_t frame) {
+    for (const auto& e : data.events) {
+        if (e.frame == frame) return &e;
+        if (e.frame > frame) break;
+    }
+    return nullptr;
+}
+
 bool ReplayFile::save(const std::string& path, const ReplayData& data, std::string& err) {
     std::ofstream f(path);
     if (!f) {
@@ -230,6 +238,9 @@ std::size_t ReplayFile::estimatedFrameCount(const ReplayData& data) {
     std::size_t n = 0;
     for (const auto& p : data.pads) {
         if (p.frame >= n) n = static_cast<std::size_t>(p.frame) + 1;
+    }
+    for (const auto& e : data.events) {
+        if (e.frame >= n) n = static_cast<std::size_t>(e.frame) + 1;
     }
     return n;
 }
