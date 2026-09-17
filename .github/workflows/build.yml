@@ -36,10 +36,12 @@ jobs:
           ./build/ico_native --replay native/replays/sample-sala-0x0F-to-0x2B.replay --capture /tmp/mcap2.txt
           diff -u /tmp/mcap1.txt /tmp/mcap2.txt
 
-      - name: Replay — digest golden is pinned (stdout must match committed file)
+      - name: Replay — digest goldens are pinned (stdout must match committed files)
         run: |
-          ./build/ico_native --replay native/replays/sample-sala-0x0F.replay > /tmp/digest.out
-          diff -u native/replays/sample-sala-0x0F.digest.expected /tmp/digest.out
+          ./build/ico_native --replay native/replays/sample-sala-0x0F.replay > /tmp/digest0F.out
+          diff -u native/replays/sample-sala-0x0F.digest.expected /tmp/digest0F.out
+          ./build/ico_native --replay native/replays/sample-sala-0x0F-to-0x2B.replay > /tmp/digest2B.out
+          diff -u native/replays/sample-sala-0x0F-to-0x2B.digest.expected /tmp/digest2B.out
 
       - name: Replay — replay_diff self-test (stdlib-only, no build needed)
         run: python3 tools/replay_diff.py --selftest
