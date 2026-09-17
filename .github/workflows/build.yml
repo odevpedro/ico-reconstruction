@@ -1,0 +1,38 @@
+name: native build + hygiene
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-headless:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build g++
+
+      - name: Configure (headless, no OpenGL)
+        run: cmake -S native -B build -G Ninja -DICO_ENABLE_OPENGL=OFF -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j2
+
+      - name: Test (headless; opengl_backend is excluded at configure time)
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Hygiene — no untracked/generated files left behind
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::build left untracked/modified files:"; git status --porcelain; exit 1
+          fi
+
+      - name: Hygiene — no personal absolute paths tracked
+        run: |
+          if git grep -n '/home/hoper' -- . ':!*.yml' ':!.gitignore' ':!native/.gitignore' >/dev/null 2>&1; then
+            echo "::error::tracked file leaks a /home/hoper path:"; git grep -n '/home/hoper' -- . ':!*.yml' ':!.gitignore' ':!native/.gitignore'; exit 1
+          fi
