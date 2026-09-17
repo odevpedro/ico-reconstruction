@@ -11,10 +11,11 @@ so code[i] = VA (0x100000 + i). To index VA A, use code[A - BASE_VADDR].
 Do NOT use code[vfoff(A)] which is off by BASE_FOFF.
 """
 
+import os
 import struct
 from capstone import *
 
-ELF_PATH = "/home/hoper/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf"
+ELF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, ".local", "extracted", "SCUS_971.13.elf")
 BASE_VADDR = 0x00100000
 BASE_FOFF  = 0x1000
 DESC_BASE  = 0x2A31B8

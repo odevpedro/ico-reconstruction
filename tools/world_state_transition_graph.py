@@ -10,6 +10,7 @@ Reads all events, extracts world_state_load events, and builds:
 """
 
 import json
+import os
 import sys
 from collections import defaultdict
 
@@ -369,7 +370,7 @@ def build_ascii_graph(transitions, all_states, dwell, classification, events):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        log_path = "/home/hoper/Documentos/repos/ico-reconstruction/.local/pcsx2-logs/ico-runtime-20260825-152452.jsonl"
+        log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, ".local", "pcsx2-logs", "ico-runtime-20260825-152452.jsonl")
     else:
         log_path = sys.argv[1]
 

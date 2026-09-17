@@ -2,8 +2,7 @@
 
 Date: 2026-09-05
 Trilha: PORT
-Scope: `native/` — P1 of the priority directive
-(`/home/hoper/Downloads/diretriz-prioridades-ico-native-port.md`)
+Scope: `native/` — P1 of the native-port priority directive
 
 ## Objective
 

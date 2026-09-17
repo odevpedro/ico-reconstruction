@@ -39,7 +39,10 @@ native/native/
 
 # Local build trees (never track generated artifacts)
 build/
-Testing/
+build-*/
+*/build/
+*/build-*/
+**/Testing/
 
 # Emulator/debugger state
 sstates/
@@ -71,3 +74,6 @@ tmp*.s
 
 # Local scratch/output
 decomp/
+
+# Environment/personal path leak guard (never commit)
+/home/hoper/

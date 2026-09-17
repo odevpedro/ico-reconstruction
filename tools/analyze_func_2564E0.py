@@ -3,12 +3,13 @@
 Final analysis of func_2564E0 — SIF Resource Loader.
 """
 
+import os
 import struct
 from collections import Counter, defaultdict
 from elftools.elf.elffile import ELFFile
 import rabbitizer
 
-ELF_PATH = "/home/hoper/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf"
+ELF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, ".local", "extracted", "SCUS_971.13.elf")
 
 def load_segment(path):
     with open(path, "rb") as f:

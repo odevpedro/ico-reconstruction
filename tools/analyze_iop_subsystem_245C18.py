@@ -7,6 +7,7 @@ SCUS_971.13.elf — ICO USA PS2 (R5900, MIPS64 little-endian)
 Uses Ghidra-verified labels from research/ghidra-exploration-2026-05-21.md.
 """
 
+import os
 import struct
 import sys
 from collections import defaultdict, Counter
@@ -22,7 +23,7 @@ try:
 except ImportError:
     print("ERROR: pip3 install pyelftools"); sys.exit(1)
 
-ELF_PATH = "/home/hoper/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf"
+ELF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, ".local", "extracted", "SCUS_971.13.elf")
 RANGE_START = 0x245C00
 RANGE_END   = 0x250000
 

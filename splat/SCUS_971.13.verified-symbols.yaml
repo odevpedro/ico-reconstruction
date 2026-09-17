@@ -2,7 +2,7 @@ name: ICO USA SCUS_971.13 — verified symbols
 sha1: a4d8fc1948fb2da2395f3863a94a3b93de55de14
 options:
   basename: SCUS_971.13
-  target_path: /home/hoper/Documentos/repos/ico-reconstruction/.local/extracted/SCUS_971.13.elf
+  target_path: .local/extracted/SCUS_971.13.elf
   base_path: /tmp/ico-verified-symbols
   asm_path: asm
   asset_path: assets

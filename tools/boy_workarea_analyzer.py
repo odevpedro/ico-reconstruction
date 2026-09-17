@@ -10,9 +10,7 @@ import os
 import re
 from collections import defaultdict, Counter
 
-SRC_ROOT = os.path.expanduser(
-    "/home/hoper/Documentos/repos/ico-reconstruction/src/entity/asm"
-)
+SRC_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "src", "entity", "asm")
 
 KNOWN_OFFSETS = {
     0x0000: ("type/flags",           373),
