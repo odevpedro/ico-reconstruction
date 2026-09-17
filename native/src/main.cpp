@@ -45,7 +45,10 @@
 #else
 #include "runtime/IcoRuntime.h"
 #include "runtime/Logger.h"
+#include "replay/ReplayFile.h"
+#include "replay/ReplayRunner.h"
 #include <cstdio>
+#include <cstring>
 #endif
 
 namespace {
@@ -2132,6 +2135,34 @@ int main(int argc, char* argv[]) {
 #ifdef ICO_HAS_OPENGL
     return runOpenGLDemo(argc, argv);
 #else
+    if (argc >= 3 && std::strcmp(argv[1], "--replay") == 0) {
+        const char* capPath = nullptr;
+        for (int i = 3; i + 1 < argc; ++i)
+            if (std::strcmp(argv[i], "--capture") == 0)
+                capPath = argv[i + 1];
+
+        ico::replay::ReplayData data;
+        std::string err;
+        if (!ico::replay::ReplayFile::parse(argv[2], data, err)) {
+            std::fprintf(stderr, "main: --replay parse failed: %s\n", err.c_str());
+            return 1;
+        }
+        ico::replay::ReplayRunnerConfig cfg;
+        cfg.replayPath = argv[2];
+        cfg.capturePath = capPath ? capPath : "";
+        const std::vector<std::string> lines =
+            ico::replay::runReplayDeterministic(data, cfg, err);
+        if (lines.empty()) {
+            std::fprintf(stderr, "main: --replay runner failed: %s\n", err.c_str());
+            return 1;
+        }
+        std::fprintf(stderr, "main: --replay %s -> %zu digest frames%s\n",
+                     argv[2], lines.size(), capPath ? "" : " (stdout)");
+        if (!capPath) {
+            for (const auto& l : lines) std::puts(l.c_str());
+        }
+        return 0;
+    }
     (void)argc;
     (void)argv;
 

@@ -25,6 +25,15 @@ jobs:
       - name: Test (headless; opengl_backend is excluded at configure time)
         run: ctest --test-dir build --output-on-failure
 
+      - name: Replay — capture is reproducible (two runs must be identical)
+        run: |
+          ./build/ico_native --replay native/replays/sample-sala-0x0F.replay --capture /tmp/cap1.txt
+          ./build/ico_native --replay native/replays/sample-sala-0x0F.replay --capture /tmp/cap2.txt
+          diff -u /tmp/cap1.txt /tmp/cap2.txt
+
+      - name: Replay — replay_diff self-test (stdlib-only, no build needed)
+        run: python3 tools/replay_diff.py --selftest
+
       - name: Hygiene — no untracked/generated files left behind
         run: |
           if [ -n "$(git status --porcelain)" ]; then

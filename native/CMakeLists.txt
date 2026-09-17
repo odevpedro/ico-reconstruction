@@ -34,6 +34,9 @@ set(ICO_ENGINE_SOURCES
     src/engine/GObjEntityAllocator.cpp
     src/engine/Ps2oMesh.cpp
     src/engine/GObjAttachment.cpp
+    src/replay/ReplayFile.cpp
+    src/replay/StateDigest.cpp
+    src/replay/ReplayRunner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/core/isysgobj_semantic.c
 )
 
@@ -197,6 +200,15 @@ target_link_libraries(room_transitions_test PRIVATE ico_engine_core)
 add_executable(multi_room_transition_test tests/multi_room_transition_test.cpp)
 target_link_libraries(multi_room_transition_test PRIVATE ico_engine_core)
 
+add_executable(replay_file_test tests/replay_file_test.cpp)
+target_link_libraries(replay_file_test PRIVATE ico_engine_core)
+
+add_executable(state_digest_test tests/state_digest_test.cpp)
+target_link_libraries(state_digest_test PRIVATE ico_engine_core)
+
+add_executable(replay_runner_test tests/replay_runner_test.cpp)
+target_link_libraries(replay_runner_test PRIVATE ico_engine_core)
+
 enable_testing()
 add_test(NAME smoke COMMAND smoke_test)
 add_test(NAME gobj_pool COMMAND gobj_pool_test)
@@ -223,6 +235,9 @@ add_test(NAME clip_bridge COMMAND clip_bridge_test)
 add_test(NAME boy_controller COMMAND boy_controller_test)
 add_test(NAME room_transitions COMMAND room_transitions_test)
 add_test(NAME multi_room_transition COMMAND multi_room_transition_test)
+add_test(NAME replay_file COMMAND replay_file_test)
+add_test(NAME state_digest COMMAND state_digest_test)
+add_test(NAME replay_runner COMMAND replay_runner_test)
 add_test(NAME input COMMAND input_test)
 add_test(NAME ps2o_mesh COMMAND ps2o_mesh_test)
 add_test(NAME scene_asset_store COMMAND scene_asset_store_test)
